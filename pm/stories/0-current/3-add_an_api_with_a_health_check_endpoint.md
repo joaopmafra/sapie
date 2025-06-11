@@ -3,7 +3,7 @@
 As a developer, I want to have a RESTFul API with a health check endpoint to see if the back end is working.
 
 ## Tasks
- - [ ] init a NestJs project in a new `api` directory
+ - [x] init a NestJs project in a new `api` directory
  - [ ] add a `health` endpoint
  - [ ] call the endpoint in the home page
  - [ ] add firebase functions 
