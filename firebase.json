@@ -16,13 +16,24 @@
       "cd web && pnpm run build"
     ]
   },
+  "functions": [
+    {
+      "source": "api/dist",
+      "predeploy": [
+        "cd api && pnpm run build:firebase"
+      ]
+    }
+  ],
   "emulators": {
+    "singleProjectMode": true,
     "hosting": {
       "port": 5000
     },
+    "functions": {
+      "port": 5001
+    },
     "ui": {
       "enabled": true
-    },
-    "singleProjectMode": true
+    }
   }
 }

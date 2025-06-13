@@ -1,12 +1,17 @@
 {
   "name": "api",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "description": "API module for the Sapie app",
+  "author": "João Paulo Mafra",
   "private": true,
   "license": "UNLICENSED",
+  "engines": {
+    "node": "22"
+  },
+  "main": "firebase-functions.js",
   "scripts": {
     "build": "nest build",
+    "build:firebase": "nest build && cp package.json dist/",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
