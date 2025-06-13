@@ -5,6 +5,7 @@ As a developer, I want to have a RESTFul API with a health check endpoint to see
 ## Tasks
  - [x] init a NestJs project in a new `api` directory
  - [x] add a `health` endpoint
+ - [x] add e2e test for the `health` endpoint
  - [ ] call the endpoint in the home page
  - [ ] add firebase functions 
  - [ ] add adapter to the api to make it work in functions
