@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Container,
   Box,
@@ -14,6 +14,14 @@ import './App.css'
 
 function App() {
   const [count, setCount] = useState(0)
+  const [healthStatus, setHealthStatus] = useState<string>('Loading...')
+
+  useEffect(() => {
+    fetch('/api/health')
+      .then(response => response.json())
+      .then(data => setHealthStatus(JSON.stringify(data, null, 2)))
+      .catch(() => setHealthStatus('Error fetching health status'))
+  }, [])
 
   return (
     <Container maxWidth="sm">
@@ -39,6 +47,12 @@ function App() {
 
         <Card>
           <CardContent sx={{ textAlign: 'center' }}>
+            <Typography variant="h6" gutterBottom>
+              API Health Status
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 2, fontFamily: 'monospace' }}>
+              {healthStatus}
+            </Typography>
             <Button
               variant="contained"
               onClick={() => setCount((count) => count + 1)}
