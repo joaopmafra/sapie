@@ -33,3 +33,9 @@ firebase deploy
 ```
 
 After deployment, your application will be available at [https://sapie-b09be.web.app](https://sapie-b09be.web.app).
+
+### Useful commands
+ - kill firebase emulators: `pkill -f "firebase.*emulator"`
+ - start firebase emulators: `firebase emulators:start`
+ - start only firebase functions emulator: `firebase emulators:start --only functions`
+ - test the API running on firebase emulators: `curl -X GET http://127.0.0.1:5001/sapie-b09be/us-central1/api/health`
