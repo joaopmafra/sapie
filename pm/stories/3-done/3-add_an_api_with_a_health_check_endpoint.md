@@ -12,4 +12,4 @@ As a developer, I want to have a RESTFul API with a health check endpoint to see
  - [x] integrate the api with the web app running on firebase emulator
  - [x] develop locally running the app in firebase emulator
  - [x] develop locally running the app in dev mode outside firebase emulator
- - [ ] Update documentation
+ - [x] Update documentation
