@@ -9,7 +9,7 @@ As a developer, I want to have a RESTFul API with a health check endpoint to see
  - [x] call the endpoint in the home page
  - [x] add firebase functions
  - [x] add adapter to the nestjs api app to make it work in firebase functions
- - [ ] integrate the api with the web app running on firebase emulator 
- - [ ] develop locally running the app in firebase emulator
- - [ ] develop locally running the app in dev mode outside firebase emulator
+ - [x] integrate the api with the web app running on firebase emulator
+ - [x] develop locally running the app in firebase emulator
+ - [x] develop locally running the app in dev mode outside firebase emulator
  - [ ] Update documentation

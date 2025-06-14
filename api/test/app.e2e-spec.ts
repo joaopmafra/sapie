@@ -15,11 +15,11 @@ describe('AppController (e2e)', () => {
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  it('/api (GET)', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .get('/api')
       .expect(200)
-      .expect('Hello World!');
+      .expect('Sapie API');
   });
 
   // cleans up resources; see https://www.google.com/search?q=nestjs+e2e+test+aftereach+app.close
