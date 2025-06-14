@@ -19,9 +19,9 @@ describe('HealthController (e2e)', () => {
     await app.close();
   });
 
-  it('/api/health (GET)', () => {
+  it('/health (GET)', () => {
     return request(app.getHttpServer())
-      .get('/api/health')
+      .get('/health')
       .expect(200)
       .then(response => {
         expect(response.body).toHaveProperty('status', 'ok');
