@@ -11,7 +11,7 @@
   "main": "firebase-functions.js",
   "scripts": {
     "build": "nest build",
-    "build:firebase": "nest build && cp package.json firebase-functions.js dist/",
+    "build:firebase": "nest build && cp package.json dist/",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",

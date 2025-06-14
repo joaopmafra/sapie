@@ -1,10 +1,8 @@
-// TODO replace by imports
 // TODO create a firebase specific package.json file with only the entries needed by firebase;
-//  also, place this file and the new package.json file in a separate folder;
-//  update the build script build:firebase
-const { NestFactory } = require('@nestjs/core');
-const { AppModule } = require('./app.module');
-const { onRequest } = require('firebase-functions/v2/https');
+
+import {NestFactory} from '@nestjs/core';
+import {AppModule} from './app.module';
+import {onRequest} from 'firebase-functions/v2/https';
 
 let cachedApp;
 
