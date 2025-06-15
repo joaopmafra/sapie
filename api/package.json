@@ -5,6 +5,7 @@
   "author": "João Paulo Mafra",
   "private": true,
   "license": "UNLICENSED",
+  "packageManager": "pnpm@10.12.1",
   "engines": {
     "node": "22"
   },
