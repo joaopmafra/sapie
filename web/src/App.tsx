@@ -14,7 +14,7 @@ import './App.css'
 
 function App() {
   const [count, setCount] = useState(0)
-  const [healthStatus, setHealthStatus] = useState<string>('Loading...')
+  const [healthStatus, setHealthStatus] = useState<string>('')
 
   useEffect(() => {
     fetch('/api/health')
@@ -50,9 +50,16 @@ function App() {
             <Typography variant="h6" gutterBottom>
               API Health Status
             </Typography>
-            <Typography variant="body2" sx={{ mb: 2, fontFamily: 'monospace' }}>
-              {healthStatus}
-            </Typography>
+
+            {healthStatus
+              ? <Typography variant="body2" sx={{ mb: 2, fontFamily: 'monospace' }} data-testid="api-health-status">
+                {healthStatus}
+              </Typography>
+              : <Typography variant="body2" sx={{ mb: 2, fontFamily: 'monospace' }}>
+                Loading...
+              </Typography>
+            }
+
             <Button
               variant="contained"
               onClick={() => setCount((count) => count + 1)}

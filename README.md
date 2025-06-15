@@ -8,6 +8,7 @@ Sapie is a knowledge management app built with React (web frontend) and NestJS (
 sapie/
 ├── web/          # React web application (Vite + TypeScript)
 ├── api/          # NestJS API backend
+├── test-e2e/     # End-to-end tests (Playwright)
 ├── docs/         # Project documentation
 ├── firebase.json # Firebase configuration
 └── README.md     # This file
@@ -123,6 +124,29 @@ cd web
 # Run linting
 pnpm lint
 ```
+
+### E2E Integration Tests
+```bash
+cd test-e2e
+
+# Install dependencies and browsers
+pnpm install
+pnpm run install
+
+# Run E2E tests (starts Firebase emulator automatically)
+pnpm test
+
+# Run tests in headed mode
+pnpm test:headed
+
+# Run tests with UI mode
+pnpm test:ui
+
+# View test reports
+pnpm test:report
+```
+
+The E2E tests validate the integration between the React frontend and NestJS API using Playwright. They automatically start and stop the Firebase emulator for testing.
 
 ## Deployment
 
