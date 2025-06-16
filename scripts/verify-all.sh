@@ -4,15 +4,15 @@
 set -e
 
 echo "Verifying api..."
-cd api
+cd packages/api
 pnpm run lint:check
 pnpm run format:check
-cd ..
+cd ../..
 echo "OK"
 
 echo "Verifying web..."
-cd web
+cd packages/web
 pnpm run lint
 pnpm run format:check
-cd ..
+cd ../..
 echo "OK"

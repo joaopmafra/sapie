@@ -6,13 +6,13 @@ set -e
 scripts/verify-all.sh
 
 echo "Building api..."
-cd api
+cd packages/api
 pnpm run build:firebase
-cd ..
+cd ../..
 echo "OK"
 
 echo "Building web..."
-cd web
+cd packages/web
 pnpm run build
-cd ..
+cd ../..
 echo "OK"

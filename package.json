@@ -1,0 +1,13 @@
+{
+  "name": "sapie",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "scripts/build-test-all.sh"
+  },
+  "keywords": [],
+  "author": "João Paulo Mafra",
+  "license": "UNLICENSED",
+  "packageManager": "pnpm@10.12.1"
+}

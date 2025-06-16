@@ -1,5 +1,5 @@
 {
-  "name": "sapie-e2e-tests",
+  "name": "@sapie/e2e-tests",
   "version": "1.0.0",
   "description": "End-to-end tests for Sapie using Playwright",
   "private": true,
@@ -17,4 +17,4 @@
   "devDependencies": {
     "@types/node": "^22.10.0"
   }
-} 
+}

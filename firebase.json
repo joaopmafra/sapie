@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "web/dist",
+    "public": "packages/web/dist",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -17,14 +17,14 @@
       }
     ],
     "predeploy": [
-      "cd web && pnpm run build"
+      "cd packages/web && pnpm run build"
     ]
   },
   "functions": [
     {
-      "source": "api/dist",
+      "source": "packages/api/dist",
       "predeploy": [
-        "cd api && pnpm run build:firebase"
+        "cd packages/api && pnpm run build:firebase"
       ]
     }
   ],

@@ -6,21 +6,21 @@ set -e
 scripts/build-all.sh
 
 echo "Running api unit tests..."
-cd api
+cd packages/api
 pnpm test
-cd ..
+cd ../..
 echo "OK"
 
 # TODO add web unit tests and run them here
 
 echo "Running api e2e tests..."
-cd api
+cd packages/api
 pnpm test:e2e
-cd ..
+cd ../..
 echo "OK"
 
 echo "Running app e2e tests..."
-cd test-e2e
+cd packages/test-e2e
 pnpm run test
-cd ..
+cd ../..
 echo "OK"
