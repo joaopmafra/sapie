@@ -1,10 +1,9 @@
-// TODO create a firebase specific package.json file with only the entries needed by firebase;
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { onRequest } from 'firebase-functions/v2/https';
+import { HttpServer } from '@nestjs/common/interfaces/http/http-server.interface';
 
-import {NestFactory} from '@nestjs/core';
-import {AppModule} from './app.module';
-import {onRequest} from 'firebase-functions/v2/https';
-
-let cachedApp;
+let cachedApp: HttpServer;
 
 async function createNestServer() {
   if (!cachedApp) {
@@ -17,13 +16,17 @@ async function createNestServer() {
     });
 
     await app.init();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     cachedApp = app.getHttpAdapter().getInstance();
   }
 
   return cachedApp;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 exports.api = onRequest(async (req, res) => {
   const server = await createNestServer();
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-expect-error
   server(req, res);
 });
