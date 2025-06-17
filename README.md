@@ -6,12 +6,15 @@ Sapie is a knowledge management app built with React (web frontend) and NestJS (
 
 ```
 sapie/
-├── web/          # React web application (Vite + TypeScript)
-├── api/          # NestJS API backend
-├── test-e2e/     # End-to-end tests (Playwright)
-├── docs/         # Project documentation
-├── firebase.json # Firebase configuration
-└── README.md     # This file
+├── packages/
+│   ├── web/          # React web application (Vite + TypeScript)
+│   ├── api/          # NestJS API backend
+│   └── test-e2e/     # End-to-end tests (Playwright)
+├── scripts/          # Build and verification scripts
+├── docs/             # Project documentation
+├── firebase.json     # Firebase configuration
+├── pnpm-workspace.yaml # PNPM workspace configuration
+└── README.md         # This file
 ```
 
 ## Architecture
@@ -20,6 +23,8 @@ sapie/
 - **Backend**: NestJS API with TypeScript
 - **Deployment**: Firebase Hosting (web) + Firebase Functions (API)
 - **Development**: Firebase Emulator Suite for local development
+- **Package Management**: PNPM workspace with unified dependency management
+- **Code Quality**: ESLint + Prettier integration across all packages
 
 ## Setup
 
@@ -34,13 +39,13 @@ pnpm add -g @nestjs/cli
 
 ### Install Dependencies
 
+From the project root:
 ```bash
-# Install API dependencies
-cd api && pnpm install
-
-# Install web dependencies
-cd ../web && pnpm install
+# Install all dependencies for all packages
+pnpm install
 ```
+
+The PNPM workspace will automatically install dependencies for all packages (`web`, `api`, and `test-e2e`).
 
 ## Development
 
@@ -49,6 +54,11 @@ cd ../web && pnpm install
 Start the Firebase emulator to run both web and API locally:
 ```bash
 firebase emulators:start
+```
+
+Or use the workspace script:
+```bash
+pnpm run emulator
 ```
 
 The emulator will start and provide you with:
@@ -62,15 +72,33 @@ For faster development, you can run the services separately:
 
 ```bash
 # Terminal 1: Start API in development mode
-cd api && pnpm run dev
+cd packages/api && pnpm run dev
 
 # Terminal 2: Start web app in development mode  
-cd web && pnpm run dev
+cd packages/web && pnpm run dev
 ```
 
 This will start:
 - **API**: http://localhost:3000
 - **Web App**: http://localhost:5173 (with API proxy configured)
+
+## Workspace Scripts
+
+The project includes workspace-level scripts for common tasks:
+
+```bash
+# Verify code quality (lint + format check) across all packages
+pnpm run verify
+
+# Build all packages
+pnpm run build
+
+# Run all tests (includes build, unit tests, e2e tests)
+pnpm run test
+
+# Start Firebase emulator with all services
+pnpm run emulator
+```
 
 ## API Endpoints
 
@@ -100,9 +128,15 @@ curl -X GET https://sapie-b09be.web.app/api/health
 
 ## Testing
 
+### Workspace-Level Testing
+```bash
+# Run all tests (unit + e2e for all packages)
+pnpm run test
+```
+
 ### API Tests
 ```bash
-cd api
+cd packages/api
 
 # Run unit tests
 pnpm test
@@ -119,15 +153,18 @@ pnpm test:cov
 
 ### Web Tests
 ```bash
-cd web
+cd packages/web
 
 # Run linting
 pnpm lint
+
+# Check code formatting
+pnpm run format:check
 ```
 
 ### E2E Integration Tests
 ```bash
-cd test-e2e
+cd packages/test-e2e
 
 # Install dependencies and browsers
 pnpm install
@@ -148,6 +185,30 @@ pnpm test:report
 
 The E2E tests validate the integration between the React frontend and NestJS API using Playwright. They automatically start and stop the Firebase emulator for testing.
 
+## Code Quality
+
+### Verification
+```bash
+# Run lint and format check across all packages
+pnpm run verify
+```
+
+### Individual Package Commands
+```bash
+# API
+cd packages/api
+pnpm run lint          # Lint with auto-fix
+pnpm run lint:check    # Lint without fixes
+pnpm run format        # Format code
+pnpm run format:check  # Check formatting
+
+# Web
+cd packages/web
+pnpm run lint          # Lint with auto-fix
+pnpm run format        # Format code
+pnpm run format:check  # Check formatting
+```
+
 ## Deployment
 
 ### Firebase Hosting
@@ -158,9 +219,15 @@ Deploy the complete application to Firebase:
 firebase deploy
 ```
 
+Or use the workspace build script first:
+```bash
+pnpm run build
+firebase deploy
+```
+
 This will:
-1. Build the web app (`web/dist`)
-2. Build the API for Firebase Functions (`api/dist`)
+1. Build the web app (`packages/web/dist`)
+2. Build the API for Firebase Functions (`packages/api/dist`)
 3. Deploy both to Firebase
 
 After deployment, your application will be available at [https://sapie-b09be.web.app](https://sapie-b09be.web.app).
@@ -180,19 +247,20 @@ firebase emulators:start --only functions
 # Start only Firebase hosting emulator  
 firebase emulators:start --only hosting
 
-# Build web app
-cd web && pnpm run build
+# Workspace commands
+pnpm run build         # Build all packages
+pnpm run verify        # Verify code quality
+pnpm run test          # Run all tests
+pnpm run emulator      # Start Firebase emulator
 
-# Build API for Firebase
-cd api && pnpm run build:firebase
-
-# Format code
-cd api && pnpm run format
-cd web && pnpm run lint
+# Individual package builds
+cd packages/web && pnpm run build
+cd packages/api && pnpm run build:firebase
 ```
 
 ## Environment Requirements
 
 - **Node.js**: 22.x (see `.nvmrc`)
-- **Package Manager**: pnpm
+- **Package Manager**: pnpm (defined in `packageManager` field)
 - **Firebase CLI**: Required for deployment and emulators
+- **Workspace**: PNPM workspace configuration for unified dependency management

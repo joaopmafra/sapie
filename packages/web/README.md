@@ -10,11 +10,13 @@ React-based frontend for the Sapie knowledge management application.
 - **State Management**: React Hooks (useState, useEffect)
 - **HTTP Client**: Fetch API
 - **Deployment**: Firebase Hosting
+- **Package Management**: PNPM (defined in packageManager field)
+- **Code Quality**: ESLint + Prettier integration
 
 ## Project Structure
 
 ```
-web/
+packages/web/
 ├── src/
 │   ├── App.tsx              # Main application component
 │   ├── App.css              # Application styles
@@ -23,8 +25,11 @@ web/
 │   └── assets/              # Static assets
 ├── public/                  # Public assets
 ├── dist/                    # Build output
+├── .prettierrc              # Prettier configuration
+├── .prettierignore          # Prettier ignore patterns
+├── eslint.config.js         # ESLint configuration (with Prettier integration)
 ├── vite.config.ts           # Vite configuration
-└── package.json
+└── package.json             # Package configuration (@sapie/web)
 ```
 
 ## Features
@@ -45,8 +50,15 @@ The web app demonstrates API connectivity by:
 
 ### Install Dependencies
 
+From the workspace root:
 ```bash
-cd web
+# Install all dependencies for all packages
+pnpm install
+```
+
+Or for this package specifically:
+```bash
+cd packages/web
 pnpm install
 ```
 
@@ -62,8 +74,17 @@ pnpm run build
 # Preview production build
 pnpm run preview
 
-# Run linting
+# Run linting with auto-fix
 pnpm run lint
+
+# Run linting without fixes
+pnpm run lint:check
+
+# Format code
+pnpm run format
+
+# Check code formatting
+pnpm run format:check
 ```
 
 ## Development Server
@@ -129,6 +150,30 @@ The main application component featuring:
 - `App.css`: Component-specific styles
 - `index.css`: Global styles and CSS reset
 
+## Code Quality
+
+### Linting and Formatting
+The package uses ESLint with Prettier integration:
+
+```bash
+# Lint code with auto-fix
+pnpm run lint
+
+# Lint code without fixes (for CI)
+pnpm run lint:check
+
+# Format code with Prettier
+pnpm run format
+
+# Check code formatting (for CI)
+pnpm run format:check
+```
+
+### Configuration Files
+- **ESLint**: `eslint.config.js` with TypeScript and React rules
+- **Prettier**: `.prettierrc` with consistent formatting rules
+- **Prettier Ignore**: `.prettierignore` to exclude certain files
+
 ## Build Process
 
 ### Production Build
@@ -163,13 +208,19 @@ Deployed to Firebase Hosting with:
 
 ## Testing
 
-### Linting
+### Linting and Formatting
 ```bash
-# Run ESLint
+# Run ESLint with auto-fix
 pnpm run lint
 
-# ESLint with auto-fix
-pnpm run lint -- --fix
+# Check ESLint without fixes
+pnpm run lint:check
+
+# Format code
+pnpm run format
+
+# Check formatting
+pnpm run format:check
 ```
 
 ### Type Checking
@@ -178,11 +229,26 @@ TypeScript type checking runs automatically during:
 - Build process (`pnpm run build`)
 - IDE integration
 
+## Workspace Integration
+
+This package is part of the Sapie PNPM workspace. From the workspace root:
+
+```bash
+# Run workspace-level verification (includes this package)
+pnpm run verify
+
+# Build all packages (includes this package)
+pnpm run build
+
+# Run all tests (includes this package)
+pnpm run test
+```
+
 ## Environment Support
 
 ### Development
 - **Node.js**: 22.x (see `.nvmrc`)
-- **Package Manager**: pnpm
+- **Package Manager**: pnpm@10.12.1 (defined in `packageManager` field)
 - **Modern Browsers**: Chrome, Firefox, Safari, Edge
 
 ### Production
@@ -202,6 +268,11 @@ TypeScript type checking runs automatically during:
 - `tsconfig.app.json`: App-specific settings
 - `tsconfig.node.json`: Node.js environment settings
 
+### Code Quality Configuration
+- `eslint.config.js`: ESLint with TypeScript, React, and Prettier integration
+- `.prettierrc`: Prettier formatting rules
+- `.prettierignore`: Files excluded from formatting
+
 ## Dependencies
 
 ### Production Dependencies
@@ -213,5 +284,13 @@ TypeScript type checking runs automatically during:
 ### Development Dependencies
 - `@vitejs/plugin-react`: React integration for Vite
 - `typescript`: TypeScript compiler
-- `eslint`: Code linting
+- `eslint`: Code linting with comprehensive plugins
+- `prettier`: Code formatting
 - `vite`: Build tool and development server
+
+## Package Information
+
+- **Package Name**: `@sapie/web`
+- **Package Manager**: pnpm@10.12.1
+- **Node.js Engine**: 22.x
+- **Private Package**: Yes (not published to npm)

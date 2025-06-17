@@ -8,11 +8,13 @@ NestJS-based API backend for the Sapie knowledge management application.
 - **Runtime**: Node.js 22
 - **Deployment**: Firebase Functions
 - **Testing**: Jest for unit tests and e2e tests
+- **Package Management**: PNPM (defined in packageManager field)
+- **Code Quality**: ESLint + Prettier integration
 
 ## Project Structure
 
 ```
-api/
+packages/api/
 ├── src/
 │   ├── health/              # Health check module
 │   │   ├── health.controller.ts
@@ -24,15 +26,24 @@ api/
 │   └── main.ts              # Local development entry point
 ├── test/                    # E2E tests
 ├── dist/                    # Build output
-└── package.json
+├── .prettierrc              # Prettier configuration
+├── eslint.config.mjs        # ESLint configuration (with Prettier integration)
+└── package.json             # Package configuration (@sapie/api)
 ```
 
 ## Development Setup
 
 ### Install Dependencies
 
+From the workspace root:
 ```bash
-cd api
+# Install all dependencies for all packages
+pnpm install
+```
+
+Or for this package specifically:
+```bash
+cd packages/api
 pnpm install
 ```
 
@@ -50,6 +61,18 @@ pnpm run build
 
 # Build for Firebase Functions
 pnpm run build:firebase
+
+# Run linting with auto-fix
+pnpm run lint
+
+# Run linting without fixes
+pnpm run lint:check
+
+# Format code
+pnpm run format
+
+# Check code formatting
+pnpm run format:check
 ```
 
 ## API Endpoints
@@ -111,6 +134,29 @@ pnpm test:all
 - **E2E Tests**: Located in `test/` directory
 - **Coverage**: Generated in `coverage/` directory
 
+## Code Quality
+
+### Linting and Formatting
+The package uses ESLint with Prettier integration:
+
+```bash
+# Lint code with auto-fix
+pnpm run lint
+
+# Lint code without fixes (for CI)
+pnpm run lint:check
+
+# Format code with Prettier
+pnpm run format
+
+# Check code formatting (for CI)
+pnpm run format:check
+```
+
+### Configuration Files
+- **ESLint**: `eslint.config.mjs` with TypeScript and NestJS rules
+- **Prettier**: `.prettierrc` with consistent formatting rules
+
 ## Firebase Integration
 
 The API is configured to run on Firebase Functions using the Firebase Functions framework adapter.
@@ -137,22 +183,36 @@ The API uses Firebase Functions environment for production deployment.
 - **Runtime**: Node.js 22
 - **CORS**: Enabled for cross-origin requests
 
-## Code Quality
+## Build Process
 
-### Linting
+### Local Development Build
 ```bash
-pnpm run lint
+pnpm run build
 ```
 
-### Formatting
+### Firebase Functions Build
 ```bash
-pnpm run format
+pnpm run build:firebase
 ```
 
-### Configuration
-- **ESLint**: Configured with TypeScript rules
-- **Prettier**: Code formatting
-- **TypeScript**: Strict type checking enabled
+This command:
+1. Runs the NestJS build process
+2. Copies `package.json` to the `dist/` directory for Firebase Functions deployment
+
+## Workspace Integration
+
+This package is part of the Sapie PNPM workspace. From the workspace root:
+
+```bash
+# Run workspace-level verification (includes this package)
+pnpm run verify
+
+# Build all packages (includes this package)
+pnpm run build
+
+# Run all tests (includes this package)
+pnpm run test
+```
 
 ## Deployment
 
@@ -183,3 +243,17 @@ firebase deploy --only functions
 - `supertest`: HTTP testing
 - `typescript`: TypeScript compiler
 - `eslint`, `prettier`: Code quality tools
+- `typescript-eslint`: TypeScript-specific ESLint rules
+
+## Package Information
+
+- **Package Name**: `@sapie/api`
+- **Package Manager**: pnpm@10.12.1
+- **Node.js Engine**: 22.x
+- **Private Package**: Yes (not published to npm)
+
+## Environment Requirements
+
+- **Node.js**: 22.x (see `.nvmrc` in workspace root)
+- **Package Manager**: pnpm@10.12.1 (defined in `packageManager` field)
+- **Firebase CLI**: Required for deployment and emulators
