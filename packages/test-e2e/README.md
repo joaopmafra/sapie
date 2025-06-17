@@ -14,14 +14,9 @@ End-to-end tests for the Sapie application using Playwright. The tests validate 
 
 ### Prerequisites
 
-From the workspace root, install all dependencies:
+Install dependencies for this package:
 ```bash
-pnpm install
-```
-
-Or for this package specifically:
-```bash
-cd test-e2e
+cd packages/test-e2e
 pnpm install
 ```
 
@@ -57,7 +52,7 @@ pnpm test:debug
 If you prefer to start the Firebase emulator manually:
 
 ```bash
-# From the workspace root, start the emulator
+# From the project root, start the emulator
 cd ../..
 firebase emulators:start
 
@@ -146,7 +141,7 @@ The tests are configured for CI environments:
 ### Emulator Issues
 - **Ports in use**: Check if ports 5000/5001 are already in use
 - **Firebase CLI**: Ensure Firebase CLI is installed and logged in
-- **Configuration**: Verify `firebase.json` exists in workspace root
+- **Configuration**: Verify `firebase.json` exists in project root
 
 ### Test Failures
 - **Headed mode**: Use `pnpm test:headed` to see what's happening

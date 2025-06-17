@@ -35,12 +35,7 @@ packages/api/
 
 ### Prerequisites
 
-From the workspace root, install all dependencies:
-```bash
-pnpm install
-```
-
-Or for this package specifically:
+Install dependencies for this package:
 ```bash
 cd packages/api
 pnpm install

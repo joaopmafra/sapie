@@ -13,7 +13,6 @@ sapie/
 ├── scripts/          # Build and verification scripts
 ├── docs/             # Project documentation
 ├── firebase.json     # Firebase configuration
-├── pnpm-workspace.yaml # PNPM workspace configuration
 └── README.md         # This file
 ```
 
@@ -23,7 +22,7 @@ sapie/
 - **Backend**: NestJS API with TypeScript
 - **Deployment**: Firebase Hosting (web) + Firebase Functions (API)
 - **Development**: Firebase Emulator Suite for local development
-- **Package Management**: PNPM workspace with unified dependency management
+- **Package Management**: Each package managed independently with PNPM
 - **Code Quality**: ESLint + Prettier integration across all packages
 - **CI/CD Pipeline**: NOT IMPLEMENTED YET
 
@@ -42,13 +41,21 @@ pnpm add -g @nestjs/cli
 
 ### Install Dependencies
 
-From the project root:
+Each package must be installed separately:
+
 ```bash
-# Install all dependencies for all packages
+# Install API dependencies
+cd packages/api
+pnpm install
+
+# Install web dependencies
+cd ../web
+pnpm install
+
+# Install test-e2e dependencies
+cd ../test-e2e
 pnpm install
 ```
-
-The PNPM workspace will automatically install dependencies for all packages (`web`, `api`, and `test-e2e`).
 
 ### Start Development
 
@@ -82,7 +89,7 @@ Start the Firebase emulator to run both web and API locally:
 firebase emulators:start
 ```
 
-Or use the workspace script:
+Or use the project-level script:
 ```bash
 pnpm run emulator
 ```
@@ -103,43 +110,61 @@ This starts:
 - **API**: http://localhost:3000
 - **Web App**: http://localhost:5173 (with API proxy configured)
 
-## Workspace Scripts
+## Project-level Scripts
 
-Common workspace-level commands:
+Project-level scripts for convenience:
 
 ```bash
-# Verify code quality (lint + format check) across all packages
-pnpm run verify
+# Build all packages (from root)
+./scripts/build-all.sh
 
-# Build all packages
-pnpm run build
+# Build and test all packages
+./scripts/build-test-all.sh
 
-# Run all tests (includes build, unit tests, e2e tests)
-pnpm run test
+# Verify code quality across all packages
+./scripts/verify-all.sh
 
 # Start Firebase emulator with all services
 pnpm run emulator
 ```
 
+Note: Since packages are managed independently, you can also build each package separately by running commands within each package directory.
+
 ## Testing
 
-### Workspace-Level Testing
+### Package-Level Testing
+Each package must be tested separately:
+
 ```bash
-# Run all tests (unit + e2e for all packages)
-pnpm run test
+# Test API package
+cd packages/api && pnpm test
+
+# Test web package (if tests exist)
+cd packages/web && pnpm test
+
+# Run e2e tests
+cd packages/test-e2e && pnpm test
 ```
 
-For package-specific testing, see individual package READMEs:
+For package-specific testing details, see individual package READMEs:
 - [API Testing](./packages/api/README.md#testing)
 - [Web Testing](./packages/web/README.md#code-quality)
 - [E2E Testing](./packages/test-e2e/README.md#running-tests)
 
 ## Code Quality
 
-### Workspace Verification
+### Package-Level Verification
+Code quality must be verified for each package separately:
+
 ```bash
-# Run lint and format check across all packages
-pnpm run verify
+# Verify API package
+cd packages/api && pnpm run lint && pnpm run format:check
+
+# Verify web package
+cd packages/web && pnpm run lint && pnpm run format:check
+
+# Or use the convenience script from root
+./scripts/verify-all.sh
 ```
 
 Each package has its own code quality configuration. See individual package READMEs for specific commands.
@@ -156,7 +181,7 @@ firebase deploy
 
 Or build first, then deploy:
 ```bash
-pnpm run build
+./scripts/build-all.sh
 firebase deploy
 ```
 
@@ -186,6 +211,6 @@ firebase emulators:start --only hosting
 ## Environment Requirements
 
 - **Node.js**: 22.x (see `.nvmrc`)
-- **Package Manager**: pnpm (defined in `packageManager` field)
+- **Package Manager**: pnpm (defined in `packageManager` field in each package)
 - **Firebase CLI**: Required for deployment and emulators
-- **Workspace**: PNPM workspace configuration for unified dependency management
+- **Package Management**: Each package is managed independently (no workspace configuration for Firebase Functions compatibility)
