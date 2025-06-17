@@ -2,9 +2,10 @@
 
 ## Overview
 Establish type-safe communication between the NestJS API and React web client 
-by implementing Swagger documentation and generating a TypeScript API client. 
-This will improve developer experience, reduce runtime errors, and ensure API 
-contract compliance.
+by implementing Swagger documentation and generating a TypeScript API client 
+directly in the web app. This approach is compatible with Firebase Functions 
+deployment and will improve developer experience, reduce runtime errors, and 
+ensure API contract compliance.
 
 ## Tasks
 
@@ -17,21 +18,21 @@ contract compliance.
    - [x] Disable swagger completely in production environment
    - [x] Set up swagger UI endpoint (e.g., `/api/docs`)
 
- - [ ] **Create api-client package in workspace**
-   - [ ] Create `packages/api-client` directory
-   - [ ] Set up `package.json` with TypeScript and axios dependencies
-   - [ ] Configure TypeScript compilation settings
-   - [ ] Add package to `pnpm-workspace.yaml`
-
- - [ ] **Set up API client generation**
-   - [ ] Install `@openapitools/openapi-generator-cli` as dev dependency
+ - [ ] **Set up API client generation in web package**
+   - [ ] Install `@openapitools/openapi-generator-cli` as dev dependency in web package
    - [ ] Create generation script in root `scripts/` directory
    - [ ] Configure OpenAPI generator to use TypeScript-axios template
-   - [ ] Add npm script to api-client package for generation
-   - [ ] Set up proper output directory structure
+   - [ ] Generate client directly into `packages/web/src/lib/api-client/` directory
+   - [ ] Add npm script to web package for client generation
+   - [ ] Set up proper output directory structure within web package
+
+ - [ ] **Configure git to ignore generated client**
+   - [ ] Add `packages/web/src/lib/api-client/` to `.gitignore`
+   - [ ] Ensure generated client code is excluded from version control
+   - [ ] Document that client should be regenerated after API changes
 
  - [ ] **Update web package to use generated client**
-   - [ ] Add api-client package as dependency to web package
+   - [ ] Install axios dependency in web package for generated client
    - [ ] Replace manual API calls with generated client methods
    - [ ] Add proper error handling and loading states
    - [ ] Update existing components to use typed API responses
@@ -58,10 +59,17 @@ contract compliance.
 **Generated Client:**
 - Language: TypeScript
 - HTTP Client: Axios
-- Package location: `packages/api-client`
+- Location: `packages/web/src/lib/api-client/` (generated, not versioned)
 - Output format: ES modules with TypeScript definitions
+- Git: Excluded from version control via `.gitignore`
 
 **Integration Points:**
-- Web package imports from `@sapie/api-client`
-- Shared types between API and client
+- Web package imports from local `./lib/api-client`
+- Client regenerated after API changes during development
+- Shared types between API and client through generated code
 - Error handling with proper TypeScript types
+
+**Firebase Functions Compatibility:**
+- No workspace dependencies to avoid Firebase Functions deployment issues
+- Self-contained generation within each consuming application
+- Independent package management per application
