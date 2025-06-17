@@ -48,11 +48,10 @@ The web app demonstrates API connectivity by:
 
 ## Development Setup
 
-### Install Dependencies
+### Prerequisites
 
-From the workspace root:
+From the workspace root, install all dependencies:
 ```bash
-# Install all dependencies for all packages
 pnpm install
 ```
 
@@ -198,99 +197,9 @@ Creates optimized production build in `dist/`:
 When running via Firebase emulator (`firebase emulators:start`):
 - Web app served at `http://localhost:5000`
 - API calls proxied through Firebase rewrites
-- Full production-like environment
+- Full production-like environment locally
 
 ### Production Deployment
-Deployed to Firebase Hosting with:
-- **Custom Domain**: https://sapie-b09be.web.app
-- **API Rewrites**: `/api/*` routes to Firebase Functions
-- **SPA Support**: All routes serve `index.html`
-
-## Testing
-
-### Linting and Formatting
-```bash
-# Run ESLint with auto-fix
-pnpm run lint
-
-# Check ESLint without fixes
-pnpm run lint:check
-
-# Format code
-pnpm run format
-
-# Check formatting
-pnpm run format:check
-```
-
-### Type Checking
-TypeScript type checking runs automatically during:
-- Development (`pnpm run dev`)
-- Build process (`pnpm run build`)
-- IDE integration
-
-## Workspace Integration
-
-This package is part of the Sapie PNPM workspace. From the workspace root:
-
-```bash
-# Run workspace-level verification (includes this package)
-pnpm run verify
-
-# Build all packages (includes this package)
-pnpm run build
-
-# Run all tests (includes this package)
-pnpm run test
-```
-
-## Environment Support
-
-### Development
-- **Node.js**: 22.x (see `.nvmrc`)
-- **Package Manager**: pnpm@10.12.1 (defined in `packageManager` field)
-- **Modern Browsers**: Chrome, Firefox, Safari, Edge
-
-### Production
-- **Firebase Hosting**: Static file serving
-- **CDN**: Global content delivery
-- **HTTPS**: Automatic SSL certificates
-
-## Configuration
-
-### Vite Configuration (`vite.config.ts`)
-- React plugin integration
-- Development server proxy setup
-- Build optimization settings
-
-### TypeScript Configuration
-- `tsconfig.json`: Base TypeScript configuration
-- `tsconfig.app.json`: App-specific settings
-- `tsconfig.node.json`: Node.js environment settings
-
-### Code Quality Configuration
-- `eslint.config.js`: ESLint with TypeScript, React, and Prettier integration
-- `.prettierrc`: Prettier formatting rules
-- `.prettierignore`: Files excluded from formatting
-
-## Dependencies
-
-### Production Dependencies
-- `react`, `react-dom`: React framework
-- `@mui/material`: Material-UI components
-- `@mui/icons-material`: Material Design icons
-- `@emotion/react`, `@emotion/styled`: CSS-in-JS styling
-
-### Development Dependencies
-- `@vitejs/plugin-react`: React integration for Vite
-- `typescript`: TypeScript compiler
-- `eslint`: Code linting with comprehensive plugins
-- `prettier`: Code formatting
-- `vite`: Build tool and development server
-
-## Package Information
-
-- **Package Name**: `@sapie/web`
-- **Package Manager**: pnpm@10.12.1
-- **Node.js Engine**: 22.x
-- **Private Package**: Yes (not published to npm)
+- Deployed to Firebase Hosting
+- API calls routed to Firebase Functions
+- Available at: https://sapie-b09be.web.app

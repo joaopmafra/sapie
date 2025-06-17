@@ -33,11 +33,10 @@ packages/api/
 
 ## Development Setup
 
-### Install Dependencies
+### Prerequisites
 
-From the workspace root:
+From the workspace root, install all dependencies:
 ```bash
-# Install all dependencies for all packages
 pnpm install
 ```
 
@@ -91,9 +90,9 @@ Returns the API health status and current timestamp.
 }
 ```
 
-**Example Usage:**
+**Testing the API:**
 ```bash
-# Local development
+# Local development server
 curl -X GET http://localhost:3000/api/health
 
 # Firebase Emulator

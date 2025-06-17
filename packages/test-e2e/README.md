@@ -1,33 +1,42 @@
 # Sapie E2E Tests
 
-This directory contains end-to-end tests for the Sapie application using Playwright. The tests validate the integration between the React frontend and NestJS API when running on Firebase Emulator.
+End-to-end tests for the Sapie application using Playwright. The tests validate the integration between the React frontend and NestJS API when running on Firebase Emulator.
+
+## Architecture
+
+- **Testing Framework**: Playwright
+- **Test Runner**: Playwright Test
+- **Browsers**: Chrome, Firefox, Safari (WebKit)
+- **Environment**: Firebase Emulator Suite
+- **Package Management**: PNPM (defined in packageManager field)
 
 ## Setup
 
 ### Prerequisites
 
-1. Node.js 22.x (see root `.nvmrc`)
-2. pnpm package manager
-3. Firebase CLI installed globally
+From the workspace root, install all dependencies:
+```bash
+pnpm install
+```
 
-### Installation
+Or for this package specifically:
+```bash
+cd test-e2e
+pnpm install
+```
 
-1. Install dependencies:
-   ```bash
-   cd test-e2e
-   pnpm install
-   ```
+### Install Playwright Browsers
 
-2. Install Playwright browsers:
-   ```bash
-   pnpm run install
-   ```
+```bash
+cd packages/test-e2e
+pnpm run install
+```
 
 ## Running Tests
 
-### With Firebase Emulator Auto-Start
+### Automatic Firebase Emulator
 
-The Playwright config is set up to automatically start the Firebase emulator before running tests:
+The Playwright configuration automatically starts the Firebase emulator before running tests:
 
 ```bash
 # Run all tests
@@ -43,25 +52,34 @@ pnpm test:ui
 pnpm test:debug
 ```
 
-### With Manual Firebase Emulator
+### Manual Firebase Emulator
 
 If you prefer to start the Firebase emulator manually:
 
-1. From the root directory, start the emulator:
-   ```bash
-   cd ..
-   firebase emulators:start
-   ```
+```bash
+# From the workspace root, start the emulator
+cd ../..
+firebase emulators:start
 
-2. In another terminal, run tests:
-   ```bash
-   cd test-e2e
-   pnpm test
-   ```
+# In another terminal, run tests
+cd packages/test-e2e
+pnpm test
+```
 
 ## Test Structure
 
-- `tests/app.spec.ts` - Frontend integration tests
+```
+packages/test-e2e/
+├── tests/
+│   ├── app.spec.ts          # Frontend integration tests
+│   └── helpers/
+│       └── test-utils.ts    # Test utilities and helpers
+├── test-results/            # Test execution results
+├── playwright-report/       # HTML test reports
+├── screenshots/             # Test screenshots
+├── playwright.config.ts     # Playwright configuration
+└── package.json             # Package configuration
+```
 
 ## Test Configuration
 
@@ -70,7 +88,7 @@ The tests are configured to:
 - Test multiple browsers (Chrome, Firefox, Safari)
 - Include mobile viewport testing
 - Automatically start/stop Firebase emulator
-- Generate HTML reports
+- Generate HTML reports with screenshots
 
 ## Viewing Test Reports
 
@@ -80,34 +98,85 @@ After running tests, view the HTML report:
 pnpm test:report
 ```
 
+## Development Commands
+
+```bash
+# Run all tests
+pnpm test
+
+# Run tests in headed mode
+pnpm test:headed
+
+# Run tests with UI mode
+pnpm test:ui
+
+# Debug tests step by step
+pnpm test:debug
+
+# View test reports
+pnpm test:report
+
+# Install Playwright browsers
+pnpm run install
+```
+
+## Firebase Emulator Integration
+
+### Automatic Management
+The Playwright configuration handles Firebase emulator lifecycle:
+- Starts emulator before tests
+- Waits for services to be ready
+- Stops emulator after tests complete
+
+### Service Endpoints
+- **Web App**: http://localhost:5000
+- **API**: http://localhost:5001/sapie-b09be/us-central1/api
+- **Emulator UI**: http://localhost:4000
+
 ## CI/CD Integration
 
-While CI/CD pipelines weren't implemented for this project yet, the tests are
-configured to work in CI environments:
-- Automatic retry on failure
-- Single worker mode for CI
-- Fail build if `test.only` is found
-- Generate trace files for debugging failures
-
-## Firebase Emulator Ports
-
-- **Frontend**: http://localhost:5000
-- **API**: http://localhost:5001/sapie-b09be/us-central1/api/api
-- **Emulator UI**: http://localhost:4000
+The tests are configured for CI environments:
+- **Single Worker**: Prevents resource conflicts
+- **Automatic Retry**: Retries flaky tests
+- **Build Failure**: Fails build if `test.only` is found
+- **Trace Files**: Generates debugging traces for failures
 
 ## Troubleshooting
 
-### Emulator doesn't start
-- Check if ports 5000/5001 are already in use
-- Ensure Firebase CLI is installed and logged in
-- Check that `firebase.json` exists in root directory
+### Emulator Issues
+- **Ports in use**: Check if ports 5000/5001 are already in use
+- **Firebase CLI**: Ensure Firebase CLI is installed and logged in
+- **Configuration**: Verify `firebase.json` exists in workspace root
 
-### Tests fail to find elements
-- Use `pnpm test:headed` to see what's happening
-- Use `pnpm test:debug` to step through tests
-- Check if the Firebase emulator is running properly
+### Test Failures
+- **Headed mode**: Use `pnpm test:headed` to see what's happening
+- **Debug mode**: Use `pnpm test:debug` to step through tests
+- **Emulator status**: Check if Firebase emulator is running properly
 
-### Browser installation issues
-- Run `pnpm run install` to reinstall browsers
-- Check available disk space
-- Try clearing Playwright cache 
+### Browser Issues
+- **Installation**: Run `pnpm run install` to reinstall browsers
+- **Disk space**: Check available disk space
+- **Cache**: Clear Playwright cache if needed
+
+## Test Examples
+
+### Basic Frontend Test
+```typescript
+import { test, expect } from '@playwright/test';
+
+test('should display health status', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByText('API Health Status')).toBeVisible();
+});
+```
+
+### API Integration Test
+```typescript
+test('should fetch and display API data', async ({ page }) => {
+  await page.goto('/');
+  // Wait for API call to complete
+  await page.waitForFunction(() => 
+    document.querySelector('[data-testid="health-status"]')?.textContent?.includes('ok')
+  );
+});
+```
