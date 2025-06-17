@@ -9,13 +9,13 @@ contract compliance.
 ## Tasks
 
 ### Core Implementation
- - [ ] **Add swagger to the api package**
-   - [ ] Install `@nestjs/swagger` package
-   - [ ] Configure Swagger module in `app.module.ts`
-   - [ ] Add API documentation decorators to controllers and DTOs
-   - [ ] Ensure swagger is available only in dev mode or firebase emulator
-   - [ ] Disable swagger completely in production environment
-   - [ ] Set up swagger UI endpoint (e.g., `/api/docs`)
+ - [x] **Add swagger to the api package**
+   - [x] Install `@nestjs/swagger` package
+   - [x] Configure Swagger module in `app.module.ts`
+   - [x] Add API documentation decorators to controllers and DTOs
+   - [x] Ensure swagger is available only in dev mode or firebase emulator
+   - [x] Disable swagger completely in production environment
+   - [x] Set up swagger UI endpoint (e.g., `/api/docs`)
 
  - [ ] **Create api-client package in workspace**
    - [ ] Create `packages/api-client` directory
