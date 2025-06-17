@@ -25,6 +25,7 @@ sapie/
 - **Development**: Firebase Emulator Suite for local development
 - **Package Management**: PNPM workspace with unified dependency management
 - **Code Quality**: ESLint + Prettier integration across all packages
+- **CI/CD Pipeline**: NOT IMPLEMENTED YET
 
 ## Setup
 

@@ -82,7 +82,8 @@ pnpm test:report
 
 ## CI/CD Integration
 
-The tests are configured to work in CI environments:
+While CI/CD pipelines weren't implemented for this project yet, the tests are
+configured to work in CI environments:
 - Automatic retry on failure
 - Single worker mode for CI
 - Fail build if `test.only` is found
