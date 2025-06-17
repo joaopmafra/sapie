@@ -13,23 +13,23 @@ export class HealthController {
 
   @Get()
   @ApiOperation({ summary: 'Health check endpoint' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Returns the health status of the API',
     schema: {
       type: 'object',
       properties: {
         status: {
           type: 'string',
-          example: 'ok'
+          example: 'ok',
         },
         timestamp: {
           type: 'string',
           format: 'date-time',
-          example: '2024-01-01T00:00:00.000Z'
-        }
-      }
-    }
+          example: '2024-01-01T00:00:00.000Z',
+        },
+      },
+    },
   })
   getHealth(): HealthResponseDto {
     return {
