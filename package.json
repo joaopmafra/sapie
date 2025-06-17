@@ -2,12 +2,13 @@
   "name": "sapie",
   "version": "0.0.1",
   "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "scripts/build-test-all.sh"
-  },
-  "keywords": [],
-  "author": "João Paulo Mafra",
+  "private": true,
   "license": "UNLICENSED",
-  "packageManager": "pnpm@10.12.1"
+  "packageManager": "pnpm@10.12.1",
+  "scripts": {
+    "verify": "scripts/verify-all.sh",
+    "build": "scripts/build-all.sh",
+    "test": "scripts/build-test-all.sh",
+    "emulator": "scripts/build-run-firebase-emulator.sh"
+  }
 }
