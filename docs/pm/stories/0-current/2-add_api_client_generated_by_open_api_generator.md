@@ -50,7 +50,7 @@ ensure API contract compliance.
    - [x] Add comments explaining when to regenerate client
 
 ## E2E Tests
- - [ ] After adding the generated api client, the Playwright `page.route` stopped working for mocking API calls
+ - [x] After adding the generated api client, the Playwright `page.route` stopped working for mocking API calls
 
 ### Implementation Details
 

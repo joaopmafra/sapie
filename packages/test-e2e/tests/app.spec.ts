@@ -26,8 +26,8 @@ test.describe('Sapie App Integration', () => {
   });
 
   test('should handle API error gracefully', async ({ page }) => {
-    // Mock the API to return an error
-    await page.route('/api/health', route => {
+    // Mock the API to return an error - use a pattern that matches the full URL
+    await page.route('**/api/health', route => {
       route.abort('failed');
     });
 
