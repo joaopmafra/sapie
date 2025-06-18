@@ -76,3 +76,5 @@ node_modules/
 # firebase cli generated functions app
 functions
 
+# Generated API client (should be regenerated, not versioned)
+packages/web/src/lib/api-client/

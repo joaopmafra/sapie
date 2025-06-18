@@ -25,4 +25,7 @@ pnpm-lock.yaml
 .env*
 
 # Public assets
-public/ 
+public/
+
+# Generated API client
+src/lib/api-client/

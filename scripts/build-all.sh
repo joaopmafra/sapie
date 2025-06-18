@@ -13,6 +13,6 @@ echo "OK"
 
 echo "Building web..."
 cd packages/web
-pnpm run build
+pnpm run build:firebase
 cd ../..
 echo "OK"

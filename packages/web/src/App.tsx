@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import {
   Container,
   Box,
@@ -8,21 +7,37 @@ import {
   CardContent,
   Link,
 } from '@mui/material';
+import { useState, useEffect } from 'react';
 
 import reactLogo from './assets/react.svg';
 
 import viteLogo from '/vite.svg';
 import './App.css';
 
+import { HealthApi, createApiConfiguration } from './lib/api-client';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 function App() {
   const [count, setCount] = useState(0);
   const [healthStatus, setHealthStatus] = useState<string>('');
 
   useEffect(() => {
-    fetch('/api/health')
-      .then(response => response.json())
-      .then(data => setHealthStatus(JSON.stringify(data, null, 2)))
-      .catch(() => setHealthStatus('Error fetching health status'));
+    const fetchHealth = async () => {
+      try {
+        // Create API client instances with configuration
+        const config = createApiConfiguration(API_BASE_URL);
+        const healthApi = new HealthApi(config);
+
+        // Fetch health status using generated client
+        const healthResponse = await healthApi.healthControllerGetHealth();
+        setHealthStatus(JSON.stringify(healthResponse.data, null, 2));
+      } catch (error) {
+        setHealthStatus('Error fetching health status');
+        console.error('API Error:', error);
+      }
+    };
+    fetchHealth().catch(console.error);
   }, []);
 
   return (

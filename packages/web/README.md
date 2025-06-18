@@ -60,25 +60,23 @@ pnpm install
 
 ```bash
 # Start development server
-pnpm run dev
+pnpm dev
+
+# Build and watch for changes for running in Firebase Emulator
+pnpm dev:firebase
 
 # Build for production
-pnpm run build
+pnpm build
+
+# Build for running in Firebase Emulator
+pnpm build:firebase
 
 # Preview production build
-pnpm run preview
+pnpm preview
 
-# Run linting with auto-fix
-pnpm run lint
-
-# Run linting without fixes
-pnpm run lint:check
-
-# Format code
-pnpm run format
-
-# Check code formatting
-pnpm run format:check
+# Lint and format
+pnpm lint
+pnpm format
 ```
 
 ## Development Server
@@ -198,3 +196,86 @@ When running via Firebase emulator (`firebase emulators:start`):
 - Deployed to Firebase Hosting
 - API calls routed to Firebase Functions
 - Available at: https://sapie-b09be.web.app
+
+## Environment Configuration
+
+The web app uses environment variables to configure the API base URL for different environments:
+
+### Environment Files
+
+- `.env` - Default configuration (local development with localhost:3000)
+- `.env.development` - Firebase Emulator configuration
+- `.env.production` - Production configuration
+- `.env.local` - Local overrides (gitignored)
+
+### Environment Variables
+
+- `VITE_API_BASE_URL` - Base URL for API calls
+
+### Configuration Examples
+
+**Local Development** (`.env`):
+```
+VITE_API_BASE_URL=http://localhost:3000
+```
+
+**Firebase Emulator** (`.env.development`):
+```
+VITE_API_BASE_URL=http://127.0.0.1:5000
+```
+
+### Usage in Development
+
+Pass the API base URL when creating the API configuration:
+
+```typescript
+import { createApiConfiguration } from './lib/api-client';
+const config = createApiConfiguration(import.meta.env.VITE_API_BASE_URL);
+```
+
+## API Client
+
+This package uses a generated TypeScript API client based on the OpenAPI specification from the NestJS API.
+
+### Generating the API Client
+
+The API client is generated from the OpenAPI spec and should be regenerated whenever the API changes:
+
+```bash
+# Make sure the API server is running first
+cd ../api && pnpm dev
+
+# In another terminal, generate the client
+cd ../web
+pnpm generate:api-client
+```
+
+### Using the API Client
+
+The generated client provides type-safe access to all API endpoints:
+
+```typescript
+import { HealthApi, AppApi, createApiConfiguration } from './lib/api-client';
+
+// Create API instances
+const config = createApiConfiguration();
+const healthApi = new HealthApi(config);
+
+// Use the APIs
+const healthResponse = await healthApi.healthControllerGetHealth();
+```
+
+### Important Notes
+
+- The `src/lib/api-client/` directory is auto-generated and should not be edited manually
+- This directory is excluded from version control via `.gitignore`
+- Regenerate the client after any API schema changes
+- The client uses axios for HTTP requests and provides full TypeScript typing
+
+## Technologies
+
+- **React 19** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+- **Material-UI** - Component library
+- **Generated API Client** - Type-safe API communication

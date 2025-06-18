@@ -18,36 +18,39 @@ ensure API contract compliance.
    - [x] Disable swagger completely in production environment
    - [x] Set up swagger UI endpoint (e.g., `/api/docs`)
 
- - [ ] **Set up API client generation in web package**
-   - [ ] Install `@openapitools/openapi-generator-cli` as dev dependency in web package
-   - [ ] Create generation script in root `scripts/` directory
-   - [ ] Configure OpenAPI generator to use TypeScript-axios template
-   - [ ] Generate client directly into `packages/web/src/lib/api-client/` directory
-   - [ ] Add npm script to web package for client generation
-   - [ ] Set up proper output directory structure within web package
+ - [x] **Set up API client generation in web package**
+   - [x] Install `@openapitools/openapi-generator-cli` as dev dependency in web package
+   - [x] Create generation script in root `scripts/` directory
+   - [x] Configure OpenAPI generator to use TypeScript-axios template
+   - [x] Generate client directly into `packages/web/src/lib/api-client/` directory
+   - [x] Add npm script to web package for client generation
+   - [x] Set up proper output directory structure within web package
 
- - [ ] **Configure git to ignore generated client**
-   - [ ] Add `packages/web/src/lib/api-client/` to `.gitignore`
-   - [ ] Ensure generated client code is excluded from version control
-   - [ ] Document that client should be regenerated after API changes
+ - [x] **Configure git to ignore generated client**
+   - [x] Add `packages/web/src/lib/api-client/` to `.gitignore`
+   - [x] Ensure generated client code is excluded from version control
+   - [x] Document that client should be regenerated after API changes
 
- - [ ] **Update web package to use generated client**
-   - [ ] Install axios dependency in web package for generated client
-   - [ ] Replace manual API calls with generated client methods
-   - [ ] Add proper error handling and loading states
-   - [ ] Update existing components to use typed API responses
+ - [x] **Update web package to use generated client**
+   - [x] Install axios dependency in web package for generated client
+   - [x] Replace manual API calls with generated client methods
+   - [x] Add proper error handling and loading states
+   - [x] Update existing components to use typed API responses
 
 ### Development Workflow & Quality Assurance
- - [ ] **Add validation and testing**
-   - [ ] Create tests to validate generated client matches API contracts
-   - [ ] Add type checking for API responses in web package
-   - [ ] Set up basic integration tests using generated client
+ - [x] **Add validation and testing**
+   - [x] Create tests to validate generated client matches API contracts
+   - [x] Add type checking for API responses in web package
+   - [x] Set up basic integration tests using generated client
 
- - [ ] **Documentation and developer experience**
-   - [ ] Document client regeneration process in README
-   - [ ] Add npm scripts for easy client regeneration
-   - [ ] Create developer guidelines for API changes and client updates
-   - [ ] Add comments explaining when to regenerate client
+ - [x] **Documentation and developer experience**
+   - [x] Document client regeneration process in README
+   - [x] Add npm scripts for easy client regeneration
+   - [x] Create developer guidelines for API changes and client updates
+   - [x] Add comments explaining when to regenerate client
+
+## E2E Tests
+ - [ ] After adding the generated api client, the Playwright `page.route` stopped working for mocking API calls
 
 ### Implementation Details
 
