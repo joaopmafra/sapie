@@ -12,6 +12,7 @@ sapie/
 │   └── test-e2e/     # End-to-end tests (Playwright)
 ├── scripts/          # Build and verification scripts
 ├── docs/             # Project documentation
+│   └── pm/           # Project management
 ├── firebase.json     # Firebase configuration
 └── README.md         # This file
 ```
