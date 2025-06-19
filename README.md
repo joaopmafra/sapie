@@ -21,6 +21,7 @@ sapie/
 
 - **Frontend**: React 19 with TypeScript, Material-UI, and Vite
 - **Backend**: NestJS API with TypeScript
+- **Authentication**: Firebase Auth with FirebaseUI for login/logout flows
 - **Deployment**: Firebase Hosting (web) + Firebase Functions (API)
 - **Development**: Firebase Emulator Suite for local development
 - **Package Management**: Each package managed independently with PNPM
@@ -72,6 +73,7 @@ This provides:
 - **Web App**: http://localhost:5000
 - **API**: http://localhost:5001/sapie-b09be/us-central1/api
 - **Emulator UI**: http://localhost:4000
+- **Firebase Auth Emulator**: http://localhost:9099
 
 ## Package Documentation
 
@@ -80,6 +82,14 @@ For detailed documentation on each package:
 - **[Web App](./packages/web/README.md)** - React frontend development and testing
 - **[API](./packages/api/README.md)** - NestJS backend development, endpoints, and testing  
 - **[E2E Tests](./packages/test-e2e/README.md)** - End-to-end testing with Playwright
+
+## Authentication
+
+Sapie includes user authentication powered by **Firebase Auth** with **FirebaseUI**.
+
+**Features**: Email/password authentication, Google Sign-In, email verification, password reset, and session persistence.
+
+For detailed authentication setup, configuration, and usage instructions, see the **[Web App Authentication Documentation](./packages/web/README.md#authentication)**.
 
 ## Development
 
