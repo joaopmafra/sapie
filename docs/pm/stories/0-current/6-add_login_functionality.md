@@ -65,18 +65,18 @@ As a user, I want to login and logout of the application using email/password or
 ### Documentation & DevOps
 - [ ] Update project documentation
   - Document Firebase Auth and FirebaseUI setup in README
-  - Add authentication guide for developers including Google OAuth setup
+  - Add an authentication guide for developers including Google OAuth setup
   - Document FirebaseUI configuration and customization options
-- [ ] Update deployment configuration
+- [x] Update deployment configuration
   - Configure Firebase Auth environment variables
   - Update Firebase hosting configuration
-  - Test authentication in production environment
+  - Test authentication in the test environment
 
 ## Acceptance Criteria
 - [x] Users can register with email and password using FirebaseUI
-- [x] Users can login with email and password using FirebaseUI
+- [x] Users can log in with email and password using FirebaseUI
 - [x] Users can sign in with Google using FirebaseUI
-- [x] Users can logout from the application
+- [x] Users can log out from the application
 - [x] User session persists across browser refreshes
 - [x] Authentication works in both development and production environments
 - [x] Email verification is sent upon registration
