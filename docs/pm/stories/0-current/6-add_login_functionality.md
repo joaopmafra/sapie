@@ -63,7 +63,7 @@ As a user, I want to login and logout of the application using email/password or
   - ~~Test logout functionality~~
 
 ### Documentation & DevOps
-- [ ] Update project documentation
+- [x] Update project documentation
   - Document Firebase Auth and FirebaseUI setup in README
   - Add an authentication guide for developers including Google OAuth setup
   - Document FirebaseUI configuration and customization options
