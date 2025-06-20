@@ -6,9 +6,26 @@ As a [role], I want [goal], so that [benefit]
 ## Details
 [details]
 
-## Acceptance criteria
-[acceptance criteria in the BDD format]
+## Dependencies
+- [ ] [dependency story]
+
+## Acceptance Criteria
+- [ ] [acceptance criteria]
+
+## Technical Requirements
+- [ ] [technical requirements]
 
 ## Tasks
- - [ ] Add automated tests
- - [ ] Update documentation
+
+### Task group 1
+- [ ] [task 1]
+  - Implement feature 1
+  - Add automated tests
+  - Update documentation
+- [ ] [task 2]
+  - Implement feature 2
+  - Add automated tests
+  - Update documentation
+
+## Notes
+[notes]
