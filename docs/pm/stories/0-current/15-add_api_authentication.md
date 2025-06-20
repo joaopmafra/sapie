@@ -9,7 +9,7 @@ As a developer, I want to secure API endpoints with Firebase Auth tokens to ensu
 ## Tasks
 
 ### Backend (NestJS API)
-- [ ] Install and configure Firebase Admin SDK
+- [x] Install and configure Firebase Admin SDK
   - Add `firebase-admin` dependency to `packages/api/package.json`
   - Create Firebase Admin configuration (`src/config/firebase-admin.config.ts`)
   - Initialize Firebase Admin in the application

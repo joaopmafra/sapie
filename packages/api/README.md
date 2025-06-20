@@ -16,6 +16,9 @@ NestJS-based API backend for the Sapie knowledge management application.
 ```
 packages/api/
 ├── src/
+│   ├── config/              # Configuration modules
+│   │   ├── firebase-admin.config.ts      # Firebase Admin SDK configuration
+│   │   └── firebase-admin.config.spec.ts # Firebase Admin SDK tests
 │   ├── health/              # Health check module
 │   │   ├── health.controller.ts
 │   │   ├── health.controller.spec.ts
@@ -26,6 +29,7 @@ packages/api/
 │   └── main.ts              # Local development entry point
 ├── test/                    # E2E tests
 ├── dist/                    # Build output
+├── FIREBASE_ADMIN_SETUP.md  # Firebase Admin SDK setup guide
 ├── .prettierrc              # Prettier configuration
 ├── eslint.config.mjs        # ESLint configuration (with Prettier integration)
 └── package.json             # Package configuration (@sapie/api)
@@ -164,6 +168,41 @@ The API is configured to run on Firebase Functions using the Firebase Functions 
 ### Environment Variables
 
 The API uses Firebase Functions environment for production deployment.
+
+### Firebase Admin SDK
+
+The API includes Firebase Admin SDK integration for server-side authentication and user management.
+
+#### Configuration
+
+The Firebase Admin SDK is automatically configured for different environments:
+
+- **Production (Firebase Functions)**: Uses default credentials automatically
+- **Development with Firebase Emulator**: Uses project ID configuration  
+- **Local Development**: Can use service account key file or default credentials
+
+For detailed setup instructions, see [FIREBASE_ADMIN_SETUP.md](./FIREBASE_ADMIN_SETUP.md).
+
+#### Usage
+
+```typescript
+import { verifyIdToken, getUserByUid } from './config/firebase-admin.config';
+
+// Verify Firebase ID token
+const decodedToken = await verifyIdToken(idToken);
+
+// Get user information
+const user = await getUserByUid(decodedToken.uid);
+```
+
+#### Configuration Module
+
+The Firebase Admin configuration is located in `src/config/firebase-admin.config.ts` and provides:
+
+- Automatic initialization for different environments
+- Token verification utilities
+- User management functions
+- Proper error handling and logging
 
 ## Development vs Production
 
