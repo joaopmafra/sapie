@@ -98,6 +98,7 @@ This verifies:
 **As a startup in early development stages, our priority is shipping faster.** We focus on testing only the most critical parts of the codebase rather than achieving comprehensive test coverage. This allows us to iterate quickly while maintaining quality where it matters most.
 
 #### Critical Testing Priority
+
 Focus testing efforts on:
 - **Core user authentication flows** (login/logout/session management)
 - **Data integrity operations** (create/update/delete operations)  
@@ -105,12 +106,33 @@ Focus testing efforts on:
 - **Business-critical user journeys** (main app workflows)
 
 #### Testing Approach
+
 When time permits and for critical functionality, write:
-- **Unit tests** for individual functions/components
-- **Integration tests** for module interactions  
+- **Unit tests** - DON'T CREATE UNIT TESTS UNLESS EXTREMELY NECESSARY; if you were to create a unit test, do it only for functions and components in the project's core; DON'T CREATE UNIT TESTS FOR LIBRARY INTEGRATION
+- **Integration tests** for module interactions
 - **E2E tests** for complete user workflows
 
 **Story Implementation**: Most story tasks will focus on implementation and documentation. Tests should be written only for business-critical functionality or when specifically required by the story acceptance criteria.
+
+#### Package-Level Testing
+
+Each package must be tested separately:
+
+```bash
+# Test API package
+cd packages/api && pnpm test
+
+# Test web package (if tests exist)
+cd packages/web && pnpm test
+
+# Run e2e tests
+cd packages/test-e2e && pnpm test
+```
+
+For package-specific testing details, see individual package READMEs:
+- [API Testing](../packages/api/README.md#testing)
+- [Web Testing](../packages/web/README.md#code-quality)
+- [E2E Testing](../packages/test-e2e/README.md#running-tests)
 
 ### Git Workflow
 - **Commit frequently** with logical units of work
@@ -129,6 +151,7 @@ When time permits and for critical functionality, write:
 - ✅ **Complete each task component** - Implementation, tests, and documentation
 - ✅ **Verify acceptance criteria** - Check each criterion before considering task complete
 - ✅ **Use parallel tool calls** when gathering information for efficiency
+- ✅ **Mark the task as complete** - Once the task is complete, mark it as complete in the story
 
 ### Implementation Standards
 - ✅ **Understand context first** - Read relevant existing code before making changes

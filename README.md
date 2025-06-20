@@ -152,32 +152,7 @@ Note: Since packages are managed independently, you can also build each package 
 ## Testing
 
 ### Testing Philosophy
-**As a startup in early development stages, our priority is shipping faster.** We focus on testing only the most critical parts of the codebase rather than achieving comprehensive test coverage. This allows us to iterate quickly while maintaining quality where it matters most.
-
-### Critical Testing Areas
-- **Core user authentication flows** (login/logout/session management)
-- **Data integrity operations** (create/update/delete operations)
-- **Security-sensitive endpoints** (authentication, authorization)
-- **Business-critical user journeys** (main app workflows)
-
-### Package-Level Testing
-Each package must be tested separately:
-
-```bash
-# Test API package
-cd packages/api && pnpm test
-
-# Test web package (if tests exist)
-cd packages/web && pnpm test
-
-# Run e2e tests
-cd packages/test-e2e && pnpm test
-```
-
-For package-specific testing details, see individual package READMEs:
-- [API Testing](./packages/api/README.md#testing)
-- [Web Testing](./packages/web/README.md#code-quality)
-- [E2E Testing](./packages/test-e2e/README.md#running-tests)
+For detailed testing philosophy and approach, see the **[Testing Philosophy Documentation](./docs/contributing_guidelines.md#testing-requirements)**.
 
 ## Code Quality
 
