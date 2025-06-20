@@ -28,6 +28,14 @@ sapie/
 - **Code Quality**: ESLint + Prettier integration across all packages
 - **CI/CD Pipeline**: NOT IMPLEMENTED YET
 
+## Development Principles
+
+Sapie follows core development principles to maintain code quality and consistency.
+
+**Core Principles**: KISS (Keep It Simple), DRY (Don't Repeat Yourself), YAGNI (You Aren't Gonna Need It), and Single Responsibility.
+
+For detailed development principles and their application during implementation, see the **[Development Principles Documentation](./docs/development_principles.md)**.
+
 ## Quick Start
 
 ### Prerequisites

@@ -1,0 +1,256 @@
+# Sapie Knowledge Management App - Cursor Rules
+
+## Project Overview
+You are working on Sapie, a knowledge management app built with React (frontend) and NestJS (API backend), deployed on Firebase. This is a modern TypeScript-based monorepo with independent package management.
+
+## Core Development Principles
+
+### Follow KISS, DRY, YAGNI, and Single Responsibility
+- **KISS (Keep It Simple)**: Choose straightforward solutions, avoid over-engineering, write readable code, keep functions small
+- **DRY (Don't Repeat Yourself)**: Extract common logic, use consistent patterns, centralize configuration, share TypeScript types
+- **YAGNI (You Aren't Gonna Need It)**: Implement only what's needed, focus on current requirements, avoid premature optimization
+- **Single Responsibility**: One purpose per function/component, separated concerns, focused modules
+
+### TypeScript Standards
+- Use strict types, avoid `any` unless absolutely necessary
+- Create meaningful interfaces and union types
+- Leverage type inference when possible
+- Co-locate types near code that uses them
+- Use consistent naming conventions
+
+## Architecture & Tech Stack
+
+### Frontend (packages/web/)
+- **Framework**: React 19 with TypeScript
+- **Build**: Vite with hot reload
+- **UI**: Material-UI (MUI) components
+- **Auth**: Firebase Auth with FirebaseUI
+- **State**: React Hooks (useState, useEffect)
+- **HTTP**: Fetch API
+- **Package Manager**: PNPM
+
+### Backend (packages/api/)
+- **Framework**: NestJS with TypeScript
+- **Runtime**: Node.js 22
+- **Testing**: Jest (unit & e2e)
+- **Deployment**: Firebase Functions
+- **Package Manager**: PNPM
+
+### Testing (packages/test-e2e/)
+- **Framework**: Playwright
+- **Environment**: Firebase Emulator Suite
+- **Browsers**: Chrome, Firefox, Safari (WebKit)
+
+## File Structure Patterns
+
+### Package Independence
+- Each package (web, api, test-e2e) is managed independently
+- Separate package.json, dependencies, and scripts per package
+- No workspace configuration (Firebase Functions compatibility)
+
+### Directory Conventions
+```
+packages/web/src/
+├── components/        # Reusable UI components
+├── contexts/         # React contexts (auth, etc.)
+├── lib/             # Utilities and configurations
+├── pages/           # Route components
+└── assets/          # Static assets
+
+packages/api/src/
+├── [feature]/       # Feature modules (health/, etc.)
+├── *.controller.ts  # Controllers
+├── *.module.ts      # NestJS modules
+├── *.service.ts     # Business logic
+└── main.ts          # Entry points
+```
+
+## Code Quality Standards
+
+### Linting & Formatting
+- **ESLint**: Configured per package with TypeScript rules
+- **Prettier**: Consistent formatting across all packages
+- **Pre-commit**: Always run `./scripts/verify-all.sh` before committing
+
+### Required Quality Checks
+```bash
+# Run from project root before any commits
+./scripts/verify-all.sh
+
+# Or per package:
+cd packages/[package] && pnpm run lint && pnpm run format:check
+```
+
+### Testing Requirements
+- Write tests for critical functionality when possible
+- Unit tests alongside source files (`.spec.ts`)
+- E2E tests for complete user workflows
+- All tests must pass before committing
+
+## Development Workflow
+
+### Story-Driven Development
+- Stories are in `docs/pm/stories/` organized by status
+- Work on one story at a time, complete fully
+- Follow task sequence: Implementation → Tests → Documentation
+- Move stories: `1-ready/` → `0-current/` → `3-done/`
+
+### Command Patterns
+```bash
+# Development setup (run once per package)
+cd packages/[package] && pnpm install
+
+# Development (choose one approach)
+pnpm run emulator                    # Firebase emulator (recommended)
+cd packages/api && pnpm run dev      # API dev server only
+cd packages/web && pnpm run dev     # Web dev server only
+
+# Quality verification (before commits)
+./scripts/verify-all.sh              # All packages
+./scripts/build-test-all.sh          # Build and test all
+
+# Testing
+cd packages/api && pnpm test         # API unit tests
+cd packages/test-e2e && pnpm test   # E2E tests
+```
+
+## Firebase Integration
+
+### Authentication
+- Use Firebase Auth consistently, don't mix auth methods
+- Handle loading, authenticated, and unauthenticated states
+- Secure by default - assume endpoints need auth unless public
+
+### Environment Setup
+- Development: Firebase Emulator Suite on localhost
+- Production: Firebase Hosting + Functions
+- Auth Emulator: http://localhost:9099
+- Web App: http://localhost:5000
+- API: http://localhost:5001/sapie-b09be/us-central1/api
+
+## Coding Patterns
+
+### React Components (packages/web/)
+```typescript
+// Functional components with TypeScript
+interface ComponentProps {
+  title: string;
+  onAction?: () => void;
+}
+
+export const Component: React.FC<ComponentProps> = ({ title, onAction }) => {
+  const [state, setState] = useState<boolean>(false);
+  
+  return (
+    <Box>
+      <Typography variant="h6">{title}</Typography>
+      {/* Material-UI components */}
+    </Box>
+  );
+};
+```
+
+### NestJS Controllers (packages/api/)
+```typescript
+@Controller('api/feature')
+export class FeatureController {
+  constructor(private readonly featureService: FeatureService) {}
+
+  @Get()
+  async getFeature(): Promise<FeatureResponse> {
+    return this.featureService.getFeature();
+  }
+}
+```
+
+### Error Handling
+- Implement proper error handling and logging
+- Use TypeScript error types
+- Handle Firebase errors appropriately
+- Don't leave error cases unhandled
+
+## Documentation Standards
+
+### Documentation Distribution
+- **Root README**: High-level overview with package references
+- **Package READMEs**: Comprehensive technical details
+- Keep root README clean, put details in package docs
+
+### Documentation Updates
+- Update documentation with code changes
+- Include setup, usage, and troubleshooting information
+- Document the "why" behind decisions, not just the "what"
+- Use clear, simple language
+
+## AI Agent Specific Guidelines
+
+### Implementation Approach
+- Read complete stories before starting work
+- Understand existing code context before making changes
+- Follow established patterns for consistency
+- Use parallel tool calls for efficiency
+- Complete implementation, tests, and documentation for each task
+
+### Quality Verification
+- Always run `./scripts/verify-all.sh` before completion
+- Fix all linting, formatting, and type errors
+- Ensure all tests pass
+- Validate story acceptance criteria
+
+### Communication
+- Be explicit about implementation progress
+- Explain reasoning for implementation decisions
+- Ask for clarification if requirements are unclear
+- Report blockers immediately
+
+### DON'Ts for AI Agents
+- Don't skip any task components (code, tests, docs)
+- Don't ignore quality issues
+- Don't assume requirements
+- Don't work on multiple stories simultaneously
+- Don't skip verification steps
+
+## Common Commands Reference
+
+```bash
+# Setup (run once per package)
+cd packages/web && pnpm install
+cd packages/api && pnpm install
+cd packages/test-e2e && pnpm install
+
+# Development
+pnpm run emulator                    # Start Firebase emulator
+firebase emulators:start             # Alternative emulator start
+pkill -f "firebase.*emulator"        # Kill emulators
+
+# Build & Deploy
+./scripts/build-all.sh               # Build all packages
+firebase deploy                      # Deploy to Firebase
+
+# Quality & Testing
+./scripts/verify-all.sh              # Verify all packages
+./scripts/build-test-all.sh          # Build and test all
+cd packages/test-e2e && pnpm test   # E2E tests
+```
+
+## Package-Specific Notes
+
+### Web Package (packages/web/)
+- Material-UI for consistent styling
+- FirebaseUI for authentication flows
+- Vite for fast development and builds
+- Responsive design with mobile support
+
+### API Package (packages/api/)
+- NestJS modular architecture
+- Firebase Functions deployment
+- Comprehensive error handling
+- OpenAPI/Swagger documentation
+
+### E2E Package (packages/test-e2e/)
+- Playwright for cross-browser testing
+- Firebase Emulator integration
+- Screenshots and traces for debugging
+- Automatic retry for flaky tests
+
+Remember: Focus on simplicity, maintainability, and following established patterns. When in doubt, check existing code for guidance.
