@@ -82,10 +82,19 @@ cd packages/[package] && pnpm run lint && pnpm run format:check
 ```
 
 ### Testing Requirements
-- Write tests for critical functionality when possible
-- Unit tests alongside source files (`.spec.ts`)
-- E2E tests for complete user workflows
-- All tests must pass before committing
+**As a startup in early development stages, our priority is shipping faster.** Focus on testing only the most critical parts of the codebase rather than comprehensive test coverage. This allows for rapid iteration while maintaining quality where it matters most.
+
+#### Critical Testing Priority
+- **Core user authentication flows** (login/logout/session management)
+- **Data integrity operations** (create/update/delete operations)
+- **Security-sensitive endpoints** (authentication, authorization)
+- **Business-critical user journeys** (main app workflows)
+
+#### Testing Approach
+- Write tests only for business-critical functionality
+- Most story tasks will focus on implementation and documentation
+- Tests should be written when specifically required by story acceptance criteria
+- All tests must pass before committing (but not every feature needs tests)
 
 ## Development Workflow
 

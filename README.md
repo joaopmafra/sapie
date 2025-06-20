@@ -151,6 +151,15 @@ Note: Since packages are managed independently, you can also build each package 
 
 ## Testing
 
+### Testing Philosophy
+**As a startup in early development stages, our priority is shipping faster.** We focus on testing only the most critical parts of the codebase rather than achieving comprehensive test coverage. This allows us to iterate quickly while maintaining quality where it matters most.
+
+### Critical Testing Areas
+- **Core user authentication flows** (login/logout/session management)
+- **Data integrity operations** (create/update/delete operations)
+- **Security-sensitive endpoints** (authentication, authorization)
+- **Business-critical user journeys** (main app workflows)
+
 ### Package-Level Testing
 Each package must be tested separately:
 

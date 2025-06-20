@@ -94,14 +94,23 @@ This verifies:
 - Test execution
 
 ### Testing Requirements
-Ideally, each story task should include appropriate tests. But as we are in the early stages of the project, we may not be able to write tests for all tasks, functions and components. For now, we will focus on writing tests for the most critical parts of the codebase.
 
-If possible, we will write the following tests:
+**As a startup in early development stages, our priority is shipping faster.** We focus on testing only the most critical parts of the codebase rather than achieving comprehensive test coverage. This allows us to iterate quickly while maintaining quality where it matters most.
+
+#### Critical Testing Priority
+Focus testing efforts on:
+- **Core user authentication flows** (login/logout/session management)
+- **Data integrity operations** (create/update/delete operations)  
+- **Security-sensitive endpoints** (authentication, authorization)
+- **Business-critical user journeys** (main app workflows)
+
+#### Testing Approach
+When time permits and for critical functionality, write:
 - **Unit tests** for individual functions/components
 - **Integration tests** for module interactions  
 - **E2E tests** for complete user workflows
 
-See package READMEs for specific testing instructions and tools.
+**Story Implementation**: Most story tasks will focus on implementation and documentation. Tests should be written only for business-critical functionality or when specifically required by the story acceptance criteria.
 
 ### Git Workflow
 - **Commit frequently** with logical units of work
