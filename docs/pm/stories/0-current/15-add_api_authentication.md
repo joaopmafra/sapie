@@ -14,7 +14,7 @@ As a developer, I want to secure API endpoints with Firebase Auth tokens to ensu
   - Create Firebase Admin configuration (`src/config/firebase-admin.config.ts`)
   - Initialize Firebase Admin in the application
   - Set up service account credentials for Firebase Admin
-- [ ] Create authentication middleware and guards
+- [x] Create authentication middleware and guards
   - Create `src/auth/auth.guard.ts` for token verification
   - Create `src/auth/auth.middleware.ts` for request processing
   - Create `src/auth/auth.decorator.ts` for route protection
