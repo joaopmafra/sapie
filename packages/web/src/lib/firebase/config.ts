@@ -4,6 +4,7 @@ import { getAuth, connectAuthEmulator } from 'firebase/auth';
 // TODO remove; we won't allow direct Firebase calls from the web app
 // import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 
+// TODO consider externalizing the demo project credentials
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'demo-api-key',
   authDomain:
@@ -25,17 +26,6 @@ try {
   console.log(
     'Please configure your Firebase environment variables in .env.local'
   );
-  // Create a dummy app for development
-  app = !getApps().length
-    ? initializeApp({
-        apiKey: 'demo-key',
-        authDomain: 'demo.firebaseapp.com',
-        projectId: 'demo',
-        storageBucket: 'demo.appspot.com',
-        messagingSenderId: '123456789',
-        appId: '1:123456789:web:demo',
-      })
-    : getApp();
 }
 
 // Initialize Firebase Auth
@@ -45,12 +35,12 @@ export const auth = getAuth(app);
 // Initialize Firestore
 // export const db = getFirestore(app);
 
-// Connect to Firebase emulators in development
-if (import.meta.env.DEV) {
+// Connect to Firebase Auth emulator in development when using demo project
+if (firebaseConfig.projectId === 'demo-project') {
   try {
     if (!auth.emulatorConfig) {
-      connectAuthEmulator(auth, 'http://localhost:9099', {
-        disableWarnings: true,
+      connectAuthEmulator(auth, 'http://127.0.0.1:9099', {
+        disableWarnings: false,
       });
     }
   } catch (error) {

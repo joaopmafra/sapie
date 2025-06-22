@@ -19,28 +19,19 @@ As a developer, I want to secure API endpoints with Firebase Auth tokens to ensu
   - Create `src/auth/auth.middleware.ts` for request processing
   - Create `src/auth/auth.decorator.ts` for route protection
   - Implement JWT token validation logic
-- [ ] Create authentication module
+- [x] Create authentication module
   - Create `src/auth/auth.module.ts`
   - Create `src/auth/auth.service.ts` for user management
   - Create `src/auth/auth.controller.ts` for auth endpoints
   - Export authentication utilities
-- [ ] Implement user management endpoints
-  - Add `/auth/profile` endpoint to get user profile
-  - Add `/auth/verify` endpoint to verify token
-  - Add user creation and update functionality
-  - Handle user data synchronization
-- [ ] Update existing endpoints with authentication
-  - Add authentication guards to protected endpoints
-  - Update health check to include auth status
+- [x] Implement an endpoint to get current user information
+  - Add `/users/me` endpoint to get user
+  - Add authentication guards to protected the endpoint
   - Add user context to request objects
   - Implement proper error handling for unauthorized requests
+  - Add a call to the home page to the endpoint to test it
 
 ### Development & Testing
-- [ ] Add unit tests
-  - Test authentication guards and middleware
-  - Test auth service methods
-  - Test token verification logic
-  - Test protected endpoint access
 - [ ] Add integration tests
   - Test authenticated API requests
   - Test unauthorized request handling

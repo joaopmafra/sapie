@@ -1,4 +1,5 @@
 import * as admin from 'firebase-admin';
+import { ConfigService } from '@nestjs/config';
 
 /**
  * Firebase Admin SDK Configuration
@@ -6,6 +7,12 @@ import * as admin from 'firebase-admin';
  * This module initializes and configures the Firebase Admin SDK for server-side
  * authentication and user management operations.
  */
+
+// Set Firebase Auth emulator host early if running in emulator mode
+if (process.env.FUNCTIONS_EMULATOR === 'true') {
+  process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099';
+  console.log('Firebase Auth emulator host set to: localhost:9099');
+}
 
 let app: admin.app.App;
 
@@ -16,24 +23,25 @@ let app: admin.app.App;
  * - Production: Uses default service account credentials
  * - Development/Emulator: Uses emulator or service account key file
  */
-export function initializeFirebaseAdmin(): admin.app.App {
+export function initializeFirebaseAdmin(
+  configService?: ConfigService
+): admin.app.App {
   if (app) {
     return app;
   }
 
   try {
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction = configService?.get('NODE_ENV') === 'production';
     const isFirebaseEmulator = process.env.FUNCTIONS_EMULATOR === 'true';
 
     if (isProduction) {
       // In production (Firebase Functions), use default credentials
       app = admin.initializeApp();
-      console.log(
-        'Firebase Admin initialized with default credentials for production'
-      );
+      console.log('Firebase Admin initialized with default credentials');
     } else if (isFirebaseEmulator) {
-      // For Firebase emulator, use project ID from environment
-      const projectId = process.env.FIREBASE_PROJECT_ID || 'demo-project';
+      // For Firebase emulator, use demo project for development isolation
+      const projectId = 'demo-project';
+
       app = admin.initializeApp({
         projectId: projectId,
       });
@@ -42,7 +50,9 @@ export function initializeFirebaseAdmin(): admin.app.App {
       );
     } else {
       // For local development, try service account key file
-      const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_KEY_PATH;
+      const serviceAccountPath = configService?.get(
+        'FIREBASE_SERVICE_ACCOUNT_KEY_PATH'
+      ) as string;
 
       if (serviceAccountPath) {
         // Use service account key file if provided

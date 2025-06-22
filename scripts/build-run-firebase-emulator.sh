@@ -5,5 +5,5 @@ set -e
 
 scripts/build-all.sh
 
-echo "Running firebase emulator..."
-firebase emulators:start
+echo "Running firebase emulator with demo project..."
+firebase emulators:start --project=demo-project

@@ -5,8 +5,12 @@ import {
   UnauthorizedException,
   Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
-import { verifyIdToken } from '../config/firebase-admin.config';
+import {
+  verifyIdToken,
+  initializeFirebaseAdmin,
+} from '../config/firebase-admin.config';
 import * as admin from 'firebase-admin';
 
 export interface AuthenticatedRequest extends Request {
@@ -22,6 +26,11 @@ export interface AuthenticatedRequest extends Request {
 @Injectable()
 export class AuthGuard implements CanActivate {
   private readonly logger = new Logger(AuthGuard.name);
+
+  constructor(private readonly configService: ConfigService) {
+    // Initialize Firebase Admin with configuration service
+    initializeFirebaseAdmin(this.configService);
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
