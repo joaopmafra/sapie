@@ -6,6 +6,11 @@ This document outlines the core development principles used throughout the Sapie
 
 We follow these fundamental development principles throughout the codebase:
 
+### Make it work, make it right, make it fast
+- ✅ **Make it work** - Get the basic functionality working first
+- ✅ **Make it right** - Clean up and improve after the feature works
+- ✅ **Make it fast** - Optimize for performance when there's a proven issue
+
 ### KISS (Keep It Simple, Stupid)
 - ✅ **Prefer simple solutions** - Choose the most straightforward approach that meets requirements
 - ✅ **Avoid over-engineering** - Don't add complexity for hypothetical future needs
