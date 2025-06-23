@@ -1,6 +1,6 @@
 import { Container, Box, Typography, Paper } from '@mui/material';
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 import FirebaseUIAuth from '../components/auth/FirebaseUIAuth';
 import { useAuth } from '../contexts/AuthContext';
@@ -8,20 +8,24 @@ import { useAuth } from '../contexts/AuthContext';
 const LoginPage = () => {
   const { currentUser, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get the intended destination from location state
+  const from = location.state?.from?.pathname || '/';
 
   useEffect(() => {
-    // Redirect to home if user is already authenticated
+    // Redirect to intended destination if user is already authenticated
     if (!loading && currentUser) {
-      navigate('/', { replace: true });
+      navigate(from, { replace: true });
     }
-  }, [currentUser, loading, navigate]);
+  }, [currentUser, loading, navigate, from]);
 
   const handleSignInSuccess = (authResult: unknown, redirectUrl?: string) => {
     // Custom logic after successful sign-in
     console.log('Sign-in successful:', authResult);
 
-    // Navigate to home or the intended page
-    const targetUrl = redirectUrl || '/';
+    // Navigate to the intended destination or provided redirect URL
+    const targetUrl = redirectUrl || from;
     navigate(targetUrl, { replace: true });
 
     // Return false to prevent FirebaseUI from handling the redirect

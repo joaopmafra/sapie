@@ -176,6 +176,122 @@ VITE_FIREBASE_APP_ID=your_app_id
 VITE_API_BASE_URL=http://127.0.0.1:5000
 ```
 
+## Route Protection
+
+The web app implements comprehensive route protection to control access to pages based on authentication status.
+
+### Authentication Guards
+
+The application provides several authentication guard components:
+
+#### ProtectedRoute
+Wraps components that require authentication. Redirects unauthenticated users to login.
+
+```typescript
+import { ProtectedRoute } from '../components/auth';
+
+<Route 
+  path="/dashboard" 
+  element={
+    <ProtectedRoute>
+      <DashboardPage />
+    </ProtectedRoute>
+  } 
+/>
+```
+
+#### PublicRoute
+Wraps components that should only be accessible to unauthenticated users (e.g., login page).
+
+```typescript
+import { PublicRoute } from '../components/auth';
+
+<Route 
+  path="/login" 
+  element={
+    <PublicRoute>
+      <LoginPage />
+    </PublicRoute>
+  } 
+/>
+```
+
+#### AuthRedirect
+A utility component for handling automatic redirects based on authentication state.
+
+```typescript
+import { AuthRedirect } from '../components/auth';
+
+<Route 
+  path="/auth-check" 
+  element={
+    <AuthRedirect 
+      authenticatedRedirect="/dashboard"
+      unauthenticatedRedirect="/login"
+    />
+  } 
+/>
+```
+
+### Route Protection Architecture
+
+The route protection system includes:
+
+- **ProtectedRoute** (`src/components/auth/ProtectedRoute.tsx`) - Guards for authenticated-only routes
+- **PublicRoute** (`src/components/auth/PublicRoute.tsx`) - Guards for unauthenticated-only routes
+- **AuthRedirect** (`src/components/auth/AuthRedirect.tsx`) - Utility for conditional redirects
+- **LoadingComponent** (`src/components/auth/LoadingComponent.tsx`) - Loading states during auth checks
+- **AuthErrorBoundary** (`src/components/auth/AuthErrorBoundary.tsx`) - Error handling for auth failures
+
+### Features
+
+- **Intended Destination Preservation**: Users are redirected to their originally requested page after login
+- **Loading States**: Smooth loading experience during authentication checks
+- **Error Boundaries**: Graceful handling of authentication errors
+- **Navigation State Management**: Header and navigation components update based on auth state
+- **Flexible Configuration**: Customizable redirect destinations
+
+### Implementation Example
+
+```typescript
+// App.tsx
+import { ProtectedRoute, PublicRoute, AuthErrorBoundary } from './components/auth';
+
+function App() {
+  return (
+    <AuthErrorBoundary>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            {/* Protected routes - require authentication */}
+            <Route 
+              path="/" 
+              element={
+                <ProtectedRoute>
+                  <HomePage />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Public routes - redirect authenticated users away */}
+            <Route 
+              path="/login" 
+              element={
+                <PublicRoute>
+                  <LoginPage />
+                </PublicRoute>
+              } 
+            />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </AuthErrorBoundary>
+  );
+}
+```
+
+For comprehensive documentation on route protection setup and usage, see the **[Route Protection Guide](../../docs/dev/route_protection_guide.md)**.
+
 ## Development Setup
 
 ### Prerequisites

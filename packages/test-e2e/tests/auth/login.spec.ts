@@ -2,23 +2,30 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Authentication', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to the home page
-    await page.goto('/');
+    // Clear any existing auth state
+    await page.context().clearCookies();
   });
 
   test('shows login button when not authenticated', async ({ page }) => {
+    // Navigate to protected route, should redirect to login
+    await page.goto('/');
+    
+    // Should be redirected to login page
+    await expect(page).toHaveURL('/login');
+
     // Should show login button in header
     await expect(page.getByRole('button', { name: 'Login' })).toBeVisible();
 
-    // Should show sign in link on home page
-    await expect(page.getByText('Sign in to unlock more features')).toBeVisible();
+    // Should show login page content
+    await expect(page.getByText('Welcome to Sapie')).toBeVisible();
+    await expect(page.getByText('Sign in to your account or create a new one')).toBeVisible();
   });
 
   test('navigates to login page when clicking login button', async ({ page }) => {
-    // Click login button in header
-    await page.getByRole('button', { name: 'Login' }).click();
-
-    // Should navigate to login page
+    // Navigate to protected route, should redirect to login
+    await page.goto('/');
+    
+    // Should already be on login page due to protection
     await expect(page).toHaveURL('/login');
 
     // Should show login page title
@@ -53,31 +60,36 @@ test.describe('Authentication', () => {
 
   test('shows user info when authenticated', async ({ page }) => {
     // This test would require authentication setup
-    // For now, we'll verify the UI structure exists
-
-    // Check that header can display user information
-    // This would require mocking authentication state
+    // For now, we'll verify the login page shows properly for unauthenticated users
+    await page.goto('/');
+    
+    // Should be redirected to login
+    await expect(page).toHaveURL('/login');
     await expect(page.locator('header')).toBeVisible();
   });
 
   test('logout functionality works', async ({ page }) => {
     // This test would require authentication setup
-    // For now, we'll verify the logout button structure exists
-
-    // Navigate to a page where logout might be visible
-    // This would require being logged in first
+    // For now, we'll verify that unauthenticated users see login page
+    await page.goto('/');
+    
+    // Should be redirected to login
+    await expect(page).toHaveURL('/login');
     await expect(page.locator('header')).toBeVisible();
   });
 
   test('maintains authentication state across page refreshes', async ({ page }) => {
-    // This test would require authentication setup and Firebase persistence
-    // For now, we'll verify that the auth context is properly set up
+    // Test that unauthenticated state persists across refreshes
     await page.goto('/');
+    
+    // Should be redirected to login
+    await expect(page).toHaveURL('/login');
 
     // Reload the page
     await page.reload();
 
-    // Should still show the same authentication state
+    // Should still be on login page
+    await expect(page).toHaveURL('/login');
     await expect(page.locator('header')).toBeVisible();
   });
 });

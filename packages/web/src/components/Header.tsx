@@ -36,7 +36,8 @@ const Header = () => {
     try {
       await logout();
       handleClose();
-      navigate('/', { replace: true });
+      // Navigate to login page after logout since home is now protected
+      navigate('/login', { replace: true });
     } catch (error) {
       console.error('Error during logout:', error);
     }

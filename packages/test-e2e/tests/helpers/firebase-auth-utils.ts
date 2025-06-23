@@ -1,7 +1,7 @@
 import { initializeApp, getApps } from 'firebase/app';
-import { 
-  getAuth, 
-  connectAuthEmulator, 
+import {
+  getAuth,
+  connectAuthEmulator,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   deleteUser,
@@ -12,7 +12,7 @@ import {
 
 /**
  * Firebase Auth Testing Utilities
- * 
+ *
  * These utilities work with the Firebase Auth emulator to create test users
  * and generate valid ID tokens for API testing.
  */
@@ -40,9 +40,9 @@ export function initializeTestAuth(): Auth {
 
   // Initialize Firebase app for testing if not already done
   const app = !getApps().length ? initializeApp(testFirebaseConfig, 'test') : getApps()[0];
-  
+
   testAuth = getAuth(app);
-  
+
   // Connect to Auth emulator
   if (!testAuth.emulatorConfig) {
     connectAuthEmulator(testAuth, 'http://127.0.0.1:9099', {
@@ -55,18 +55,30 @@ export function initializeTestAuth(): Auth {
 
 /**
  * Create a test user with email and password
- * 
+ * If user already exists, try to sign them in instead
+ *
  * @param email - Test user email
  * @param password - Test user password
- * @returns Promise<User> - The created user
+ * @returns Promise<User> - The created or signed-in user
  */
 export async function createTestUser(email: string, password: string): Promise<User> {
   const auth = initializeTestAuth();
-  
+
   try {
     const userCredential: UserCredential = await createUserWithEmailAndPassword(auth, email, password);
     return userCredential.user;
-  } catch (error) {
+  } catch (error: any) {
+    // If user already exists, try to sign them in instead
+    if (error?.code === 'auth/email-already-in-use') {
+      console.log(`User ${email} already exists, signing in instead`);
+      try {
+        const existingUser = await signInTestUser(email, password);
+        return existingUser;
+      } catch (signInError) {
+        console.error('Failed to sign in existing user:', signInError);
+        throw signInError;
+      }
+    }
     console.error('Failed to create test user:', error);
     throw error;
   }
@@ -74,14 +86,14 @@ export async function createTestUser(email: string, password: string): Promise<U
 
 /**
  * Sign in a test user and return their credentials
- * 
+ *
  * @param email - Test user email
  * @param password - Test user password
  * @returns Promise<User> - The signed-in user
  */
 export async function signInTestUser(email: string, password: string): Promise<User> {
   const auth = initializeTestAuth();
-  
+
   try {
     const userCredential: UserCredential = await signInWithEmailAndPassword(auth, email, password);
     return userCredential.user;
@@ -93,7 +105,7 @@ export async function signInTestUser(email: string, password: string): Promise<U
 
 /**
  * Generate a Firebase ID token for a test user
- * 
+ *
  * @param user - Firebase user object
  * @returns Promise<string> - The ID token
  */
@@ -109,7 +121,7 @@ export async function generateTestFirebaseToken(user: User): Promise<string> {
 
 /**
  * Delete a test user (cleanup)
- * 
+ *
  * @param user - Firebase user object to delete
  */
 export async function deleteTestUser(user: User): Promise<void> {
@@ -124,7 +136,7 @@ export async function deleteTestUser(user: User): Promise<void> {
 /**
  * Create a test user and get their ID token
  * Convenience function that combines user creation and token generation
- * 
+ *
  * @param email - Test user email
  * @param password - Test user password
  * @returns Promise<{user: User, token: string}> - User and their ID token
@@ -132,21 +144,21 @@ export async function deleteTestUser(user: User): Promise<void> {
 export async function createTestUserWithToken(email: string, password: string): Promise<{user: User, token: string}> {
   const user = await createTestUser(email, password);
   const token = await generateTestFirebaseToken(user);
-  
+
   return { user, token };
 }
 
 /**
  * Sign in an existing test user and get their ID token
- * 
- * @param email - Test user email  
+ *
+ * @param email - Test user email
  * @param password - Test user password
  * @returns Promise<{user: User, token: string}> - User and their ID token
  */
 export async function signInTestUserWithToken(email: string, password: string): Promise<{user: User, token: string}> {
   const user = await signInTestUser(email, password);
   const token = await generateTestFirebaseToken(user);
-  
+
   return { user, token };
 }
 
@@ -158,7 +170,7 @@ export async function waitForFirebaseAuthEmulator(timeoutMs: number = 10000): Pr
   const startTime = Date.now();
   const testEmail = `test.${Date.now()}@example.com`;
   const testPassword = 'test123456';
-  
+
   while (Date.now() - startTime < timeoutMs) {
     try {
       // Try to create and delete a test user to verify emulator is working
@@ -170,8 +182,17 @@ export async function waitForFirebaseAuthEmulator(timeoutMs: number = 10000): Pr
       await new Promise(resolve => setTimeout(resolve, 500));
     }
   }
-  
+
   throw new Error(`Firebase Auth emulator not ready after ${timeoutMs}ms`);
+}
+
+/**
+ * Generate unique test user email with timestamp to avoid collisions
+ */
+function generateUniqueEmail(prefix: string): string {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 8);
+  return `${prefix}.${timestamp}.${random}@example.com`;
 }
 
 /**
@@ -179,15 +200,15 @@ export async function waitForFirebaseAuthEmulator(timeoutMs: number = 10000): Pr
  */
 export const TEST_USERS = {
   VALID_USER_1: {
-    email: 'test1@example.com',
+    get email() { return generateUniqueEmail('test1'); },
     password: 'password123',
   },
   VALID_USER_2: {
-    email: 'test2@example.com', 
+    get email() { return generateUniqueEmail('test2'); },
     password: 'password456',
   },
   ADMIN_USER: {
-    email: 'admin@example.com',
+    get email() { return generateUniqueEmail('admin'); },
     password: 'admin123456',
   },
-} as const; 
+} as const;

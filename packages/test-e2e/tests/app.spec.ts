@@ -4,18 +4,16 @@ import {takeScreenshot} from "./helpers/test-utils";
 const screenshotName = 'health-status-failure';
 
 test.describe('Sapie App Integration', () => {
-  test('should display API health status', async ({ page }, testInfo) => {
+  test('should redirect to login for protected home page', async ({ page }, testInfo) => {
     await page.goto('/');
 
     try {
-      // Wait for the API health status to load
-      await expect(page.getByTestId('api-health-status')).toBeVisible();
-
-      // Check that the health status is ok
-      const healthStatus = page.getByTestId('api-health-status');
-      const statusText = await healthStatus.innerText();
-      const statusObject = JSON.parse(statusText);
-      expect(statusObject.status).toBe('ok');
+      // Should be redirected to login page since home is protected
+      await expect(page).toHaveURL('/login');
+      
+      // Should show login page content
+      await expect(page.getByText('Welcome to Sapie')).toBeVisible();
+      await expect(page.getByText('Sign in to your account or create a new one')).toBeVisible();
 
     } catch (error) {
       const screenshot = await page.screenshot();
@@ -25,17 +23,18 @@ test.describe('Sapie App Integration', () => {
     }
   });
 
-  test('should handle API error gracefully', async ({ page }) => {
-    // Mock the API to return an error - use a pattern that matches the full URL
-    await page.route('**/api/health', route => {
-      route.abort('failed');
-    });
-
+  test('should handle protected route access consistently', async ({ page }) => {
+    // Try to access protected route
     await page.goto('/');
 
-    // Verify error handling
-    const healthStatus = page.getByTestId('api-health-status');
-    const statusText = await healthStatus.innerText();
-    expect(statusText).toBe('Error fetching health status');
+    // Should consistently redirect to login
+    await expect(page).toHaveURL('/login');
+    
+    // Should show login page elements
+    await expect(page.getByText('Welcome to Sapie')).toBeVisible();
+    
+    // Try to access again to test consistency
+    await page.goto('/');
+    await expect(page).toHaveURL('/login');
   });
 });

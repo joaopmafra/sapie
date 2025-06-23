@@ -69,10 +69,5 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     cwd: '..',
     timeout: 60 * 1000, // 1 minute timeout for emulator to start
-    env: {
-      FUNCTIONS_EMULATOR: 'true',
-      FIREBASE_AUTH_EMULATOR_HOST: 'localhost:9099',
-      GCLOUD_PROJECT: 'demo-project',
-    },
   },
 });

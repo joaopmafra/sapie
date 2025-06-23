@@ -44,14 +44,15 @@ test.describe('API Authentication', () => {
   test('should be able to create Firebase Auth test user', async () => {
     // Verify Firebase Auth emulator is working
     const testUser = TEST_USERS.VALID_USER_1;
-
-    const { user, token } = await createTestUserWithToken(testUser.email, testUser.password);
+    const email = testUser.email; // Get email once to ensure consistency
+    
+    const { user, token } = await createTestUserWithToken(email, testUser.password);
 
     try {
       // Basic assertions
       expect(user).toBeDefined();
       expect(user.uid).toBeDefined();
-      expect(user.email).toBe(testUser.email);
+      expect(user.email).toBe(email);
       expect(token).toBeDefined();
       expect(typeof token).toBe('string');
       expect(token.length).toBeGreaterThan(0);
@@ -100,7 +101,8 @@ test.describe('API Authentication', () => {
   test('should allow authenticated requests with valid Firebase ID token', async () => {
     // Create a test user and get their ID token
     const testUser = TEST_USERS.VALID_USER_1;
-    const { user, token } = await createTestUserWithToken(testUser.email, testUser.password);
+    const email = testUser.email; // Get email once to ensure consistency
+    const { user, token } = await createTestUserWithToken(email, testUser.password);
 
     try {
       // Test authenticated request to /api/auth endpoint
@@ -130,7 +132,8 @@ test.describe('API Authentication', () => {
   test('should maintain user context across multiple authenticated requests', async () => {
     // Create a test user and get their ID token
     const testUser = TEST_USERS.ADMIN_USER;
-    const { user, token } = await createTestUserWithToken(testUser.email, testUser.password);
+    const email = testUser.email; // Get email once to ensure consistency
+    const { user, token } = await createTestUserWithToken(email, testUser.password);
 
     try {
       const apiContext = await request.newContext({
