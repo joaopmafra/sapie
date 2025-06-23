@@ -162,11 +162,17 @@ For package-specific testing details, see individual package READMEs:
 - ✅ **Keep documentation current** - Update all relevant documentation
 
 ### Quality Verification
-- ✅ **Run lint first** - Always run `pnpm run lint` to fix code style issues before verification
-- ✅ **Run verification scripts** - Always run `./scripts/verify-all.sh` before completion
-- ✅ **Fix all issues** - Address linting, formatting, and type errors
-- ✅ **Test thoroughly** - Ensure all tests pass and functionality works
+
+Run these scripts in sequence after completing implementation:
+
+- ✅ **Fix linting issues** - Run `./scripts/lint-all.sh` to automatically fix ESLint violations
+- ✅ **Fix formatting issues** - Run `./scripts/format-all.sh` to automatically fix code formatting
+- ✅ **Verify code quality** - Run `./scripts/verify-all.sh` to ensure all quality checks pass
+- ✅ **Run tests** - Run `./scripts/build-test-all.sh` to ensure all tests pass
+- ✅ **Address any failures** - Fix any remaining linting, formatting, type, or test errors
 - ✅ **Validate story completion** - Verify all acceptance criteria are met
+
+**Important**: If `verify-all.sh` or `build-test-all.sh` fail, address the specific issues reported before proceeding.
 
 ### Communication
 - ✅ **Be explicit about progress** - Clearly communicate what's being implemented
