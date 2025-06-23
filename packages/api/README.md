@@ -183,6 +183,8 @@ The Firebase Admin SDK is automatically configured for different environments:
 
 For detailed setup instructions, see [FIREBASE_ADMIN_SETUP.md](./FIREBASE_ADMIN_SETUP.md).
 
+For comprehensive authentication documentation, see [NestJS Firebase Integration Guide](../../docs/nestjs_firebase_integration.md).
+
 #### Usage
 
 ```typescript

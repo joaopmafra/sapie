@@ -21,6 +21,17 @@ async function bootstrap() {
       )
       .setVersion('1.0')
       .addTag('sapie')
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          name: 'Authorization',
+          description: 'Enter Firebase ID token',
+          in: 'header',
+        },
+        'bearer'
+      )
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
