@@ -162,6 +162,7 @@ For package-specific testing details, see individual package READMEs:
 - ✅ **Keep documentation current** - Update all relevant documentation
 
 ### Quality Verification
+- ✅ **Run lint first** - Always run `pnpm run lint` to fix code style issues before verification
 - ✅ **Run verification scripts** - Always run `./scripts/verify-all.sh` before completion
 - ✅ **Fix all issues** - Address linting, formatting, and type errors
 - ✅ **Test thoroughly** - Ensure all tests pass and functionality works

@@ -6,6 +6,7 @@
   "license": "UNLICENSED",
   "packageManager": "pnpm@10.12.1",
   "scripts": {
+    "lint": "scripts/lint-all.sh",
     "verify": "scripts/verify-all.sh",
     "build": "scripts/build-all.sh",
     "test": "scripts/build-test-all.sh",
