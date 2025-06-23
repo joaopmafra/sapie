@@ -41,6 +41,7 @@ Stories are organized in folders under `docs/pm/stories/`:
 6. **Move to `3-done/`** when complete
 
 ### Story Creation
+- ✅ Update the [last_story_number.md](../pm/stories/last_story_number.md) file with the new story number
 - ✅ Use the [story template](story_template.md) for new stories
 - ✅ Place in appropriate folder (`1-ready/` or `2-backlog/`)
 - ✅ Include comprehensive acceptance criteria
