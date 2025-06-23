@@ -32,7 +32,8 @@ sapie/
 
 Sapie follows core development principles to maintain code quality and consistency.
 
-For detailed development principles and their application during implementation, see the **[Development Principles Documentation](./docs/development_principles.md)**.
+For detailed development principles and their application during implementation, see the *
+*[Development Principles Documentation](docs/dev/development_principles.md)**.
 
 ## Quick Start
 
@@ -43,6 +44,7 @@ For detailed development principles and their application during implementation,
 - **Firebase CLI**: Required for deployment and emulators
 
 Install NestJS CLI globally:
+
 ```bash
 pnpm add -g @nestjs/cli
 ```
@@ -76,6 +78,7 @@ pnpm run emulator
 ```
 
 This provides:
+
 - **Web App**: http://localhost:5000
 - **API**: http://localhost:5001/sapie-b09be/us-central1/api
 - **Emulator UI**: http://localhost:4000
@@ -86,27 +89,31 @@ This provides:
 For detailed documentation on each package:
 
 - **[Web App](./packages/web/README.md)** - React frontend development and testing
-- **[API](./packages/api/README.md)** - NestJS backend development, endpoints, and testing  
+- **[API](./packages/api/README.md)** - NestJS backend development, endpoints, and testing
 - **[E2E Tests](./packages/test-e2e/README.md)** - End-to-end testing with Playwright
 
 ## Authentication
 
 Sapie includes user authentication powered by **Firebase Auth** with **FirebaseUI**.
 
-**Features**: Email/password authentication, Google Sign-In, email verification, password reset, and session persistence.
+**Features**: Email/password authentication, Google Sign-In, email verification, password reset, and session
+persistence.
 
-For detailed authentication setup, configuration, and usage instructions, see the **[Web App Authentication Documentation](./packages/web/README.md#authentication)**.
+For detailed authentication setup, configuration, and usage instructions, see the 
+**[Web App Authentication Documentation](./packages/web/README.md#authentication)**.
 
 ## Development
 
 ### Firebase Emulator (Recommended)
 
 Start the Firebase emulator to run both web and API locally:
+
 ```bash
 firebase emulators:start
 ```
 
 Or use the project-level script:
+
 ```bash
 pnpm run emulator
 ```
@@ -124,6 +131,7 @@ cd packages/web && pnpm run dev
 ```
 
 This starts:
+
 - **API**: http://localhost:3000
 - **Web App**: http://localhost:5173 (with API proxy configured)
 
@@ -145,16 +153,20 @@ Project-level scripts for convenience:
 pnpm run emulator
 ```
 
-Note: Since packages are managed independently, you can also build each package separately by running commands within each package directory.
+Note: Since packages are managed independently, you can also build each package separately by running commands within
+each package directory.
 
 ## Testing
 
 ### Testing Philosophy
-For detailed testing philosophy and approach, see the **[Testing Philosophy Documentation](./docs/contributing_guidelines.md#testing-requirements)**.
+
+For detailed testing philosophy and approach, see the *
+*[Testing Philosophy Documentation](docs/dev/contributing_guidelines.md#testing-requirements)**.
 
 ## Code Quality
 
 ### Package-Level Verification
+
 Code quality must be verified for each package separately:
 
 ```bash
@@ -181,12 +193,14 @@ firebase deploy
 ```
 
 Or build first, then deploy:
+
 ```bash
 ./scripts/build-all.sh
 firebase deploy
 ```
 
 This will:
+
 1. Build the web app (`packages/web/dist`)
 2. Build the API for Firebase Functions (`packages/api/dist`)
 3. Deploy both to Firebase
@@ -214,4 +228,5 @@ firebase emulators:start --only hosting
 - **Node.js**: 22.x (see `.nvmrc`)
 - **Package Manager**: pnpm (defined in `packageManager` field in each package)
 - **Firebase CLI**: Required for deployment and emulators
-- **Package Management**: Each package is managed independently (no workspace configuration for Firebase Functions compatibility)
+- **Package Management**: Each package is managed independently (no workspace configuration for Firebase Functions
+  compatibility)

@@ -14,10 +14,10 @@ Welcome to the Sapie knowledge management app! This document provides contributi
 ## Quick Start for Contributors
 
 ### Prerequisites & Setup
-For environment setup, prerequisites, and getting started instructions, see the **[main README](../README.md#quick-start)**.
+For environment setup, prerequisites, and getting started instructions, see the **[main README](../../README.md#quick-start)**.
 
 ### First Contribution
-1. **Read the project documentation**: Start with [README](../README.md) and [documentation guidelines](documentation_guidelines.md)
+1. **Read the project documentation**: Start with [README](../../README.md) and [documentation guidelines](documentation_guidelines.md)
 2. **Understand development principles**: Review [development principles](development_principles.md) - these guide all implementation decisions
 3. **Pick a story**: Choose from `docs/pm/stories/1-ready/`
 4. **Follow this guide**: Use these contributing guidelines for the workflow
@@ -73,9 +73,9 @@ Stories are organized in folders under `docs/pm/stories/`:
 
 ### Technical References
 For detailed technical guidelines, see:
-- **[Web Package Documentation](../packages/web/README.md)** - React, Material-UI, Firebase Auth
-- **[API Package Documentation](../packages/api/README.md)** - NestJS, Firebase Admin, testing
-- **[E2E Package Documentation](../packages/test-e2e/README.md)** - Playwright, user journey testing
+- **[Web Package Documentation](../../packages/web/README.md)** - React, Material-UI, Firebase Auth
+- **[API Package Documentation](../../packages/api/README.md)** - NestJS, Firebase Admin, testing
+- **[E2E Package Documentation](../../packages/test-e2e/README.md)** - Playwright, user journey testing
 - **[Documentation Guidelines](documentation_guidelines.md)** - Documentation standards and structure
 - **[Development Principles](development_principles.md)** - Core development principles and their application
 
@@ -130,9 +130,9 @@ cd packages/test-e2e && pnpm test
 ```
 
 For package-specific testing details, see individual package READMEs:
-- [API Testing](../packages/api/README.md#testing)
-- [Web Testing](../packages/web/README.md#code-quality)
-- [E2E Testing](../packages/test-e2e/README.md#running-tests)
+- [API Testing](../../packages/api/README.md#testing)
+- [Web Testing](../../packages/web/README.md#code-quality)
+- [E2E Testing](../../packages/test-e2e/README.md#running-tests)
 
 ### Git Workflow
 - **Commit frequently** with logical units of work
@@ -207,7 +207,7 @@ When reporting issues, include:
 For questions about contributing:
 
 1. **Check existing documentation**:
-   - [Main README](../README.md) - Project overview and setup
+   - [Main README](../../README.md) - Project overview and setup
    - [Documentation Guidelines](documentation_guidelines.md) - Documentation standards
    - Package READMEs - Technical implementation details
 

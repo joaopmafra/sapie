@@ -40,6 +40,7 @@ packages/api/
 ### Prerequisites
 
 Install dependencies for this package:
+
 ```bash
 cd packages/api
 pnpm install
@@ -82,6 +83,7 @@ pnpm run format:check
 Returns the API health status and current timestamp.
 
 **Response:**
+
 ```json
 {
   "status": "ok",
@@ -90,6 +92,7 @@ Returns the API health status and current timestamp.
 ```
 
 **Testing the API:**
+
 ```bash
 # Local development server
 curl -X GET http://localhost:3000/api/health
@@ -135,6 +138,7 @@ pnpm test:all
 ## Code Quality
 
 ### Linting and Formatting
+
 The package uses ESLint with Prettier integration:
 
 ```bash
@@ -152,6 +156,7 @@ pnpm run format:check
 ```
 
 ### Configuration Files
+
 - **ESLint**: `eslint.config.mjs` with TypeScript and NestJS rules
 - **Prettier**: `.prettierrc` with consistent formatting rules
 
@@ -178,17 +183,18 @@ The API includes Firebase Admin SDK integration for server-side authentication a
 The Firebase Admin SDK is automatically configured for different environments:
 
 - **Production (Firebase Functions)**: Uses default credentials automatically
-- **Development with Firebase Emulator**: Uses project ID configuration  
+- **Development with Firebase Emulator**: Uses project ID configuration
 - **Local Development**: Can use service account key file or default credentials
 
 For detailed setup instructions, see [FIREBASE_ADMIN_SETUP.md](./FIREBASE_ADMIN_SETUP.md).
 
-For comprehensive authentication documentation, see [NestJS Firebase Integration Guide](../../docs/nestjs_firebase_integration.md).
+For comprehensive authentication documentation,
+see [NestJS Firebase Integration Guide](../../docs/other/nestjs_firebase_integration.md).
 
 #### Usage
 
 ```typescript
-import { verifyIdToken, getUserByUid } from './config/firebase-admin.config';
+import {verifyIdToken, getUserByUid} from './config/firebase-admin.config';
 
 // Verify Firebase ID token
 const decodedToken = await verifyIdToken(idToken);
@@ -209,11 +215,13 @@ The Firebase Admin configuration is located in `src/config/firebase-admin.config
 ## Development vs Production
 
 ### Local Development
+
 - **Entry Point**: `main.ts`
 - **Port**: 3000
 - **Hot Reload**: Enabled with `--watch`
 
 ### Firebase Functions
+
 - **Entry Point**: `firebase-functions.ts`
 - **Runtime**: Node.js 22
 - **CORS**: Enabled for cross-origin requests
@@ -221,16 +229,19 @@ The Firebase Admin configuration is located in `src/config/firebase-admin.config
 ## Build Process
 
 ### Local Development Build
+
 ```bash
 pnpm run build
 ```
 
 ### Firebase Functions Build
+
 ```bash
 pnpm run build:firebase
 ```
 
 This command:
+
 1. Runs the NestJS build process
 2. Copies `package.json` to the `dist/` directory for Firebase Functions deployment
 
@@ -267,12 +278,14 @@ firebase deploy --only functions
 ## Dependencies
 
 ### Production Dependencies
+
 - `@nestjs/common`, `@nestjs/core`: NestJS framework
 - `firebase-functions`: Firebase Functions runtime
 - `firebase-admin`: Firebase Admin SDK
 - `rxjs`: Reactive extensions
 
 ### Development Dependencies
+
 - `@nestjs/testing`: Testing utilities
 - `jest`: Testing framework
 - `supertest`: HTTP testing

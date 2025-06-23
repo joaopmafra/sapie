@@ -49,7 +49,7 @@ We follow these fundamental development principles throughout the codebase:
 - ✅ **Separate concerns** - Don't mix refactoring with feature work in the same commit
 - ✅ **Simplify then extend** - Make the foundation clear before building on it
 
-*See [detailed guide](research/first_make_change_easy.md) for examples and when to apply this principle.*
+*See [detailed guide](../research/first_make_change_easy.md) for examples and when to apply this principle.*
 
 ### Principle of least astonishment (POLA)
 

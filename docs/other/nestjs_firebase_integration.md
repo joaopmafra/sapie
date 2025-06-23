@@ -1,6 +1,6 @@
 # NestJS Firebase Integration Guide
 
-**TODO:** merge this document to the existing [FIREBASE_ADMIN_SETUP.md](../packages/api/FIREBASE_ADMIN_SETUP.md).
+**TODO:** merge this document to the existing [FIREBASE_ADMIN_SETUP.md](../../packages/api/FIREBASE_ADMIN_SETUP.md).
 
 This document provides comprehensive information about Firebase integration in the Sapie API, including authentication,
 user management, and development setup.

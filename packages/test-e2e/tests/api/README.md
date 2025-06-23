@@ -44,15 +44,6 @@ Run specific test file:
 pnpm test -- tests/api/auth.spec.ts
 ```
 
-## Development Principles Applied
-
-Following the [development principles](../../../../docs/development_principles.md):
-
-- **KISS**: Simple, focused tests for specific API behaviors
-- **DRY**: Shared utilities and helper functions to avoid code duplication
-- **Single Responsibility**: Each test verifies one specific authentication scenario
-- **YAGNI**: Only implemented what's needed now (unauthorized requests), with TODO comments for future requirements
-
 ## Architecture
 
 These tests use Playwright's `request` API for direct HTTP testing without browser overhead, making them faster and more
