@@ -42,6 +42,8 @@ The optimizations are designed around our core principle: **shipping speed is pr
   - Optimize daily development to use dev servers instead of emulator
   - Reserve Firebase emulator for integration testing only
   - Document when to use each development approach
+  - Configure Firebase Admin SDK for local development outside emulator
+  - Add environment variables for Firebase Admin configuration to support dev/emulator separation
 
 ### Phase 2: Short-term Optimizations (Next Sprint)
 - [ ] **Enhanced Development Scripts**
