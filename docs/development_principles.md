@@ -51,6 +51,15 @@ We follow these fundamental development principles throughout the codebase:
 
 *See [detailed guide](research/first_make_change_easy.md) for examples and when to apply this principle.*
 
+### Principle of least astonishment (POLA)
+
+People are part of the system. The design should match the user's experience, expectations, and mental models (https://en.wikipedia.org/wiki/Principle_of_least_astonishment#cite_note-SaltzerKaashoek2009-14).
+
+- ✅ **Avoid surprising behavior** - Don't add unexpected side effects or behavior
+- ✅ **Be explicit** - Be clear about what the code does and how it behaves
+- ✅ **Be consistent** - Be consistent in the way the code behaves
+- ✅ **Be predictable** - Be predictable in the way the code behaves
+
 ## Application in Story Implementation
 
 ### When Implementing Features
@@ -67,6 +76,12 @@ Apply "First make the change easy, then make the easy change" when working with 
 
 - If the change feels complex due to current code structure, first refactor to simplify
 - Separate refactoring commits from feature implementation commits
+
+Follow the "Principle of least astonishment" (POLA) to create intuitive user experiences:
+
+- Make UI behavior consistent with user expectations
+- Avoid unexpected side effects or surprising interactions
+- Use clear, predictable naming for functions and variables
 
 ### When Writing Tests
 
@@ -121,8 +136,9 @@ When reviewing code (or self-reviewing):
 4. **Does it only implement what's needed?** (YAGNI)
 5. **Does each part have a single responsibility?** (SRP)
 6. **If changing existing code, was it simplified first?** (First make the change easy, then make the easy change)
-7. **Are there proper tests for the functionality, if possible?**
-8. **Is the documentation updated?**
+7. **Does it behave as expected without surprises?** (POLA - Principle of least astonishment)
+8. **Are there proper tests for the functionality, if possible?**
+9. **Is the documentation updated?**
 
 ## Questions?
 
