@@ -31,11 +31,6 @@ As a user, I want protected pages to require authentication and be redirected ap
   - Implement graceful fallbacks for auth issues
 
 ### Development & Testing
-- [ ] Add unit tests
-  - Test protected route components
-  - Test public route components
-  - Test authentication redirects
-  - Test navigation state changes
 - [ ] Add end-to-end tests
   - Test protected route access when authenticated
   - Test protected route redirect when unauthenticated
