@@ -180,6 +180,9 @@ For package-specific testing details, see individual package READMEs:
 - ✅ **Verify acceptance criteria** - Check each criterion before considering task complete
 - ✅ **Use parallel tool calls** when gathering information for efficiency
 - ✅ **Mark the task as complete** - Once the task is complete, mark it as complete in the story
+- ✅ **DO NOT mark the whole story as complete** - Once the story is complete, ask developers to verify if it really is
+  and
+  remind them to mark it once it's complete
 
 ### Implementation Standards
 
