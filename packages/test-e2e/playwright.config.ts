@@ -64,10 +64,15 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'firebase emulators:start',
-    url: 'http://127.0.0.1:5001/sapie-b09be/us-central1/api/api',
+    command: 'firebase emulators:start --project=demo-project',
+    url: 'http://127.0.0.1:5001/demo-project/us-central1/api/api',
     reuseExistingServer: !process.env.CI,
     cwd: '..',
     timeout: 60 * 1000, // 1 minute timeout for emulator to start
+    env: {
+      FUNCTIONS_EMULATOR: 'true',
+      FIREBASE_AUTH_EMULATOR_HOST: 'localhost:9099',
+      GCLOUD_PROJECT: 'demo-project',
+    },
   },
 });

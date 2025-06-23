@@ -33,18 +33,14 @@ As a developer, I want to secure API endpoints with Firebase Auth tokens to ensu
 - [ ] Refactor after implementing tests
 
 ### Development & Testing
-- [ ] Add E2E tests using Playwright
-  - Test authenticated API requests
-  - Test unauthorized request handling
-  - Test token expiration scenarios
+- [x] Add E2E tests using Playwright
+  - Test unauthorized request handling (✅ implemented)
+  - Test authenticated API requests (✅ implemented)  
+  - Test token expiration scenarios (moved to a separate story)
 - [ ] Update development environment
   - Configure Firebase Admin SDK for local development
   - Add environment variables for Firebase Admin configuration
   - Update API documentation with authentication requirements
-- [ ] Add backend E2E tests in the API package (packages/api/test directory)
-  - Test authenticated API requests
-  - Test unauthorized request handling
-  - Test token expiration scenarios
 
 ### Documentation & DevOps
 - [ ] Update project documentation
@@ -56,9 +52,6 @@ As a developer, I want to secure API endpoints with Firebase Auth tokens to ensu
   - Configure Firebase Admin environment variables
   - Set up service account credentials for production
   - Test API authentication in production environment
-- [ ] Document the kind of E2E tests in this project (Playwright and NestJS E2E tests)
-  - Most of API tests should be NestJS E2E tests
-  - Use Playwright for end-to-end tests that require browser interaction
 
 ## Acceptance Criteria
 - [ ] API endpoints are protected with Firebase Auth token verification
