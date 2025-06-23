@@ -67,6 +67,51 @@ Stories are organized in folders under `docs/pm/stories/`:
 - **Verify before moving on** - Run quality checks before considering work complete
 - **If blocked, ask for help** - If you're stuck, ask for help from the team
 
+### Iterative Development Approach
+
+**Think scooter → bicycle → motorcycle → car, not chassis → wheels → engine → car.**
+
+When building toward a complex feature or system, each iteration should deliver a complete, functional product that provides real value to users - even if it's simpler than the final vision.
+
+#### The Transportation Analogy
+
+Imagine you're tasked with building a car for users who need transportation:
+
+- ❌ **Wrong approach**: Build a chassis first (unusable), then add wheels (still unusable), then engine (still unusable), then finally a working car
+- ✅ **Right approach**: Build a scooter first (users can move!), then upgrade to bicycle (better!), then motorcycle (even better!), then finally a sophisticated car
+
+Each iteration is a complete, working solution that solves the core problem while progressively adding capabilities.
+
+#### Applying This to Software Features
+
+**Example: Building a Note-Taking System**
+
+Instead of building incomplete database schemas + incomplete UI + incomplete API:
+
+1. **Iteration 1** (Scooter): Simple text input that saves to localStorage - users can take notes immediately
+2. **Iteration 2** (Bicycle): Add basic persistence with a simple backend - notes survive browser refresh
+3. **Iteration 3** (Motorcycle): Add user accounts and sync - notes available across devices
+4. **Iteration 4** (Car): Add rich formatting, search, tags, and collaboration features
+
+#### Guidelines for AI Agents
+
+- ✅ **Start with the simplest working solution** that addresses the core user need
+- ✅ **Each iteration should be deployable** and provide measurable user value
+- ✅ **Build end-to-end** (UI + logic + data) for each iteration, even if simple
+- ✅ **Plan the progression** - know how each iteration builds toward the final vision
+- ✅ **Get feedback early** - deploy iterations to validate assumptions before building more complexity
+
+#### Story Implementation
+
+When working on stories:
+
+- **Break complex features** into iterative releases rather than building everything at once
+- **Prioritize core functionality** - what's the minimal version that solves the user's problem?
+- **Plan upgrade path** - how will each iteration naturally evolve to the next?
+- **Document the vision** - explain how this iteration fits into the larger roadmap
+
+**Remember**: Users prefer a working scooter today over a promised car next month. Each iteration should make their life better immediately.
+
 ### Implementation Guidelines
 
 #### DO:
@@ -181,8 +226,7 @@ For package-specific testing details, see individual package READMEs:
 - ✅ **Use parallel tool calls** when gathering information for efficiency
 - ✅ **Mark the task as complete** - Once the task is complete, mark it as complete in the story
 - ✅ **DO NOT mark the whole story as complete** - Once the story is complete, ask developers to verify if it really is
-  and
-  remind them to mark it once it's complete
+  and remind them to mark it once it's complete
 
 ### Implementation Standards
 
