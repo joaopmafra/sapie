@@ -30,7 +30,7 @@ As a developer, I want to secure API endpoints with Firebase Auth tokens to ensu
   - Add user context to request objects
   - Implement proper error handling for unauthorized requests
   - Add a call to the home page to the endpoint to test it
-- [ ] Refactor after implementing tests
+- [x] Refactor after implementing tests
 
 ### Development & Testing
 - [x] Add E2E tests using Playwright

@@ -20,7 +20,6 @@ export const API_BASE_URL = 'http://127.0.0.1:5001/demo-project/us-central1/api'
  */
 export const API_ENDPOINTS = {
   AUTH: `${API_BASE_URL}/api/auth`,
-  USERS_ME: `${API_BASE_URL}/api/auth/users/me`,
   HEALTH: `${API_BASE_URL}/api/health`,
 } as const;
 

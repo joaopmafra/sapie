@@ -21,7 +21,7 @@ import {
   AuthenticationApi,
   createApiConfiguration,
 } from '../lib/api-client';
-import type { AuthControllerGetCurrentUser200Response } from '../lib/api-client';
+import type { AuthenticatedUser } from '../lib/api-client';
 import { createAuthenticatedApiConfiguration } from '../lib/auth-utils';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -30,8 +30,7 @@ const HomePage = () => {
   const { currentUser } = useAuth();
   const [count, setCount] = useState(0);
   const [healthStatus, setHealthStatus] = useState<string>('');
-  const [userInfo, setUserInfo] =
-    useState<AuthControllerGetCurrentUser200Response | null>(null);
+  const [userInfo, setUserInfo] = useState<AuthenticatedUser | null>(null);
   const [userInfoLoading, setUserInfoLoading] = useState(false);
   const [userInfoError, setUserInfoError] = useState<string>('');
 
@@ -73,8 +72,8 @@ const HomePage = () => {
         );
         const authApi = new AuthenticationApi(config);
 
-        // Fetch user information from /users/me endpoint
-        const userResponse = await authApi.authControllerGetUsersMe();
+        // Fetch user information from /api/auth endpoint
+        const userResponse = await authApi.authControllerGetCurrentUser();
         setUserInfo(userResponse.data);
       } catch (error) {
         console.error('Failed to fetch user info:', error);
@@ -167,7 +166,7 @@ const HomePage = () => {
           <Card sx={{ mt: 2 }}>
             <CardContent sx={{ textAlign: 'center' }}>
               <Typography variant='h6' gutterBottom>
-                User Information from API (/users/me)
+                User Information from API (/api/auth)
               </Typography>
 
               {userInfoLoading ? (
@@ -193,9 +192,8 @@ const HomePage = () => {
                   </Typography>
                   <Divider sx={{ my: 2 }} />
                   <Typography variant='body2' color='text.secondary'>
-                    This information was fetched from the{' '}
-                    <code>/api/auth/users/me</code> endpoint using the Firebase
-                    ID token for authentication.
+                    This information was fetched from the <code>/api/auth</code>{' '}
+                    endpoint using the Firebase ID token for authentication.
                   </Typography>
                 </Box>
               ) : (
