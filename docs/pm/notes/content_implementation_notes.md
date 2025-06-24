@@ -7,6 +7,7 @@ We need to support the following types of content:
 - Directories
 - Notes
 - Images
+- Excalidraw drawings (only in a future version)
 - Flashcards
 - Quizzes
 - PDFs (only in a future version)
@@ -21,35 +22,96 @@ We need to support the following types of content:
 - For now, don't allow notes/flashcards/quizzes bigger than that
 - In the future we must find a way to support bigger documents
 
+### Performance Considerations
+
+- **Lazy loading:** Load content on-demand to improve initial page load times
+- **Caching strategy:** Implement aggressive caching for frequently accessed content
+- ~~**Image optimization:** Compress and resize images automatically~~
+- **Content indexing:** Build efficient search indexes for quick content discovery
+
 ## Data Architecture
+
+### Content Hierarchy
+
+**Content entities:**
+- All content types inherit from a base `Content` entity
+- Each content has: `id`, `name`, `type`, `parentId`, `createdAt`, `updatedAt`, `ownerId`
+- Directory traversal through parent-child relationships
+
+### Study Tracking
+
+- Study tracking must be separated from the flashcard and quizzes to allow multiple users to study the same content
 
 ### Entity Versioning
 - Entity versioning for easy migration
-- Migration happens only when user accesses the application
+- Migration happens only when users access the application
+- Version compatibility matrix to handle breaking changes
 
 ### Content Versioning
 - Content versioning to allow restoration of old versions
-
-### Directory Structure Optimization
-
-To make listing directory contents and moving directories more efficient:
-- Do not store the content path or depth
-- Each content should have a list of its children
-
-**TODO:** Remove this approach
+- Keep last N versions (configurable, default: 10)
+- Automatic cleanup of old versions after retention period
+- Support for version comparison and diff visualization
 
 ### Storage Strategy
 
-I don't think we need to store the content path or depth.
+**Question:** Should we store the content path or depth? I don't think this is needed since the content will be cached
+in the client and fetching by id will be fast.
 
 **Question:** Should we store only metadata on Firestore and contents on cloud storage?
 
 **Requirements:**
-- The solution must be cost effective
-- Track each API call, number of queries performed, and amount of data transferred
+- The solution must be cost-effective
+- Track each API call, number of Firestore queries performed, Cloud Storage calls, and amount of data transferred
 - Consider a new entity "directory index" that should hold all the metadata for the directory and its immediate children
+- The goal is to be able to measure the cost per user
+
+**Hybrid approach:**
+- Small content (< 100KB): Store directly in Firestore
+- Large content (> 100KB): Store in Cloud Storage with metadata in Firestore
+- Implement automatic migration between storage types based on size
+
+**Question:** Is this cost-effective? Storing metadata on Firestore and actual contents on Cloud Storage will be more
+cost-effective?
 
 ## Content Types Implementation
+
+### Directories
+
+**Structure:**
+- Name and description
+- Permissions and sharing settings
+- Custom organization options (sort order, view type) (only in future versions)
+
+### Notes
+
+**Format:** Markdown with rich media support
+
+**Features:**
+- We will allow only visual editing (no markdown code editing)
+- Syntax highlighting for code blocks
+- Mathematical equation support (LaTeX) (only in future versions)
+- Auto-save functionality
+
+**Editor options:**
+- https://github.com/mdx-editor/editor
+- https://www.wysimark.com/
+
+### Images
+
+**Supported formats:** JPEG, PNG, GIF, WebP, SVG
+**Features:**
+- Automatic thumbnail generation
+- Multiple resolution support
+- Alt text for accessibility
+- ~~Image metadata extraction (EXIF)~~
+- Compression and optimization
+
+### Excalidraw drawing
+
+https://github.com/excalidraw/excalidraw
+
+Only in a future version.
 
 ### Flashcard Decks
 
@@ -58,10 +120,12 @@ I don't think we need to store the content path or depth.
   - Content (front/back): Markdown with attachments
   - Start/end time for tracking the total time taken to answer
   - Timeout for defining a maximum total time to answer
+  - Difficulty rating
+  - Learning statistics
 - **ReversedFlashcard**
   - Do not have contents, only a reference to flashcard
 
-**Decision needed:** Store flashcards in specific content or inside card decks?
+**Decision needed:** Store flashcards in specific content or inside flashcard decks?
 
 #### Spaced Repetition Algorithm
 
@@ -76,13 +140,21 @@ I don't think we need to store the content path or depth.
 - https://github.com/RickCarlino/femto-fsrs
 - [Google search results](https://www.google.com/search?q=spaced+repetition+algorithm+javascript)
 
-### Notes
+### Quizzes (only in a future version)
 
-**Format:** Markdown
+**Question types:**
+- Multiple choice
+- True/false
+- Fill in the blank
+- Short answer
+- ~~Essay questions~~ won't be supported for now
 
-**Editor options:**
-- https://github.com/mdx-editor/editor
-- https://www.wysimark.com/
+**Features:**
+- Randomized question order
+- Time limits
+- Immediate feedback
+- Score tracking
+- ~~Detailed analytics~~
 
 ### Attachments
 
@@ -91,12 +163,32 @@ Notes, images, and other contents may have the following as attachments:
 - Images
 - Quizzes
 - Other notes
+- External links with preview generation
+- TODO: specify the supported types of attachments for each content type
 
 ## System Features
 
+### Search and Discovery
+
+**Full-text search capabilities:**
+- Search across all content types
+- Advanced search filters (date, type, tags, owner)
+- Search result ranking and relevance
+- Search suggestions and autocomplete
+- Recent searches history
+
+**Indexing strategy:**
+-Searching and indexing must be done in the client side
+  - https://github.com/nextapps-de/flexsearch
+  - https://www.google.com/search?q=js+full+text+search+library
+- Real-time content indexing
+- Faceted search support
+
 ### Virtual File System
-- Local cache
-- Local indexing for search
+- Local cache with intelligent invalidation
+- Local indexing for offline search
+- ~~Conflict resolution for offline changes~~ we won't support offline mode for now
+- ~~Sync status indicators~~ we won't support offline mode for now
 
 ### Tags System
 
@@ -106,13 +198,138 @@ Tag names with optional values.
 - **System tags:**
   - Content root
   - Knowledge area
+  - Knowledge level (beginner, intermediate, advanced)
+  - Base principles / axioms
 - **User defined tags:**
+  - e.g.: custom categories, priority levels, status indicators, etc.
+
+**Tag management:**
+- Tag autocomplete and suggestions
+- Tag renaming and merging
+- Bulk tag operations
 
 ### Favorites
-- Support for marking content as favorites
+- Support for marking content as favorites (notes, cards, quizzes, etc.)
+- Mark content as "to review"
+- Quick access to favorite content
+
+### Focus mode
+
+- Focus mode is a mode that allows the user to focus on a single content root
+
+### Study
+
+- Study is a mode that allows the user to study a single directory, including or not its children
+
+### View modes
+
+- The user may want not to show a note's content, only information like title, tags, attachments, etc.
+- This can be selected per directory, note, or other content types, and optionally be applied to all children
 
 ### Content Sharing
 
 **Current scope:** Sharing content with other users
 - For now, only the owner will be able to change contents
-- Study tracking must be separated from the flashcard
+
+**Sharing methods:**
+- Direct user sharing
+
+## Security and Privacy
+
+TODO
+
+## Gamification
+
+- Badges
+- Allow users to compete with each other
+- etc.
+
+### User preferences
+
+- Default view modes
+- Don't ask again
+- etc.
+
+### AI features
+
+- AI-powered content creation
+- Generate notes from pdf's
+- Generate flashcards from notes
+- AI-powered chat with the content
+- etc.
+
+### Data Protection
+- Encryption at rest and in transit
+- Personal data anonymization options
+- GDPR compliance features
+- Deletion capabilities
+
+### Content Security
+- Input validation and sanitization
+- XSS protection for user-generated content
+- File type validation and scanning
+- Rate limiting to prevent abuse (only in a future version)
+
+## User Experience
+
+### Content Creation
+- Drag-and-drop file uploads (only in a future version)
+- Bulk import capabilities (only in a future version)
+
+### Content Organization
+- Multiple organization methods (folders, tags, favorites)
+- Custom sorting options
+- View customization (list, grid, timeline) (only in a future version)
+
+### Responsive Design
+- Mobile-first approach
+- Touch-friendly interfaces
+- ~~Offline capability indicators~~ we won't support offline mode for now
+- Progressive web app features
+
+## API Design
+
+### RESTful Endpoints
+- Consistent naming conventions
+- Proper HTTP status codes
+- Comprehensive error handling
+- Rate limiting and throttling
+
+## Analytics and Monitoring
+
+### Content Analytics
+- Popular content identification
+- User engagement metrics
+- Learning progress tracking
+
+### System Monitoring
+- Performance metrics
+- Error tracking and alerting
+- Resource usage monitoring
+- User behavior analytics
+
+### Cost Optimization
+- Storage cost tracking
+- API usage monitoring
+- Automated cost alerts
+- Resource optimization recommendations
+
+## Testing Strategy
+
+### Unit Testing
+- Content validation logic
+- Business rule enforcement
+- Data transformation functions
+- Error handling scenarios
+- Virtual file system
+
+### Integration Testing
+- API endpoint testing
+- Database interaction testing
+- File upload and storage testing
+- Authentication and authorization testing
+
+### End-to-End Testing
+- User workflow testing
+- Cross-browser compatibility
+- Mobile device testing
