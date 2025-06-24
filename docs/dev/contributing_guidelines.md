@@ -16,8 +16,8 @@ and AI agents.
 
 ### Prerequisites & Setup
 
-For environment setup, prerequisites, and getting started instructions, see the *
-*[main README](../../README.md#quick-start)**.
+For environment setup, prerequisites, and getting started instructions, see the
+**[main README](../../README.md#quick-start)**.
 
 ### First Contribution
 
@@ -51,6 +51,9 @@ Stories are organized in folders under `docs/pm/stories/`:
 
 ### Story Creation
 
+- ✅ Apply the iterative development approach described
+  in [Iterative Development Approach](#iterative-development-approach) to break down requirements into small and
+  manageable stories
 - ✅ Update the [last_story_number.md](../pm/stories/last_story_number.md) file with the new story number
 - ✅ Use the [story template](story_template.md) for new stories
 - ✅ Place in appropriate folder (`1-ready/` or `2-backlog/`)
@@ -69,16 +72,19 @@ Stories are organized in folders under `docs/pm/stories/`:
 
 ### Iterative Development Approach
 
-**Think scooter → bicycle → motorcycle → car, not chassis → wheels → engine → car.**
+When building toward a complex feature or system, each iteration should deliver a complete, functional product that
+provides real value to users - even if it's simpler than the final vision.
 
-When building toward a complex feature or system, each iteration should deliver a complete, functional product that provides real value to users - even if it's simpler than the final vision.
+**Think scooter → bicycle → motorcycle → car, not chassis → wheels → engine → car.**
 
 #### The Transportation Analogy
 
 Imagine you're tasked with building a car for users who need transportation:
 
-- ❌ **Wrong approach**: Build a chassis first (unusable), then add wheels (still unusable), then engine (still unusable), then finally a working car
-- ✅ **Right approach**: Build a scooter first (users can move!), then upgrade to bicycle (better!), then motorcycle (even better!), then finally a sophisticated car
+- ❌ **Wrong approach**: Build a chassis first (unusable), then add wheels (still unusable), then engine (still
+  unusable), then finally a working car
+- ✅ **Right approach**: Build a scooter first (users can move!), then upgrade to bicycle (better!), then motorcycle (
+  even better!), then finally a sophisticated car
 
 Each iteration is a complete, working solution that solves the core problem while progressively adding capabilities.
 
@@ -110,7 +116,8 @@ When working on stories:
 - **Plan upgrade path** - how will each iteration naturally evolve to the next?
 - **Document the vision** - explain how this iteration fits into the larger roadmap
 
-**Remember**: Users prefer a working scooter today over a promised car next month. Each iteration should make their life better immediately.
+**Remember**: Users prefer a working scooter today over a promised car next month. Each iteration should make their life
+better immediately.
 
 ### Implementation Guidelines
 
