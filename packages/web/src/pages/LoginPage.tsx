@@ -20,10 +20,7 @@ const LoginPage = () => {
     }
   }, [currentUser, loading, navigate, from]);
 
-  const handleSignInSuccess = (authResult: unknown, redirectUrl?: string) => {
-    // Custom logic after successful sign-in
-    console.log('Sign-in successful:', authResult);
-
+  const handleSignInSuccess = (_authResult: unknown, redirectUrl?: string) => {
     // Navigate to the intended destination or provided redirect URL
     const targetUrl = redirectUrl || from;
     navigate(targetUrl, { replace: true });
