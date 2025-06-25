@@ -64,6 +64,13 @@ The same applies for epics and features.
   in [Iterative Development Approach](#iterative-development-approach) to break down requirements into small and
   manageable stories
 - ✅ Update the [last_pbi_number.md](../pm/last_pbi_number.md) file with the new PBI number
+- ✅ Name the file using the following format: `{pbi_number}-{pbi_type}-{pbi_name}.md`
+  - `pbi_number` is the number of the PBI
+  - `pbi_type` is the type of the PBI (epic, feature, story)
+  - `pbi_name` is the name of the PBI
+  - Example: `1-epic-content.md`
+  - Example: `2-feature-content.md`
+  - Example: `3-story-content.md`
 - ✅ Use the [story template](story_template.md) for new stories
 - ✅ Place in appropriate folder (`3-stories/1-ready/` or `3-stories/2-to-refine/`)
 - ✅ Include comprehensive acceptance criteria
