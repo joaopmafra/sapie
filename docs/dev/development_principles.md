@@ -3,6 +3,8 @@
 This document outlines the core development principles used throughout the Sapie project to maintain code quality,
 consistency, and maintainability.
 
+TODO: add lean startup, MVP development, lean software development, agile and devops principles
+
 ## Core Principles
 
 We follow these fundamental development principles throughout the codebase:
