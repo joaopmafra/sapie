@@ -49,12 +49,12 @@ Stories are organized in folders under `docs/pm/stories/`:
 5. **Verify quality** using project scripts
 6. **Move to `3-done/`** when complete if you are not an AI Agent; if you are, ask the user to do it manually.
 
-### Story Creation
+### PBI Creation
 
 - ✅ Apply the iterative development approach described
   in [Iterative Development Approach](#iterative-development-approach) to break down requirements into small and
   manageable stories
-- ✅ Update the [last_story_number.md](../pm/stories/last_story_number.md) file with the new story number
+- ✅ Update the [last_pbi_number.md](../pm/last_pbi_number.md) file with the new PBI number
 - ✅ Use the [story template](story_template.md) for new stories
 - ✅ Place in appropriate folder (`1-ready/` or `2-backlog/`)
 - ✅ Include comprehensive acceptance criteria
