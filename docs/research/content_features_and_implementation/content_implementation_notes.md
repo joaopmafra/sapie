@@ -25,6 +25,7 @@ We need to support the following types of content:
 - Excalidraw drawings (only in a future version)
 - Flashcards
 - Quizzes
+- Exercises: quizzes, flashcards, and short videos made specifically for learning. (only in a future version)
 - PDFs (only in a future version)
 - Audio files (only in a future version)
 
@@ -195,6 +196,17 @@ Only in a future version.
 - Immediate feedback
 - Score tracking
 - ~~Detailed analytics~~
+
+### Exercises (only in a future version)
+
+**Overview:**
+Exercises are structured learning modules that combine multiple content types (quizzes, flashcards, and short educational videos) into cohesive learning experiences. They are specifically designed to reinforce learning through active practice and spaced repetition.
+
+**Examples:**
+- fill in the blank
+- repeat after me
+- explain the concept with your own words, with AI correction and feedback
+- etc.
 
 ### Attachments
 
