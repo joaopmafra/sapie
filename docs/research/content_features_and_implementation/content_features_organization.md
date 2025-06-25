@@ -39,13 +39,18 @@ This document provides the complete organization of content features implementat
 **User value**: Users can immediately start taking notes digitally
 **Timeline**: 2-3 weeks
 
-**Stories**:
+**Stories** (aligned with implementation phases):
+### Phase 1: Backend Foundation (API Package)
 - **Story 31**: Implement Content Storage Foundation
 - **Story 32**: Create Basic Content API
+
+### Phase 2: Frontend Foundation (Web Package)  
 - **Story 33**: Build Content Management UI
-- **Story 34**: Implement Note Editor
-- **Story 35**: Add Content Operations (Delete, Validation)
-- **Story 36**: Implement Auto-save and Polish
+- **Story 34**: Create Content Service Layer
+
+### Phase 3: Note Editor & Polish
+- **Story 35**: Implement Note Editor with mdx-editor
+- **Story 36**: Add Auto-save and Final Polish
 
 ### 🚲 Iteration 2: Bicycle (Individual Flashcards)
 **Feature 27: Individual Flashcards**
@@ -152,13 +157,69 @@ This document provides the complete organization of content features implementat
 - Validate assumptions early
 - Get feedback after each iteration
 
+## Technical Decisions for Iteration 1
+
+### Editor Choice
+- **Decision**: Use mdx-editor for markdown editing
+- **Rationale**: Open source, more customizable, cost-effective
+- **Alternative**: wysimark (commercial, more polished)
+
+### Auto-save Strategy
+- **Decision**: Debounced auto-save (3-second delay)
+- Prevents excessive API calls
+- Shows save status to user
+- Never lose user content
+
+### Storage Architecture
+- **Firestore**: Metadata only (fast queries, low cost)
+- **Cloud Storage**: Actual content (1000x cheaper storage)
+- **Access**: Signed URLs for secure content delivery
+- **Caching**: Aggressive client-side caching
+
+### Frontend Architecture
+```
+src/pages/
+├── ContentPage.tsx            // Main content management page
+└── NoteEditorPage.tsx         // Note editing page
+
+src/components/content/
+├── ContentList.tsx            // List of notes in directory
+├── NoteCard.tsx              // Individual note preview
+├── NoteEditor.tsx            // Markdown editor component
+├── CreateNoteModal.tsx       // Modal for creating new notes
+└── DeleteConfirmModal.tsx    // Confirmation for deletions
+
+src/hooks/
+├── useContent.ts             // Content CRUD operations
+├── useContentList.ts         // Directory content listing
+└── useNoteEditor.ts          // Note editing state management
+
+src/lib/content/
+├── content-service.ts        // API client for content operations
+├── content-cache.ts          // Client-side content caching
+└── types.ts                  // TypeScript type definitions
+```
+
 ## Success Metrics
 
 ### Iteration 1 Metrics
+**User Engagement:**
 - Users create ≥3 notes within first week
 - Session time >10 minutes
 - User retention >60% after first week
+- Daily/weekly active users growth
+
+**Technical Performance:**
+- Content list loads in <2 seconds
+- Note editor opens in <1 second
+- Auto-save completes in <3 seconds
 - Zero data loss incidents
+
+**Cost Tracking:**
+- Total cost per active user <$0.10/month
+- Firestore read/write operations per user
+- Cloud Storage usage per user
+- API call volume monitoring
 
 ### Iteration 2 Metrics
 - Users create ≥5 flashcards within first week

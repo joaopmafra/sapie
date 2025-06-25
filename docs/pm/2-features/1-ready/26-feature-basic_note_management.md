@@ -99,6 +99,31 @@ DELETE /api/content/:id            // Delete content
 GET /api/content/:id/download      // Get signed URL for content
 ```
 
+### Frontend Components (React)
+
+```
+src/pages/
+├── ContentPage.tsx            // Main content management page
+└── NoteEditorPage.tsx         // Note editing page
+
+src/components/content/
+├── ContentList.tsx            // List of notes in directory
+├── NoteCard.tsx              // Individual note preview
+├── NoteEditor.tsx            // Markdown editor component
+├── CreateNoteModal.tsx       // Modal for creating new notes
+└── DeleteConfirmModal.tsx    // Confirmation for deletions
+
+src/hooks/
+├── useContent.ts             // Content CRUD operations
+├── useContentList.ts         // Directory content listing
+└── useNoteEditor.ts          // Note editing state management
+
+src/lib/content/
+├── content-service.ts        // API client for content operations
+├── content-cache.ts          // Client-side content caching
+└── types.ts                  // TypeScript type definitions
+```
+
 ## User Experience Flow
 
 ### First Time User
@@ -115,6 +140,49 @@ GET /api/content/:id/download      // Get signed URL for content
 3. User clicks note → Opens editor
 4. User makes changes → Auto-saves
 5. User can delete with confirmation
+
+### Core Operations
+- **Create**: Title input → Editor → Auto-save
+- **Read**: Click note → Load from cache/Cloud Storage
+- **Update**: Edit in place → Auto-save
+- **Delete**: Delete button → Confirmation → Remove from both stores
+
+## Implementation Plan
+
+### Phase 1: Backend Foundation (API Package)
+1. **Basic Content Storage**
+   - Simple Content entity with Firestore integration
+   - Basic Cloud Storage service for markdown files
+   - Root directory auto-creation service
+   - Authentication middleware for content endpoints
+
+2. **Simple Content API**
+   - Core RESTful endpoints (CRUD operations)
+   - Basic error handling and validation
+
+### Phase 2: Frontend Foundation (Web Package)
+1. **Content Service Layer**
+   - Simple API client for content operations
+   - Basic TypeScript type definitions
+   - Simple content hooks (useContent, useContentList)
+
+2. **Basic UI Components**
+   - ContentPage for listing notes
+   - Simple NoteCard component
+   - CreateNoteModal for new notes
+   - Basic delete functionality with confirmation
+
+### Phase 3: Note Editor & Polish
+1. **Simple Note Editor**
+   - Integrate mdx-editor for markdown editing
+   - Basic auto-save functionality
+   - Navigation between list and editor
+   - Basic loading states
+
+2. **Final Polish**
+   - Basic error handling and user feedback
+   - Simple responsive design
+   - E2E test for core user journey
 
 ## Stories Breakdown
 
@@ -159,18 +227,62 @@ This feature will be implemented through the following stories:
 
 ## Success Metrics
 
-- Users create at least 3 notes within first week
-- Average session time > 10 minutes
-- User retention > 60% after first week
+### User Engagement
+- Number of notes created per user
+- Time spent in editor per session
+- Daily/weekly active users
+- User retention after first week
+
+### Technical Performance
+- API response times
+- Content loading performance
+- Error rates and recovery
+- Cost per user (Firestore + Cloud Storage)
+
+### Cost Tracking
+- Firestore read/write operations per user
+- Cloud Storage usage per user
+- API call volume
+- Total cost per active user
+
+### Specific Targets
+- Users create ≥3 notes within first week
+- Average session time >10 minutes
+- User retention >60% after first week
 - Zero data loss incidents
-- Cost per user < $0.10/month
+- Cost per user <$0.10/month
+
+## Technical Decisions
+
+### Editor Choice
+**Decision**: Use mdx-editor for markdown editing
+- **Rationale**: Open source, more customizable, cost-effective
+- **Alternative**: wysimark (commercial, more polished out-of-box)
+
+### Auto-save Strategy
+**Decision**: Implement debounced auto-save (3-second delay)
+- Saves user changes automatically
+- Prevents excessive API calls
+- Shows save status to user
+
+### Error Handling
+**Decision**: Graceful degradation approach
+- Cache content locally when possible
+- Show clear error messages
+- Provide retry mechanisms
+- Never lose user content
 
 ## Risk Mitigation
 
-- **Editor Integration**: Start with basic markdown, enhance gradually
-- **Auto-save Performance**: Implement debouncing and local caching
-- **Data Loss**: Visible save indicators + reliable error handling
-- **User Confusion**: Clear onboarding with helpful empty states
+### Technical Risks
+- **Editor integration complexity**: Start with basic markdown, enhance gradually
+- **Auto-save performance**: Implement debouncing and local caching
+- **Content loading performance**: Aggressive caching + loading states
+
+### User Experience Risks
+- **Learning curve**: Simple, intuitive interface with clear actions
+- **Data loss fears**: Visible auto-save indicators + reliable error handling
+- **Empty state confusion**: Clear onboarding flow with helpful empty states
 
 ## Definition of Done
 

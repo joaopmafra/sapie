@@ -78,3 +78,5 @@ functions
 
 # Generated API client (should be regenerated, not versioned)
 packages/web/src/lib/api-client/
+
+exec
