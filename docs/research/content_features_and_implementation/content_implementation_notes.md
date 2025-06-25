@@ -361,6 +361,8 @@ Tag names with optional values.
 - Generate notes from pdf's
 - Generate flashcards from notes
 - AI-powered chat with the content
+- AI-generated short videos from content
+- AI-generated podcasts from content
 - etc.
 
 ## Problems to solve
