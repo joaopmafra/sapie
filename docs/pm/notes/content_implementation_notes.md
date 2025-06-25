@@ -58,21 +58,26 @@ We need to support the following types of content:
 **Question:** Should we store the content path or depth? I don't think this is needed since the content will be cached
 in the client and fetching by id will be fast.
 
-**Question:** Should we store only metadata on Firestore and contents on cloud storage?
-
 **Requirements:**
 - The solution must be cost-effective
 - Track each API call, number of Firestore queries performed, Cloud Storage calls, and amount of data transferred
 - Consider a new entity "directory index" that should hold all the metadata for the directory and its immediate children
 - The goal is to be able to measure the cost per user
 
-**Hybrid approach:**
-- Small content (< 100KB): Store directly in Firestore
-- Large content (> 100KB): Store in Cloud Storage with metadata in Firestore
-- Implement automatic migration between storage types based on size
+**Decision: Cloud Storage + Firestore Metadata**
 
-**Question:** Is this cost-effective? Storing metadata on Firestore and actual contents on Cloud Storage will be more
-cost-effective?
+**Storage Architecture:**
+- **Firestore**: Store all metadata (id, name, type, parentId, createdAt, updatedAt, ownerId, contentUrl, size, etc.)
+- **Cloud Storage**: Store actual content (markdown, images, etc.) and generate signed URLs for access
+- **Benefits**: 1000x cheaper storage costs, no size limitations, simple implementation, efficient metadata queries
+
+**Implementation:**
+- Each content document in Firestore contains metadata + `contentUrl` pointing to Cloud Storage
+- Content uploaded to Cloud Storage with structured paths: `/{ownerId}/{contentType}/{contentId}`
+- Use Cloud Storage signed URLs for secure, cacheable content access
+- Lazy load content from Cloud Storage URLs when needed
+
+Look at the storage_solution_decision.md file for more details.
 
 ## Content Types Implementation
 
@@ -113,9 +118,10 @@ https://github.com/excalidraw/excalidraw
 
 Only in a future version.
 
-### Flashcard Decks
+### Flashcards
 
-#### FlashcardDeck Structure
+#### Flashcards Structure
+
 - **Flashcard**
   - Content (front/back): Markdown with attachments
   - Start/end time for tracking the total time taken to answer
@@ -124,8 +130,14 @@ Only in a future version.
   - Learning statistics
 - **ReversedFlashcard**
   - Do not have contents, only a reference to flashcard
+- When designing the data model, consider the atributes that will be used for the spaced repetition algorithm
 
-**Decision needed:** Store flashcards in specific content or inside flashcard decks?
+#### Flashcard Decks Structure
+
+- Name and description
+- Permissions and sharing settings
+- Custom organization options (sort order, view type)
+- Should have references to flashcards
 
 #### Spaced Repetition Algorithm
 
@@ -178,11 +190,12 @@ Notes, images, and other contents may have the following as attachments:
 - Recent searches history
 
 **Indexing strategy:**
--Searching and indexing must be done in the client side
+-Searching and indexing must be done in the client side for now
   - https://github.com/nextapps-de/flexsearch
   - https://www.google.com/search?q=js+full+text+search+library
 - Real-time content indexing
 - Faceted search support
+- In future versions, we will use a search service like Algolia or Elasticsearch
 
 ### Virtual File System
 - Local cache with intelligent invalidation
@@ -333,3 +346,20 @@ TODO
 - User workflow testing
 - Cross-browser compatibility
 - Mobile device testing
+
+## Problems to solve
+
+### Missing Data Validation Strategy
+**Problem**: No mention of input validation, sanitization, or content security policies.
+**Improvement**:
+- Define validation rules for each content type
+- Specify sanitization procedures for user-generated content
+- Add XSS and injection attack prevention measures
+
+### Incomplete Cost Analysis
+**Problem**: The doc mentions cost optimization but lacks concrete metrics or budgets.
+**Improvement**:
+- Define specific cost targets per user
+- Implement detailed cost tracking and alerting
+- Create cost optimization decision tree
+
