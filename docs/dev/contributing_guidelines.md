@@ -31,23 +31,32 @@ For environment setup, prerequisites, and getting started instructions, see the
 
 ## Story-Driven Workflow
 
-### Story Organization
+### PM Artifact Organization
 
-Stories are organized in folders under `docs/pm/stories/`:
+The project management artifacts are organized in a hierarchical structure under `docs/pm/`:
 
-- `0-current/` - Currently being worked on
-- `1-ready/` - Ready to be picked up
-- `2-backlog/` - Future work
-- `3-done/` - Completed stories
+- `1-epics/` - High-level business objectives
+    - `1-ready/` - Epics ready for feature breakdown
+    - `2-to-refine/` - Epics requiring further refinement
+- `2-features/` - Feature-level requirements
+    - `1-ready/` - Features ready for story breakdown
+    - `2-to-refine/` - Features requiring further refinement
+- `3-stories/` - Development stories (implementation units)
+    - `1-ready/` - Stories ready to be picked up for development
+    - `2-to-refine/` - Stories requiring further refinement
+- `4-working/` - Currently being worked on (any level: epics, features, or stories)
+- `5-done/` - Completed work
 
 ### Story Lifecycle
 
-1. **Pick a story** from `1-ready/`
-2. **Move to `0-current/`** when starting work
+1. **Pick a story** from `3-stories/1-ready/`
+2. **Move to `4-working/`** when starting work
 3. **Follow the story tasks** in sequence (see [story template](story_template.md))
 4. **Complete all task components**: Implementation + Tests + Documentation
 5. **Verify quality** using project scripts
-6. **Move to `3-done/`** when complete if you are not an AI Agent; if you are, ask the user to do it manually.
+6. **Move to `5-done/`** when complete if you are not an AI Agent; if you are, ask the user to do it manually.
+
+The same applies for epics and features.
 
 ### PBI Creation
 
@@ -56,7 +65,7 @@ Stories are organized in folders under `docs/pm/stories/`:
   manageable stories
 - ✅ Update the [last_pbi_number.md](../pm/last_pbi_number.md) file with the new PBI number
 - ✅ Use the [story template](story_template.md) for new stories
-- ✅ Place in appropriate folder (`1-ready/` or `2-backlog/`)
+- ✅ Place in appropriate folder (`3-stories/1-ready/` or `3-stories/2-to-refine/`)
 - ✅ Include comprehensive acceptance criteria
 - ✅ Break down into manageable tasks with implementation, testing, and documentation components
 
