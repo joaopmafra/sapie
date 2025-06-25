@@ -9,10 +9,10 @@ echo "Building api..."
 cd packages/api
 pnpm run build:firebase
 cd ../..
-echo "OK"
+printf "OK\n\n"
 
 echo "Building web..."
 cd packages/web
 pnpm run build:firebase
 cd ../..
-echo "OK"
+printf "OK\n\n"

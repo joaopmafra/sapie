@@ -9,7 +9,7 @@ echo "Running api unit tests..."
 cd packages/api
 pnpm test
 cd ../..
-echo "OK"
+printf "OK\n\n"
 
 # TODO add web unit tests and run them here
 
@@ -17,10 +17,10 @@ echo "Running api e2e tests..."
 cd packages/api
 pnpm test:e2e
 cd ../..
-echo "OK"
+printf "OK\n\n"
 
 echo "Running app e2e tests..."
 cd packages/test-e2e
 pnpm run test
 cd ../..
-echo "OK"
+printf "OK\n\n"

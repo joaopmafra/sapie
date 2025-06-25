@@ -289,8 +289,7 @@ For package-specific testing details, see individual package READMEs:
 
 Run these scripts in sequence after completing implementation:
 
-- ✅ **Fix linting issues** - Run `./scripts/lint-all.sh` to automatically fix ESLint violations
-- ✅ **Fix formatting issues** - Run `./scripts/format-all.sh` to automatically fix code formatting
+- ✅ **Fix formatting and linting issues** - Run `./scripts/format-lint-all.sh` to automatically fix ESLint violations
 - ✅ **Verify code quality** - Run `./scripts/verify-all.sh` to ensure all quality checks pass
 - ✅ **Run tests** - Run `./scripts/build-test-all.sh` to ensure all tests pass
 - ✅ **Address any failures** - Fix any remaining linting, formatting, type, or test errors

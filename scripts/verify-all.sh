@@ -8,11 +8,11 @@ cd packages/api
 pnpm run lint:check
 pnpm run format:check
 cd ../..
-echo "OK"
+printf "OK\n\n"
 
 echo "Verifying web..."
 cd packages/web
 pnpm run lint
 pnpm run format:check
 cd ../..
-echo "OK"
+printf "OK\n\n"

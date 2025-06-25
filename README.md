@@ -140,16 +140,25 @@ This starts:
 Project-level scripts for convenience:
 
 ```bash
-# Build all packages (from root)
-./scripts/build-all.sh
+# Lint all packages
+pnpm run lint
+
+# Format all packages  
+pnpm run format
+
+# Format and lint all packages in sequence
+pnpm run forlin
+
+# Verify code quality across all packages (format check + lint)
+pnpm run verify
+
+# Build all packages
+pnpm run build
 
 # Build and test all packages
-./scripts/build-test-all.sh
+pnpm run test
 
-# Verify code quality across all packages
-./scripts/verify-all.sh
-
-# Start Firebase emulator with all services
+# Build and start Firebase emulator with all services
 pnpm run emulator
 ```
 

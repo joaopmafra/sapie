@@ -7,10 +7,11 @@ echo "Linting packages/api..."
 cd packages/api
 pnpm run lint
 cd ../..
-echo "OK"
+printf "OK\n\n"
 
 echo "Linting packages/web..."
 cd packages/web
 pnpm run lint:fix
 cd ../..
-echo "OK"
+printf "OK\n\n"
+

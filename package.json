@@ -8,6 +8,7 @@
   "scripts": {
     "lint": "scripts/lint-all.sh",
     "format": "scripts/format-all.sh",
+    "forlin": "scripts/format-lint-all.sh",
     "verify": "scripts/verify-all.sh",
     "build": "scripts/build-all.sh",
     "test": "scripts/build-test-all.sh",
