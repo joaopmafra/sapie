@@ -65,16 +65,19 @@ The same applies for epics and features.
   manageable stories
 - ✅ Update the [last_pbi_number.md](../pm/last_pbi_number.md) file with the new PBI number
 - ✅ Name the file using the following format: `{pbi_number}-{pbi_type}-{pbi_name}.md`
-  - `pbi_number` is the number of the PBI
-  - `pbi_type` is the type of the PBI (epic, feature, story)
-  - `pbi_name` is the name of the PBI
-  - Example: `1-epic-content.md`
-  - Example: `2-feature-content.md`
-  - Example: `3-story-content.md`
+    - `pbi_number` is the number of the PBI
+    - `pbi_type` is the type of the PBI (epic, feature, story)
+    - `pbi_name` is the name of the PBI
+    - Example: `1-epic-content.md`
+    - Example: `2-feature-content.md`
+    - Example: `3-story-content.md`
 - ✅ Use the [story template](story_template.md) for new stories
 - ✅ Place in appropriate folder (`3-stories/1-ready/` or `3-stories/2-to-refine/`)
 - ✅ Include comprehensive acceptance criteria
 - ✅ Break down into manageable tasks with implementation, testing, and documentation components
+- ✅ **Full-stack story approach**: Default to single stories for features requiring both backend and frontend work
+- ✅ **Story splitting**: Only split when there are genuine complexity or dependency reasons (see detailed guidelines
+  in [Iterative Development Approach](#iterative-development-approach))
 
 ## Development Process
 
@@ -103,6 +106,29 @@ Imagine you're tasked with building a car for users who need transportation:
   even better!), then finally a sophisticated car
 
 Each iteration is a complete, working solution that solves the core problem while progressively adding capabilities.
+
+##### Full-Stack Feature Implementation
+
+**Core principle**: Build complete, working features that users can immediately benefit from.
+
+Just like the transportation analogy, avoid building incomplete parts (API without UI, or UI without backend). Instead, 
+build simple but complete end-to-end functionality that delivers real user value.
+
+**Default approach**: Single story for full-stack features
+- ✅ **Complete user workflow**: From UI interaction to data persistence
+- ✅ **Immediate user value**: Feature works end-to-end upon completion
+- ✅ **Faster delivery**: No coordination overhead between separate stories
+- ✅ **Example**: "Add note creation" → API endpoint + UI form + validation + storage
+
+**When to split**: Only for genuine complexity or dependency reasons
+- ❌ **Don't split just because** it "feels like too much work"
+- ✅ **Do split when**:
+  - Backend serves multiple frontends and has standalone value
+  - Significant technical complexity differences (simple UI + complex data processing)
+  - Different team members must work simultaneously
+  - Clear dependency chain exists (foundation → feature)
+- ✅ **Structure**: Create parent feature with child stories for backend and frontend components, not isolated
+  backend/frontend stories
 
 #### Applying This to Software Features
 
