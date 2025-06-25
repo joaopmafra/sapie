@@ -1,6 +1,21 @@
 # Content Implementation Notes
 
-## Supported Content Types
+## Table of Contents
+
+- [Overview & Requirements](#overview--requirements)
+- [Technical Architecture](#technical-architecture)
+- [Content Types & Features](#content-types--features)
+- [System Features](#system-features)
+- [Security & Privacy](#security--privacy)
+- [User Experience & Interface](#user-experience--interface)
+- [Development & Testing](#development--testing)
+- [Analytics & Monitoring](#analytics--monitoring)
+- [Future Features](#future-features)
+- [Outstanding Issues](#outstanding-issues)
+
+## Overview & Requirements
+
+### Supported Content Types
 
 We need to support the following types of content:
 
@@ -13,15 +28,6 @@ We need to support the following types of content:
 - PDFs (only in a future version)
 - Audio files (only in a future version)
 
-## Technical Constraints
-
-### Firestore Limitations
-
-**Maximum document length:** 1 MiB (1,048,576 bytes)
-- Reference: https://firebase.google.com/docs/firestore/quotas
-- For now, don't allow notes/flashcards/quizzes bigger than that
-- In the future we must find a way to support bigger documents
-
 ### Performance Considerations
 
 - **Lazy loading:** Load content on-demand to improve initial page load times
@@ -29,31 +35,39 @@ We need to support the following types of content:
 - ~~**Image optimization:** Compress and resize images automatically~~
 - **Content indexing:** Build efficient search indexes for quick content discovery
 
-## Data Architecture
+## Technical Architecture
 
-### Content Hierarchy
+### Technical Constraints
+
+#### Firestore Limitations
+
+We will store only metadata on Firestore, so the  1 MiB Firestore document limit shouldn't be a problem.
+
+### Data Architecture
+
+#### Content Hierarchy
 
 **Content entities:**
 - All content types inherit from a base `Content` entity
 - Each content has: `id`, `name`, `type`, `parentId`, `createdAt`, `updatedAt`, `ownerId`
 - Directory traversal through parent-child relationships
 
-### Study Tracking
+#### Study Tracking
 
 - Study tracking must be separated from the flashcard and quizzes to allow multiple users to study the same content
 
-### Entity Versioning
+#### Entity Versioning
 - Entity versioning for easy migration
 - Migration happens only when users access the application
 - Version compatibility matrix to handle breaking changes
 
-### Content Versioning
+#### Content Versioning
 - Content versioning to allow restoration of old versions
 - Keep last N versions (configurable, default: 10)
 - Automatic cleanup of old versions after retention period
 - Support for version comparison and diff visualization
 
-### Storage Strategy
+#### Storage Strategy
 
 **Question:** Should we store the content path or depth? I don't think this is needed since the content will be cached
 in the client and fetching by id will be fast.
@@ -79,7 +93,21 @@ in the client and fetching by id will be fast.
 
 Look at the storage_solution_decision.md file for more details.
 
-## Content Types Implementation
+### API Design
+
+#### RESTful Endpoints
+- Consistent naming conventions
+- Proper HTTP status codes
+- Comprehensive error handling
+- Rate limiting and throttling
+
+### Virtual File System
+- Local cache with intelligent invalidation
+- Local indexing for offline search
+- ~~Conflict resolution for offline changes~~ we won't support offline mode for now
+- ~~Sync status indicators~~ we won't support offline mode for now
+
+## Content Types & Features
 
 ### Directories
 
@@ -197,12 +225,6 @@ Notes, images, and other contents may have the following as attachments:
 - Faceted search support
 - In future versions, we will use a search service like Algolia or Elasticsearch
 
-### Virtual File System
-- Local cache with intelligent invalidation
-- Local indexing for offline search
-- ~~Conflict resolution for offline changes~~ we won't support offline mode for now
-- ~~Sync status indicators~~ we won't support offline mode for now
-
 ### Tags System
 
 Tag names with optional values.
@@ -247,29 +269,7 @@ Tag names with optional values.
 **Sharing methods:**
 - Direct user sharing
 
-## Security and Privacy
-
-TODO
-
-## Gamification
-
-- Badges
-- Allow users to compete with each other
-- etc.
-
-### User preferences
-
-- Default view modes
-- Don't ask again
-- etc.
-
-### AI features
-
-- AI-powered content creation
-- Generate notes from pdf's
-- Generate flashcards from notes
-- AI-powered chat with the content
-- etc.
+## Security & Privacy
 
 ### Data Protection
 - Encryption at rest and in transit
@@ -283,7 +283,7 @@ TODO
 - File type validation and scanning
 - Rate limiting to prevent abuse (only in a future version)
 
-## User Experience
+## User Experience & Interface
 
 ### Content Creation
 - Drag-and-drop file uploads (only in a future version)
@@ -300,15 +300,35 @@ TODO
 - ~~Offline capability indicators~~ we won't support offline mode for now
 - Progressive web app features
 
-## API Design
+### User preferences
 
-### RESTful Endpoints
-- Consistent naming conventions
-- Proper HTTP status codes
-- Comprehensive error handling
-- Rate limiting and throttling
+- Default view modes
+- Don't ask again
+- etc.
 
-## Analytics and Monitoring
+## Development & Testing
+
+### Testing Strategy
+
+#### Unit Testing
+- Content validation logic
+- Business rule enforcement
+- Data transformation functions
+- Error handling scenarios
+- Virtual file system
+
+#### Integration Testing
+- API endpoint testing
+- Database interaction testing
+- File upload and storage testing
+- Authentication and authorization testing
+
+#### End-to-End Testing
+- User workflow testing
+- Cross-browser compatibility
+- Mobile device testing
+
+## Analytics & Monitoring
 
 ### Content Analytics
 - Popular content identification
@@ -327,27 +347,25 @@ TODO
 - Automated cost alerts
 - Resource optimization recommendations
 
-## Testing Strategy
+## Future Features
 
-### Unit Testing
-- Content validation logic
-- Business rule enforcement
-- Data transformation functions
-- Error handling scenarios
-- Virtual file system
+### Gamification
 
-### Integration Testing
-- API endpoint testing
-- Database interaction testing
-- File upload and storage testing
-- Authentication and authorization testing
+- Badges
+- Allow users to compete with each other
+- etc.
 
-### End-to-End Testing
-- User workflow testing
-- Cross-browser compatibility
-- Mobile device testing
+### AI features
+
+- AI-powered content creation
+- Generate notes from pdf's
+- Generate flashcards from notes
+- AI-powered chat with the content
+- etc.
 
 ## Problems to solve
+
+We may not need to solve all of these problems, but we should at least be aware of them.
 
 ### Missing Data Validation Strategy
 **Problem**: No mention of input validation, sanitization, or content security policies.
@@ -363,3 +381,42 @@ TODO
 - Implement detailed cost tracking and alerting
 - Create cost optimization decision tree
 
+### Incomplete Security Implementation
+**Problem**: Security section was originally just marked as "TODO" and lacks comprehensive coverage.
+**Improvement**:
+- Expand security section with proper authentication and authorization strategies
+- Define comprehensive data protection policies
+- Add specific security testing requirements
+- Document threat modeling and risk assessment procedures
+
+### Inconsistent Documentation Detail Levels
+**Problem**: Some sections are very detailed while others are just bullet points, making it hard to understand implementation requirements.
+**Improvement**:
+- Standardize the level of detail across all sections
+- Ensure each feature has clear acceptance criteria
+- Add implementation examples where needed
+- Define consistent documentation templates
+
+### Missing Implementation Priorities
+**Problem**: Document doesn't clearly indicate what should be implemented first vs. later, making sprint planning difficult.
+**Improvement**:
+- Add priority levels (P0, P1, P2) to all features
+- Create implementation phases with dependencies
+- Define MVP vs. future version boundaries clearly
+- Add effort estimation guidelines
+
+### Scattered Open Questions and TODOs
+**Problem**: TODOs and open questions are scattered throughout the document, making them easy to miss.
+**Improvement**:
+- Create a dedicated "Open Questions" section
+- Track all unresolved decisions in one place
+- Assign owners and deadlines to open questions
+- Regular review process for outstanding items
+
+### Missing Comprehensive Data Validation Strategy
+**Problem**: No systematic approach to input validation and sanitization across all content types.
+**Improvement**:
+- Create unified validation rules for each content type
+- Define client-side and server-side validation responsibilities
+- Add specific sanitization procedures for user-generated content
+- Document validation error handling and user feedback
