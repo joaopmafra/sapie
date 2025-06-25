@@ -362,6 +362,8 @@ Tag names with optional values.
 - Generate flashcards from notes
 - AI-powered chat with the content
 - AI-generated short videos from content
+  - publish to TikTok
+  - publish to YouTube Shorts
 - AI-generated podcasts from content
 - etc.
 
