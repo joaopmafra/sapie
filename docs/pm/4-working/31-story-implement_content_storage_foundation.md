@@ -13,9 +13,9 @@ As a user, I need to see my personal "My Contents" directory when I log in, so t
 
 ## Feature Context
 
-**Parent Feature**: [Feature 26: Basic Note Management](../../2-features/1-ready/26-feature-basic_note_management.md)
+**Parent Feature**: [Feature 26: Basic Note Management](../2-features/1-ready/26-feature-basic_note_management.md)
 
-**Epic Context**: [Epic 23: Content Management Foundation](../../1-epics/1-ready/23-epic-content_management_foundation.md)
+**Epic Context**: [Epic 23: Content Management Foundation](../1-epics/1-ready/23-epic-content_management_foundation.md)
 
 **Iteration Philosophy**: "Scooter" implementation - complete, working solution that provides immediate value
 
