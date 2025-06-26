@@ -13,6 +13,9 @@ printf "OK\n\n"
 
 # TODO add web unit tests and run them here
 
+# Clean up any running Firebase instances before running tests
+./scripts/cleanup-firebase.sh
+
 echo "Running api e2e tests..."
 cd packages/api
 pnpm test:e2e

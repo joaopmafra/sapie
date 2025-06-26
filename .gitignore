@@ -80,3 +80,4 @@ functions
 packages/web/src/lib/api-client/
 
 exec
+/.vscode
