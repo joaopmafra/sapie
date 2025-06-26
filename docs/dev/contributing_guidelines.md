@@ -339,9 +339,12 @@ Run these scripts in sequence after completing implementation:
 - ✅ **Verify code quality** - Run `./scripts/verify-all.sh` to ensure all quality checks pass
 - ✅ **Run tests** - Run `./scripts/build-test-all.sh` to ensure all tests pass
 - ✅ **Address any failures** - Fix any remaining linting, formatting, type, or test errors
+- ✅ **Verify all claims made** - Use tool calls to confirm every claim about implementation
 - ✅ **Validate story completion** - Verify all acceptance criteria are met
 
 **Important**: If `verify-all.sh` or `build-test-all.sh` fail, address the specific issues reported before proceeding.
+
+**Critical**: Before claiming any task is complete, use appropriate tools (read_file, grep_search, codebase_search) to verify your claims are accurate.
 
 ### Communication
 
@@ -349,6 +352,74 @@ Run these scripts in sequence after completing implementation:
 - ✅ **Explain implementation decisions** - Provide reasoning for choices made
 - ✅ **Ask for clarification** - If story requirements are unclear, ask for guidance
 - ✅ **Report blockers immediately** - Identify and communicate implementation obstacles
+
+### Honesty and Verification Requirements
+
+**CRITICAL**: AI agents must be completely honest about what has been implemented and must verify every claim before making it.
+
+#### Mandatory Verification Before Making Claims
+
+Before marking ANY task as complete or making ANY claim about implementation:
+
+- ✅ **Verify files actually exist** - Use file reading tools to confirm files are present
+- ✅ **Verify code actually works** - Use search tools to confirm implementation matches claims
+- ✅ **Verify tests actually exist and pass** - Use grep/search to confirm test files contain actual test cases
+- ✅ **Verify functionality actually works** - Don't claim something works without evidence
+
+#### Examples of Required Verification
+
+**Before claiming "Unit tests implemented":**
+```bash
+# MUST verify test files exist and contain actual tests
+grep_search query="describe|it|test" include_pattern="*.spec.ts"
+read_file target_file="path/to/test.spec.ts" # Confirm tests exist
+```
+
+**Before claiming "API endpoint working":**
+```bash
+# MUST verify endpoint exists in code
+grep_search query="@Get.*root" include_pattern="*.controller.ts"
+read_file target_file="path/to/controller.ts" # Confirm implementation
+```
+
+**Before claiming "E2E tests cover workflow":**
+```bash
+# MUST verify E2E tests actually test the claimed functionality
+grep_search query="workspace|content" include_pattern="test-e2e/**/*.spec.ts"
+```
+
+#### Honesty Requirements
+
+- ✅ **Admit when you don't know** - "I cannot verify if this works" instead of assuming
+- ✅ **Admit when you haven't implemented something** - "Tests not implemented" instead of claiming they exist
+- ✅ **Admit when you're making assumptions** - "Assuming this works based on..." instead of claiming certainty
+- ✅ **Admit when verification failed** - "Cannot confirm tests pass" instead of marking complete
+
+#### Consequences of Dishonesty
+
+Dishonest claims:
+- **Waste developer time** when they discover the truth later
+- **Undermine trust** in AI assistance
+- **Create technical debt** by hiding missing components
+- **Compromise project quality** by giving false confidence
+
+#### Red Flag Phrases to Avoid
+
+Never use these phrases without explicit verification:
+- ❌ "Tests are passing" (without running them)
+- ❌ "E2E coverage is complete" (without checking E2E test content)
+- ❌ "Implementation is tested" (without verifying test files exist)
+- ❌ "Everything works" (without evidence)
+
+#### Required Honest Alternatives
+
+Instead of false claims, use honest documentation:
+- ✅ "Implementation complete, tests deferred for startup speed"
+- ✅ "Functionality works via manual testing, automated tests not implemented"
+- ✅ "Cannot verify test coverage, marking as incomplete"
+- ✅ "Code compiles successfully, runtime testing pending"
+
+**Remember**: Honesty builds trust. Dishonesty destroys it. Always verify claims before making them.
 
 ### AI Agent DON'Ts
 
@@ -358,6 +429,7 @@ Run these scripts in sequence after completing implementation:
 - ❌ **Don't work on multiple stories** - Focus on one story at a time
 - ❌ **Don't skip verification** - Always run quality checks before completion
 - ❌ **Don't mark test tasks complete without actual tests** - Only mark test tasks as ✅ when test files exist and pass
+- ❌ **Don't make unverified claims** - Every claim about implementation must be verified with tool calls
 
 ## Communication & Collaboration
 
