@@ -3,6 +3,9 @@
 # Firebase Cleanup Script
 # Kills any running Firebase emulator processes and clears ports
 
+# TODO this is not the right way to stop firebase emulator; the right way is to send a SIGINT to the process
+# TODO we should also stop only the firebase emulator and not other processes
+
 echo "🧹 Cleaning up Firebase emulator processes..."
 
 # Kill Firebase CLI processes (be specific to avoid killing test runners)
@@ -23,34 +26,36 @@ pkill -f "java.*cloud-firestore-emulator" || true
 # Kill processes on Firebase emulator ports
 echo "Clearing Firebase emulator ports..."
 lsof -ti:9099 | xargs kill -9 2>/dev/null || true  # Firebase Auth emulator
-lsof -ti:8080 | xargs kill -9 2>/dev/null || true  # Firestore emulator  
+lsof -ti:8080 | xargs kill -9 2>/dev/null || true  # Firestore emulator
 lsof -ti:9199 | xargs kill -9 2>/dev/null || true  # Database emulator
 lsof -ti:5001 | xargs kill -9 2>/dev/null || true  # Functions emulator
 lsof -ti:4000 | xargs kill -9 2>/dev/null || true  # Emulator UI
 lsof -ti:9000 | xargs kill -9 2>/dev/null || true  # Storage emulator
 lsof -ti:8085 | xargs kill -9 2>/dev/null || true  # Pub/Sub emulator
 
+# TODO remove; there is no need for this
 # Clear any additional common development ports that might conflict
-echo "Clearing additional development ports..."
-lsof -ti:3000 | xargs kill -9 2>/dev/null || true  # Common React dev server
-lsof -ti:5173 | xargs kill -9 2>/dev/null || true  # Vite dev server
-lsof -ti:3001 | xargs kill -9 2>/dev/null || true  # Alternative React port
+#echo "Clearing additional development ports..."
+#lsof -ti:3000 | xargs kill -9 2>/dev/null || true  # Common React dev server
+#lsof -ti:5173 | xargs kill -9 2>/dev/null || true  # Vite dev server
+#lsof -ti:3001 | xargs kill -9 2>/dev/null || true  # Alternative React port
 
 # Wait for processes to fully terminate
 echo "Waiting for processes to terminate..."
-sleep 3
+sleep 1
 
 # Verify cleanup
-echo "Verifying cleanup..."
-REMAINING_FIREBASE=$(pgrep -f "firebase" | wc -l)
-REMAINING_JAVA=$(pgrep -f "java.*firebase" | wc -l)
+#echo "Verifying cleanup..."
+#REMAINING_FIREBASE=$(pgrep -f "firebase" | wc -l)
+#REMAINING_JAVA=$(pgrep -f "java.*firebase" | wc -l)
+#
+#if [ "$REMAINING_FIREBASE" -eq 0 ] && [ "$REMAINING_JAVA" -eq 0 ]; then
+#    echo "✅ Firebase cleanup completed successfully!"
+#else
+#    echo "⚠️  Some Firebase processes may still be running:"
+#    pgrep -f "firebase" || true
+#    pgrep -f "java.*firebase" || true
+#    exit 1
+#fi
 
-if [ "$REMAINING_FIREBASE" -eq 0 ] && [ "$REMAINING_JAVA" -eq 0 ]; then
-    echo "✅ Firebase cleanup completed successfully!"
-else
-    echo "⚠️  Some Firebase processes may still be running:"
-    pgrep -f "firebase" || true
-    pgrep -f "java.*firebase" || true
-fi
-
-echo "🎯 Ready for fresh Firebase emulator startup!" 
+echo "🎯 Ready for fresh Firebase emulator startup!"
