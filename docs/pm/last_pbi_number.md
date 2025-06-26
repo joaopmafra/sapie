@@ -4,7 +4,7 @@ This file is used to track the PBI (product backlog item), which is the number o
 
 ## Current Last PBI Number
 
-36
+37
 
 ## Recent PBIs Created
 
@@ -22,3 +22,4 @@ This file is used to track the PBI (product backlog item), which is the number o
 - **34**: Story - Implement Note Editor
 - **35**: Story - Add Content Operations (Delete, Validation)
 - **36**: Story - Implement Auto-save and Polish
+- **37**: Story - Implement Auth Session Management and Error Handling
