@@ -233,6 +233,52 @@ When time permits and for critical functionality, write:
 **Story Implementation**: Most story tasks will focus on implementation and documentation. Tests should be written only
 for business-critical functionality or when specifically required by the story acceptance criteria.
 
+#### Test Task Marking Guidelines
+
+**CRITICAL**: Only mark test-related tasks as complete when tests actually exist and pass.
+
+##### When to Mark Test Tasks Complete ✅
+
+- **Tests actually exist** - You can see the test files in the codebase
+- **Tests are implemented** - The test files contain actual test cases, not just empty files
+- **Tests pass** - All tests execute successfully when run
+- **Test coverage matches task description** - If task says "unit tests for service X", service X has unit tests
+
+##### When NOT to Mark Test Tasks Complete ❌
+
+- **No test files exist** - Cannot mark "unit tests implemented" if no `.spec.ts` files exist
+- **Empty test files** - Test files exist but contain no actual test cases
+- **Tests fail** - Cannot mark complete if tests don't pass
+- **Relying only on E2E coverage** - E2E tests don't count as unit/integration test completion
+- **Planning to write tests later** - Mark as incomplete or deferred, not complete
+
+##### Alternative Approaches for Startup Speed
+
+If following startup-speed approach and skipping non-critical tests:
+
+- ✅ **Mark task as "Deferred"** - `- [ ] Unit tests (deferred for startup speed)`
+- ✅ **Update task description** - `- [x] Implementation complete (tests deferred)`
+- ✅ **Add note in story** - Document testing decisions in story notes
+- ✅ **Be honest in documentation** - Don't claim tests exist when they don't
+
+##### Examples
+
+**Good test task marking:**
+```markdown
+- [x] Unit tests for UserService - tests/user.service.spec.ts created and passing
+- [x] Integration tests for auth flow - 5 test cases covering happy path and errors
+- [ ] Performance tests (deferred - not critical for MVP)
+```
+
+**Bad test task marking:**
+```markdown
+- [x] Unit tests for UserService (covered by E2E tests)
+- [x] Integration tests (will add later)
+- [x] Component tests (functionality works, so marking complete)
+```
+
+**Remember**: It's better to be honest about test coverage than to claim tests exist when they don't. This helps with future maintenance and debugging.
+
 #### Package-Level Testing
 
 Each package must be tested separately:
@@ -311,6 +357,7 @@ Run these scripts in sequence after completing implementation:
 - ❌ **Don't assume requirements** - Ask for clarification if story details are unclear
 - ❌ **Don't work on multiple stories** - Focus on one story at a time
 - ❌ **Don't skip verification** - Always run quality checks before completion
+- ❌ **Don't mark test tasks complete without actual tests** - Only mark test tasks as ✅ when test files exist and pass
 
 ## Communication & Collaboration
 
