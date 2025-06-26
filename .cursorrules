@@ -13,7 +13,7 @@ Full-stack TypeScript knowledge management app:
 ## Critical AI Assistant Rules
 
 ### ⚠️ NEVER Claim Task Completion Without Verification
-- **Tests**: MUST run `npm test` and verify they pass before claiming complete
+- **Tests**: MUST run `pnpm run test` and verify they pass before claiming complete
 - **Implementation**: MUST use tool calls to verify code exists and works
 - **Quality**: MUST run `./scripts/verify-all.sh` before claiming completion
 
@@ -43,4 +43,4 @@ Never use without verification:
 ## Quick Reference
 - **Quality Scripts**: `./scripts/format-lint-all.sh`, `./scripts/verify-all.sh`, `./scripts/build-test-all.sh`
 - **Test Commands**: `cd packages/api && npm test`, `cd packages/web && npm test`
-- **Development Principle**: "Scooter → bicycle → motorcycle → car" (complete working solutions) 
+- **Development Principle**: "Scooter → bicycle → motorcycle → car" (complete working solutions)
