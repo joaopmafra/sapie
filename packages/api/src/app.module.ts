@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth';
+import { ContentModule } from './content/content.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { AuthModule } from './auth';
     }),
     HealthModule,
     AuthModule,
+    ContentModule,
   ],
   controllers: [AppController],
 })

@@ -8,10 +8,12 @@ import { ConfigService } from '@nestjs/config';
  * authentication and user management operations.
  */
 
-// Set Firebase Auth emulator host early if running in emulator mode
+// Set Firebase emulator hosts early if running in emulator mode
 if (process.env.FUNCTIONS_EMULATOR === 'true') {
   process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099';
+  process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
   console.log('Firebase Auth emulator host set to: localhost:9099');
+  console.log('Firestore emulator host set to: localhost:8080');
 }
 
 let app: admin.app.App;
@@ -98,6 +100,13 @@ export function getFirebaseAdmin(): admin.app.App {
  */
 export function getFirebaseAuth(): admin.auth.Auth {
   return getFirebaseAdmin().auth();
+}
+
+/**
+ * Get Firebase Firestore instance
+ */
+export function getFirestore(): admin.firestore.Firestore {
+  return getFirebaseAdmin().firestore();
 }
 
 /**

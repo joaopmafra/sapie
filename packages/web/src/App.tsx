@@ -7,6 +7,7 @@ import {
 } from './components/auth';
 import Header from './components/Header';
 import { AuthProvider } from './contexts/AuthContext';
+import ContentWorkspacePage from './pages/ContentWorkspacePage';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import './App.css';
@@ -25,6 +26,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <HomePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path='/workspace'
+                element={
+                  <ProtectedRoute>
+                    <ContentWorkspacePage />
                   </ProtectedRoute>
                 }
               />
