@@ -1,0 +1,46 @@
+# Sapie Knowledge Management App - Cursor Rules
+
+## Documentation Reference
+📖 **Complete guidelines**: See `docs/dev/contributing_guidelines.md` for comprehensive development principles, workflow, and AI agent requirements.
+
+## Project Context
+Full-stack TypeScript knowledge management app:
+- **Backend**: NestJS + Firebase Admin + Firestore (`packages/api/`)
+- **Frontend**: React + Material-UI + Firebase Auth (`packages/web/`)
+- **E2E**: Playwright tests (`packages/test-e2e/`)
+- **Docs**: PM artifacts in `docs/pm/`, dev docs in `docs/dev/`
+
+## Critical AI Assistant Rules
+
+### ⚠️ NEVER Claim Task Completion Without Verification
+- **Tests**: MUST run `npm test` and verify they pass before claiming complete
+- **Implementation**: MUST use tool calls to verify code exists and works
+- **Quality**: MUST run `./scripts/verify-all.sh` before claiming completion
+
+### Story-Driven Workflow
+- Read complete story in `docs/pm/4-working/` before starting
+- Follow task sequence exactly as written
+- Complete all task components: Implementation + Tests + Documentation
+- Move story to `docs/pm/5-done/` only after user verification
+
+### Code Standards
+- TypeScript everywhere - fix all type errors
+- Follow existing patterns in codebase
+- Use existing auth patterns and Firebase integration
+- Comprehensive error handling with proper HTTP status codes
+
+### Honesty Requirements
+Use these phrases when verification fails:
+- ✅ "Tests implemented but failing - task incomplete until fixed"
+- ✅ "Cannot verify tests pass - marking as incomplete"
+- ✅ "Implementation complete, tests deferred for startup speed"
+
+Never use without verification:
+- ❌ "Tests are passing" (without running them)
+- ❌ "Task X completed" (without running deliverables)
+- ❌ "Comprehensive testing implemented" (without verifying)
+
+## Quick Reference
+- **Quality Scripts**: `./scripts/format-lint-all.sh`, `./scripts/verify-all.sh`, `./scripts/build-test-all.sh`
+- **Test Commands**: `cd packages/api && npm test`, `cd packages/web && npm test`
+- **Development Principle**: "Scooter → bicycle → motorcycle → car" (complete working solutions) 

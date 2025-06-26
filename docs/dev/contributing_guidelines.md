@@ -363,8 +363,31 @@ Before marking ANY task as complete or making ANY claim about implementation:
 
 - ✅ **Verify files actually exist** - Use file reading tools to confirm files are present
 - ✅ **Verify code actually works** - Use search tools to confirm implementation matches claims
-- ✅ **Verify tests actually exist and pass** - Use grep/search to confirm test files contain actual test cases
+- ✅ **VERIFY TESTS ACTUALLY RUN AND PASS** - Use terminal commands to run tests and confirm they pass
 - ✅ **Verify functionality actually works** - Don't claim something works without evidence
+
+#### Critical Rule: NO Test Task Completion Without Running Tests
+
+**ABSOLUTE REQUIREMENT**: Before marking ANY test-related task as complete:
+
+1. **MUST run the actual tests** using terminal commands
+2. **MUST verify tests pass** - failing tests = incomplete task
+3. **MUST fix any test failures** before claiming completion
+4. **MUST NOT assume tests work** based on code inspection alone
+
+**Examples of required verification:**
+```bash
+# For backend unit tests
+cd packages/api && npm test -- --testPathPattern="content.*spec.ts"
+
+# For frontend unit tests  
+cd packages/web && npm test -- --testPathPattern="content.*test.ts"
+
+# For e2e tests
+cd packages/test-e2e && npm test -- tests/content/
+```
+
+**If tests fail**: Fix the failures or mark the task as incomplete. NEVER mark test tasks complete when tests are failing.
 
 #### Examples of Required Verification
 
@@ -407,9 +430,12 @@ Dishonest claims:
 
 Never use these phrases without explicit verification:
 - ❌ "Tests are passing" (without running them)
+- ❌ "Task 8 (testing) is complete" (without running any tests)
+- ❌ "Comprehensive testing implemented" (without running tests to verify)
 - ❌ "E2E coverage is complete" (without checking E2E test content)
 - ❌ "Implementation is tested" (without verifying test files exist)
 - ❌ "Everything works" (without evidence)
+- ❌ "77+ test cases across all testing levels" (without running tests to confirm they work)
 
 #### Required Honest Alternatives
 
@@ -430,6 +456,24 @@ Instead of false claims, use honest documentation:
 - ❌ **Don't skip verification** - Always run quality checks before completion
 - ❌ **Don't mark test tasks complete without actual tests** - Only mark test tasks as ✅ when test files exist and pass
 - ❌ **Don't make unverified claims** - Every claim about implementation must be verified with tool calls
+- ❌ **NEVER claim "Task X completed" without running the actual deliverables** - If the task is about tests, run the tests first
+- ❌ **NEVER write a summary claiming comprehensive test coverage without verifying tests work** - File existence ≠ working tests
+
+#### Common AI Agent Mistakes to Avoid
+
+**Mistake Pattern**: Creating test files but claiming task completion without running them
+- ❌ Creating `.spec.ts` files with test code
+- ❌ Writing documentation about "comprehensive testing"  
+- ❌ Claiming "Task 8: Comprehensive Testing completed"
+- ❌ **BUT**: Never actually running `npm test` to verify tests work
+
+**Correct Approach**: Always verify before claiming
+- ✅ Create test files
+- ✅ Run the tests: `cd packages/api && npm test`
+- ✅ Fix any failures (dependency injection issues, missing imports, etc.)
+- ✅ Only then claim task completion
+
+**If tests fail**: Be honest and say "Tests implemented but failing due to [specific issues]. Task incomplete until fixed."
 
 ## Communication & Collaboration
 
