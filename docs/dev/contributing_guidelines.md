@@ -83,6 +83,9 @@ The same applies for epics and features.
 
 ### Core Principles
 
+TODO: add and document the "baby steps" approach; see 31-story-implement_content_storage_foundation.md task 9 for an
+example of how to do it.
+
 - **One story at a time** - Complete fully before starting another
 - **Follow task sequence** - Complete tasks in the order specified
 - **Complete all components** - Implementation, tests, and documentation for each task
