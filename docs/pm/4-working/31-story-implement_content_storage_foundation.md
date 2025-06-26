@@ -139,7 +139,7 @@ GET / api / content / root  // Get or create user's root directory
 - [ ] Unit tests for root directory creation (deferred for startup speed)
 - [ ] Idempotency tests (deferred for startup speed)
 - [ ] Error handling tests (deferred for startup speed)
-- [x] Integration testing via E2E workflow coverage
+- [ ] Integration testing via E2E workflow coverage
 
 ### Task 3: Create Root Directory API Endpoint
 
@@ -164,7 +164,7 @@ GET / api / content / root  // Get or create user's root directory
 - [ ] Unit tests for endpoint (deferred for startup speed)
 - [ ] Authentication tests (deferred for startup speed)
 - [ ] Auto-creation tests (deferred for startup speed)
-- [x] Integration testing via E2E workflow coverage
+- [ ] Integration testing via E2E workflow coverage
 
 ### Task 4: Create Content Module (Backend)
 
@@ -256,9 +256,9 @@ GET / api / content / root  // Get or create user's root directory
 
 **Testing:**
 
-- [x] Routing works correctly (verified via E2E tests)
-- [x] Authentication protection works (verified via E2E tests)
-- [x] Navigation is intuitive (verified via E2E tests)
+- [x] Routing works correctly (verified via manual tests)
+- [x] Authentication protection works (verified via manual tests)
+- [x] Navigation is intuitive (verified via manual tests)
 
 ### Task 8: Integration Testing and Polish
 
@@ -279,9 +279,9 @@ GET / api / content / root  // Get or create user's root directory
 
 **Testing:**
 
-- [x] E2E tests for complete workflow
-- [x] Performance benchmarks met
-- [x] Error scenarios tested
+- [ ] E2E tests for complete workflow
+- [ ] Performance benchmarks met
+- [ ] Error scenarios tested
 
 ## Acceptance Criteria
 
