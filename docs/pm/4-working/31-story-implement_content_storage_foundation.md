@@ -239,22 +239,11 @@ GET / api / content / root  // Get or create user's root directory
 **Acceptance Criteria:**
 
 - [ ] E2E tests cover complete content workspace workflow
-- [ ] Unit tests for critical backend services
-- [ ] Unit tests for critical frontend components
-- [ ] Integration tests for API endpoints
-- [ ] Performance benchmarks established
-- [ ] Error scenario testing implemented
 
 **Implementation Steps:**
 
 1. Create E2E test for content workspace workflow
-2. Add unit tests for RootDirectoryService
-3. Add unit tests for ContentController
-4. Add unit tests for ContentService (frontend)
-5. Add unit tests for ContentWorkspacePage component
-6. Add integration tests for authentication with content API
-7. Establish performance benchmarks
-8. Test error scenarios (API failures, network issues)
+2. Test error scenarios (API failures, network issues)
 
 **E2E Test Scenarios:**
 
@@ -265,31 +254,6 @@ GET / api / content / root  // Get or create user's root directory
 - [ ] Error states display when API fails
 - [ ] Authentication protection works for content routes
 - [ ] Navigation between home and workspace works
-
-**Unit Test Coverage:**
-
-- [ ] RootDirectoryService.ensureRootDirectory()
-- [ ] RootDirectoryService.findRootDirectory()
-- [ ] RootDirectoryService.createRootDirectory()
-- [ ] ContentController.getRootDirectory()
-- [ ] ContentService.getRootDirectory() (frontend)
-- [ ] ContentWorkspacePage component rendering
-- [ ] ContentWorkspacePage loading states
-- [ ] ContentWorkspacePage error handling
-
-**Integration Test Coverage:**
-
-- [ ] API endpoint /api/content/root with authentication
-- [ ] Firestore integration for root directory creation
-- [ ] Error handling for Firestore failures
-- [ ] Content service with Firebase Auth tokens
-
-**Performance Benchmarks:**
-
-- [ ] Root directory API response < 500ms
-- [ ] ContentWorkspacePage initial load < 2 seconds
-- [ ] Root directory creation < 1 second
-- [ ] Navigation to workspace < 1 second
 
 **Error Scenario Testing:**
 
