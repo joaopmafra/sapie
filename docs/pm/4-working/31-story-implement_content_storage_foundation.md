@@ -134,12 +134,7 @@ GET / api / content / root  // Get or create user's root directory
 4. Implement `ensureRootDirectory(userId: string)` method
 5. Add comprehensive error handling
 
-**Testing:**
 
-- [ ] Unit tests for root directory creation (deferred for startup speed)
-- [ ] Idempotency tests (deferred for startup speed)
-- [ ] Error handling tests (deferred for startup speed)
-- [ ] Integration testing via E2E workflow coverage
 
 ### Task 3: Create Root Directory API Endpoint
 
@@ -159,12 +154,7 @@ GET / api / content / root  // Get or create user's root directory
 4. Apply AuthGuard to endpoint
 5. Integrate with RootDirectoryService
 
-**Testing:**
 
-- [ ] Unit tests for endpoint (deferred for startup speed)
-- [ ] Authentication tests (deferred for startup speed)
-- [ ] Auto-creation tests (deferred for startup speed)
-- [ ] Integration testing via E2E workflow coverage (not implemented)
 
 ### Task 4: Create Content Module (Backend)
 
@@ -183,10 +173,7 @@ GET / api / content / root  // Get or create user's root directory
 4. Export ContentModule
 5. Import in AppModule
 
-**Testing:**
 
-- [x] Module loads correctly (verified via successful compilation)
-- [x] All services can be injected (verified via successful manual testing)
 
 ### Task 5: Create Content Service (Frontend)
 
@@ -205,11 +192,7 @@ GET / api / content / root  // Get or create user's root directory
 4. Import and use Content types
 5. Integrate with existing API client setup
 
-**Testing:**
 
-- [ ] Unit tests for service methods (deferred for startup speed)
-- [ ] Error handling tests (deferred for startup speed)
-- [ ] Integration testing via E2E workflow coverage (not implemented)
 
 ### Task 6: Create Content Workspace Page (Frontend)
 
@@ -231,12 +214,7 @@ GET / api / content / root  // Get or create user's root directory
 5. Add responsive design
 6. Handle authentication requirements
 
-**Testing:**
 
-- [ ] Component unit tests (deferred for startup speed)
-- [ ] Loading state unit tests (deferred for startup speed)
-- [ ] Error handling unit tests (deferred for startup speed)
-- [ ] Integration testing via E2E workflow coverage (not implemented)
 
 ### Task 7: Add Navigation and Routing
 
@@ -254,34 +232,72 @@ GET / api / content / root  // Get or create user's root directory
 3. Add route protection using existing auth guards
 4. Test navigation flow
 
-**Testing:**
 
-- [x] Routing works correctly (verified via manual tests)
-- [x] Authentication protection works (verified via manual tests)
-- [x] Navigation is intuitive (verified via manual tests)
 
-### Task 8: Integration Testing and Polish
+### Task 8: Implement Comprehensive Testing
 
 **Acceptance Criteria:**
 
-- [x] Full end-to-end workflow tested
-- [x] Error handling across full stack
-- [x] Performance meets requirements
-- [x] User experience is smooth and intuitive
+- [ ] E2E tests cover complete content workspace workflow
+- [ ] Unit tests for critical backend services
+- [ ] Unit tests for critical frontend components
+- [ ] Integration tests for API endpoints
+- [ ] Performance benchmarks established
+- [ ] Error scenario testing implemented
 
 **Implementation Steps:**
 
-1. Test complete user flow from login to seeing workspace
-2. Add comprehensive error handling
-3. Optimize performance
-4. Polish UI/UX details
-5. Add loading animations/states
+1. Create E2E test for content workspace workflow
+2. Add unit tests for RootDirectoryService
+3. Add unit tests for ContentController
+4. Add unit tests for ContentService (frontend)
+5. Add unit tests for ContentWorkspacePage component
+6. Add integration tests for authentication with content API
+7. Establish performance benchmarks
+8. Test error scenarios (API failures, network issues)
 
-**Testing:**
+**E2E Test Scenarios:**
 
-- [ ] E2E tests for complete workflow
-- [ ] Performance benchmarks met
-- [ ] Error scenarios tested
+- [ ] User logs in and navigates to /workspace
+- [ ] ContentWorkspacePage loads and displays "My Contents"
+- [ ] Root directory is automatically created for new users
+- [ ] Loading states display correctly during API calls
+- [ ] Error states display when API fails
+- [ ] Authentication protection works for content routes
+- [ ] Navigation between home and workspace works
+
+**Unit Test Coverage:**
+
+- [ ] RootDirectoryService.ensureRootDirectory()
+- [ ] RootDirectoryService.findRootDirectory()
+- [ ] RootDirectoryService.createRootDirectory()
+- [ ] ContentController.getRootDirectory()
+- [ ] ContentService.getRootDirectory() (frontend)
+- [ ] ContentWorkspacePage component rendering
+- [ ] ContentWorkspacePage loading states
+- [ ] ContentWorkspacePage error handling
+
+**Integration Test Coverage:**
+
+- [ ] API endpoint /api/content/root with authentication
+- [ ] Firestore integration for root directory creation
+- [ ] Error handling for Firestore failures
+- [ ] Content service with Firebase Auth tokens
+
+**Performance Benchmarks:**
+
+- [ ] Root directory API response < 500ms
+- [ ] ContentWorkspacePage initial load < 2 seconds
+- [ ] Root directory creation < 1 second
+- [ ] Navigation to workspace < 1 second
+
+**Error Scenario Testing:**
+
+- [ ] API endpoint returns 500 error
+- [ ] Network timeout during API call
+- [ ] Invalid authentication token
+- [ ] Firestore service unavailable
+- [ ] Malformed API responses
 
 ## Acceptance Criteria
 
@@ -311,15 +327,15 @@ GET / api / content / root  // Get or create user's root directory
 
 ## Definition of Done
 
-- [x] All tasks completed and tested
+- [x] All implementation tasks completed (Tasks 1-7)
+- [ ] Comprehensive testing implemented (Task 8)
 - [x] Full-stack integration working
-- [x] Code review completed
-- [x] All acceptance criteria met
-- [ ] E2E test covers complete user workflow (not implemented)
-- [ ] Unit and integration tests (not implemented - startup speed approach)
+- [x] Code review completed  
+- [x] All functional acceptance criteria met
 - [x] Documentation updated
-- [x] Performance benchmarks met
 - [x] **Production deployment successful** - Firestore Database enabled and working
+
+**Note**: Story delivers working functionality immediately (Tasks 1-7 complete). Task 8 (comprehensive testing) can be implemented as a follow-up to provide additional quality assurance.
 
 ## Dependencies
 
@@ -353,7 +369,7 @@ will live.
 **"Scooter" Implementation**: This is a complete, working solution that users can immediately benefit from, even though
 it's simple. It establishes the foundation that all future content features will build upon.
 
-**Testing Approach**: Following startup-speed principles, no tests were implemented for the content functionality. The existing E2E tests only cover authentication and route protection, not the content workspace features. Manual testing was used to verify the implementation works end-to-end.
+**Testing Approach**: Following startup-speed principles, implementation was prioritized over testing to deliver working functionality quickly. Task 8 provides a comprehensive testing plan that can be implemented as a follow-up to ensure quality. Manual testing was used to verify the implementation works end-to-end.
 
 **Future Growth**: This story creates the foundation for Story 32 (adding note creation) and beyond, but delivers
 standalone value. 
