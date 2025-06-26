@@ -232,8 +232,6 @@ GET / api / content / root  // Get or create user's root directory
 3. Add route protection using existing auth guards
 4. Test navigation flow
 
-
-
 ### Task 8: Implement Comprehensive Testing
 
 **Acceptance Criteria:**
@@ -280,6 +278,18 @@ All tests are now passing! The comprehensive test suite covers:
 - Performance requirements (response times)
 - User isolation and security
 - Firebase cleanup automation
+
+### Task 9: Refactor UI
+
+- [ ] Refactor the home page content to a new component "Status"
+- [ ] Run all tests to verify the refactoring
+- [ ] Refactor the workspace page content to a new component "Workspace"
+- [ ] Run all tests to verify the refactoring
+- [ ] Create a new /status page and add the Status component to it
+- [ ] Run all tests to verify the refactoring
+- [ ] Remove the Status component from the home page
+- [ ] Add the Workspace component to the home page
+- [ ] Run all tests to verify the refactoring
 
 ## Acceptance Criteria
 
