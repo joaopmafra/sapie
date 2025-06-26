@@ -338,7 +338,8 @@ For package-specific testing details, see individual package READMEs:
 
 Run these scripts in sequence after completing implementation:
 
-- ✅ **Fix formatting and linting issues** - Run `./scripts/format-lint-all.sh` to automatically fix ESLint violations
+- ✅ **Fix formatting and linting issues** - After implementing any changes, run `./scripts/format-lint-all.sh` to 
+  automatically fix ESLint violations before running any other scripts
 - ✅ **Verify code quality** - Run `./scripts/verify-all.sh` to ensure all quality checks pass
 - ✅ **Run tests** - Run `./scripts/build-test-all.sh` to ensure all tests pass
 - ✅ **Address any failures** - Fix any remaining linting, formatting, type, or test errors
@@ -380,14 +381,19 @@ Before marking ANY task as complete or making ANY claim about implementation:
 
 **Examples of required verification:**
 ```bash
+# For all tests - **PREFER THIS APPROACH WHENEVER POSSIBLE**
+pnpm test
+# or
+scripts/build-test-all.sh
+
 # For backend unit tests
-cd packages/api && npm test -- --testPathPattern="content.*spec.ts"
+cd packages/api && pnpm test -- --testPathPattern="content.*spec.ts"
 
 # For frontend unit tests  
-cd packages/web && npm test -- --testPathPattern="content.*test.ts"
+cd packages/web && pnpm test -- --testPathPattern="content.*test.ts"
 
 # For e2e tests
-cd packages/test-e2e && npm test -- tests/content/
+cd packages/test-e2e && pnpm test -- tests/content/
 ```
 
 **If tests fail**: Fix the failures or mark the task as incomplete. NEVER mark test tasks complete when tests are failing.
