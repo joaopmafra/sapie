@@ -281,15 +281,15 @@ All tests are now passing! The comprehensive test suite covers:
 
 ### Task 9: Refactor UI
 
-- [ ] Refactor the home page content to a new component "Status"
-- [ ] Run all tests to verify the refactoring
-- [ ] Refactor the workspace page content to a new component "Workspace"
-- [ ] Run all tests to verify the refactoring
-- [ ] Create a new /status page and add the Status component to it
-- [ ] Run all tests to verify the refactoring
-- [ ] Remove the Status component from the home page
-- [ ] Add the Workspace component to the home page
-- [ ] Run all tests to verify the refactoring
+- [x] Refactor the home page content to a new component "Status"
+- [x] Run all tests to verify the refactoring
+- [x] Refactor the workspace page content to a new component "Workspace"
+- [x] Run all tests to verify the refactoring
+- [x] Create a new /status page and add the Status component to it
+- [x] Run all tests to verify the refactoring
+- [x] Remove the Status component from the home page
+- [x] Add the Workspace component to the home page
+- [x] Run all tests to verify the refactoring
 
 ## Acceptance Criteria
 

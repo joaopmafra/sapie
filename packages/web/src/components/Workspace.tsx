@@ -17,12 +17,12 @@ import { contentService } from '../lib/content';
 import type { Content } from '../lib/content';
 
 /**
- * Content Workspace Page
+ * Workspace Component
  *
- * This page displays the user's content workspace, starting with their root directory.
+ * This component displays the user's content workspace, starting with their root directory.
  * It provides the entry point for all content management operations.
  */
-const ContentWorkspacePage = () => {
+const Workspace = () => {
   const { currentUser } = useAuth();
   const [rootDirectory, setRootDirectory] = useState<Content | null>(null);
   const [loading, setLoading] = useState(true);
@@ -197,4 +197,4 @@ const ContentWorkspacePage = () => {
   );
 };
 
-export default ContentWorkspacePage;
+export default Workspace;

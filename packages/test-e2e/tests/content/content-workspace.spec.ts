@@ -11,9 +11,9 @@ test.describe('Content Workspace', () => {
     await page.context().clearCookies();
   });
 
-  test('redirects unauthenticated users from /workspace to login', async ({ page }) => {
-    // Try to access the workspace page without authentication
-    await page.goto('/workspace');
+  test('redirects unauthenticated users from home to login', async ({ page }) => {
+    // Try to access the home page without authentication
+    await page.goto('/');
 
     // Should be redirected to login page
     await expect(page).toHaveURL('/login');
@@ -22,14 +22,14 @@ test.describe('Content Workspace', () => {
   });
 
   test('displays loading state while fetching content workspace', async ({ page }) => {
-    // Try to access workspace page
-    await page.goto('/workspace');
+    // Try to access home page
+    await page.goto('/');
 
     // Should redirect to login first
     await expect(page).toHaveURL('/login');
     
     // For unauthenticated users, we can't test the actual loading state
-    // but we can verify the workspace page shows loading when accessed
+    // but we can verify the home page shows loading when accessed
     // This test is more relevant when we have authenticated user access
   });
 
@@ -38,13 +38,13 @@ test.describe('Content Workspace', () => {
     await page.goto('/login');
     await expect(page).toHaveURL('/login');
     
-    // For this test, we'll verify the workspace route protection
+    // For this test, we'll verify the home route protection
     // Error state testing requires authentication setup
-    await page.goto('/workspace');
+    await page.goto('/');
     await expect(page).toHaveURL('/login');
   });
 
-  test('navigation between home and workspace works correctly', async ({ page }) => {
+  test('navigation works correctly', async ({ page }) => {
     // Start at login page
     await page.goto('/login');
     await expect(page).toHaveURL('/login');
@@ -53,8 +53,8 @@ test.describe('Content Workspace', () => {
     await page.goto('/');
     await expect(page).toHaveURL('/login');
 
-    // Try to navigate to workspace (should redirect to login)
-    await page.goto('/workspace');
+    // Try to navigate to status page (should redirect to login)
+    await page.goto('/status');
     await expect(page).toHaveURL('/login');
 
     // Verify navigation header exists
@@ -63,9 +63,9 @@ test.describe('Content Workspace', () => {
 });
 
 test.describe('Content Workspace - Route Protection', () => {
-  test('workspace route requires authentication', async ({ page }) => {
-    // Direct access to workspace should redirect to login
-    await page.goto('/workspace');
+  test('home route requires authentication', async ({ page }) => {
+    // Direct access to home should redirect to login
+    await page.goto('/');
     await expect(page).toHaveURL('/login');
 
     // Verify login page content
@@ -73,13 +73,13 @@ test.describe('Content Workspace - Route Protection', () => {
     await expect(page.locator('.firebaseui-container')).toBeVisible();
   });
 
-  test('workspace route is protected consistently', async ({ page }) => {
-    // Multiple attempts to access workspace should all redirect to login
-    await page.goto('/workspace');
+  test('home route is protected consistently', async ({ page }) => {
+    // Multiple attempts to access home should all redirect to login
+    await page.goto('/');
     await expect(page).toHaveURL('/login');
 
     // Try again after being on login page
-    await page.goto('/workspace');
+    await page.goto('/');
     await expect(page).toHaveURL('/login');
 
     // Navigation should be consistent
@@ -103,9 +103,9 @@ test.describe('Content Workspace - Route Protection', () => {
 test.describe('Content Workspace - Error Scenarios', () => {
   test('handles navigation errors gracefully', async ({ page }) => {
     // Test rapid navigation attempts
-    await page.goto('/workspace');
     await page.goto('/');
-    await page.goto('/workspace');
+    await page.goto('/status');
+    await page.goto('/');
     
     // Should settle consistently on login page
     await expect(page).toHaveURL('/login');
@@ -117,11 +117,11 @@ test.describe('Content Workspace - Error Scenarios', () => {
     await page.goto('/login');
     await expect(page).toHaveURL('/login');
     
-    // Try to navigate to workspace
-    await page.goto('/workspace');
+    // Try to navigate to home
+    await page.goto('/');
     await expect(page).toHaveURL('/login');
     
-    // Use browser back (should stay on login since workspace redirected)
+    // Use browser back (should stay on login since home redirected)
     await page.goBack();
     await expect(page).toHaveURL('/login');
     
@@ -131,8 +131,8 @@ test.describe('Content Workspace - Error Scenarios', () => {
   });
 
   test('maintains route protection during page refresh', async ({ page }) => {
-    // Access workspace
-    await page.goto('/workspace');
+    // Access home
+    await page.goto('/');
     await expect(page).toHaveURL('/login');
     
     // Refresh the page
@@ -149,11 +149,11 @@ test.describe('Content Workspace - Error Scenarios', () => {
 // when full authentication testing is enabled
 
 test.describe.skip('Content Workspace - Authenticated User', () => {
-  test('authenticated user can access workspace and see "My Contents"', async ({ page }) => {
+  test('authenticated user can access home page and see "My Contents"', async ({ page }) => {
     // This test would require:
     // 1. Setting up Firebase Auth emulator
     // 2. Creating and signing in a test user
-    // 3. Verifying workspace page loads with "My Contents" directory
+    // 3. Verifying home page loads with "My Contents" directory
     // 4. Testing the complete user workflow
     
     const testUser = TEST_USERS.VALID_USER_1;
@@ -163,11 +163,11 @@ test.describe.skip('Content Workspace - Authenticated User', () => {
       // Set authentication state in browser
       // (This would require implementing browser-side auth state setup)
       
-      // Navigate to workspace
-      await page.goto('/workspace');
+      // Navigate to home
+      await page.goto('/');
       
-      // Should load workspace page (not redirect to login)
-      await expect(page).toHaveURL('/workspace');
+      // Should load home page (not redirect to login)
+      await expect(page).toHaveURL('/');
       
       // Should show loading state initially
       await expect(page.getByText('Loading your content workspace...')).toBeVisible();
@@ -186,15 +186,15 @@ test.describe.skip('Content Workspace - Authenticated User', () => {
     }
   });
 
-  test('workspace automatically creates root directory for new users', async ({ page }) => {
+  test('home page automatically creates root directory for new users', async ({ page }) => {
     // This test would verify that the API automatically creates
-    // a root directory when a new user first accesses their workspace
+    // a root directory when a new user first accesses their home page
     
     const testUser = TEST_USERS.ADMIN_USER;
     const { user, token } = await createTestUserWithToken(testUser.email, testUser.password);
 
     try {
-      // Set authentication state and navigate to workspace
+      // Set authentication state and navigate to home
       // Verify that root directory is created automatically
       // Verify that subsequent visits use the existing directory
       
@@ -204,7 +204,7 @@ test.describe.skip('Content Workspace - Authenticated User', () => {
     }
   });
 
-  test('workspace shows error state when API fails', async ({ page }) => {
+  test('home page shows error state when API fails', async ({ page }) => {
     // This test would simulate API failures and verify error handling
     
     const testUser = TEST_USERS.VALID_USER_1;
@@ -221,18 +221,18 @@ test.describe.skip('Content Workspace - Authenticated User', () => {
     }
   });
 
-  test('workspace navigation from header works for authenticated users', async ({ page }) => {
+  test('home navigation from header works for authenticated users', async ({ page }) => {
     // This test would verify that authenticated users can navigate
-    // to workspace from the header menu
+    // to home from the header menu
     
     const testUser = TEST_USERS.VALID_USER_1;
     const { user, token } = await createTestUserWithToken(testUser.email, testUser.password);
 
     try {
       // Set authentication state
-      // Navigate to home page
-      // Use header navigation to access workspace
-      // Verify workspace loads correctly
+      // Navigate to status page
+      // Use header navigation to access home
+      // Verify home loads correctly
       
     } finally {
       // Cleanup

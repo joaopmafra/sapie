@@ -7,9 +7,9 @@ import {
 } from './components/auth';
 import Header from './components/Header';
 import { AuthProvider } from './contexts/AuthContext';
-import ContentWorkspacePage from './pages/ContentWorkspacePage';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
+import StatusPage from './pages/StatusPage';
 import './App.css';
 
 function App() {
@@ -30,10 +30,10 @@ function App() {
                 }
               />
               <Route
-                path='/workspace'
+                path='/status'
                 element={
                   <ProtectedRoute>
-                    <ContentWorkspacePage />
+                    <StatusPage />
                   </ProtectedRoute>
                 }
               />

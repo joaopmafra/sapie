@@ -1,4 +1,4 @@
-import { AccountCircle, Logout, Folder } from '@mui/icons-material';
+import { AccountCircle, Logout } from '@mui/icons-material';
 import {
   AppBar,
   Toolbar,
@@ -41,11 +41,6 @@ const Header = () => {
     } catch (error) {
       console.error('Error during logout:', error);
     }
-  };
-
-  const handleWorkspace = () => {
-    handleClose();
-    navigate('/workspace');
   };
 
   return (
@@ -100,10 +95,6 @@ const Header = () => {
               open={Boolean(anchorEl)}
               onClose={handleClose}
             >
-              <MenuItem onClick={handleWorkspace}>
-                <Folder sx={{ mr: 1 }} />
-                My Workspace
-              </MenuItem>
               <MenuItem onClick={handleLogout}>
                 <Logout sx={{ mr: 1 }} />
                 Logout
