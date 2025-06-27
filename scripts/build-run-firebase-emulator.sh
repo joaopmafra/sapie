@@ -8,4 +8,4 @@ scripts/build-all.sh
 scripts/cleanup-firebase.sh
 
 echo "Running firebase emulator with demo project..."
-firebase emulators:start --project=demo-project
+firebase emulators:start
