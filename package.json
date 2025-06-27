@@ -12,6 +12,7 @@
     "verify": "scripts/verify-all.sh",
     "build": "scripts/build-all.sh",
     "test": "scripts/build-test-all.sh",
-    "emulator": "scripts/build-run-firebase-emulator.sh"
+    "emulator": "scripts/build-run-firebase-emulator.sh",
+    "deploy:staging": "firebase deploy --project=sapie-b09be"
   }
 }
