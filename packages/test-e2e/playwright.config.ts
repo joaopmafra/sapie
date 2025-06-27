@@ -64,7 +64,7 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'firebase emulators:start --project=demo-project',
+    command: 'firebase emulators:start',
     url: 'http://127.0.0.1:5001/demo-project/us-central1/api/api',
     reuseExistingServer: !process.env.CI,
     cwd: '..',
