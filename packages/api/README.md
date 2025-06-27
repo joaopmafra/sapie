@@ -98,9 +98,9 @@ Returns the API health status and current timestamp.
 curl -X GET http://localhost:3000/api/health
 
 # Firebase Emulator
-curl -X GET http://127.0.0.1:5001/sapie-b09be/us-central1/api/health
+curl -X GET http://127.0.0.1:5001/demo-project/us-central1/api/health
 
-# Production
+# Staging
 curl -X GET https://sapie-b09be.web.app/api/health
 ```
 

@@ -1,6 +1,5 @@
 {
   "projects": {
-    "default": "demo-project",
-    "staging": "sapie-b09be"
+    "default": "demo-project"
   }
 }

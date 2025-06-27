@@ -80,7 +80,7 @@ pnpm run emulator
 This provides:
 
 - **Web App**: http://localhost:5000
-- **API**: http://localhost:5001/sapie-b09be/us-central1/api
+- **API**: http://localhost:5001/demo-project/us-central1/api
 - **Emulator UI**: http://localhost:4000
 - **Firebase Auth Emulator**: http://localhost:9099
 
@@ -195,10 +195,10 @@ Each package has its own code quality configuration. See individual package READ
 
 ### Firebase Hosting
 
-Deploy the complete application to Firebase:
+Deploy the complete application to Firebase (staging):
 
 ```bash
-firebase deploy
+firebase deploy --project=sapie-b09be
 ```
 
 Or build first, then deploy:
@@ -216,7 +216,7 @@ This will:
 
 After deployment, your application will be available at [https://sapie-b09be.web.app](https://sapie-b09be.web.app).
 
-## Firebase Emulator Management
+## Firebase Commands
 
 ```bash
 # Kill Firebase emulators
@@ -230,6 +230,9 @@ firebase emulators:start --only functions
 
 # Start only Firebase hosting emulator  
 firebase emulators:start --only hosting
+
+# Clear the current project
+firebase use --clear
 ```
 
 ## Environment Requirements

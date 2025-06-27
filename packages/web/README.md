@@ -438,7 +438,7 @@ When running via Firebase emulator (`firebase emulators:start`):
 - API calls proxied through Firebase rewrites
 - Full production-like environment locally
 
-### Production Deployment
+### Staging Deployment
 - Deployed to Firebase Hosting
 - API calls routed to Firebase Functions
 - Available at: https://sapie-b09be.web.app

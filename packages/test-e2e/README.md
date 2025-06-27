@@ -125,7 +125,7 @@ The Playwright configuration handles Firebase emulator lifecycle:
 
 ### Service Endpoints
 - **Web App**: http://localhost:5000
-- **API**: http://localhost:5001/sapie-b09be/us-central1/api
+- **API**: http://localhost:5001/demo-project/us-central1/api
 - **Emulator UI**: http://localhost:4000
 
 ## CI/CD Integration
