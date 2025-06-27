@@ -1,4 +1,4 @@
-import { AccountCircle, Logout } from '@mui/icons-material';
+import { AccountCircle, Logout, Menu as MenuIcon } from '@mui/icons-material';
 import {
   AppBar,
   Toolbar,
@@ -10,12 +10,20 @@ import {
   MenuItem,
   IconButton,
 } from '@mui/material';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../contexts/AuthContext';
 
-const Header = () => {
+interface HeaderProps {
+  onMenuClick?: () => void;
+  showMenuButton?: boolean;
+}
+
+const Header: React.FC<HeaderProps> = ({
+  onMenuClick,
+  showMenuButton = false,
+}) => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -46,6 +54,18 @@ const Header = () => {
   return (
     <AppBar position='static'>
       <Toolbar>
+        {showMenuButton && (
+          <IconButton
+            color='inherit'
+            aria-label='open drawer'
+            onClick={onMenuClick}
+            edge='start'
+            sx={{ mr: 2 }}
+            data-testid='hamburger-menu-button'
+          >
+            <MenuIcon />
+          </IconButton>
+        )}
         <Typography
           variant='h6'
           component='div'

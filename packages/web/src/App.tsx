@@ -1,11 +1,11 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
+import AppLayout from './components/AppLayout';
 import {
   ProtectedRoute,
   PublicRoute,
   AuthErrorBoundary,
 } from './components/auth';
-import Header from './components/Header';
 import { AuthProvider } from './contexts/AuthContext';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -18,14 +18,15 @@ function App() {
       <AuthProvider>
         <Router>
           <div className='App'>
-            <Header />
             <Routes>
               {/* Protected routes - require authentication */}
               <Route
                 path='/'
                 element={
                   <ProtectedRoute>
-                    <HomePage />
+                    <AppLayout showNavigation={true}>
+                      <HomePage />
+                    </AppLayout>
                   </ProtectedRoute>
                 }
               />
@@ -33,7 +34,9 @@ function App() {
                 path='/status'
                 element={
                   <ProtectedRoute>
-                    <StatusPage />
+                    <AppLayout showNavigation={true}>
+                      <StatusPage />
+                    </AppLayout>
                   </ProtectedRoute>
                 }
               />
@@ -43,7 +46,9 @@ function App() {
                 path='/login'
                 element={
                   <PublicRoute>
-                    <LoginPage />
+                    <AppLayout showNavigation={false}>
+                      <LoginPage />
+                    </AppLayout>
                   </PublicRoute>
                 }
               />
