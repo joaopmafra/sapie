@@ -291,6 +291,13 @@ All tests are now passing! The comprehensive test suite covers:
 - [x] Add the Workspace component to the home page
 - [x] Run all tests to verify the refactoring
 
+### Task 10: Add a responsive navigation drawer to the home page
+
+- [ ] Add a responsive navigation drawer to the home page; look at the persistent-drawer-example.tsx file for inspiration
+- [ ] Add a hamburger menu icon to the top left corner of the home page
+- [ ] Add a menu item for the Status page in the navigation drawer
+- [ ] Implement E2E tests for the navigation drawer
+
 ## Acceptance Criteria
 
 ### Functional Criteria
