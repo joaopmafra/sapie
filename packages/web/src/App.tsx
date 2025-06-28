@@ -46,9 +46,7 @@ function App() {
                 path='/login'
                 element={
                   <PublicRoute>
-                    <AppLayout showNavigation={false}>
-                      <LoginPage />
-                    </AppLayout>
+                    <LoginPage />
                   </PublicRoute>
                 }
               />

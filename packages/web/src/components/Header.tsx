@@ -8,6 +8,7 @@ import {
   Avatar,
   Menu,
   MenuItem,
+  Button,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { signOut } from 'firebase/auth';
@@ -94,9 +95,9 @@ const Header: React.FC<HeaderProps> = ({
           </IconButton>
         )}
         <Typography variant='h6' component='div' sx={{ flexGrow: 1 }}>
-          Sapie
+          {shouldShowMenuIcon ? 'Sapie' : ''}
         </Typography>
-        {currentUser && (
+        {currentUser ? (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant='body2' sx={{ mr: 1 }}>
               {currentUser.displayName || currentUser.email}
@@ -142,6 +143,14 @@ const Header: React.FC<HeaderProps> = ({
               </MenuItem>
             </Menu>
           </Box>
+        ) : (
+          <Button
+            color='inherit'
+            onClick={() => navigate('/login')}
+            data-testid='login-button'
+          >
+            Login
+          </Button>
         )}
       </Toolbar>
     </StyledAppBar>

@@ -28,8 +28,19 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, showNavigation }) => {
   // Simple layout for pages without navigation (e.g., login)
   if (!showNavigation) {
     return (
-      <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
-        {children}
+      <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+        <Header showMenuButton={false} drawerOpen={false} isMobile={isMobile} />
+        <Box
+          component='main'
+          sx={{
+            flexGrow: 1,
+            minHeight: '100vh',
+            backgroundColor: 'background.default',
+            paddingTop: `calc(64px)`, // Account for AppBar height
+          }}
+        >
+          {children}
+        </Box>
       </Box>
     );
   }
