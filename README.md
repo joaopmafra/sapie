@@ -222,14 +222,11 @@ After deployment, your application will be available at [https://sapie-b09be.web
 # Kill Firebase emulators
 pkill -f "firebase.*emulator"
 
-# Start Firebase emulators
+# Start Firebase with all emulators enabled
 firebase emulators:start
 
-# Start only Firebase functions emulator
-firebase emulators:start --only functions
-
-# Start only Firebase hosting emulator  
-firebase emulators:start --only hosting
+# Start Firebase with only some emulators enabled
+firebase emulators:start --only=auth,functions,firestore
 
 # Clear the current project
 firebase use --clear
