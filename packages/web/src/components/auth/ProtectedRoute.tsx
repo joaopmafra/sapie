@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 
 import { useAuth } from '../../contexts/AuthContext';
+import AppLayout from '../AppLayout.tsx';
 
 import LoadingComponent from './LoadingComponent';
 
@@ -25,7 +26,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   // User is authenticated, render the children
-  return <>{children}</>;
+  return <AppLayout showNavigation={true}>{children}</AppLayout>;
 };
 
 export default ProtectedRoute;

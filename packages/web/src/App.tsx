@@ -1,6 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-import AppLayout from './components/AppLayout';
 import {
   ProtectedRoute,
   PublicRoute,
@@ -24,9 +23,7 @@ function App() {
                 path='/'
                 element={
                   <ProtectedRoute>
-                    <AppLayout showNavigation={true}>
-                      <HomePage />
-                    </AppLayout>
+                    <HomePage />
                   </ProtectedRoute>
                 }
               />
@@ -34,9 +31,7 @@ function App() {
                 path='/status'
                 element={
                   <ProtectedRoute>
-                    <AppLayout showNavigation={true}>
-                      <StatusPage />
-                    </AppLayout>
+                    <StatusPage />
                   </ProtectedRoute>
                 }
               />
