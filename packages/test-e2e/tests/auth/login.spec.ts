@@ -6,15 +6,12 @@ test.describe('Authentication', () => {
     await page.context().clearCookies();
   });
 
-  test('shows login button when not authenticated', async ({ page }) => {
+  test('shows login page when not authenticated', async ({ page }) => {
     // Navigate to protected route, should redirect to login
     await page.goto('/');
     
     // Should be redirected to login page
     await expect(page).toHaveURL('/login');
-
-    // Should show login button in header
-    await expect(page.getByRole('button', { name: 'Login' })).toBeVisible();
 
     // Should show login page content
     await expect(page.getByText('Welcome to Sapie')).toBeVisible();
@@ -65,7 +62,8 @@ test.describe('Authentication', () => {
     
     // Should be redirected to login
     await expect(page).toHaveURL('/login');
-    await expect(page.locator('header')).toBeVisible();
+    // Login page content should be visible
+    await expect(page.getByText('Welcome to Sapie')).toBeVisible();
   });
 
   test('logout functionality works', async ({ page }) => {
@@ -75,7 +73,8 @@ test.describe('Authentication', () => {
     
     // Should be redirected to login
     await expect(page).toHaveURL('/login');
-    await expect(page.locator('header')).toBeVisible();
+    // Login page content should be visible
+    await expect(page.getByText('Welcome to Sapie')).toBeVisible();
   });
 
   test('maintains authentication state across page refreshes', async ({ page }) => {
@@ -90,6 +89,7 @@ test.describe('Authentication', () => {
 
     // Should still be on login page
     await expect(page).toHaveURL('/login');
-    await expect(page.locator('header')).toBeVisible();
+    // Login page content should be visible
+    await expect(page.getByText('Welcome to Sapie')).toBeVisible();
   });
 });

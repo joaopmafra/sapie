@@ -104,8 +104,8 @@ test.describe('Route Protection', () => {
     // Should redirect to login
     await expect(page).toHaveURL('/login');
     
-    // Should maintain proper navigation state
-    await expect(page.locator('header')).toBeVisible();
+    // Login page content should be visible (no header on login page)
+    await expect(page.getByText('Welcome to Sapie')).toBeVisible();
   });
 
   test('protected route access shows loading then redirects', async ({ page }) => {

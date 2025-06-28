@@ -57,8 +57,8 @@ test.describe('Content Workspace', () => {
     await page.goto('/status');
     await expect(page).toHaveURL('/login');
 
-    // Verify navigation header exists
-    await expect(page.locator('header')).toBeVisible();
+    // Verify login page content is visible (no header on login page)
+    await expect(page.getByText('Welcome to Sapie')).toBeVisible();
   });
 });
 
@@ -82,8 +82,8 @@ test.describe('Content Workspace - Route Protection', () => {
     await page.goto('/');
     await expect(page).toHaveURL('/login');
 
-    // Navigation should be consistent
-    await expect(page.locator('header')).toBeVisible();
+    // Login page content should be visible
+    await expect(page.getByText('Welcome to Sapie')).toBeVisible();
   });
 
   test('workspace navigation from header requires authentication', async ({ page }) => {
@@ -91,12 +91,9 @@ test.describe('Content Workspace - Route Protection', () => {
     await page.goto('/login');
     await expect(page).toHaveURL('/login');
 
-    // Header should be visible but user menu not available for unauthenticated users
-    await expect(page.locator('header')).toBeVisible();
-    await expect(page.locator('header').getByText('Sapie')).toBeVisible();
-    
-    // Should show login button instead of user menu
-    await expect(page.getByRole('button', { name: 'Login' })).toBeVisible();
+    // Login page content should be visible (no header on login page)
+    await expect(page.getByText('Welcome to Sapie')).toBeVisible();
+    await expect(page.getByText('Sign in to your account or create a new one')).toBeVisible();
   });
 });
 
@@ -109,7 +106,8 @@ test.describe('Content Workspace - Error Scenarios', () => {
     
     // Should settle consistently on login page
     await expect(page).toHaveURL('/login');
-    await expect(page.locator('header')).toBeVisible();
+    // Login page content should be visible
+    await expect(page.getByText('Welcome to Sapie')).toBeVisible();
   });
 
   test('handles browser back/forward navigation correctly', async ({ page }) => {
