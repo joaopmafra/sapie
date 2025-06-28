@@ -117,17 +117,18 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   // Desktop: persistent drawer
   return (
     <Drawer
+      variant='persistent'
+      open={open}
+      onClose={onClose}
+      ModalProps={{
+        keepMounted: true, // better performance
+      }}
       sx={{
-        width: drawerWidth,
-        flexShrink: 0,
         '& .MuiDrawer-paper': {
-          width: drawerWidth,
           boxSizing: 'border-box',
+          width: drawerWidth,
         },
       }}
-      variant='persistent'
-      anchor='left'
-      open={open}
       data-testid='navigation-drawer-desktop'
     >
       {drawerContent}

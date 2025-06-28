@@ -53,24 +53,15 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, showNavigation }) => {
         sx={{
           flexGrow: 1,
           p: 3,
-          transition: theme.transitions.create(['margin', 'width'], {
+          transition: theme.transitions.create('margin', {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
           }),
-          marginLeft: 0,
-          ...(drawerOpen &&
-            !isMobile && {
-              transition: theme.transitions.create(['margin', 'width'], {
-                easing: theme.transitions.easing.easeOut,
-                duration: theme.transitions.duration.enteringScreen,
-              }),
-              marginLeft: `${drawerWidth}px`,
-            }),
+          marginLeft: drawerOpen && !isMobile ? `${drawerWidth}px` : 0,
           minHeight: '100vh',
           // Add top padding to account for AppBar
           paddingTop: `calc(${theme.spacing(3)} + 64px)`, // 64px is typical AppBar height
-          width:
-            drawerOpen && !isMobile ? `calc(100% - ${drawerWidth}px)` : '100%',
+          width: '100%',
         }}
       >
         {children}
