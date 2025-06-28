@@ -1,25 +1,26 @@
 import {
-  ChevronLeft,
-  ChevronRight,
   Home as HomeIcon,
   Assessment as StatusIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
 } from '@mui/icons-material';
 import {
   Drawer,
   List,
-  Divider,
-  IconButton,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  useMediaQuery,
+  Divider,
+  IconButton,
+  Typography,
+  useTheme,
 } from '@mui/material';
-import { styled, useTheme } from '@mui/material/styles';
+import { styled } from '@mui/material/styles';
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
-const drawerWidth = 240;
+export const drawerWidth = 260;
 
 const DrawerHeader = styled('div')(({ theme }) => ({
   display: 'flex',
@@ -27,49 +28,93 @@ const DrawerHeader = styled('div')(({ theme }) => ({
   padding: theme.spacing(0, 1),
   // necessary for content to be below app bar
   ...theme.mixins.toolbar,
-  justifyContent: 'flex-end',
+  justifyContent: 'space-between',
 }));
 
 interface NavigationDrawerProps {
   open: boolean;
   onClose: () => void;
+  isMobile: boolean;
 }
-
-interface MenuItem {
-  text: string;
-  path: string;
-  icon: React.ReactElement;
-}
-
-const menuItems: MenuItem[] = [
-  {
-    text: 'Home',
-    path: '/',
-    icon: <HomeIcon />,
-  },
-  {
-    text: 'Status',
-    path: '/status',
-    icon: <StatusIcon />,
-  },
-];
 
 const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   open,
   onClose,
+  isMobile,
 }) => {
-  const theme = useTheme();
-  const navigate = useNavigate();
   const location = useLocation();
-  // Mobile-first approach: anything smaller than 900px is mobile
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const navigate = useNavigate();
+  const theme = useTheme();
 
-  const handleMenuItemClick = (path: string) => {
+  const menuItems = [
+    { text: 'Home', icon: <HomeIcon />, path: '/' },
+    { text: 'Status', icon: <StatusIcon />, path: '/status' },
+  ];
+
+  const handleNavigate = (path: string) => {
     navigate(path);
-    // Always close drawer after navigation on mobile, and also on desktop for better UX
-    onClose();
+    // Close drawer on mobile after navigation
+    if (isMobile) {
+      onClose();
+    }
   };
 
+  const drawerContent = (
+    <>
+      <DrawerHeader>
+        <Typography variant='h6' noWrap sx={{ flexGrow: 1, pl: 1 }}>
+          Sapie
+        </Typography>
+        <IconButton onClick={onClose} data-testid='drawer-close-button'>
+          {theme.direction === 'ltr' ? (
+            <ChevronLeftIcon />
+          ) : (
+            <ChevronRightIcon />
+          )}
+        </IconButton>
+      </DrawerHeader>
+      <Divider />
+      <List>
+        {menuItems.map(item => (
+          <ListItem key={item.text} disablePadding>
+            <ListItemButton
+              selected={location.pathname === item.path}
+              onClick={() => handleNavigate(item.path)}
+              data-testid={`nav-${item.text.toLowerCase()}`}
+            >
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+    </>
+  );
+
+  if (isMobile) {
+    // Mobile: temporary drawer (overlay)
+    return (
+      <Drawer
+        variant='temporary'
+        open={open}
+        onClose={onClose}
+        ModalProps={{
+          keepMounted: true, // Better open performance on mobile
+        }}
+        sx={{
+          '& .MuiDrawer-paper': {
+            boxSizing: 'border-box',
+            width: drawerWidth,
+          },
+        }}
+        data-testid='navigation-drawer-mobile'
+      >
+        {drawerContent}
+      </Drawer>
+    );
+  }
+
+  // Desktop: persistent drawer
   return (
     <Drawer
       sx={{
@@ -80,32 +125,12 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
           boxSizing: 'border-box',
         },
       }}
-      variant={isMobile ? 'temporary' : 'persistent'}
+      variant='persistent'
       anchor='left'
       open={open}
-      onClose={onClose}
-      data-testid='navigation-drawer'
+      data-testid='navigation-drawer-desktop'
     >
-      <DrawerHeader>
-        <IconButton onClick={onClose} data-testid='close-drawer-button'>
-          {theme.direction === 'ltr' ? <ChevronLeft /> : <ChevronRight />}
-        </IconButton>
-      </DrawerHeader>
-      <Divider />
-      <List>
-        {menuItems.map(item => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton
-              onClick={() => handleMenuItemClick(item.path)}
-              selected={location.pathname === item.path}
-              data-testid={`menu-item-${item.text.toLowerCase()}`}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
+      {drawerContent}
     </Drawer>
   );
 };

@@ -1,74 +1,81 @@
-import { Box, CssBaseline, useMediaQuery } from '@mui/material';
-import { styled, useTheme } from '@mui/material/styles';
-import React, { useState } from 'react';
+import { Box, useMediaQuery, useTheme } from '@mui/material';
+import React from 'react';
+
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 import Header from './Header';
-import NavigationDrawer from './NavigationDrawer';
-
-const drawerWidth = 240;
-
-const DrawerHeader = styled('div')(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  padding: theme.spacing(0, 1),
-  // necessary for content to be below app bar
-  ...theme.mixins.toolbar,
-  justifyContent: 'flex-end',
-}));
+import NavigationDrawer, { drawerWidth } from './NavigationDrawer';
 
 interface AppLayoutProps {
   children: React.ReactNode;
-  showNavigation?: boolean;
+  showNavigation: boolean;
 }
 
-const AppLayout: React.FC<AppLayoutProps> = ({
-  children,
-  showNavigation = false,
-}) => {
-  const [drawerOpen, setDrawerOpen] = useState(false);
+const AppLayout: React.FC<AppLayoutProps> = ({ children, showNavigation }) => {
   const theme = useTheme();
-  // Mobile-first approach: anything smaller than 900px is mobile
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const handleDrawerOpen = () => {
-    setDrawerOpen(true);
+  // For desktop: persistent drawer state (default open), for mobile: temporary state (default closed)
+  const [drawerOpen, setDrawerOpen] = useLocalStorage<boolean>(
+    'persistentDrawerOpen',
+    !isMobile // Default open on desktop, closed on mobile
+  );
+
+  const handleDrawerToggle = () => {
+    setDrawerOpen(!drawerOpen);
   };
 
-  const handleDrawerClose = () => {
-    setDrawerOpen(false);
-  };
-
-  // For pages without navigation (like login), use simple layout
+  // Simple layout for pages without navigation (e.g., login)
   if (!showNavigation) {
     return (
-      <>
-        <CssBaseline />
-        <Header showMenuButton={false} />
+      <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
         {children}
-      </>
+      </Box>
     );
   }
 
-  // For pages with navigation, use the drawer layout
+  // Main layout with navigation
   return (
-    <>
-      <CssBaseline />
-      <Header onMenuClick={handleDrawerOpen} showMenuButton={showNavigation} />
-      <NavigationDrawer open={drawerOpen} onClose={handleDrawerClose} />
+    <Box sx={{ display: 'flex' }}>
+      <Header
+        onMenuClick={handleDrawerToggle}
+        showMenuButton={true}
+        drawerOpen={drawerOpen}
+        isMobile={isMobile}
+      />
+      <NavigationDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        isMobile={isMobile}
+      />
       <Box
         component='main'
         sx={{
-          // Mobile: overlay (no margin), Desktop: persistent (margin when open)
-          marginLeft: isMobile ? 0 : drawerOpen ? `${drawerWidth}px` : 0,
-          transition: 'margin 0.3s ease',
+          flexGrow: 1,
+          p: 3,
+          transition: theme.transitions.create(['margin', 'width'], {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.leavingScreen,
+          }),
+          marginLeft: 0,
+          ...(drawerOpen &&
+            !isMobile && {
+              transition: theme.transitions.create(['margin', 'width'], {
+                easing: theme.transitions.easing.easeOut,
+                duration: theme.transitions.duration.enteringScreen,
+              }),
+              marginLeft: `${drawerWidth}px`,
+            }),
           minHeight: '100vh',
-          backgroundColor: 'background.default',
+          // Add top padding to account for AppBar
+          paddingTop: `calc(${theme.spacing(3)} + 64px)`, // 64px is typical AppBar height
+          width:
+            drawerOpen && !isMobile ? `calc(100% - ${drawerWidth}px)` : '100%',
         }}
       >
-        <DrawerHeader />
         {children}
       </Box>
-    </>
+    </Box>
   );
 };
 

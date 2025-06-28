@@ -1,30 +1,59 @@
-import { AccountCircle, Logout, Menu as MenuIcon } from '@mui/icons-material';
+import { Menu as MenuIcon, AccountCircle, Logout } from '@mui/icons-material';
 import {
   AppBar,
   Toolbar,
   Typography,
-  Button,
+  IconButton,
   Box,
   Avatar,
   Menu,
   MenuItem,
-  IconButton,
 } from '@mui/material';
+import { styled } from '@mui/material/styles';
+import { signOut } from 'firebase/auth';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../contexts/AuthContext';
+import { auth } from '../lib/firebase/config';
+
+const drawerWidth = 260;
+
+interface AppBarProps {
+  open?: boolean;
+}
+
+const StyledAppBar = styled(AppBar, {
+  shouldForwardProp: prop => prop !== 'open',
+})<AppBarProps>(({ theme, open }) => ({
+  transition: theme.transitions.create(['margin', 'width'], {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen,
+  }),
+  ...(open && {
+    width: `calc(100% - ${drawerWidth}px)`,
+    marginLeft: `${drawerWidth}px`,
+    transition: theme.transitions.create(['margin', 'width'], {
+      easing: theme.transitions.easing.easeOut,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+  }),
+}));
 
 interface HeaderProps {
   onMenuClick?: () => void;
   showMenuButton?: boolean;
+  drawerOpen?: boolean;
+  isMobile?: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({
   onMenuClick,
   showMenuButton = false,
+  drawerOpen = false,
+  isMobile = false,
 }) => {
-  const { currentUser, logout } = useAuth();
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -36,46 +65,38 @@ const Header: React.FC<HeaderProps> = ({
     setAnchorEl(null);
   };
 
-  const handleLogin = () => {
-    navigate('/login');
-  };
-
   const handleLogout = async () => {
     try {
-      await logout();
+      await signOut(auth);
       handleClose();
       // Navigate to login page after logout since home is now protected
       navigate('/login', { replace: true });
     } catch (error) {
-      console.error('Error during logout:', error);
+      console.error('Error signing out:', error);
     }
   };
 
+  const shouldShowMenuIcon = showMenuButton && (isMobile || !drawerOpen);
+
   return (
-    <AppBar position='static'>
+    <StyledAppBar position='fixed' open={!isMobile && drawerOpen}>
       <Toolbar>
-        {showMenuButton && (
+        {shouldShowMenuIcon && (
           <IconButton
             color='inherit'
             aria-label='open drawer'
             onClick={onMenuClick}
             edge='start'
             sx={{ mr: 2 }}
-            data-testid='hamburger-menu-button'
+            data-testid='menu-button'
           >
             <MenuIcon />
           </IconButton>
         )}
-        <Typography
-          variant='h6'
-          component='div'
-          sx={{ flexGrow: 1, cursor: 'pointer' }}
-          onClick={() => navigate('/')}
-        >
+        <Typography variant='h6' component='div' sx={{ flexGrow: 1 }}>
           Sapie
         </Typography>
-
-        {currentUser ? (
+        {currentUser && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant='body2' sx={{ mr: 1 }}>
               {currentUser.displayName || currentUser.email}
@@ -121,13 +142,9 @@ const Header: React.FC<HeaderProps> = ({
               </MenuItem>
             </Menu>
           </Box>
-        ) : (
-          <Button color='inherit' onClick={handleLogin}>
-            Login
-          </Button>
         )}
       </Toolbar>
-    </AppBar>
+    </StyledAppBar>
   );
 };
 
