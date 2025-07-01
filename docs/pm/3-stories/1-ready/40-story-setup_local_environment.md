@@ -79,6 +79,7 @@ While still maintaining safe development practices with emulated services
 
 ## Dependencies
 
+- **Feature 5**: Multiple Environments Setup (parent feature)
 - **Story 38**: Emulator environment must be working for auth emulator
 - Understanding of Vite and NestJS development servers
 - Firebase CLI for auth emulator functionality

@@ -83,6 +83,7 @@ In a production-like environment separate from production
 
 ## Dependencies
 
+- **Feature 5**: Multiple Environments Setup (parent feature)
 - **Story 38**: Emulator environment for comparison and fallback
 - Access to Firebase Console for project creation
 - Understanding of Firebase deployment processes

@@ -77,6 +77,7 @@ And have a consistent, isolated development experience
 
 ## Dependencies
 
+- **Feature 5**: Multiple Environments Setup (parent feature)
 - Understanding of current Firebase configuration
 - Access to Firebase CLI
 - Basic knowledge of Firebase emulator suite

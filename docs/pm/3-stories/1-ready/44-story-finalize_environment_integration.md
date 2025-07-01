@@ -76,6 +76,7 @@ And other team members can understand and use the multi-environment setup
 
 ## Dependencies
 
+- **Feature 5**: Multiple Environments Setup (parent feature)
 - **Story 38**: Emulator Environment
 - **Story 39**: Test-E2E Environment  
 - **Story 40**: Local Environment

@@ -83,6 +83,7 @@ With proper security, monitoring, and reliability measures
 
 ## Dependencies
 
+- **Feature 5**: Multiple Environments Setup (parent feature)
 - **Story 42**: Staging environment as final validation
 - **Story 41**: Development environment as reference
 - Access to Firebase Console with production permissions

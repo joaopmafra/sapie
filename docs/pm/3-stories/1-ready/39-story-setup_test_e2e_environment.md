@@ -77,6 +77,7 @@ And ensure tests don't interfere with development or production data
 
 ## Dependencies
 
+- **Feature 5**: Multiple Environments Setup (parent feature)
 - **Story 38**: Emulator environment must be working first
 - Access to Firebase CLI
 - Understanding of Playwright E2E testing configuration

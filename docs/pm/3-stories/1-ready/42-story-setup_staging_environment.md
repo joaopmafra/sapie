@@ -84,6 +84,7 @@ Before deploying changes to the live production environment
 
 ## Dependencies
 
+- **Feature 5**: Multiple Environments Setup (parent feature)
 - **Story 41**: Development environment as template and reference
 - Access to Firebase Console for project creation
 - Understanding of production configuration requirements
