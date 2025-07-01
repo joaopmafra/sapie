@@ -4,6 +4,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 export class HealthResponseDto {
   status: string;
   timestamp: string;
+  environment: string;
 }
 
 @ApiTags('health')
@@ -28,6 +29,10 @@ export class HealthController {
           format: 'date-time',
           example: '2024-01-01T00:00:00.000Z',
         },
+        environment: {
+          type: 'string',
+          example: 'emulator',
+        },
       },
     },
   })
@@ -35,6 +40,7 @@ export class HealthController {
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),
+      environment: process.env.CURRENT_ENV ?? 'null',
     };
   }
 }

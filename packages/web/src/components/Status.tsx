@@ -109,6 +109,34 @@ const Status = () => {
           </Alert>
         )}
 
+        <Card>
+          <CardContent sx={{ textAlign: 'center' }}>
+            <Typography variant='h6' gutterBottom>
+              Web Environment
+            </Typography>
+            <Typography variant='body1'>
+              VITE_CURRENT_ENV: {import.meta.env.VITE_CURRENT_ENV ?? 'null'}
+            </Typography>
+            <Typography variant='body1'>
+              MODE: {import.meta.env.MODE}
+            </Typography>
+            <Typography variant='body1'>
+              NODE_ENV: {import.meta.env.NODE_ENV ?? 'null'}
+            </Typography>
+            <Typography variant='body1'>
+              VITE_API_BASE_URL: {import.meta.env.VITE_API_BASE_URL ?? 'null'}
+            </Typography>
+            <Typography variant='body1'>
+              BASE_URL: {import.meta.env.BASE_URL}
+            </Typography>
+            <Typography variant='body1'>DEV: {import.meta.env.DEV}</Typography>
+            <Typography variant='body1'>
+              PROD: {import.meta.env.PROD}
+            </Typography>
+            <Typography variant='body1'>SSR: {import.meta.env.SSR}</Typography>
+          </CardContent>
+        </Card>
+
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Link href='https://vite.dev' target='_blank'>
             <img src={viteLogo} className='logo' alt='Vite logo' />

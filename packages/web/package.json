@@ -5,8 +5,8 @@
   "type": "module",
   "packageManager": "pnpm@10.12.1",
   "scripts": {
-    "dev": "vite",
-    "dev:firebase": "vite build --watch --mode development",
+    "dev": "NODE_ENV=development vite --mode emulator",
+    "dev:emulator": "NODE_ENV=development vite build --watch --mode emulator ",
     "build": "tsc -b && vite build",
     "build:firebase": "tsc -b && vite build --mode development",
     "preview": "vite preview",

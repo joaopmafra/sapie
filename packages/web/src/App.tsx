@@ -1,4 +1,9 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import {
+  // routing does not work after reloading the page; consider using HashRouter instead
+  BrowserRouter as Router,
+  Routes,
+  Route,
+} from 'react-router-dom';
 
 import {
   ProtectedRoute,
