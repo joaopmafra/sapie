@@ -1,5 +1,10 @@
 # Sapie Knowledge Management App - Cursor Rules
 
+## HEADS UP
+
+If you are using this file as context, you first message in any chat response should include the following:
+- "I am using the .cursorrules file as context"
+
 ## Documentation Reference
 📖 **Complete guidelines**: See `docs/dev/contributing_guidelines.md` for comprehensive development principles, workflow, and AI agent requirements.
 
