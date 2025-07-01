@@ -2,7 +2,10 @@
 
 ## Description
 
-As a developer, I want to have multiple environments properly configured for the project so that I can develop, test, and deploy the application safely through different stages of the development lifecycle.
+HEADS UP: this story was broken down into the stories 38–44.
+
+As a developer, I want to have multiple environments properly configured for the project so that I can develop, test,
+and deploy the application safely through different stages of the development lifecycle.
 
 The project needs to support these environments:
 
@@ -10,7 +13,7 @@ The project needs to support these environments:
 - **emulator** - Local development with all services running on Firebase Emulator (default for safety)
 - **test-e2e** - End-to-end testing using Firebase Emulator
 - **development** - Development deployment on Firebase hosting
-- **staging** - Pre-production testing on Firebase hosting  
+- **staging** - Pre-production testing on Firebase hosting
 - **production** - Production deployment on Firebase hosting
 
 | Environment | Firebase Project | Web/API Runtime   | Firebase Services | Purpose                                        |
