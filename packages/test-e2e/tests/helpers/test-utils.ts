@@ -13,7 +13,7 @@ export async function takeScreenshot(page: Page, name: string) {
 /**
  * API Testing Utilities
  */
-export const API_BASE_URL = 'http://127.0.0.1:5001/demo-project/us-central1/api';
+export const API_BASE_URL = 'http://127.0.0.1:5001/demo-emulator/us-central1/api';
 
 /**
  * Common API endpoints for testing

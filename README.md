@@ -80,7 +80,7 @@ pnpm run emulator
 This provides:
 
 - **Web App**: http://localhost:5000
-- **API**: http://localhost:5001/demo-project/us-central1/api
+- **API**: http://localhost:5001/demo-emulator/us-central1/api
 - **Emulator UI**: http://localhost:4000
 - **Firebase Auth Emulator**: http://localhost:9099
 

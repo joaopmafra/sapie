@@ -39,7 +39,7 @@ admin.initializeApp(); // Uses default credentials
 **✅ No service account required**
 
 When using Firebase emulators with `FUNCTIONS_EMULATOR=true`, the system:
-- Uses a demo project ID (`'demo-project'`)
+- Uses a demo project ID (`'demo-emulator'`)
 - Initializes without requiring credentials
 - Connects to local Firebase Auth emulator (localhost:9099)
 - Provides complete isolation from production data

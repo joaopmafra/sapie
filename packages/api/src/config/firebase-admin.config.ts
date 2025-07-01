@@ -42,7 +42,7 @@ export function initializeFirebaseAdmin(
       console.log('Firebase Admin initialized with default credentials');
     } else if (isFirebaseEmulator) {
       // For Firebase emulator, use demo project for development isolation
-      const projectId = 'demo-project';
+      const projectId = 'demo-emulator';
 
       app = admin.initializeApp({
         projectId: projectId,

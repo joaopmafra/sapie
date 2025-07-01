@@ -8,10 +8,11 @@ import { getAuth, connectAuthEmulator } from 'firebase/auth';
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'demo-api-key',
   authDomain:
-    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'demo-project.firebaseapp.com',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'demo-project',
+    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ||
+    'demo-emulator.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'demo-emulator',
   storageBucket:
-    import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'demo-project.appspot.com',
+    import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'demo-emulator.appspot.com',
   messagingSenderId:
     import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '123456789',
   appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:123456789:web:abcdef123456',
@@ -36,7 +37,7 @@ export const auth = getAuth(app);
 // export const db = getFirestore(app);
 
 // Connect to Firebase Auth emulator in development when using demo project
-if (firebaseConfig.projectId === 'demo-project') {
+if (firebaseConfig.projectId === 'demo-emulator') {
   try {
     if (!auth.emulatorConfig) {
       connectAuthEmulator(auth, 'http://127.0.0.1:9099', {
