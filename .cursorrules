@@ -23,7 +23,7 @@ Full-stack TypeScript knowledge management app:
 - **Quality**: MUST run `./scripts/verify-all.sh` before claiming completion
 
 ### Story-Driven Workflow
-- Read complete story in `docs/pm/4-working/` before starting
+- Read complete story in `docs/pm/4-in-progress/` before starting
 - Follow task sequence exactly as written
 - Complete all task components: Implementation + Tests + Documentation
 - Move story to `docs/pm/5-done/` only after user verification

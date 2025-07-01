@@ -18,7 +18,7 @@ Each level is organized into stages, and there are also shared working and done 
 - **2-to-refine**: Needs refinement before it can be worked on
 
 **Shared workflow stages:**
-- **4-working**: Currently being worked on (shared across all levels)
+- **4-in-progress**: Currently being worked on (shared across all levels)
 - **5-done**: Completed items (shared across all levels)
 
 ## Numbering

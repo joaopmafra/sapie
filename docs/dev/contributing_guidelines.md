@@ -44,13 +44,13 @@ The project management artifacts are organized in a hierarchical structure under
 - `3-stories/` - Development stories (implementation units)
     - `1-ready/` - Stories ready to be picked up for development
     - `2-to-refine/` - Stories requiring further refinement
-- `4-working/` - Currently being worked on (any level: epics, features, or stories)
+- `4-in-progress/` - Currently being worked on (any level: epics, features, or stories)
 - `5-done/` - Completed work
 
 ### Story Lifecycle
 
 1. **Pick a story** from `3-stories/1-ready/`
-2. **Move to `4-working/`** when starting work
+2. **Move to `4-in-progress/`** when starting work
 3. **Follow the story tasks** in sequence (see [story template](story_template.md))
 4. **Complete all task components**: Implementation + Tests + Documentation
 5. **Verify quality** using project scripts
