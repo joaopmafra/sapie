@@ -1,245 +1,218 @@
-# Setup multiple environments
+# Feature 5: Multiple Environments Setup
 
-## Description
+## Feature Summary
 
-HEADS UP: this story was broken down into the stories 38–44.
+Establish a comprehensive multi-environment infrastructure that enables safe development, testing, and deployment
+workflows for the Sapie knowledge management application. This feature provides six distinct environments (emulator,
+test-e2e, local, development, staging, production) that support the complete development lifecycle from local
+development to production deployment.
 
-As a developer, I want to have multiple environments properly configured for the project so that I can develop, test,
-and deploy the application safely through different stages of the development lifecycle.
+## Business Value
 
-The project needs to support these environments:
+**Core Development Need**: Development teams need isolated environments to develop, test, and deploy applications safely
+without risking production data or functionality.
 
-- **local** - Local development with web/API running locally, connecting to Firebase Auth emulator
-- **emulator** - Local development with all services running on Firebase Emulator (default for safety)
-- **test-e2e** - End-to-end testing using Firebase Emulator
-- **development** - Development deployment on Firebase hosting
-- **staging** - Pre-production testing on Firebase hosting
-- **production** - Production deployment on Firebase hosting
+**Value Proposition**: Developers can work confidently knowing that:
+
+- Local development never affects production data
+- Testing environments are completely isolated
+- Deployment processes are validated before production
+- Environment switching is seamless and well-documented
+
+**Strategic Importance**: This foundation enables all future development by providing safe, scalable infrastructure for
+the entire development lifecycle.
+
+## Feature Scope
+
+### ✅ Included in This Feature
+
+1. **Safe Development Environments**
+    - Emulator environment as default development (complete Firebase emulation)
+    - Local environment for fast iteration (hybrid local + emulated auth)
+    - Clear environment switching and configuration management
+    - Data isolation preventing production accidents
+
+2. **Isolated Testing Infrastructure**
+    - Dedicated E2E testing environment with clean data state
+    - Automated test data cleanup between runs
+    - Parallel execution capabilities with development environments
+    - Foundation for CI/CD integration
+
+3. **Production-Ready Deployment Pipeline**
+    - Development environment for deployment validation
+    - Staging environment for pre-production testing
+    - Production environment with enterprise-grade security
+    - Comprehensive deployment scripts and validation
+
+4. **Developer Experience Excellence**
+    - Comprehensive documentation and troubleshooting guides
+    - Unified workspace scripts supporting all environments
+    - Clear environment switching procedures
+    - New developer onboarding documentation
+
+### ❌ Explicitly Excluded (Future Enhancements)
+
+- CI/CD pipeline automation → Future DevOps feature
+- Advanced monitoring and alerting → Future Operations feature
+- Backup and disaster recovery → Future Reliability feature
+- Multi-region deployment → Future Scaling feature
+
+## Technical Architecture
+
+### Environment Strategy
 
 | Environment | Firebase Project | Web/API Runtime   | Firebase Services | Purpose                                        |
 |-------------|------------------|-------------------|-------------------|------------------------------------------------|
-| local       | `demo-local`     | Local servers     | Auth emulator     | Development with local servers + emulated auth |
-| emulator    | `demo-emulator`  | Firebase Emulator | Auth emulator     | Full emulator development                      |
+| emulator    | `demo-emulator`  | Firebase Emulator | Auth emulator     | Full emulator development (default)            |
 | test-e2e    | `demo-test-e2e`  | Firebase Emulator | Auth emulator     | Automated testing                              |
+| local       | `demo-local`     | Local servers     | Auth emulator     | Development with local servers + emulated auth |
 | development | `sapie-dev`      | Firebase hosting  | Real Firebase     | Development deployment                         |
 | staging     | `sapie-staging`  | Firebase hosting  | Real Firebase     | Pre-production validation                      |
 | production  | `sapie-prod`     | Firebase hosting  | Real Firebase     | Live application                               |
 
-The default environment should be **emulator** for local development to avoid accidental production data usage.
+### Configuration Management
 
-## Technical Requirements
+**Environment Variables Strategy**
 
-- Demo projects (`demo-local`, `demo-emulator`, `demo-test-e2e`) for safe development
-- Real Firebase projects (`sapie-dev`, `sapie-staging`, `sapie-prod`) for deployments
-- Local environment: web/API run locally but connect to Firebase Auth emulator
-- Emulator environment: all services run on Firebase emulator (default for safety)
-- Environment-specific configuration managed through environment files and build scripts
-- API and web packages should detect and connect to appropriate Firebase services per environment
+```typescript
+// Environment-specific configuration
+.
+env.development    // Emulator environment
+    .env.local.example  // Local development template
+    .env.staging        // Staging environment
+    .env.production     // Production environment
+```
 
-## Tasks
+**Firebase Project Configuration**
 
-### Phase 1: Emulator Environment (Default Development)
+```typescript
+// .firebaserc with environment aliases
+{
+    "projects"
+:
+    {
+        "emulator"
+    :
+        "demo-emulator",
+            "test-e2e"
+    :
+        "demo-test-e2e",
+            "local"
+    :
+        "demo-local",
+            "dev"
+    :
+        "sapie-dev",
+            "staging"
+    :
+        "sapie-staging",
+            "prod"
+    :
+        "sapie-prod"
+    }
+}
+```
 
-**Goal**: Establish the default development environment using Firebase emulator for all services.
+### Build and Deployment Scripts
 
-- [ ] **Firebase Project Setup for Emulator**
-    - [ ] Create `demo-emulator` project (minimal setup needed)
-    - [ ] Configure Firebase emulator settings for `demo-emulator` project
-    - [ ] Update `.firebaserc` with `emulator` alias pointing to `demo-emulator`
-- [ ] **Environment Configuration**
-    - [ ] Create `.env.development` for emulator environment
-    - [ ] Update `firebase.json` to support emulator configuration
-    - [ ] Modify Firebase configuration in `src/lib/firebase/config.ts` to detect emulator mode
-- [ ] **Build Scripts and API Updates**
-    - [ ] Add `dev:emulator` script to run everything on Firebase emulator (make this default)
-    - [ ] Update API `firebase-admin.config.ts` to support emulator mode
-    - [ ] Modify API `package.json` scripts to support emulator development
-- [ ] **Testing and Validation**
-    - [ ] Test web app authentication with emulated auth
-    - [ ] Test API connectivity with emulated services
-    - [ ] Verify data isolation (emulator data doesn't affect other environments)
-    - [ ] Update project documentation for emulator environment usage
+**Development Scripts**
 
-### Phase 2: Test-E2E Environment
+```bash
+npm run dev:emulator     # Default development (emulator)
+npm run dev:local        # Local servers + auth emulator
+npm run test:e2e         # E2E tests in isolated environment
+```
 
-**Goal**: Configure isolated testing environment for automated E2E tests.
+**Deployment Scripts**
 
-- [ ] **Firebase Project Setup for Test-E2E**
-    - [ ] Create `demo-test-e2e` project (minimal setup needed)
-    - [ ] Configure emulator settings specifically for E2E testing
-    - [ ] Update `.firebaserc` with `test-e2e` alias pointing to `demo-test-e2e`
-- [ ] **E2E Testing Configuration**
-    - [ ] Modify `packages/test-e2e/playwright.config.ts` to use `demo-test-e2e` project
-    - [ ] Update test helpers to support emulator-based testing with `test-e2e` environment
-    - [ ] Configure E2E tests to use separate emulator ports if needed
-- [ ] **Build Scripts for Testing**
-    - [ ] Add `test:e2e:emulator` script that starts emulator with test-e2e configuration
-    - [ ] Ensure E2E tests clean up data between test runs
-    - [ ] Add environment validation for test environment
-- [ ] **Testing and Validation**
-    - [ ] Run E2E tests in isolated test-e2e environment
-    - [ ] Verify test environment doesn't affect emulator or other environments
-    - [ ] Test parallel execution of emulator and test-e2e environments
+```bash
+npm run build:dev        # Build for development environment
+npm run deploy:dev       # Deploy to development
+npm run deploy:staging   # Deploy to staging
+npm run deploy:prod      # Deploy to production (with safety checks)
+```
 
-### Phase 3: Local Environment (Hybrid Local Development)
+### Security and Isolation
 
-**Goal**: Enable hybrid local development where web/API run locally but connect to Firebase Auth emulator.
+- **Demo Projects**: Minimal Firebase configuration for safe development
+- **Real Projects**: Full security configuration for deployments
+- **Data Isolation**: Complete separation between all environments
+- **Access Controls**: Proper IAM permissions for each environment
+- **Environment Validation**: Pre-deployment checks and safety measures
 
-- [ ] **Firebase Project Setup for Local**
-    - [ ] Create `demo-local` project (minimal setup needed)
-    - [ ] Configure auth emulator settings for local development
-    - [ ] Update `.firebaserc` with `local` alias pointing to `demo-local`
-- [ ] **Environment Configuration**
-    - [ ] Create `.env.local.example` with all required variables
-    - [ ] Create local environment configuration files
-    - [ ] Update `vite.config.ts` to support local development mode
-- [ ] **Build Scripts and API Updates**
-    - [ ] Add `dev:local` script to run web/API locally with auth emulator connection
-    - [ ] Create `scripts/dev-local.sh` to start local development with auth emulator
-    - [ ] Modify API to connect to auth emulator when running locally
-    - [ ] Update API documentation with hybrid local environment setup
-- [ ] **Testing and Validation**
-    - [ ] Test local web/API servers connecting to auth emulator
-    - [ ] Verify authentication flow in local development mode
-    - [ ] Test hot reloading and development workflow
-    - [ ] Document local development setup and troubleshooting
+## Implementation Stories
 
-### Phase 4: Development Environment (First Real Deployment)
+This feature is implemented through seven sequential stories:
 
-**Goal**: Set up development deployment environment using real Firebase services.
+### Phase 1: Foundation (Safe Development)
 
-- [ ] **Firebase Project Setup for Development**
-    - [ ] Create `sapie-dev` project for development deployment
-    - [ ] Enable Authentication (Email/Password, Google) for `sapie-dev`
-    - [ ] Configure authorized domains for development environment
-    - [ ] Set up Firebase Hosting for `sapie-dev`
-    - [ ] Configure Firebase Functions for `sapie-dev`
-- [ ] **Environment Configuration**
-    - [ ] Create environment-specific Firebase configuration for development
-    - [ ] Update `.firebaserc` with `dev` alias pointing to `sapie-dev`
-    - [ ] Create development environment variables and configuration
-- [ ] **Build Scripts and Deployment**
-    - [ ] Add `build:dev` script for development environment deployment
-    - [ ] Add `deploy:dev` script for development deployment
-    - [ ] Update `firebase.json` to support development environment deployment
-    - [ ] Add environment validation before development deployment
-- [ ] **Testing and Validation**
-    - [ ] Test deployment to development environment
-    - [ ] Verify authentication works with real Firebase Auth in dev environment
-    - [ ] Test API functionality in deployed development environment
-    - [ ] Validate environment isolation (dev data separate from other environments)
+- **Story 38**: Setup Emulator Environment (Default Development)
+- **Story 39**: Setup Test-E2E Environment
+- **Story 40**: Setup Local Environment (Hybrid Local Development)
 
-### Phase 5: Staging Environment
+### Phase 2: Deployment Pipeline (Real Environments)
 
-**Goal**: Set up pre-production testing environment.
+- **Story 41**: Setup Development Environment (First Real Deployment)
+- **Story 42**: Setup Staging Environment
+- **Story 43**: Setup Production Environment
 
-- [ ] **Firebase Project Setup for Staging**
-    - [ ] Create `sapie-staging` project for staging environment
-    - [ ] Enable Authentication (Email/Password, Google) for `sapie-staging`
-    - [ ] Configure authorized domains for staging environment
-    - [ ] Set up Firebase Hosting for `sapie-staging`
-    - [ ] Configure Firebase Functions for `sapie-staging`
-- [ ] **Environment Configuration**
-    - [ ] Create `.env.staging` for staging environment
-    - [ ] Update Firebase configuration for staging
-    - [ ] Update `.firebaserc` with `staging` alias pointing to `sapie-staging`
-- [ ] **Build Scripts and Deployment**
-    - [ ] Add `build:staging` script for staging environment deployment
-    - [ ] Add `deploy:staging` script for staging deployment
-    - [ ] Add staging-specific deployment validation
-- [ ] **Testing and Validation**
-    - [ ] Test deployment to staging environment
-    - [ ] Run comprehensive testing in staging environment
-    - [ ] Verify production-like functionality in staging
-    - [ ] Document staging environment usage and testing procedures
+### Phase 3: Integration (Complete Experience)
 
-### Phase 6: Production Environment
-
-**Goal**: Finalize production environment configuration and deployment.
-
-- [ ] **Firebase Project Setup for Production**
-    - [ ] Verify `sapie-prod` project exists and is properly configured
-    - [ ] Enable Authentication (Email/Password, Google) for `sapie-prod`
-    - [ ] Configure authorized domains for production environment
-    - [ ] Set up Firebase Hosting for `sapie-prod`
-    - [ ] Configure Firebase Functions for `sapie-prod`
-- [ ] **Environment Configuration**
-    - [ ] Create `.env.production` for production environment
-    - [ ] Update Firebase configuration for production
-    - [ ] Update `.firebaserc` with `prod` alias pointing to `sapie-prod`
-    - [ ] Ensure secure configuration (no sensitive data in version control)
-- [ ] **Build Scripts and Deployment**
-    - [ ] Add `build:prod` script for production environment deployment
-    - [ ] Add `deploy:prod` script for production deployment
-    - [ ] Add comprehensive environment validation before production deployment
-    - [ ] Add production deployment safety checks
-- [ ] **Testing and Validation**
-    - [ ] Test deployment to production environment
-    - [ ] Verify all functionality in production environment
-    - [ ] Test production monitoring and error handling
-    - [ ] Document production deployment and rollback procedures
-
-### Phase 7: Final Integration and Documentation
-
-**Goal**: Complete workspace-level integration and comprehensive documentation.
-
-- [ ] **Workspace Integration**
-    - [ ] Update root `package.json` scripts to support all environment targets
-    - [ ] Update `scripts/build-all.sh` to accept environment parameter
-    - [ ] Create `scripts/deploy.sh` with environment support
-    - [ ] Update existing emulator scripts to support multiple demo projects
-- [ ] **Comprehensive Documentation**
-    - [ ] Create comprehensive environment setup guide
-    - [ ] Update `README.md` with environment-specific instructions
-    - [ ] Document environment variable requirements for each environment
-    - [ ] Add troubleshooting guide for environment issues
-    - [ ] Document environment switching procedures
-    - [ ] Create development best practices guide
-    - [ ] Update onboarding documentation for new developers
-- [ ] **Final Validation**
-    - [ ] Test environment switching functionality between all environments
-    - [ ] Verify that emulator environments don't affect deployed environments
-    - [ ] Test all build and deployment scripts
-    - [ ] Validate security and isolation across all environments
-    - [ ] Monitor Firebase quotas and billing for real projects
+- **Story 44**: Finalize Environment Integration and Documentation
 
 ## Acceptance Criteria
 
-- [ ] All six environments are properly configured with appropriate Firebase projects/emulators
-- [ ] Developers can easily switch between environments using build scripts
-- [ ] Environment variables are properly configured for each environment
-- [ ] Local development defaults to Firebase emulator for safety
-- [ ] Each deployed environment (local, dev, staging, production) has working authentication and API connectivity
-- [ ] Emulator environments (emulator, test-e2e) work independently without affecting deployed environments
-- [ ] Build and deployment scripts work correctly for each target environment
-- [ ] E2E tests run in isolated emulator environment without affecting other environments
-- [ ] Documentation is complete and accurate for environment setup
-- [ ] Environment configuration is secure (no sensitive data in version control)
-- [ ] All environments are tested and validated before marking story as complete
+### Functional Requirements
+
+- [ ] All six environments are properly configured and accessible
+- [ ] Developers can switch between environments seamlessly
+- [ ] Environment isolation is complete (no cross-environment data contamination)
+- [ ] Build and deployment scripts work reliably for all environments
+- [ ] E2E tests run in complete isolation without affecting other environments
+
+### Technical Requirements
+
+- [ ] Firebase projects configured appropriately for each environment type
+- [ ] Environment variables properly managed and secure
+- [ ] Local development defaults to safe emulator environment
+- [ ] Authentication and API connectivity work in all environments
+- [ ] Deployment processes include validation and safety checks
+
+### Developer Experience Requirements
+
+- [ ] Comprehensive documentation covers all environments and workflows
+- [ ] Environment switching is clearly documented and easy to follow
+- [ ] Troubleshooting guides address common environment issues
+- [ ] New developer onboarding includes complete environment setup
+- [ ] All environments support the existing authentication and content management features
+
+### Security and Reliability Requirements
+
+- [ ] Production environment has maximum security configuration
+- [ ] No sensitive data stored in version control
+- [ ] Proper access controls configured for all real environments
+- [ ] Environment validation prevents accidental production deployment
+- [ ] Rollback procedures documented and tested
 
 ## Dependencies
 
-- Firebase projects must be created and configured before implementation
+- Firebase CLI and understanding of Firebase project management
 - Team access to Firebase Console for all environments
-- Understanding of current Firebase configuration and build processes
+- Understanding of current application architecture and configuration
+- Vite and NestJS development server knowledge for local environment
 
-## Notes
+## Success Metrics
 
-- Each phase builds upon the previous phases and can be implemented incrementally
-- Local environment provides hybrid approach: local development with emulated authentication
-- Emulator environment provides full isolation with all services emulated
-- Demo projects require minimal Firebase configuration (mainly for project ID references)
-- Consider using Firebase CLI aliases for easier environment management
-- Ensure proper IAM permissions are set up for deployed environments
-- Monitor Firebase quotas and billing for real projects (dev, staging, production)
-- Consider implementing environment validation checks in CI/CD pipeline
-- Document rollback procedures for each deployed environment
+- **Development Velocity**: Faster development cycles with safe environment switching
+- **Deployment Confidence**: Zero production incidents due to deployment validation
+- **Team Onboarding**: New developers productive within 1 day using environment documentation
+- **Testing Reliability**: Consistent E2E test results in isolated environment
 
 ## Definition of Done
 
-- [ ] All tasks completed and tested
-- [ ] Code review completed
-- [ ] Documentation updated and reviewed
-- [ ] E2E tests passing in test environment
-- [ ] All environments validated and working
-- [ ] Story acceptance criteria met
+- [ ] All implementation stories (38-44) completed and validated
+- [ ] Code review completed for all environment configurations
+- [ ] Documentation comprehensive and tested by team members
+- [ ] All environments tested and validated
+- [ ] Feature acceptance criteria met
+- [ ] Team training completed on environment usage 
