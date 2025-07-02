@@ -35,6 +35,62 @@ packages/api/
 └── package.json             # Package configuration (@sapie/api)
 ```
 
+## Development Environments
+
+The API supports multiple development environments:
+
+### 1. Full Emulator Environment (`pnpm run emulator`)
+- Everything runs inside Firebase emulators
+- Complete isolation from production
+- Slower startup but maximum safety
+
+### 2. Hybrid Local Development (`pnpm run dev:local`)
+- **NEW**: API runs locally with hot reloading
+- Firebase services run in emulators (Auth, Firestore)
+- Fast development with emulated Firebase services
+- Best of both worlds: speed + safety
+
+### 3. Local Development (`pnpm run dev`)
+- API runs locally
+- Uses local environment configuration
+
+## Quick Start - Local Development
+
+1. **Copy environment template**:
+   ```bash
+   cp .env.local-dev.example .env.local-dev
+   ```
+
+2. **Start hybrid local development** (recommended):
+   ```bash
+   # From project root
+   pnpm run dev:local
+   
+   # Or just the API
+   cd packages/api
+   pnpm run dev:local
+   ```
+
+3. **Access services**:
+   - API: http://localhost:3000
+   - API Swagger: http://localhost:3000/api/docs
+   - Firebase Auth Emulator: http://localhost:9099
+   - Firestore Emulator: http://localhost:8080
+
+## Environment Configuration
+
+The API uses environment files in this order:
+1. `.env.${CURRENT_ENV}` (environment-specific)
+
+### Local Development Variables
+
+See `.env.local-dev.example` for all required variables:
+- `CURRENT_ENV=local-dev`
+- `NODE_ENV=development`
+- `FUNCTIONS_EMULATOR=true`
+- `GCLOUD_PROJECT=demo-local-dev`
+- `PORT=3000`
+
 ## Development Setup
 
 ### Prerequisites

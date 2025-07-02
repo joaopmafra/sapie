@@ -32,7 +32,7 @@ export const auth = getAuth(app);
 // export const db = getFirestore(app);
 
 // Connect to Firebase Auth emulator in development when using demo project
-if (import.meta.env.VITE_FIREBASE_EMULATOR_REQUIRED) {
+if (import.meta.env.VITE_FIREBASE_EMULATOR_REQUIRED === 'true') {
   try {
     if (!auth.emulatorConfig) {
       connectAuthEmulator(auth, 'http://127.0.0.1:9099', {

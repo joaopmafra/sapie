@@ -6,6 +6,7 @@
   "packageManager": "pnpm@10.12.1",
   "scripts": {
     "dev": "vite",
+    "dev:local": "vite --mode local-dev",
     "dev:emulator": "NODE_ENV=development vite build --watch --mode emulator",
     "build": "tsc -b && vite build",
     "build:emulator": "tsc -b && NODE_ENV=development vite build --mode emulator",

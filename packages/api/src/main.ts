@@ -1,12 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { initializeFirebaseAdmin } from './config/firebase-admin.config';
 
 async function bootstrap() {
-  // Initialize Firebase Admin SDK
-  initializeFirebaseAdmin();
-
   const app = await NestFactory.create(AppModule);
 
   // Set up Swagger only in development or Firebase emulator

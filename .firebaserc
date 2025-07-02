@@ -22,6 +22,13 @@
         "prod": ["demo-test-e2e"]
       }
     },
+    "demo-local-dev": {
+      "hosting": {
+        "dev": ["demo-local-dev"],
+        "staging": ["demo-local-dev"],
+        "prod": ["demo-local-dev"]
+      }
+    },
     "sapie-dev": {
       "hosting": {
         "dev": ["sapie-dev"]

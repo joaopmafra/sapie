@@ -11,8 +11,15 @@ const logger = new Logger('firebase-admin.config.ts');
  * authentication and user management operations.
  */
 
-// Set Firebase emulator hosts early if running in emulator mode
-if (process.env.FUNCTIONS_EMULATOR === 'true') {
+// TODO improve this; should get the current environment from the configService
+// Set Firebase emulator hosts early if running in emulator mode or local development
+const isLocalDevelopment =
+  process.env.CURRENT_ENV === 'local-dev' ||
+  process.env.NODE_ENV === 'development';
+const isFirebaseEmulator =
+  process.env.FUNCTIONS_EMULATOR === 'true' || isLocalDevelopment;
+
+if (isFirebaseEmulator) {
   process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099';
   process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
   logger.debug('Firebase Auth emulator host set to: localhost:9099');
@@ -26,7 +33,7 @@ let app: admin.app.App;
  *
  * Handles initialization for different environments:
  * - Production: Uses default service account credentials
- * - Development/Emulator: Uses emulator or service account key file
+ * - Development/Emulator/Local: Uses emulator or service account key file
  */
 export function initializeFirebaseAdmin(
   configService?: ConfigService
@@ -35,9 +42,10 @@ export function initializeFirebaseAdmin(
     return app;
   }
 
+  logger.debug('CURRENT_ENV: ' + configService?.get('CURRENT_ENV'));
+
   try {
     const isProduction = configService?.get('NODE_ENV') === 'production';
-    const isFirebaseEmulator = process.env.FUNCTIONS_EMULATOR === 'true';
 
     if (isProduction) {
       // In production (Firebase Functions), use default credentials
@@ -49,10 +57,11 @@ export function initializeFirebaseAdmin(
         projectId: projectId,
       });
       logger.debug(
-        `Firebase Admin initialized for emulator with project ID: ${projectId}`
+        `Firebase Admin initialized for emulator/local development with project ID: ${projectId}`
       );
     } else {
-      // For local development, try service account key file
+      // TODO this seems not to be necessary; verify and remove
+      // For other development scenarios, try service account key file
       const serviceAccountPath = configService?.get(
         'FIREBASE_SERVICE_ACCOUNT_KEY_PATH'
       ) as string;

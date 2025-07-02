@@ -22,6 +22,7 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "dev": "nest start --watch",
+    "dev:local": "CURRENT_ENV=local-dev NODE_ENV=development nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "test": "jest",
