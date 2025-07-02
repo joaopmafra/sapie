@@ -1,6 +1,5 @@
 {
   "projects": {
-    "default": "demo-emulator",
     "emulator": "demo-emulator",
     "test-e2e": "demo-test-e2e",
     "local": "demo-local",
