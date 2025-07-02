@@ -2,7 +2,7 @@
   "projects": {
     "emulator": "demo-emulator",
     "test-e2e": "demo-test-e2e",
-    "local": "demo-local",
+    "local-dev": "demo-local-dev",
     "dev": "sapie-dev",
     "staging": "sapie-staging",
     "prod": "sapie-prod"

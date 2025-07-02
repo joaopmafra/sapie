@@ -45,7 +45,7 @@ the application needs to support six distinct environments:
 |-------------|------------------|------------------------------------------------|
 | emulator    | `demo-emulator`  | Full emulator development (default)            |
 | test-e2e    | `demo-test-e2e`  | Automated testing                              |
-| local       | `demo-local`     | Development with local servers + emulated auth |
+| local-dev   | `demo-local-dev`     | Development with local servers + emulated auth |
 | development | `sapie-dev`      | Development deployment                         |
 | staging     | `sapie-staging`  | Pre-production validation                      |
 | production  | `sapie-prod`     | Live application                               |
@@ -74,7 +74,7 @@ single `firebase.json` file, each with environment-specific build scripts.
     "default": "demo-emulator",
     "emulator": "demo-emulator",
     "test-e2e": "demo-test-e2e",
-    "local": "demo-local",
+    "local-dev": "demo-local-dev",
     "dev": "sapie-dev",
     "staging": "sapie-staging",
     "prod": "sapie-prod"
@@ -229,11 +229,11 @@ Error: Deploy target dev not configured for project demo-emulator. Configure wit
         "prod": ["demo-test-e2e"]
       }
     },
-    "demo-local": {
+    "demo-local-dev": {
       "hosting": {
-        "dev": ["demo-local"],
-        "staging": ["demo-local"],
-        "prod": ["demo-local"]
+        "dev": ["demo-local-dev"],
+        "staging": ["demo-local-dev"],
+        "prod": ["demo-local-dev"]
       }
     }
   }

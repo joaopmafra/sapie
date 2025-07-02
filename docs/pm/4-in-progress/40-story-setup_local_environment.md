@@ -39,9 +39,9 @@ While still maintaining safe development practices with all emulated services
 
 ### Firebase Project Setup for Local
 
-- [ ] Create `demo-local` project (minimal setup needed)
+- [ ] Create `demo-local-dev` project (minimal setup needed)
 - [ ] Configure all Firebase emulator settings for local development
-- [ ] Update `.firebaserc` with `local` alias pointing to `demo-local`
+- [ ] Update `.firebaserc` with `local-dev` alias pointing to `demo-local-dev`
 - [ ] Configure Firebase emulators to accept connections from local servers
 
 ### Environment Configuration
