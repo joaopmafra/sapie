@@ -315,7 +315,7 @@ pnpm dev:emulator
 pnpm build
 
 # Build for running in Firebase Emulator
-pnpm build:firebase
+pnpm build:emulator
 
 # Preview production build
 pnpm preview

@@ -1,5 +1,42 @@
 {
   "projects": {
-    "default": "demo-emulator"
+    "default": "demo-emulator",
+    "emulator": "demo-emulator",
+    "test-e2e": "demo-test-e2e",
+    "local": "demo-local",
+    "dev": "sapie-dev",
+    "staging": "sapie-staging",
+    "prod": "sapie-prod"
+  },
+  "targets": {
+    "demo-emulator": {
+      "hosting": {
+        "dev": ["demo-emulator"],
+        "staging": ["demo-emulator"],
+        "prod": ["demo-emulator"]
+      }
+    },
+    "demo-test-e2e": {
+      "hosting": {
+        "dev": ["demo-test-e2e"],
+        "staging": ["demo-test-e2e"],
+        "prod": ["demo-test-e2e"]
+      }
+    },
+    "sapie-dev": {
+      "hosting": {
+        "dev": ["sapie-dev"]
+      }
+    },
+    "sapie-staging": {
+      "hosting": {
+        "staging": ["sapie-staging"]
+      }
+    },
+    "sapie-prod": {
+      "hosting": {
+        "prod": ["sapie-prod"]
+      }
+    }
   }
 }

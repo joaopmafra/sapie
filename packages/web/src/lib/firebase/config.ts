@@ -24,9 +24,7 @@ try {
   app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 } catch (error) {
   console.error('Firebase initialization failed:', error);
-  console.log(
-    'Please configure your Firebase environment variables in .env.local'
-  );
+  console.log('Please configure your Firebase environment variables in .env');
 }
 
 // Initialize Firebase Auth

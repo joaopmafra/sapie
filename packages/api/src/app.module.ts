@@ -3,15 +3,15 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth';
-import { ContentModule } from './content/content.module';
+import { ContentModule } from './content';
 
 @Module({
   imports: [
-    // The nestjs config support doesn't work with Firebase. We're keeping this for now because it can be useful if
-    // running the app locally, outside Firebase Emulator.
+    // https://docs.nestjs.com/techniques/configuration
+    // https://stackoverflow.com/questions/63285055/nestjs-how-to-use-env-variables-in-main-app-module-file-for-database-connecti/63285574#63285574
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['.env.local'],
+      envFilePath: [`.env.${process.env.NODE_ENV}`, '.env'],
     }),
     HealthModule,
     AuthModule,

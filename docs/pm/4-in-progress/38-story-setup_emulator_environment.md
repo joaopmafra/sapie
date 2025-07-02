@@ -43,13 +43,13 @@ And have a consistent, isolated development experience
 
 ### Environment Configuration
 
-- [x] Web package: create `.env.firebase` for emulator environment with all required variables
+- [x] Web package: create `.env.emulator` for emulator environment with all required variables
 - [x] Web package: Add a "Web environment" card in the status page to show current environment information
 - [x] Web package: update dev scripts in the package.json file
-- [ ] Create `.env.firebase` for emulator environment with all required variables in the api package
-- [ ] Update `firebase.json` to support emulator configuration
+- [x] API package: create `.env.emulator` for emulator environment with all required variables
+- [x] Update `firebase.json` to support emulator configuration
 - [ ] Modify Firebase configuration in `src/lib/firebase/config.ts` to detect emulator mode
-- [ ] Ensure environment variables are properly loaded in emulator mode
+- [x] Ensure environment variables are properly loaded in emulator mode
 
 ### Build Scripts and API Updates
 

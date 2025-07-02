@@ -12,7 +12,8 @@
   "main": "firebase-functions.js",
   "scripts": {
     "build": "nest build",
-    "build:firebase": "nest build && cp package.json dist/",
+    "build:firebase": "NODE_ENV=emulator nest build && cp package.json .env* dist/",
+    "build:emulator": "NODE_ENV=emulator nest build && cp package.json .env* dist/",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
