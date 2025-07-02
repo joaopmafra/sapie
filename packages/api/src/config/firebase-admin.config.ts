@@ -1,5 +1,8 @@
 import * as admin from 'firebase-admin';
 import { ConfigService } from '@nestjs/config';
+import { Logger } from '@nestjs/common';
+
+const logger = new Logger('firebase-admin.config.ts');
 
 /**
  * Firebase Admin SDK Configuration
@@ -12,8 +15,8 @@ import { ConfigService } from '@nestjs/config';
 if (process.env.FUNCTIONS_EMULATOR === 'true') {
   process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099';
   process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
-  console.log('Firebase Auth emulator host set to: localhost:9099');
-  console.log('Firestore emulator host set to: localhost:8080');
+  logger.debug('Firebase Auth emulator host set to: localhost:9099');
+  logger.debug('Firestore emulator host set to: localhost:8080');
 }
 
 let app: admin.app.App;
@@ -39,15 +42,13 @@ export function initializeFirebaseAdmin(
     if (isProduction) {
       // In production (Firebase Functions), use default credentials
       app = admin.initializeApp();
-      console.log('Firebase Admin initialized with default credentials');
+      logger.debug('Firebase Admin initialized with default credentials');
     } else if (isFirebaseEmulator) {
-      // For Firebase emulator, use demo project for development isolation
-      const projectId = 'demo-emulator';
-
+      const projectId = process.env.MY_FIREBASE_PROJECT_ID;
       app = admin.initializeApp({
         projectId: projectId,
       });
-      console.log(
+      logger.debug(
         `Firebase Admin initialized for emulator with project ID: ${projectId}`
       );
     } else {
@@ -65,11 +66,13 @@ export function initializeFirebaseAdmin(
         app = admin.initializeApp({
           credential: admin.credential.cert(serviceAccount),
         });
-        console.log('Firebase Admin initialized with service account key file');
+        logger.debug(
+          'Firebase Admin initialized with service account key file'
+        );
       } else {
         // Fallback to default credentials or application default credentials
         app = admin.initializeApp();
-        console.log(
+        logger.debug(
           'Firebase Admin initialized with default credentials for development'
         );
       }
@@ -77,7 +80,7 @@ export function initializeFirebaseAdmin(
 
     return app;
   } catch (error) {
-    console.error('Failed to initialize Firebase Admin SDK:', error);
+    logger.error('Failed to initialize Firebase Admin SDK:', error);
     throw new Error(
       `Firebase Admin initialization failed: ${error instanceof Error ? error.message : String(error)}`
     );
@@ -122,7 +125,7 @@ export async function verifyIdToken(
     const decodedToken = await getFirebaseAuth().verifyIdToken(idToken);
     return decodedToken;
   } catch (error) {
-    console.error('Token verification failed:', error);
+    logger.error('Token verification failed:', error);
     throw new Error(
       `Token verification failed: ${error instanceof Error ? error.message : String(error)}`
     );
@@ -142,7 +145,7 @@ export async function getUserByUid(
     const userRecord = await getFirebaseAuth().getUser(uid);
     return userRecord;
   } catch (error) {
-    console.error('Failed to get user:', error);
+    logger.error('Failed to get user:', error);
     throw new Error(
       `Failed to get user: ${error instanceof Error ? error.message : String(error)}`
     );
