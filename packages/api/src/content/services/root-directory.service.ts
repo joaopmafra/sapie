@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as admin from 'firebase-admin';
-import { getFirestore } from '../../config/firebase-admin.config';
+import { FirebaseAdminService } from '../../firebase';
 import {
   Content,
   ContentDocument,
@@ -17,11 +17,12 @@ import {
 @Injectable()
 export class RootDirectoryService {
   private readonly logger = new Logger(RootDirectoryService.name);
-  private readonly firestore: admin.firestore.Firestore;
   private readonly contentCollection = 'content';
 
-  constructor() {
-    this.firestore = getFirestore();
+  constructor(private readonly firebaseAdminService: FirebaseAdminService) {}
+
+  private get firestore(): admin.firestore.Firestore {
+    return this.firebaseAdminService.getFirestore();
   }
 
   /**

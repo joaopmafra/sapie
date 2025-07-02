@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth';
 import { ContentModule } from './content';
-import { initializeFirebaseAdmin } from './config/firebase-admin.config';
-import { Logger } from '@nestjs/common';
+import { FirebaseAdminModule } from './firebase';
 
 @Module({
   imports: [
@@ -15,23 +14,11 @@ import { Logger } from '@nestjs/common';
       isGlobal: true,
       envFilePath: [`.env.local-dev`],
     }),
+    FirebaseAdminModule,
     HealthModule,
     AuthModule,
     ContentModule,
   ],
   controllers: [AppController],
 })
-export class AppModule {
-  private readonly logger = new Logger('firebase-admin.config.ts');
-
-  constructor(private readonly configService: ConfigService) {}
-
-  onModuleInit() {
-    this.logger.debug('CURRENT_ENV: ' + this.configService.get('CURRENT_ENV'));
-
-    // Initialize Firebase Admin SDK
-    initializeFirebaseAdmin(this.configService);
-
-    console.log('AppModule initialized');
-  }
-}
+export class AppModule {}

@@ -188,6 +188,7 @@ For detailed technical guidelines, see:
 
 - **[Web Package Documentation](../../packages/web/README.md)** - React, Material-UI, Firebase Auth
 - **[API Package Documentation](../../packages/api/README.md)** - NestJS, Firebase Admin, testing
+- **[Firebase Integration Guide](../other/nestjs_firebase_integration.md)** - Firebase module architecture and usage
 - **[E2E Package Documentation](../../packages/test-e2e/README.md)** - Playwright, user journey testing
 - **[Documentation Guidelines](documentation_guidelines.md)** - Documentation standards and structure
 - **[Development Principles](development_principles.md)** - Core development principles and their application

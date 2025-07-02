@@ -1,11 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { ApiProperty } from '@nestjs/swagger';
 import * as admin from 'firebase-admin';
-import {
-  getUserByUid,
-  initializeFirebaseAdmin,
-} from '../config/firebase-admin.config';
+import { FirebaseAdminService } from '../firebase';
 
 /**
  * Provider Data DTO
@@ -79,10 +75,7 @@ export class AuthenticatedUser {
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
-  constructor(private readonly configService: ConfigService) {
-    // Initialize Firebase Admin with configuration service
-    initializeFirebaseAdmin(this.configService);
-  }
+  constructor(private readonly firebaseAdminService: FirebaseAdminService) {}
 
   /**
    * Get current user information from Firebase Auth
@@ -95,7 +88,7 @@ export class AuthService {
     try {
       this.logger.debug(`Getting user information for UID: ${uid}`);
 
-      const userRecord = await getUserByUid(uid);
+      const userRecord = await this.firebaseAdminService.getUserByUid(uid);
 
       const authenticatedUser = new AuthenticatedUser();
       authenticatedUser.uid = userRecord.uid;

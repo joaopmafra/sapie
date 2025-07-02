@@ -4,11 +4,20 @@ This document explains how to configure Firebase Admin SDK for the Sapie API.
 
 ## Overview
 
-The Firebase Admin SDK is used for server-side authentication and user management. It's configured to work in multiple environments:
+The Firebase Admin SDK is implemented as a NestJS module for proper dependency injection and lifecycle management. It's configured to work in multiple environments:
 
 - **Production (Firebase Functions)**: Uses default service account credentials automatically
 - **Development with Firebase Emulator**: Uses demo project configuration (no service account needed)
 - **Local Development**: Can use service account key file or default credentials
+
+## Architecture
+
+The Firebase integration follows NestJS best practices with:
+
+- **`FirebaseAdminModule`**: A global NestJS module that provides Firebase services
+- **`FirebaseAdminService`**: Injectable service that manages Firebase Admin SDK initialization and operations
+- **Dependency Injection**: All components use DI to access Firebase functionality
+- **Lifecycle Management**: Firebase initialization happens during module initialization
 
 ## What is a Firebase Service Account?
 
@@ -29,9 +38,22 @@ A Firebase service account is a special type of Google Cloud service account tha
 
 **✅ No service account setup required**
 
-Firebase Functions automatically provide the necessary default credentials. Your application initializes with:
+Firebase Functions automatically provide the necessary default credentials. The `FirebaseAdminService` initializes automatically:
 ```typescript
-admin.initializeApp(); // Uses default credentials
+// Automatic initialization via NestJS module lifecycle
+// No manual initialization needed
+```
+
+The module is imported in `AppModule`:
+```typescript
+@Module({
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    FirebaseAdminModule, // Global module - available throughout app
+    // ... other modules
+  ],
+})
+export class AppModule {}
 ```
 
 ### Development with Firebase Emulator (Recommended)
@@ -75,6 +97,62 @@ The emulator automatically sets `FUNCTIONS_EMULATOR=true` and connects to:
    - Run `gcloud auth application-default login`
    - The SDK will use your authenticated Google account
 
+## Using Firebase in Your Code
+
+### Service Injection
+
+Use dependency injection to access Firebase functionality in your services:
+
+```typescript
+import { Injectable } from '@nestjs/common';
+import { FirebaseAdminService } from '../firebase';
+
+@Injectable()
+export class YourService {
+  constructor(private readonly firebaseAdminService: FirebaseAdminService) {}
+
+  async verifyToken(idToken: string) {
+    return await this.firebaseAdminService.verifyIdToken(idToken);
+  }
+
+  async getUser(uid: string) {
+    return await this.firebaseAdminService.getUserByUid(uid);
+  }
+
+  async getFirestoreData() {
+    const firestore = this.firebaseAdminService.getFirestore();
+    // Use firestore...
+  }
+}
+```
+
+### Available Methods
+
+The `FirebaseAdminService` provides these methods:
+
+- `getFirebaseAdmin()` - Get Firebase Admin app instance
+- `getFirebaseAuth()` - Get Firebase Auth instance  
+- `getFirestore()` - Get Firestore instance
+- `verifyIdToken(token)` - Verify Firebase ID token
+- `getUserByUid(uid)` - Get user by UID
+
+### Module Structure
+
+```
+src/
+├── firebase/
+│   ├── firebase-admin.module.ts     # NestJS module
+│   ├── firebase-admin.service.ts    # Main service
+│   └── index.ts                     # Exports
+├── auth/
+│   ├── auth.guard.ts               # Uses FirebaseAdminService
+│   ├── auth.service.ts             # Uses FirebaseAdminService
+│   └── auth.middleware.ts          # Uses FirebaseAdminService
+└── content/
+    └── services/
+        └── root-directory.service.ts # Uses FirebaseAdminService
+```
+
 ## Environment Variables
 
 | Variable                            | Description                          | Required             |
@@ -105,8 +183,9 @@ The emulator automatically sets `FUNCTIONS_EMULATOR=true` and connects to:
 ### Common Issues
 
 1. **"Firebase Admin not initialized"**:
-   - Ensure `initializeFirebaseAdmin()` is called before using Firebase services
+   - Ensure `FirebaseAdminModule` is imported in your module
    - Check that credentials are properly configured
+   - Verify that the service injection is working correctly
 
 2. **"Service account key not found"**:
    - Verify the path in `FIREBASE_SERVICE_ACCOUNT_KEY_PATH`

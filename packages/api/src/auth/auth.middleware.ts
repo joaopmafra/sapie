@@ -1,6 +1,6 @@
 import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import { verifyIdToken } from '../config/firebase-admin.config';
+import { FirebaseAdminService } from '../firebase';
 import * as admin from 'firebase-admin';
 
 export interface AuthenticatedRequest extends Request {
@@ -19,6 +19,8 @@ export interface AuthenticatedRequest extends Request {
 export class AuthMiddleware implements NestMiddleware {
   private readonly logger = new Logger(AuthMiddleware.name);
 
+  constructor(private readonly firebaseAdminService: FirebaseAdminService) {}
+
   async use(
     req: AuthenticatedRequest,
     res: Response,
@@ -28,8 +30,9 @@ export class AuthMiddleware implements NestMiddleware {
 
     if (token) {
       try {
-        // Verify the Firebase ID token using the existing Firebase Admin configuration
-        const decodedToken = await verifyIdToken(token);
+        // Verify the Firebase ID token using the Firebase Admin service
+        const decodedToken =
+          await this.firebaseAdminService.verifyIdToken(token);
 
         // Add user information to the request object
         req.user = decodedToken;

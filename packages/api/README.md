@@ -16,9 +16,6 @@ NestJS-based API backend for the Sapie knowledge management application.
 ```
 packages/api/
 ├── src/
-│   ├── config/              # Configuration modules
-│   │   ├── firebase-admin.config.ts      # Firebase Admin SDK configuration
-│   │   └── firebase-admin.config.spec.ts # Firebase Admin SDK tests
 │   ├── health/              # Health check module
 │   │   ├── health.controller.ts
 │   │   ├── health.controller.spec.ts
@@ -258,15 +255,6 @@ const decodedToken = await verifyIdToken(idToken);
 // Get user information
 const user = await getUserByUid(decodedToken.uid);
 ```
-
-#### Configuration Module
-
-The Firebase Admin configuration is located in `src/config/firebase-admin.config.ts` and provides:
-
-- Automatic initialization for different environments
-- Token verification utilities
-- User management functions
-- Proper error handling and logging
 
 ## Development vs Production
 

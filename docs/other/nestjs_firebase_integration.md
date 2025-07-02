@@ -16,33 +16,60 @@ user management, and development setup.
 
 ## Firebase Admin SDK Configuration
 
-The Firebase Admin SDK is configured to work across different environments:
+The Firebase Admin SDK is implemented as a NestJS module for proper dependency injection and follows modern NestJS architecture patterns.
 
-### Production (Firebase Functions)
+### Architecture Overview
+
+**Module Structure**: `packages/api/src/firebase/`
+
+- **`FirebaseAdminModule`**: Global NestJS module that provides Firebase services
+- **`FirebaseAdminService`**: Injectable service managing Firebase Admin SDK operations
+- **Dependency Injection**: All components use DI to access Firebase functionality
+
+### Environment Support
+
+#### Production (Firebase Functions)
 
 - Uses default service account credentials automatically
 - No additional configuration needed
+- Automatic initialization via NestJS lifecycle
 
-### Development with Firebase Emulator
+#### Development with Firebase Emulator
 
 - Uses project ID configuration
 - Automatically connects to Firebase Auth emulator at `localhost:9099`
+- Firestore emulator at `localhost:8080`
 
-### Local Development
+#### Local Development
 
 - Can use service account key file or Application Default Credentials
 - Set `FIREBASE_SERVICE_ACCOUNT_KEY_PATH` environment variable if using service account key
 
-### Configuration Files
+### Service Usage
 
-**Location**: `packages/api/src/config/firebase-admin.config.ts`
+**Service Methods**:
 
-Key functions:
-
-- `initializeFirebaseAdmin()` - Initializes Firebase Admin SDK
+- `getFirebaseAdmin()` - Gets Firebase Admin app instance
 - `getFirebaseAuth()` - Gets Firebase Auth instance
-- `verifyIdToken()` - Verifies Firebase ID tokens
-- `getUserByUid()` - Retrieves user information by UID
+- `getFirestore()` - Gets Firestore instance
+- `verifyIdToken(token)` - Verifies Firebase ID tokens
+- `getUserByUid(uid)` - Retrieves user information by UID
+
+**Example Usage**:
+
+```typescript
+import { Injectable } from '@nestjs/common';
+import { FirebaseAdminService } from '../firebase';
+
+@Injectable()
+export class ExampleService {
+  constructor(private readonly firebaseAdminService: FirebaseAdminService) {}
+
+  async authenticateUser(token: string) {
+    return await this.firebaseAdminService.verifyIdToken(token);
+  }
+}
+```
 
 ## Authentication System
 
@@ -60,19 +87,21 @@ The authentication system uses Firebase ID tokens for secure API access. The sys
 #### AuthGuard (`src/auth/auth.guard.ts`)
 
 - Enforces authentication on protected endpoints
-- Verifies Firebase ID tokens
+- Injects `FirebaseAdminService` for token verification
 - Adds user context to request object
 - Throws `UnauthorizedException` for invalid/missing tokens
 
 #### AuthMiddleware (`src/auth/auth.middleware.ts`)
 
 - Optional authentication processing
+- Uses `FirebaseAdminService` for token verification
 - Adds user context when valid token is present
 - Does not throw errors for missing tokens
 - Useful for endpoints that work with or without authentication
 
 #### AuthService (`src/auth/auth.service.ts`)
 
+- Injects `FirebaseAdminService` for user operations
 - Retrieves user information from Firebase Auth
 - Converts Firebase User Records to API DTOs
 - Handles user not found scenarios
@@ -270,10 +299,12 @@ cd packages/test-e2e && pnpm test
 **Symptom**: Firebase Admin SDK initialization errors
 **Solutions**:
 
-1. Verify service account key path and permissions
-2. Check Firebase project ID configuration
-3. Ensure environment variables are set correctly
-4. Verify Firebase emulator is running (development)
+1. Ensure `FirebaseAdminModule` is imported in `AppModule`
+2. Verify service account key path and permissions
+3. Check Firebase project ID configuration
+4. Ensure environment variables are set correctly
+5. Verify Firebase emulator is running (development)
+6. Check that dependency injection is working correctly
 
 ### Performance Considerations
 
