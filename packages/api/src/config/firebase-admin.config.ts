@@ -44,7 +44,7 @@ export function initializeFirebaseAdmin(
       app = admin.initializeApp();
       logger.debug('Firebase Admin initialized with default credentials');
     } else if (isFirebaseEmulator) {
-      const projectId = process.env.MY_FIREBASE_PROJECT_ID;
+      const projectId = process.env.GCLOUD_PROJECT;
       app = admin.initializeApp({
         projectId: projectId,
       });
