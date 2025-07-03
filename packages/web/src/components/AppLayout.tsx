@@ -4,7 +4,7 @@ import React from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 import Header from './Header';
-import NavigationDrawer, { drawerWidth } from './NavigationDrawer';
+import NavigationDrawer, { desktopDrawerWidth } from './NavigationDrawer';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -68,7 +68,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, showNavigation }) => {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
           }),
-          marginLeft: drawerOpen && !isMobile ? `${drawerWidth}px` : 0,
+          marginLeft: drawerOpen && !isMobile ? `${desktopDrawerWidth}px` : 0,
           minHeight: '100vh',
           // Add top padding to account for AppBar
           paddingTop: `calc(${theme.spacing(3)} + 64px)`, // 64px is typical AppBar height

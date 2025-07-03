@@ -27,7 +27,7 @@ my study notes immediately in a digital format.
 - Cloud Storage service for note content files (backend)
 - Content metadata service for Firestore operations (backend)
 - Complete CRUD API endpoints for notes (backend)
-- Note creation modal and form (frontend)
+- Note creation (frontend)
 - Markdown editor with auto-save (frontend)
 - Note listing and management UI (frontend)
 - End-to-end error handling and validation (full-stack)
@@ -56,7 +56,6 @@ POST   /api/content                   // Create new note
 GET    /api/content /:id              // Get note metadata
 PUT    /api/content/:id               // Update note
 DELETE /api/content/:id               // Delete note
-GET    /api/content/:id/download      // Get signed URL for note content
 GET    /api/content/:id/children      // List notes in directory
 ```
 
@@ -101,7 +100,6 @@ GET    /api/content/:id/children      // List notes in directory
 **Acceptance Criteria:**
 
 - [ ] ContentStorageService class created
-- [ ] File upload/download operations for markdown content
 - [ ] Signed URL generation for secure access
 - [ ] Structured file paths: `/{ownerId}/notes/{noteId}.md`
 - [ ] Error handling for storage operations
@@ -116,7 +114,6 @@ GET    /api/content/:id/children      // List notes in directory
 
 **Testing:**
 
-- [ ] Upload/download operations tested
 - [ ] Signed URL generation tested
 - [ ] File path structure validated
 

@@ -1,16 +1,9 @@
 import {
-  Home as HomeIcon,
-  Assessment as StatusIcon,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
 } from '@mui/icons-material';
 import {
   Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
   Divider,
   IconButton,
   Typography,
@@ -18,9 +11,9 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 
-export const drawerWidth = 260;
+export const mobileDrawerWidth = 260;
+export const desktopDrawerWidth = 300;
 
 const DrawerHeader = styled('div')(({ theme }) => ({
   display: 'flex',
@@ -42,22 +35,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   onClose,
   isMobile,
 }) => {
-  const location = useLocation();
-  const navigate = useNavigate();
   const theme = useTheme();
-
-  const menuItems = [
-    { text: 'Home', icon: <HomeIcon />, path: '/' },
-    { text: 'Status', icon: <StatusIcon />, path: '/status' },
-  ];
-
-  const handleNavigate = (path: string) => {
-    navigate(path);
-    // Close drawer on mobile after navigation
-    if (isMobile) {
-      onClose();
-    }
-  };
 
   const drawerContent = (
     <>
@@ -74,20 +52,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
         </IconButton>
       </DrawerHeader>
       <Divider />
-      <List>
-        {menuItems.map(item => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton
-              selected={location.pathname === item.path}
-              onClick={() => handleNavigate(item.path)}
-              data-testid={`nav-${item.text.toLowerCase()}`}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
+      TODO: add a tree-like structure to display the contents
     </>
   );
 
@@ -104,7 +69,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
         sx={{
           '& .MuiDrawer-paper': {
             boxSizing: 'border-box',
-            width: drawerWidth,
+            width: mobileDrawerWidth,
           },
         }}
         data-testid='navigation-drawer-mobile'
@@ -126,7 +91,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
       sx={{
         '& .MuiDrawer-paper': {
           boxSizing: 'border-box',
-          width: drawerWidth,
+          width: desktopDrawerWidth,
         },
       }}
       data-testid='navigation-drawer-desktop'

@@ -16,6 +16,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { contentService } from '../lib/content';
 import type { Content } from '../lib/content';
 
+// TODO remove this component
+
 /**
  * Workspace Component
  *
