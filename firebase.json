@@ -17,9 +17,6 @@
           "source": "**",
           "destination": "/index.html"
         }
-      ],
-      "predeploy": [
-        "cd packages/web && pnpm run build:dev"
       ]
     },
     {
@@ -39,9 +36,6 @@
           "source": "**",
           "destination": "/index.html"
         }
-      ],
-      "predeploy": [
-        "cd packages/web && pnpm run build:staging"
       ]
     },
     {
@@ -61,18 +55,12 @@
           "source": "**",
           "destination": "/index.html"
         }
-      ],
-      "predeploy": [
-        "cd packages/web && pnpm run build:prod"
       ]
     }
   ],
   "functions": [
     {
-      "source": "packages/api/dist",
-      "predeploy": [
-        "cd packages/api && pnpm run build:firebase"
-      ]
+      "source": "packages/api/dist"
     }
   ],
   "emulators": {

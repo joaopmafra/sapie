@@ -12,9 +12,9 @@
   "main": "firebase-functions.js",
   "scripts": {
     "build": "nest build",
-    "build:firebase": "CURRENT_ENV=emulator nest build && cp package.json .env* dist/",
-    "build:emulator": "CURRENT_ENV=emulator nest build && cp package.json .env* dist/",
-    "build:test-e2e": "CURRENT_ENV=test-e2e nest build && cp package.json .env* dist/",
+    "build:emulator": "CURRENT_ENV=emulator nest build && cp package.json .env.emulator dist/",
+    "build:test-e2e": "CURRENT_ENV=test-e2e nest build && cp package.json .env.test-e2e dist/",
+    "build:staging": "CURRENT_ENV=staging nest build && cp package.json .env.staging dist/",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",

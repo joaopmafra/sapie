@@ -1,5 +1,4 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
 
 @Injectable()
@@ -7,7 +6,7 @@ export class FirebaseAdminService implements OnModuleInit {
   private readonly logger = new Logger(FirebaseAdminService.name);
   private app: admin.app.App;
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor() {}
 
   onModuleInit() {
     this.initializeFirebaseAdmin();
@@ -30,46 +29,31 @@ export class FirebaseAdminService implements OnModuleInit {
     }
 
     try {
-      const isProduction =
-        this.configService.get('CURRENT_ENV') === 'production';
+      const projectId = process.env.GCLOUD_PROJECT;
+      this.app = admin.initializeApp({
+        // this is not needed, but we're keeping it here to make it explicit
+        projectId: projectId,
+      });
+      this.logger.debug(
+        `Firebase Admin initialized with project ID: ${projectId}`
+      );
 
-      if (isProduction) {
-        // In production (Firebase Functions), use default credentials
-        this.app = admin.initializeApp();
-        this.logger.debug(
-          'Firebase Admin initialized with default credentials'
-        );
-      } else if (useFirebaseEmulator) {
-        const projectId = process.env.GCLOUD_PROJECT;
-        this.app = admin.initializeApp({
-          projectId: projectId,
-        });
-        this.logger.debug(
-          `Firebase Admin initialized for emulator/local development with project ID: ${projectId}`
-        );
-      } else {
-        // TODO this seems not to be necessary; verify and remove
-        // For other development scenarios, try service account key file
-        const serviceAccountPath = this.configService.get(
-          'FIREBASE_SERVICE_ACCOUNT_KEY_PATH'
-        ) as string;
+      // TODO this seems not to be necessary; verify and remove
+      // For other development scenarios, try service account key file
+      /*const serviceAccountPath = this.configService.get(
+        'FIREBASE_SERVICE_ACCOUNT_KEY_PATH'
+      ) as string;
 
-        if (serviceAccountPath) {
-          // Use service account key file if provided
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
-          const serviceAccount = require(
-            serviceAccountPath
-          ) as admin.ServiceAccount;
-          this.app = admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-          });
-          this.logger.debug(
-            'Firebase Admin initialized with service account key file'
-          );
-        } else {
-          throw new Error('Unable to initialize Firebase Admin SDK.');
-        }
-      }
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const serviceAccount = require(
+        serviceAccountPath
+      ) as admin.ServiceAccount;
+      this.app = admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+      this.logger.debug(
+        'Firebase Admin initialized with service account key file'
+      );*/
     } catch (error) {
       this.logger.error('Failed to initialize Firebase Admin SDK:', error);
       throw new Error(

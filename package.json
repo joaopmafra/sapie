@@ -13,7 +13,8 @@
     "build": "scripts/build-all.sh",
     "test": "scripts/build-test-all.sh",
     "emulator": "scripts/build-run-firebase-emulator.sh",
-    "dev:local": "scripts/dev-local.sh",
+    "dev": "scripts/dev-local.sh",
+    "deploy": "scripts/build-deploy-all.sh",
     "deploy:dev": "firebase deploy --project dev",
     "deploy:staging": "firebase deploy --project staging",
     "deploy:prod": "firebase deploy --project prod"

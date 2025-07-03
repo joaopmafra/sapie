@@ -4,7 +4,7 @@
     "test-e2e": "demo-test-e2e",
     "local-dev": "demo-local-dev",
     "dev": "sapie-dev",
-    "staging": "sapie-staging",
+    "staging": "sapie-b09be",
     "prod": "sapie-prod"
   },
   "targets": {
@@ -34,9 +34,11 @@
         "dev": ["sapie-dev"]
       }
     },
-    "sapie-staging": {
+    "sapie-b09be": {
       "hosting": {
-        "staging": ["sapie-staging"]
+        "dev": ["sapie-b09be"],
+        "staging": ["sapie-b09be"],
+        "prod": ["sapie-b09be"]
       }
     },
     "sapie-prod": {

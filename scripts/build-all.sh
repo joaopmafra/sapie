@@ -3,6 +3,8 @@
 # exit immediately if a command exits with a non-zero status
 set -e
 
+printf "Building all projects...\n\n"
+
 ENV=$1
 if [[ ! $ENV =~ emulator|test-e2e|local|development|staging|production ]]; then
   echo "Usage:"
