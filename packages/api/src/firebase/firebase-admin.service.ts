@@ -21,28 +21,17 @@ export class FirebaseAdminService implements OnModuleInit {
    * - Development/Emulator/Local: Uses emulator or service account key file
    */
   private initializeFirebaseAdmin(): void {
-    if (this.app) {
-      return;
-    }
+    const useFirebaseEmulator = process.env.USE_FIREBASE_EMULATOR === 'true';
 
-    // Set Firebase emulator hosts early if running in emulator mode or local development
-    const isLocalDevelopment =
-      this.configService.get('CURRENT_ENV') === 'local-dev' ||
-      this.configService.get('NODE_ENV') === 'development';
-    const isFirebaseEmulator =
-      process.env.FUNCTIONS_EMULATOR === 'true' || isLocalDevelopment;
-
-    if (isFirebaseEmulator) {
+    // set firebase emulator hosts
+    if (useFirebaseEmulator) {
       process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099';
       process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
-      this.logger.debug('Firebase Auth emulator host set to: localhost:9099');
-      this.logger.debug('Firestore emulator host set to: localhost:8080');
     }
 
-    this.logger.debug('CURRENT_ENV: ' + this.configService.get('CURRENT_ENV'));
-
     try {
-      const isProduction = this.configService.get('NODE_ENV') === 'production';
+      const isProduction =
+        this.configService.get('CURRENT_ENV') === 'production';
 
       if (isProduction) {
         // In production (Firebase Functions), use default credentials
@@ -50,7 +39,7 @@ export class FirebaseAdminService implements OnModuleInit {
         this.logger.debug(
           'Firebase Admin initialized with default credentials'
         );
-      } else if (isFirebaseEmulator) {
+      } else if (useFirebaseEmulator) {
         const projectId = process.env.GCLOUD_PROJECT;
         this.app = admin.initializeApp({
           projectId: projectId,
@@ -78,11 +67,7 @@ export class FirebaseAdminService implements OnModuleInit {
             'Firebase Admin initialized with service account key file'
           );
         } else {
-          // Fallback to default credentials or application default credentials
-          this.app = admin.initializeApp();
-          this.logger.debug(
-            'Firebase Admin initialized with default credentials for development'
-          );
+          throw new Error('Unable to initialize Firebase Admin SDK.');
         }
       }
     } catch (error) {

@@ -22,7 +22,7 @@ fi
 echo "🔧 Starting Firebase emulators in background..."
 
 # Start Firebase emulators with local-dev project
-firebase emulators:start --project local-dev &
+firebase emulators:start --only=auth,firestore,storage --project local-dev &
 FIREBASE_PID=$!
 
 # Wait a bit for emulators to start
@@ -34,7 +34,7 @@ cleanup() {
     echo ""
     echo "🛑 Stopping all services..."
     kill $FIREBASE_PID 2>/dev/null || true
-    kill $WEB_PID 2>/dev/null || true  
+    kill $WEB_PID 2>/dev/null || true
     kill $API_PID 2>/dev/null || true
     exit 0
 }
@@ -58,7 +58,7 @@ echo ""
 echo "✅ Hybrid Local Development Environment is running!"
 echo ""
 echo "🌐 Web application: http://localhost:5173"
-echo "🔧 API server: http://localhost:3000" 
+echo "🔧 API server: http://localhost:3000"
 echo "🔥 Firebase emulators UI: http://localhost:4000"
 echo "🔐 Firebase Auth emulator: http://localhost:9099"
 echo "📁 Firestore emulator: http://localhost:8080"
@@ -66,4 +66,4 @@ echo ""
 echo "Press Ctrl+C to stop all services"
 
 # Wait for any process to exit
-wait 
+wait

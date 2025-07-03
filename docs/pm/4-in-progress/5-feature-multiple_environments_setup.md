@@ -65,7 +65,7 @@ the entire development lifecycle.
 |-------------|------------------|-------------------|-------------------|------------------------------------------------|
 | emulator    | `demo-emulator`  | Firebase Emulator | Auth emulator     | Full emulator development (default)            |
 | test-e2e    | `demo-test-e2e`  | Firebase Emulator | Auth emulator     | Automated testing                              |
-| local-dev   | `demo-local-dev`     | Local servers     | Auth emulator     | Development with local servers + emulated auth |
+| local-dev   | `demo-local-dev` | Local servers     | Auth emulator     | Development with local servers + emulated auth |
 | development | `sapie-dev`      | Firebase hosting  | Real Firebase     | Development deployment                         |
 | staging     | `sapie-staging`  | Firebase hosting  | Real Firebase     | Pre-production validation                      |
 | production  | `sapie-prod`     | Firebase hosting  | Real Firebase     | Live application                               |

@@ -13,8 +13,6 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-console.log(firebaseConfig);
-
 // Initialize Firebase
 let app;
 try {
@@ -31,8 +29,8 @@ export const auth = getAuth(app);
 // Initialize Firestore
 // export const db = getFirestore(app);
 
-// Connect to Firebase Auth emulator in development when using demo project
-if (import.meta.env.VITE_FIREBASE_EMULATOR_REQUIRED === 'true') {
+// Connect to Firebase Auth emulator in development
+if (import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true') {
   try {
     if (!auth.emulatorConfig) {
       connectAuthEmulator(auth, 'http://127.0.0.1:9099', {
@@ -41,6 +39,7 @@ if (import.meta.env.VITE_FIREBASE_EMULATOR_REQUIRED === 'true') {
     }
   } catch (error) {
     console.log('Auth emulator connection failed:', error);
+    throw error;
   }
 
   // TODO remove; we won't allow direct Firebase calls from the web app
