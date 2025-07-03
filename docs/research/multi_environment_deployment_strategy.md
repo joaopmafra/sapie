@@ -451,5 +451,5 @@ multi-environment infrastructure defined in Feature 5.
 - [Firebase Hosting Targets Documentation](https://firebase.google.com/docs/cli/targets)
 - [Vite Environment Variables](https://vitejs.dev/guide/env-and-mode.html)
 - [Story 41: Setup Development Environment](../pm/3-stories/1-ready/41-story-setup_development_environment.md)
-- [Story 42: Setup Staging Environment](../pm/4-in-progress/42-story-setup_staging_environment.md)
+- [Story 42: Setup Staging Environment](../pm/5-done/42-story-setup_staging_environment.md)
 - [Story 43: Setup Production Environment](../pm/3-stories/1-ready/43-story-setup_production_environment.md) 
