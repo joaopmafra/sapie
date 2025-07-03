@@ -6,45 +6,5 @@
     "dev": "sapie-dev",
     "staging": "sapie-b09be",
     "prod": "sapie-prod"
-  },
-  "targets": {
-    "demo-emulator": {
-      "hosting": {
-        "dev": ["demo-emulator"],
-        "staging": ["demo-emulator"],
-        "prod": ["demo-emulator"]
-      }
-    },
-    "demo-test-e2e": {
-      "hosting": {
-        "dev": ["demo-test-e2e"],
-        "staging": ["demo-test-e2e"],
-        "prod": ["demo-test-e2e"]
-      }
-    },
-    "demo-local-dev": {
-      "hosting": {
-        "dev": ["demo-local-dev"],
-        "staging": ["demo-local-dev"],
-        "prod": ["demo-local-dev"]
-      }
-    },
-    "sapie-dev": {
-      "hosting": {
-        "dev": ["sapie-dev"]
-      }
-    },
-    "sapie-b09be": {
-      "hosting": {
-        "dev": ["sapie-b09be"],
-        "staging": ["sapie-b09be"],
-        "prod": ["sapie-b09be"]
-      }
-    },
-    "sapie-prod": {
-      "hosting": {
-        "prod": ["sapie-prod"]
-      }
-    }
   }
 }
