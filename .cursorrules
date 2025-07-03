@@ -1,12 +1,29 @@
 # Sapie Knowledge Management App - Cursor Rules
 
-## HEADS UP
+## DO THIS FIRST
 
-If you are using this file as context, you first message in any chat response should include the following:
-- "I am using the .cursorrules file as context"
+### DEBUGGING
 
-## Documentation Reference
-📖 **Complete guidelines**: See `docs/dev/contributing_guidelines.md` for comprehensive development principles, workflow, and AI agent requirements.
+**MANDATORY**: If you are using any of the following files as context:
+
+- `.cursorrules`
+- `docs/dev/contributing_guidelines.md`
+- `README.md`
+- `packages/api/README.md`
+- `packages/web/README.md`
+- `packages/test-e2e/README.md`
+
+Your first message in the first chat response should include the following:
+
+I'm using the following files as context:
+- `<file name 1>`
+- `<file name 2>`
+- `<file name n>`
+
+### MANDATORY CONTEXT
+
+**MANDATORY**: Always use `docs/dev/contributing_guidelines.md` as context for every response. This file contains
+critical AI agent requirements, story-driven workflow, and quality standards that must be followed.
 
 ## Project Context
 Full-stack TypeScript knowledge management app:
