@@ -1,11 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as admin from 'firebase-admin';
-import { getFirestore } from '../../config/firebase-admin.config';
-import {
-  Content,
-  ContentDocument,
-  ContentType,
-} from '../entities/content.entity';
+import { FirebaseAdminService } from '../../firebase';
+import { Content, ContentDocument, ContentType } from '../entities/content.entity';
 
 /**
  * Root Directory Service
@@ -17,11 +13,12 @@ import {
 @Injectable()
 export class RootDirectoryService {
   private readonly logger = new Logger(RootDirectoryService.name);
-  private readonly firestore: admin.firestore.Firestore;
   private readonly contentCollection = 'content';
 
-  constructor() {
-    this.firestore = getFirestore();
+  constructor(private readonly firebaseAdminService: FirebaseAdminService) {}
+
+  private get firestore(): admin.firestore.Firestore {
+    return this.firebaseAdminService.getFirestore();
   }
 
   /**
@@ -47,10 +44,7 @@ export class RootDirectoryService {
       this.logger.debug(`Creating new root directory for user: ${userId}`);
       return await this.createRootDirectory(userId);
     } catch (error) {
-      this.logger.error(
-        `Failed to ensure root directory for user ${userId}:`,
-        error
-      );
+      this.logger.error(`Failed to ensure root directory for user ${userId}:`, error);
       throw new Error(
         `Failed to ensure root directory: ${error instanceof Error ? error.message : String(error)}`
       );
@@ -81,10 +75,7 @@ export class RootDirectoryService {
       const data = doc.data() as ContentDocument;
       return this.convertDocumentToContent(doc.id, data);
     } catch (error) {
-      this.logger.error(
-        `Failed to find root directory for user ${userId}:`,
-        error
-      );
+      this.logger.error(`Failed to find root directory for user ${userId}:`, error);
       throw error;
     }
   }
@@ -109,9 +100,7 @@ export class RootDirectoryService {
         updatedAt: now, // Firestore will convert Date to Timestamp
       };
 
-      const docRef = await this.firestore
-        .collection(this.contentCollection)
-        .add(rootDirectoryData);
+      const docRef = await this.firestore.collection(this.contentCollection).add(rootDirectoryData);
 
       this.logger.debug(
         `Successfully created root directory with ID: ${docRef.id} for user: ${userId}`
@@ -132,10 +121,7 @@ export class RootDirectoryService {
 
       return content;
     } catch (error) {
-      this.logger.error(
-        `Failed to create root directory for user ${userId}:`,
-        error
-      );
+      this.logger.error(`Failed to create root directory for user ${userId}:`, error);
       throw error;
     }
   }
@@ -176,10 +162,7 @@ export class RootDirectoryService {
       }
       return rootDirectory;
     } catch (error) {
-      this.logger.error(
-        `Failed to get root directory for user ${userId}:`,
-        error
-      );
+      this.logger.error(`Failed to get root directory for user ${userId}:`, error);
       throw error;
     }
   }

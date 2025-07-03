@@ -1,12 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { initializeFirebaseAdmin } from './config/firebase-admin.config';
 
 async function bootstrap() {
-  // Initialize Firebase Admin SDK
-  initializeFirebaseAdmin();
-
   const app = await NestFactory.create(AppModule);
 
   // Set up Swagger only in development or Firebase emulator
@@ -16,9 +12,7 @@ async function bootstrap() {
   if (isDevelopment || isFirebaseEmulator) {
     const config = new DocumentBuilder()
       .setTitle('Sapie API')
-      .setDescription(
-        'API documentation for the Sapie knowledge management application'
-      )
+      .setDescription('API documentation for the Sapie knowledge management application')
       .setVersion('1.0')
       .addTag('sapie')
       .addBearerAuth(

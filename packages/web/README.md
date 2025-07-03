@@ -309,13 +309,13 @@ pnpm install
 pnpm dev
 
 # Build and watch for changes for running in Firebase Emulator
-pnpm dev:firebase
+pnpm dev:emulator
 
 # Build for production
 pnpm build
 
 # Build for running in Firebase Emulator
-pnpm build:firebase
+pnpm build:emulator
 
 # Preview production build
 pnpm preview

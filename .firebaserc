@@ -1,5 +1,10 @@
 {
   "projects": {
-    "default": "demo-project"
+    "emulator": "demo-emulator",
+    "test-e2e": "demo-test-e2e",
+    "local-dev": "demo-local-dev",
+    "dev": "sapie-dev",
+    "staging": "sapie-b09be",
+    "prod": "sapie-prod"
   }
 }

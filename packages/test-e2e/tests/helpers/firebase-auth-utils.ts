@@ -20,11 +20,11 @@ import {
 // Firebase config for testing with emulator
 const testFirebaseConfig = {
   apiKey: 'demo-api-key',
-  authDomain: 'demo-project.firebaseapp.com',
-  projectId: 'demo-project',
-  storageBucket: 'demo-project.appspot.com',
-  messagingSenderId: '123456789',
-  appId: '1:123456789:web:abcdef123456',
+  authDomain: 'demo-test-e2e.firebaseapp.com',
+  projectId: 'demo-test-e2e',
+  storageBucket: 'demo-test-e2e.appspot.com',
+  messagingSenderId: '234567890',
+  appId: '2:123456789:web:abcdef123456',
 };
 
 let testAuth: Auth | null = null;

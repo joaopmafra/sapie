@@ -3,7 +3,8 @@
 # exit immediately if a command exits with a non-zero status
 set -e
 
-scripts/build-all.sh
+# for now, all tests run in the test-e2e env
+scripts/build-all.sh test-e2e
 
 echo "Running api unit tests..."
 cd packages/api

@@ -47,21 +47,14 @@ export class AuthController {
   @ApiNotFoundResponse({
     description: 'User not found in Firebase Auth',
   })
-  async getCurrentUser(
-    @Request() request: AuthenticatedRequest
-  ): Promise<AuthenticatedUser> {
+  async getCurrentUser(@Request() request: AuthenticatedRequest): Promise<AuthenticatedUser> {
     const uid = request.user.uid;
     try {
       const currentUser = await this.authService.getCurrentUser(uid);
-      this.logger.debug(
-        `Successfully retrieved current user information for UID: ${uid}`
-      );
+      this.logger.debug(`Successfully retrieved current user information for UID: ${uid}`);
       return currentUser;
     } catch (error) {
-      this.logger.error(
-        `Failed to get current user information for UID: ${uid}`,
-        error
-      );
+      this.logger.error(`Failed to get current user information for UID: ${uid}`, error);
       throw error;
     }
   }

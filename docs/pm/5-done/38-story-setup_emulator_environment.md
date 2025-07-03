@@ -36,17 +36,20 @@ And have a consistent, isolated development experience
 
 ### Firebase Project Setup for Emulator
 
-- [ ] Create `demo-emulator` project (minimal setup needed)
-- [ ] Configure Firebase emulator settings for `demo-emulator` project  
-- [ ] Update `.firebaserc` with `emulator` alias pointing to `demo-emulator`
-- [ ] Verify emulator configuration supports all required services (Auth, Firestore, Functions, Storage)
+- [x] Create `demo-emulator` project (minimal setup needed)
+- [x] Configure Firebase emulator settings for `demo-emulator` project  
+- [x] Update `.firebaserc` with `emulator` alias pointing to `demo-emulator`
+- [x] Verify emulator configuration supports all required services (Auth, Firestore, Functions, Storage)
 
 ### Environment Configuration
 
-- [ ] Create `.env.development` for emulator environment with all required variables
-- [ ] Update `firebase.json` to support emulator configuration
+- [x] Web package: create `.env.emulator` for emulator environment with all required variables
+- [x] Web package: Add a "Web environment" card in the status page to show current environment information
+- [x] Web package: update dev scripts in the package.json file
+- [x] API package: create `.env.emulator` for emulator environment with all required variables
+- [x] Update `firebase.json` to support emulator configuration
 - [ ] Modify Firebase configuration in `src/lib/firebase/config.ts` to detect emulator mode
-- [ ] Ensure environment variables are properly loaded in emulator mode
+- [x] Ensure environment variables are properly loaded in emulator mode
 
 ### Build Scripts and API Updates
 
