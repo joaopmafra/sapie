@@ -101,19 +101,12 @@ export class AuthService {
         providerData.providerId = provider.providerId;
         return providerData;
       });
-      authenticatedUser.customClaims = userRecord.customClaims as
-        | Record<string, any>
-        | undefined;
+      authenticatedUser.customClaims = userRecord.customClaims as Record<string, any> | undefined;
 
-      this.logger.debug(
-        `Successfully retrieved user information for UID: ${uid}`
-      );
+      this.logger.debug(`Successfully retrieved user information for UID: ${uid}`);
       return authenticatedUser;
     } catch (error) {
-      this.logger.error(
-        `Failed to get user information for UID: ${uid}`,
-        error
-      );
+      this.logger.error(`Failed to get user information for UID: ${uid}`, error);
 
       if (
         error instanceof Error &&

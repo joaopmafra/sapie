@@ -12,9 +12,7 @@ async function bootstrap() {
   if (isDevelopment || isFirebaseEmulator) {
     const config = new DocumentBuilder()
       .setTitle('Sapie API')
-      .setDescription(
-        'API documentation for the Sapie knowledge management application'
-      )
+      .setDescription('API documentation for the Sapie knowledge management application')
       .setVersion('1.0')
       .addTag('sapie')
       .addBearerAuth(

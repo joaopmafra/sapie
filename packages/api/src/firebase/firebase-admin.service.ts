@@ -34,9 +34,7 @@ export class FirebaseAdminService implements OnModuleInit {
         // this is not needed, but we're keeping it here to make it explicit
         projectId: projectId,
       });
-      this.logger.debug(
-        `Firebase Admin initialized with project ID: ${projectId}`
-      );
+      this.logger.debug(`Firebase Admin initialized with project ID: ${projectId}`);
 
       // TODO this seems not to be necessary; verify and remove
       // For other development scenarios, try service account key file

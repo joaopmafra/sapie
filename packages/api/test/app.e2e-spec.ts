@@ -17,10 +17,7 @@ describe('AppController (e2e)', () => {
 
   it('/api (GET)', () => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    return request(app.getHttpServer())
-      .get('/api')
-      .expect(200)
-      .expect('Sapie API');
+    return request(app.getHttpServer()).get('/api').expect(200).expect('Sapie API');
   });
 
   // cleans up resources; see https://www.google.com/search?q=nestjs+e2e+test+aftereach+app.close

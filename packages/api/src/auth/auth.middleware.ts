@@ -21,18 +21,13 @@ export class AuthMiddleware implements NestMiddleware {
 
   constructor(private readonly firebaseAdminService: FirebaseAdminService) {}
 
-  async use(
-    req: AuthenticatedRequest,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  async use(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     const token = this.extractTokenFromHeader(req);
 
     if (token) {
       try {
         // Verify the Firebase ID token using the Firebase Admin service
-        const decodedToken =
-          await this.firebaseAdminService.verifyIdToken(token);
+        const decodedToken = await this.firebaseAdminService.verifyIdToken(token);
 
         // Add user information to the request object
         req.user = decodedToken;

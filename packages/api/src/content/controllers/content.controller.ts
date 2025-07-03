@@ -52,16 +52,13 @@ export class ContentController {
   @ApiInternalServerErrorResponse({
     description: 'Internal server error - Failed to ensure root directory',
   })
-  async getRootDirectory(
-    @Request() request: AuthenticatedRequest
-  ): Promise<Content> {
+  async getRootDirectory(@Request() request: AuthenticatedRequest): Promise<Content> {
     const userId = request.user.uid;
 
     try {
       this.logger.debug(`Getting root directory for user: ${userId}`);
 
-      const rootDirectory =
-        await this.rootDirectoryService.ensureRootDirectory(userId);
+      const rootDirectory = await this.rootDirectoryService.ensureRootDirectory(userId);
 
       this.logger.debug(
         `Successfully retrieved root directory for user: ${userId}, directory ID: ${rootDirectory.id}`
@@ -69,10 +66,7 @@ export class ContentController {
 
       return rootDirectory;
     } catch (error) {
-      this.logger.error(
-        `Failed to get root directory for user: ${userId}`,
-        error
-      );
+      this.logger.error(`Failed to get root directory for user: ${userId}`, error);
 
       throw error;
     }
