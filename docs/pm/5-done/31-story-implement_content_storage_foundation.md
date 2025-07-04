@@ -14,9 +14,9 @@ managing my study content and can immediately begin using the application.
 
 ## Feature Context
 
-**Parent Feature**: [Feature 26: Basic Note Management](../2-features/2-to-refine/26-feature-basic_note_management.md)
+**Parent Feature**: [Feature 26: Basic Note Management](../6-archived/26-feature-basic_note_management.md)
 
-**Epic Context**: [Epic 23: Content Management Foundation](../1-epics/2-to-refine/23-epic-content_management_foundation.md)
+**Epic Context**: [Epic 23: Content Management Foundation](../6-archived/23-epic-content_management_foundation.md)
 
 **Iteration Philosophy**: "Scooter" implementation - complete, working solution that provides immediate value
 
