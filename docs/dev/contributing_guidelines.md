@@ -103,6 +103,7 @@ See [User Stories](https://www.mountaingoatsoftware.com/agile/user-stories) for 
   related to in the form of markdown links. Example: `[#23 Epic: Content Management Foundation](../pm/1-epics/23-epic-content_management_foundation.md)`.
 - ✅ **Acceptance criteria**: Only include acceptance criteria when refining a story
 - ✅ **Technical Requirements**: Only include technical requirements when refining a story
+- ✅ **Technical Details**: Only include technical details when refining a story
 
 ## Development Process
 
