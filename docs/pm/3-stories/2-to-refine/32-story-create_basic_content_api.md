@@ -14,9 +14,9 @@ my study notes immediately in a digital format.
 
 ## Feature Context
 
-**Parent Feature**: [Feature 26: Basic Note Management](26-feature-basic_note_management.md)
+**Parent Feature**: [Feature 26: Basic Note Management](../../2-features/2-to-refine/26-feature-basic_note_management.md)
 
-**Epic Context**: [Epic 23: Content Management Foundation](../1-epics/1-ready/23-epic-content_management_foundation.md)
+**Epic Context**: [Epic 23: Content Management Foundation](../../1-epics/2-to-refine/23-epic-content_management_foundation.md)
 
 **Implementation Philosophy**: "Scooter" enhancement - adds complete note creation to the working directory display
 
