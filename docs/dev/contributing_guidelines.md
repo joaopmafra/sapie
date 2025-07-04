@@ -99,6 +99,8 @@ See [User Stories](https://www.mountaingoatsoftware.com/agile/user-stories) for 
 - ✅ **Story splitting into backend and frontend stories**: Only split when there are genuine complexity or dependency
   reasons (see detailed guidelines
   in [Iterative Development Approach](#iterative-development-approach))
+- ✅ **References to epics, features, and stories**: **ALWAYS** reference the epic, feature, and story that the PBI is
+  related to.
 - ✅ **Acceptance criteria**: Only include acceptance criteria when refining a story
 - ✅ **Technical Requirements**: Only include technical requirements when refining a story
 
