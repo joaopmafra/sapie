@@ -60,6 +60,27 @@ The same applies for epics and features.
 
 ### PBI Creation
 
+#### Definition and format
+
+A PBI is a Product Backlog Item and generally is a user story, feature, or epic
+
+A user story is a short, simple description of a feature **told from the perspective of the person who desires the new
+capability**, usually a user or customer of the system. User stories typically follow a simple template:
+
+```
+As a <type of user>, I want <some goal> so that <some reason>.
+```
+
+A feature is a bigger story, containing a collection of user stories that are related to a single user goal. Features
+are typically more complex than user stories and have less granular requirements.
+
+An epic is a bigger story, containing a collection of features that are related to a single user goal. Epics are
+typically more complex than features and have less granular requirements.
+
+See [User Stories](https://www.mountaingoatsoftware.com/agile/user-stories) for more information.
+
+#### Guidelines
+
 - ✅ Apply the iterative development approach described
   in [Iterative Development Approach](#iterative-development-approach) to break down requirements into small and
   manageable stories
@@ -73,15 +94,17 @@ The same applies for epics and features.
     - Example: `3-story-content.md`
 - ✅ Use the [story template](story_template.md) for new stories
 - ✅ Place in appropriate folder (`3-stories/1-ready/` or `3-stories/2-to-refine/`)
-- ✅ Include comprehensive acceptance criteria
 - ✅ Break down into manageable tasks with implementation, testing, and documentation components
 - ✅ **Full-stack story approach**: Default to single stories for features requiring both backend and frontend work
-- ✅ **Story splitting**: Only split when there are genuine complexity or dependency reasons (see detailed guidelines
+- ✅ **Story splitting into backend and frontend stories**: Only split when there are genuine complexity or dependency
+  reasons (see detailed guidelines
   in [Iterative Development Approach](#iterative-development-approach))
+- ✅ **Acceptance criteria**: Only include acceptance criteria when refining a story
+- ✅ **Technical Requirements**: Only include technical requirements when refining a story
 
 ## Development Process
 
-TODO: add the "baby steps" approach; see 31-story-implement_content_storage_foundation.md task 9 for an example of how 
+TODO: add the "baby steps" approach; see 31-story-implement_content_storage_foundation.md task 9 for an example of how
 to do it.
 
 ### Iterative Development Approach
@@ -106,24 +129,26 @@ Each iteration is a complete, working solution that solves the core problem whil
 
 **Core principle**: Build complete, working features that users can immediately benefit from.
 
-Just like the transportation analogy, avoid building incomplete parts (API without UI, or UI without backend). Instead, 
+Just like the transportation analogy, avoid building incomplete parts (API without UI, or UI without backend). Instead,
 build simple but complete end-to-end functionality that delivers real user value. This is **VERY** important to enable
 fast feedback loops.
 
 **Default approach**: Single story for full-stack features
+
 - ✅ **Complete user workflow**: From UI interaction to data persistence
 - ✅ **Immediate user value**: Feature works end-to-end upon completion
 - ✅ **Faster delivery**: No coordination overhead between separate stories
 - ✅ **Example**: "Add note creation" → API endpoint + UI form + validation + storage
 
 **When to split**: Only for genuine complexity or dependency reasons
-- ❌ **Don't split just because** it "feels like too much work"; in this case, it's better to split the story into 
+
+- ❌ **Don't split just because** it "feels like too much work"; in this case, it's better to split the story into
   smaller ones
 - ✅ **Do split when**:
-  - Backend serves multiple frontends and has standalone value
-  - Significant technical complexity differences (simple UI + complex data processing)
-  - Different team members must work simultaneously
-  - Clear dependency chain exists (foundation → feature)
+    - Backend serves multiple frontends and has standalone value
+    - Significant technical complexity differences (simple UI + complex data processing)
+    - Different team members must work simultaneously
+    - Clear dependency chain exists (foundation → feature)
 - ✅ **Structure**: Create parent feature with child stories for backend and frontend components, not isolated
   backend/frontend stories
 
@@ -278,6 +303,7 @@ If following startup-speed approach and skipping non-critical tests:
 ##### Examples
 
 **Good test task marking:**
+
 ```markdown
 - [x] Unit tests for UserService - tests/user.service.spec.ts created and passing
 - [x] Integration tests for auth flow - 5 test cases covering happy path and errors
@@ -285,13 +311,15 @@ If following startup-speed approach and skipping non-critical tests:
 ```
 
 **Bad test task marking:**
+
 ```markdown
 - [x] Unit tests for UserService (covered by E2E tests)
 - [x] Integration tests (will add later)
 - [x] Component tests (functionality works, so marking complete)
 ```
 
-**Remember**: It's better to be honest about test coverage than to claim tests exist when they don't. This helps with future maintenance and debugging.
+**Remember**: It's better to be honest about test coverage than to claim tests exist when they don't. This helps with
+future maintenance and debugging.
 
 #### Package-Level Testing
 
@@ -349,7 +377,7 @@ For package-specific testing details, see individual package READMEs:
 
 Run these scripts in sequence after completing implementation:
 
-- ✅ **Fix formatting and linting issues** - After implementing any changes, run `./scripts/format-lint-all.sh` to 
+- ✅ **Fix formatting and linting issues** - After implementing any changes, run `./scripts/format-lint-all.sh` to
   automatically fix ESLint violations before running any other scripts
 - ✅ **Verify code quality** - Run `./scripts/verify-all.sh` to ensure all quality checks pass
 - ✅ **Run tests** - Run `./scripts/build-test-all.sh` to ensure all tests pass
@@ -359,7 +387,8 @@ Run these scripts in sequence after completing implementation:
 
 **Important**: If `verify-all.sh` or `build-test-all.sh` fail, address the specific issues reported before proceeding.
 
-**Critical**: Before claiming any task is complete, use appropriate tools (read_file, grep_search, codebase_search) to verify your claims are accurate.
+**Critical**: Before claiming any task is complete, use appropriate tools (read_file, grep_search, codebase_search) to
+verify your claims are accurate.
 
 ### Communication
 
@@ -370,7 +399,8 @@ Run these scripts in sequence after completing implementation:
 
 ### Honesty and Verification Requirements
 
-**CRITICAL**: AI agents must be completely honest about what has been implemented and must verify every claim before making it.
+**CRITICAL**: AI agents must be completely honest about what has been implemented and must verify every claim before
+making it.
 
 #### Mandatory Verification Before Making Claims
 
@@ -391,6 +421,7 @@ Before marking ANY task as complete or making ANY claim about implementation:
 4. **MUST NOT assume tests work** based on code inspection alone
 
 **Examples of required verification:**
+
 ```bash
 # For all tests - **PREFER THIS APPROACH WHENEVER POSSIBLE**
 pnpm test
@@ -407,11 +438,13 @@ cd packages/web && pnpm test -- --testPathPattern="content.*test.ts"
 cd packages/test-e2e && pnpm test -- tests/content/
 ```
 
-**If tests fail**: Fix the failures or mark the task as incomplete. NEVER mark test tasks complete when tests are failing.
+**If tests fail**: Fix the failures or mark the task as incomplete. NEVER mark test tasks complete when tests are
+failing.
 
 #### Examples of Required Verification
 
 **Before claiming "Unit tests implemented":**
+
 ```bash
 # MUST verify test files exist and contain actual tests
 grep_search query="describe|it|test" include_pattern="*.spec.ts"
@@ -419,6 +452,7 @@ read_file target_file="path/to/test.spec.ts" # Confirm tests exist
 ```
 
 **Before claiming "API endpoint working":**
+
 ```bash
 # MUST verify endpoint exists in code
 grep_search query="@Get.*root" include_pattern="*.controller.ts"
@@ -426,6 +460,7 @@ read_file target_file="path/to/controller.ts" # Confirm implementation
 ```
 
 **Before claiming "E2E tests cover workflow":**
+
 ```bash
 # MUST verify E2E tests actually test the claimed functionality
 grep_search query="workspace|content" include_pattern="test-e2e/**/*.spec.ts"
@@ -441,6 +476,7 @@ grep_search query="workspace|content" include_pattern="test-e2e/**/*.spec.ts"
 #### Consequences of Dishonesty
 
 Dishonest claims:
+
 - **Waste developer time** when they discover the truth later
 - **Undermine trust** in AI assistance
 - **Create technical debt** by hiding missing components
@@ -449,6 +485,7 @@ Dishonest claims:
 #### Red Flag Phrases to Avoid
 
 Never use these phrases without explicit verification:
+
 - ❌ "Tests are passing" (without running them)
 - ❌ "Task 8 (testing) is complete" (without running any tests)
 - ❌ "Comprehensive testing implemented" (without running tests to verify)
@@ -460,6 +497,7 @@ Never use these phrases without explicit verification:
 #### Required Honest Alternatives
 
 Instead of false claims, use honest documentation:
+
 - ✅ "Implementation complete, tests deferred for startup speed"
 - ✅ "Functionality works via manual testing, automated tests not implemented"
 - ✅ "Cannot verify test coverage, marking as incomplete"
@@ -476,24 +514,29 @@ Instead of false claims, use honest documentation:
 - ❌ **Don't skip verification** - Always run quality checks before completion
 - ❌ **Don't mark test tasks complete without actual tests** - Only mark test tasks as ✅ when test files exist and pass
 - ❌ **Don't make unverified claims** - Every claim about implementation must be verified with tool calls
-- ❌ **NEVER claim "Task X completed" without running the actual deliverables** - If the task is about tests, run the tests first
-- ❌ **NEVER write a summary claiming comprehensive test coverage without verifying tests work** - File existence ≠ working tests
+- ❌ **NEVER claim "Task X completed" without running the actual deliverables** - If the task is about tests, run the
+  tests first
+- ❌ **NEVER write a summary claiming comprehensive test coverage without verifying tests work** - File existence ≠
+  working tests
 
 #### Common AI Agent Mistakes to Avoid
 
 **Mistake Pattern**: Creating test files but claiming task completion without running them
+
 - ❌ Creating `.spec.ts` files with test code
-- ❌ Writing documentation about "comprehensive testing"  
+- ❌ Writing documentation about "comprehensive testing"
 - ❌ Claiming "Task 8: Comprehensive Testing completed"
 - ❌ **BUT**: Never actually running `npm test` to verify tests work
 
 **Correct Approach**: Always verify before claiming
+
 - ✅ Create test files
 - ✅ Run the tests: `cd packages/api && npm test`
 - ✅ Fix any failures (dependency injection issues, missing imports, etc.)
 - ✅ Only then claim task completion
 
-**If tests fail**: Be honest and say "Tests implemented but failing due to [specific issues]. Task incomplete until fixed."
+**If tests fail**: Be honest and say "Tests implemented but failing due to [specific issues]. Task incomplete until
+fixed."
 
 ## Communication & Collaboration
 
