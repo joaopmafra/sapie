@@ -2,7 +2,12 @@
 
 ## Summary
 
-Establish a robust foundation for users to create, organize, and manage their study content in a digital environment, supporting intuitive navigation, editing, and contextual actions.
+Establish a robust foundation for users to create, organize, and manage their study content in a digital environment,
+supporting intuitive navigation, editing, and contextual actions.
+
+## Resources
+
+1. Mockup: ![note_editing_mockup.png](../../../research/content_features_and_implementation/note_editing_mockup.png)
 
 ## Features
 
