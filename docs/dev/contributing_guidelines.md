@@ -81,16 +81,8 @@ The same applies for epics and features.
 
 ## Development Process
 
-### Core Principles
-
-TODO: add and document the "baby steps" approach; see 31-story-implement_content_storage_foundation.md task 9 for an
-example of how to do it.
-
-- **One story at a time** - Complete fully before starting another
-- **Follow task sequence** - Complete tasks in the order specified
-- **Complete all components** - Implementation, tests, and documentation for each task
-- **Verify before moving on** - Run quality checks before considering work complete
-- **If blocked, ask for help** - If you're stuck, ask for help from the team
+TODO: add the "baby steps" approach; see 31-story-implement_content_storage_foundation.md task 9 for an example of how 
+to do it.
 
 ### Iterative Development Approach
 
@@ -110,12 +102,13 @@ Imagine you're tasked with building a car for users who need transportation:
 
 Each iteration is a complete, working solution that solves the core problem while progressively adding capabilities.
 
-##### Full-Stack Feature Implementation
+##### Full-Stack Feature Planning and Implementation
 
 **Core principle**: Build complete, working features that users can immediately benefit from.
 
 Just like the transportation analogy, avoid building incomplete parts (API without UI, or UI without backend). Instead, 
-build simple but complete end-to-end functionality that delivers real user value.
+build simple but complete end-to-end functionality that delivers real user value. This is **VERY** important to enable
+fast feedback loops.
 
 **Default approach**: Single story for full-stack features
 - ✅ **Complete user workflow**: From UI interaction to data persistence
@@ -124,7 +117,8 @@ build simple but complete end-to-end functionality that delivers real user value
 - ✅ **Example**: "Add note creation" → API endpoint + UI form + validation + storage
 
 **When to split**: Only for genuine complexity or dependency reasons
-- ❌ **Don't split just because** it "feels like too much work"
+- ❌ **Don't split just because** it "feels like too much work"; in this case, it's better to split the story into 
+  smaller ones
 - ✅ **Do split when**:
   - Backend serves multiple frontends and has standalone value
   - Significant technical complexity differences (simple UI + complex data processing)
@@ -133,7 +127,7 @@ build simple but complete end-to-end functionality that delivers real user value
 - ✅ **Structure**: Create parent feature with child stories for backend and frontend components, not isolated
   backend/frontend stories
 
-#### Applying This to Software Features
+#### Applying This to Software Features Planning and Implementation
 
 **Example: Building a Note-Taking System**
 
@@ -144,17 +138,17 @@ Instead of building incomplete database schemas + incomplete UI + incomplete API
 3. **Iteration 3** (Motorcycle): Add user accounts and sync - notes available across devices
 4. **Iteration 4** (Car): Add rich formatting, search, tags, and collaboration features
 
-#### Guidelines for AI Agents
+Another approach is to split complex features into small iterations that deliver complete functionality that users can
+immediately benefit from:
 
-- ✅ **Start with the simplest working solution** that addresses the core user need
-- ✅ **Each iteration should be deployable** and provide measurable user value
-- ✅ **Build end-to-end** (UI + logic + data) for each iteration, even if simple
-- ✅ **Plan the progression** - know how each iteration builds toward the final vision
-- ✅ **Get feedback early** - deploy iterations to validate assumptions before building more complexity
+1. **Iteration 1** (Scooter): Add a tree-like structure for note organization with just a root folder
+2. **Iteration 2** (Bicycle): Add note editing and listing under the root folder
+3. **Iteration 3** (Motorcycle): Add note deletion, nested folders, and favorites
+4. **Iteration 4** (Car): Add sync, search, tags, and collaboration features
 
-#### Story Implementation
+#### Story Planning and Creation
 
-When working on stories:
+When creating stories:
 
 - **Break complex features** into iterative releases rather than building everything at once
 - **Prioritize core functionality** - what's the minimal version that solves the user's problem?
@@ -164,13 +158,29 @@ When working on stories:
 **Remember**: Users prefer a working scooter today over a promised car next month. Each iteration should make their life
 better immediately.
 
+#### Guidelines for AI Agents
+
+- ✅ **Start with the simplest working solution** that addresses the core user need
+- ✅ **Each iteration should be deployable** and provide measurable user value
+- ✅ **Build end-to-end** (UI + logic + data) for each iteration, even if simple
+- ✅ **Plan the progression** - know how each iteration builds toward the final vision
+- ✅ **Get feedback early** - deploy iterations to validate assumptions before building more complexity
+
 ### Implementation Guidelines
+
+#### Story Implementation
+
+- **One story at a time** - Complete fully before starting another
+- **Follow task sequence** - Complete tasks in the order specified
+- **Complete all components** - Implementation, tests, and documentation for each task
+- **Verify before moving on** - Run quality checks before considering work complete
+- **If blocked, ask for help** - If you're stuck, ask for help from the team
 
 #### DO:
 
 - ✅ **Implement one story task at a time** - Focus prevents incomplete work
 - ✅ **Follow existing patterns** - Maintain consistency with established codebase patterns
-- ✅ **Write comprehensive tests** - Unit, integration, and e2e as appropriate
+- ✅ ~~**Write comprehensive tests** - Unit, integration, and e2e as appropriate~~
 - ✅ **Update documentation** - Keep all docs current with changes
 - ✅ **Handle errors properly** - Implement proper error handling and logging
 - ✅ **Use TypeScript properly** - Fix all type errors before committing

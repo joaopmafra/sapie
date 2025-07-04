@@ -4,15 +4,15 @@
 As a [role], I want [goal], so that [benefit]
 
 ## Details
-[details]
+[High level details (no technical details)]
 
 ## Dependencies
 - [ ] [dependency story]
 
-## Acceptance Criteria
+## ~~Acceptance Criteria~~
 - [ ] [acceptance criteria]
 
-## Technical Requirements
+## ~~Technical Requirements~~
 - [ ] [technical requirements]
 
 ## Tasks
