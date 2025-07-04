@@ -7,15 +7,15 @@ content.
 
 ## Epic Reference
 
-- [Epic 45: Content Management Foundation](../../1-epics/2-to-refine/45-epic-content_management_foundation.md)
+- [Epic 45: Content Management Foundation](../1-epics/2-to-refine/45-epic-content_management_foundation.md)
 
 ## Feature Reference
 
-- [Feature 46: Content Navigation & Organization](../../2-features/2-to-refine/46-feature-content_navigation_and_organization.md)
+- [Feature 46: Content Navigation & Organization](../2-features/2-to-refine/46-feature-content_navigation_and_organization.md)
 
 ## Resources
 
-1. Mockup: ![note_editing_mockup.png](../../../research/content_features_and_implementation/note_editing_mockup.png)
+1. Mockup: ![note_editing_mockup.png](../../research/content_features_and_implementation/note_editing_mockup.png)
 
 ---
 
