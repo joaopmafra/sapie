@@ -129,11 +129,12 @@ const Status = () => {
             <Typography variant='body1'>
               BASE_URL: {import.meta.env.BASE_URL}
             </Typography>
-            <Typography variant='body1'>DEV: {import.meta.env.DEV}</Typography>
             <Typography variant='body1'>
-              PROD: {import.meta.env.PROD}
+              DEV: {import.meta.env.DEV?.toString()}
             </Typography>
-            <Typography variant='body1'>SSR: {import.meta.env.SSR}</Typography>
+            <Typography variant='body1'>
+              PROD: {import.meta.env.PROD?.toString()}
+            </Typography>
           </CardContent>
         </Card>
 

@@ -41,6 +41,8 @@ content.
 ## Technical Details
 
 - **Data Structure Example:**
+  The `children` property is optional. If it's `undefined`, it means the children haven't been fetched yet. If it's an
+  empty array `[]`, it means the folder is empty.
   ```ts
   type TreeNode = {
     id: string;
@@ -50,11 +52,15 @@ content.
   };
   ```
 - **API/Firestore:**
-    - Fetch the root directory and recursively load children
-    - Use existing content service or create a new one if needed
+    - The frontend will first fetch the root directory using the existing `GET /api/content/root` endpoint.
+    - A new endpoint `GET /api/content?parentId=:id` will be implemented to fetch the immediate children of a given
+      directory.
+    - For the "scooter" version, this new endpoint will return hardcoded fake data to simulate the structure.
 - **Component Structure:**
-    - `TreeNavigationSidebar` (main component)
-    - May use helper components for tree nodes
+    - `TreeNavigationSidebar` will manage the state of the tree.
+    - On initial render, it fetches the root.
+    - When a user expands a folder, it will call the `GET /api/content?parentId=:id` endpoint and merge the returned
+      children into the tree state.
 - **UI/UX:**
     - Show loading spinner while fetching
     - Show error message if fetch fails
@@ -68,7 +74,10 @@ content.
 
 ## Tasks
 
-- [ ] Implementation: Build the sidebar component, integrate data loading, handle loading/error states
-- [ ] Testing: Add/verify tests for data loading and UI rendering (defer non-critical tests if needed, but document
-  decision)
+- [x] Implementation: Build the sidebar component, integrate data loading, handle loading/error states
+- [ ] Backend: Implement `GET /api/content?parentId=:id` endpoint that returns a hardcoded list of children for a given
+  ID.
+- [ ] Frontend: Implement lazy-loading logic in `TreeNavigationSidebar` to fetch and display children when a folder is
+  expanded.
+- [ ] Testing: Add/verify E2E tests for the lazy-loading functionality (e.g., expanding a node loads new items).
 - [ ] Documentation: Update relevant docs and add usage notes for the new component 

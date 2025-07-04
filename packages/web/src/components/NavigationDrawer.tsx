@@ -12,6 +12,8 @@ import {
 import { styled } from '@mui/material/styles';
 import React from 'react';
 
+import ContentExplorer from './ContentExplorer';
+
 export const mobileDrawerWidth = 260;
 export const desktopDrawerWidth = 300;
 
@@ -52,7 +54,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
         </IconButton>
       </DrawerHeader>
       <Divider />
-      TODO: add a tree-like structure to display the contents
+      <ContentExplorer />
     </>
   );
 
