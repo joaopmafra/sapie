@@ -521,6 +521,8 @@ Instead of false claims, use honest documentation:
   tests first
 - ❌ **NEVER write a summary claiming comprehensive test coverage without verifying tests work** - File existence ≠
   working tests
+- ❌ **NEVER commit code.** Stage changes and inform the user they are ready for review and commit.
+- ❌ **NEVER delete files unless they are directly part of the current task.** For example, when renaming a file, it is acceptable to remove the old file. However, do not remove other, unrelated files from the project, even if they appear to be unused.
 
 #### Common AI Agent Mistakes to Avoid
 
