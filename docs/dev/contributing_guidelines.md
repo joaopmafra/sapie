@@ -100,7 +100,7 @@ See [User Stories](https://www.mountaingoatsoftware.com/agile/user-stories) for 
   reasons (see detailed guidelines
   in [Iterative Development Approach](#iterative-development-approach))
 - ✅ **References to epics, features, and stories**: **ALWAYS** reference the epic, feature, and story that the PBI is
-  related to.
+  related to in the form of markdown links. Example: `[Epic 23: Content Management Foundation](../pm/1-epics/23-epic-content_management_foundation.md)`.
 - ✅ **Acceptance criteria**: Only include acceptance criteria when refining a story
 - ✅ **Technical Requirements**: Only include technical requirements when refining a story
 
