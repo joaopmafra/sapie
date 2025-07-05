@@ -4,10 +4,13 @@ This file is used to track the PBI (product backlog item), which is the number o
 
 ## Current Last PBI Number
 
-44
+60
 
 ## Recent PBIs Created
 
+- **60**: Story - Denormalize Folder Data for Frontend Optimization
+- **59**: Story - Toggle Information Pane
+- **58**: Story - Note Information Pane
 - **5**: Feature - Multiple Environments Setup
 - **23**: Epic - Content Management Foundation
 - **24**: Epic - Study & Learning Features
@@ -31,3 +34,12 @@ This file is used to track the PBI (product backlog item), which is the number o
 - **42**: Story - Setup Staging Environment [Feature 5]
 - **43**: Story - Setup Production Environment [Feature 5]
 - **44**: Story - Finalize Environment Integration and Documentation [Feature 5]
+- **49**: Story - Tree Navigation Sidebar
+- **50**: Story - Nested Folders Support
+- **51**: Story - Highlight Selected Node
+- **52**: Story - Favorites Section Sidebar
+- **53**: Story - Editable Note Title
+- **54**: Story - Save Status Display
+- **55**: Story - Note Content Editor
+- **56**: Story - Common Actions Menu
+- **57**: Story - Context Menu on Tree Nodes
