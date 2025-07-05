@@ -1,7 +1,10 @@
+import ArticleIcon from '@mui/icons-material/Article';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { CircularProgress, Alert, Box, Typography } from '@mui/material';
+import FolderIcon from '@mui/icons-material/Folder';
+import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
+import { TreeItem, type TreeItemProps } from '@mui/x-tree-view/TreeItem';
 import React, { useEffect, useState } from 'react';
 
 import { useAuth } from '../contexts/AuthContext';
@@ -13,7 +16,8 @@ const DEV_MODE = true;
 
 interface TreeNode {
   id: string;
-  label: string;
+  name:string;
+  type: 'directory' | 'note';
   children?: TreeNode[];
 }
 
@@ -21,28 +25,76 @@ interface TreeNode {
 const FAKE_TREE: TreeNode[] = [
   {
     id: 'root',
-    label: 'My Contents',
+    name: 'My Contents',
+    type: 'directory',
     children: [
       {
         id: 'folder1',
-        label: 'Math',
+        name: 'Math',
+        type: 'directory',
         children: [
-          { id: 'note1', label: 'Algebra Notes' },
-          { id: 'note2', label: 'Geometry Notes' },
+          { id: 'note1', name: 'Algebra Notes', type: 'note' },
+          { id: 'note2', name: 'Geometry Notes', type: 'note' },
         ],
       },
       {
         id: 'folder2',
-        label: 'Science',
+        name: 'Science',
+        type: 'directory',
         children: [
-          { id: 'note3', label: 'Physics Notes' },
-          { id: 'note4', label: 'Chemistry Notes' },
+          { id: 'note3', name: 'Physics Notes', type: 'note' },
+          { id: 'note4', name: 'Chemistry Notes', type: 'note' },
         ],
       },
-      { id: 'note5', label: 'General Notes' },
+      { id: 'note5', name: 'General Notes', type: 'note' },
     ],
   },
 ];
+
+const FAKE_TREE_NODE_MAP = new Map<string, TreeNode>();
+const buildMap = (nodes: TreeNode[]) => {
+  for (const node of nodes) {
+    FAKE_TREE_NODE_MAP.set(node.id, node);
+    if (node.children) {
+      buildMap(node.children);
+    }
+  }
+};
+buildMap(FAKE_TREE);
+
+const CustomTreeItem = React.forwardRef(function CustomTreeItem(
+  props: TreeItemProps,
+  ref: React.Ref<HTMLLIElement>,
+) {
+  const { itemId, label, ...other } = props;
+  const node = FAKE_TREE_NODE_MAP.get(itemId);
+
+  const icon =
+    node?.type === 'directory' ? (
+      <FolderIcon sx={{ marginRight: 1 }} />
+    ) : (
+      <ArticleIcon sx={{ marginRight: 1 }} />
+    );
+
+  return (
+    <TreeItem
+      {...other}
+      itemId={itemId}
+      ref={ref}
+      label={
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          {icon}
+          <Typography
+            variant='body2'
+            sx={{ fontWeight: 'inherit', flexGrow: 1 }}
+          >
+            {label}
+          </Typography>
+        </Box>
+      }
+    />
+  );
+});
 
 /**
  * TreeNavigationSidebar
@@ -127,7 +179,12 @@ const ContentExplorer: React.FC = () => {
       >
         <RichTreeView
           items={FAKE_TREE}
-          slots={{ collapseIcon: ExpandMoreIcon, expandIcon: ChevronRightIcon }}
+          getItemLabel={(item) => item.name}
+          slots={{
+            collapseIcon: ExpandMoreIcon,
+            expandIcon: ChevronRightIcon,
+            item: CustomTreeItem,
+          }}
           defaultExpandedItems={['root']}
           sx={{ flexGrow: 1 }}
         />
@@ -147,7 +204,8 @@ const ContentExplorer: React.FC = () => {
   // For now, it will just show the root.
   return (
     <RichTreeView
-      items={[{ id: root.id, label: root.name }]}
+      items={[{ id: root.id, name: root.name, type: 'directory' }]}
+      getItemLabel={(item) => item.name}
       slots={{ collapseIcon: ExpandMoreIcon, expandIcon: ChevronRightIcon }}
     />
   );
