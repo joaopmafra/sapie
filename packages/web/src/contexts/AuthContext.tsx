@@ -1,3 +1,4 @@
+// @refresh reset
 import type { User } from 'firebase/auth';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { createContext, useContext, useEffect, useState } from 'react';

@@ -4,6 +4,11 @@ import { createAuthenticatedApiConfiguration } from '../auth-utils';
 
 import type { Content } from './types';
 
+interface RawContent extends Omit<Content, 'createdAt' | 'updatedAt'> {
+  createdAt: string;
+  updatedAt: string;
+}
+
 /**
  * Content Service
  *
@@ -66,6 +71,46 @@ export class ContentService {
       console.error('Failed to get root directory:', error);
       throw new Error(
         `Failed to get root directory: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  async getContentByParentId(
+    currentUser: User,
+    parentId: string
+  ): Promise<Content[]> {
+    try {
+      const config = await createAuthenticatedApiConfiguration(
+        this.basePath,
+        currentUser
+      );
+
+      const response = await fetch(`/api/content?parentId=${parentId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...config.baseOptions?.headers,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `Failed to get content: ${response.status} ${response.statusText}. ${errorText}`
+        );
+      }
+
+      const data = await response.json();
+
+      return data.map((item: RawContent) => ({
+        ...item,
+        createdAt: new Date(item.createdAt),
+        updatedAt: new Date(item.updatedAt),
+      })) as Content[];
+    } catch (error) {
+      console.error('Failed to get content:', error);
+      throw new Error(
+        `Failed to get content: ${error instanceof Error ? error.message : String(error)}`
       );
     }
   }

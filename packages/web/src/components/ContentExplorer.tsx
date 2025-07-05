@@ -11,63 +11,16 @@ import { useAuth } from '../contexts/AuthContext';
 import { contentService } from '../lib/content';
 import type { Content } from '../lib/content';
 
-// --- DEV MODE: Set to true to use fake data for testing ---
-const DEV_MODE = true;
-
-interface TreeNode {
-  id: string;
-  name:string;
-  type: 'directory' | 'note';
+interface TreeNode extends Content {
   children?: TreeNode[];
 }
 
-// Example fake tree data for development/testing
-const FAKE_TREE: TreeNode[] = [
-  {
-    id: 'root',
-    name: 'My Contents',
-    type: 'directory',
-    children: [
-      {
-        id: 'folder1',
-        name: 'Math',
-        type: 'directory',
-        children: [
-          { id: 'note1', name: 'Algebra Notes', type: 'note' },
-          { id: 'note2', name: 'Geometry Notes', type: 'note' },
-        ],
-      },
-      {
-        id: 'folder2',
-        name: 'Science',
-        type: 'directory',
-        children: [
-          { id: 'note3', name: 'Physics Notes', type: 'note' },
-          { id: 'note4', name: 'Chemistry Notes', type: 'note' },
-        ],
-      },
-      { id: 'note5', name: 'General Notes', type: 'note' },
-    ],
-  },
-];
-
-const FAKE_TREE_NODE_MAP = new Map<string, TreeNode>();
-const buildMap = (nodes: TreeNode[]) => {
-  for (const node of nodes) {
-    FAKE_TREE_NODE_MAP.set(node.id, node);
-    if (node.children) {
-      buildMap(node.children);
-    }
-  }
-};
-buildMap(FAKE_TREE);
-
 const CustomTreeItem = React.forwardRef(function CustomTreeItem(
-  props: TreeItemProps,
-  ref: React.Ref<HTMLLIElement>,
+  props: TreeItemProps & { nodeMap: Map<string, TreeNode> },
+  ref: React.Ref<HTMLLIElement>
 ) {
-  const { itemId, label, ...other } = props;
-  const node = FAKE_TREE_NODE_MAP.get(itemId);
+  const { itemId, label, nodeMap, ...other } = props;
+  const node = nodeMap.get(itemId);
 
   const icon =
     node?.type === 'directory' ? (
@@ -96,28 +49,15 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
   );
 });
 
-/**
- * TreeNavigationSidebar
- *
- * Minimal version: Fetches and displays the user's root directory as a tree root node.
- * Loading and error states are handled. Recursive children loading is not yet implemented.
- *
- * DEV_MODE: Set to true to use fake data for development/testing.
- *
- * TODO: Extend to fetch and display children recursively for full tree navigation.
- */
 const ContentExplorer: React.FC = () => {
   const { currentUser, loading: authLoading } = useAuth();
-  const [root, setRoot] = useState<Content | null>(null);
+  const [tree, setTree] = useState<TreeNode[]>([]);
+  const [nodeMap, setNodeMap] = useState(new Map<string, TreeNode>());
+  const [expanded, setExpanded] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (DEV_MODE) {
-      setLoading(false);
-      setError(null);
-      return;
-    }
     let isMounted = true;
     const fetchRoot = async () => {
       setLoading(true);
@@ -129,13 +69,29 @@ const ContentExplorer: React.FC = () => {
           return;
         }
         const rootDir = await contentService.getRootDirectory(currentUser);
+        const children = await contentService.getContentByParentId(
+          currentUser,
+          rootDir.id
+        );
+        const childNodes: TreeNode[] = children.map(child => ({
+          ...child,
+          children: child.type === 'directory' ? [] : undefined,
+        }));
+
         if (isMounted) {
-          setRoot(rootDir);
+          const rootNode: TreeNode = { ...rootDir, children: childNodes };
+          setTree([rootNode]);
+          const newMap = new Map<string, TreeNode>();
+          newMap.set(rootNode.id, rootNode);
+          childNodes.forEach(child => newMap.set(child.id, child));
+          setNodeMap(newMap);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
     if (!authLoading) {
@@ -145,6 +101,57 @@ const ContentExplorer: React.FC = () => {
       isMounted = false;
     };
   }, [currentUser, authLoading]);
+
+  const handleExpandedItemsChange = async (
+    _event: React.SyntheticEvent | null,
+    expandedIds: string[]
+  ) => {
+    setExpanded(expandedIds);
+
+    if (!currentUser) return;
+
+    const lastExpandedId = expandedIds.find(id => !expanded.includes(id));
+    if (!lastExpandedId) return;
+
+    const node = nodeMap.get(lastExpandedId);
+
+    if (node && node.type === 'directory' && node.children?.length === 0) {
+      try {
+        const children = await contentService.getContentByParentId(
+          currentUser,
+          node.id
+        );
+        const childNodes: TreeNode[] = children.map(child => ({
+          ...child,
+          children: child.type === 'directory' ? [] : undefined,
+        }));
+
+        setTree(prevTree => {
+          const newTree = JSON.parse(JSON.stringify(prevTree));
+          const updateChildren = (nodes: TreeNode[]): TreeNode[] => {
+            return nodes.map(n => {
+              if (n.id === node.id) {
+                return { ...n, children: childNodes };
+              }
+              if (n.children) {
+                return { ...n, children: updateChildren(n.children) };
+              }
+              return n;
+            });
+          };
+          return updateChildren(newTree);
+        });
+
+        setNodeMap(prevMap => {
+          const newMap = new Map(prevMap);
+          childNodes.forEach(child => newMap.set(child.id, child));
+          return newMap;
+        });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    }
+  };
 
   if (authLoading || loading) {
     return (
@@ -167,47 +174,28 @@ const ContentExplorer: React.FC = () => {
     );
   }
 
-  if (DEV_MODE) {
-    return (
-      <Box
-        p={1}
-        sx={{
-          flexGrow: 1,
-          maxHeight: 'calc(100vh - 64px)',
-          overflowY: 'auto',
-        }}
-      >
-        <RichTreeView
-          items={FAKE_TREE}
-          getItemLabel={(item) => item.name}
-          slots={{
-            collapseIcon: ExpandMoreIcon,
-            expandIcon: ChevronRightIcon,
-            item: CustomTreeItem,
-          }}
-          defaultExpandedItems={['root']}
-          sx={{ flexGrow: 1 }}
-        />
-      </Box>
-    );
-  }
-
-  if (!root) {
-    return (
-      <Box p={2}>
-        <Typography color='textSecondary'>No root directory found.</Typography>
-      </Box>
-    );
-  }
-
-  // This part is for the non-dev mode, which is not yet fully implemented
-  // For now, it will just show the root.
   return (
-    <RichTreeView
-      items={[{ id: root.id, name: root.name, type: 'directory' }]}
-      getItemLabel={(item) => item.name}
-      slots={{ collapseIcon: ExpandMoreIcon, expandIcon: ChevronRightIcon }}
-    />
+    <Box
+      p={1}
+      sx={{
+        flexGrow: 1,
+        maxHeight: 'calc(100vh - 64px)',
+        overflowY: 'auto',
+      }}
+    >
+      <RichTreeView
+        items={tree}
+        getItemLabel={item => item.name}
+        slots={{
+          collapseIcon: ExpandMoreIcon,
+          expandIcon: ChevronRightIcon,
+          item: props => <CustomTreeItem {...props} nodeMap={nodeMap} />,
+        }}
+        expandedItems={expanded}
+        onExpandedItemsChange={handleExpandedItemsChange}
+        sx={{ flexGrow: 1 }}
+      />
+    </Box>
   );
 };
 
