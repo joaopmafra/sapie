@@ -75,9 +75,9 @@ content.
 ## Tasks
 
 - [x] Implementation: Build the sidebar component, integrate data loading, handle loading/error states
-- [ ] Backend: Implement `GET /api/content?parentId=:id` endpoint that returns a hardcoded list of children for a given
+- [x] Backend: Implement `GET /api/content?parentId=:id` endpoint that returns a hardcoded list of children for a given
   ID.
-- [ ] Frontend: Implement lazy-loading logic in `TreeNavigationSidebar` to fetch and display children when a folder is
+- [x] Frontend: Implement lazy-loading logic in `TreeNavigationSidebar` to fetch and display children when a folder is
   expanded.
 - [ ] Testing: Add/verify E2E tests for the lazy-loading functionality (e.g., expanding a node loads new items).
 - [ ] Documentation: Update relevant docs and add usage notes for the new component 
