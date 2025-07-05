@@ -381,8 +381,8 @@ For package-specific testing details, see individual package READMEs:
 
 Run these scripts in sequence after completing implementation:
 
-- ✅ **Fix formatting and linting issues** - After implementing any changes, run `./scripts/format-lint-all.sh` to
-  automatically fix ESLint violations before running any other scripts
+- ✅ **Run format and lint script after every code change** - After any code modification, you **MUST** run
+  `./scripts/format-lint-all.sh` to maintain code quality and catch errors early.
 - ✅ **Verify code quality** - Run `./scripts/verify-all.sh` to ensure all quality checks pass
 - ✅ **Run tests** - Run `./scripts/build-test-all.sh` to ensure all tests pass
 - ✅ **Address any failures** - Fix any remaining linting, formatting, type, or test errors
