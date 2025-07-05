@@ -25,7 +25,7 @@ export class ContentService {
       },
       {
         id: 'folder3',
-        name: 'Science',
+        name: 'Empty',
         type: ContentType.DIRECTORY,
         parentId: 'folder1',
         ownerId: 'dummy-owner',

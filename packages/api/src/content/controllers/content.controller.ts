@@ -63,6 +63,9 @@ export class ContentController {
       return this.contentService.findByParentId('root');
     }
 
+    // uncomment to test the loading indicator
+    // await new Promise(resolve => setTimeout(resolve, 1000));
+
     return this.contentService.findByParentId(parentId);
   }
 
