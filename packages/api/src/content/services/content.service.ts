@@ -24,6 +24,15 @@ export class ContentService {
         updatedAt: new Date(),
       },
       {
+        id: 'folder3',
+        name: 'Science',
+        type: ContentType.DIRECTORY,
+        parentId: 'folder1',
+        ownerId: 'dummy-owner',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
         id: 'note5',
         name: 'General Notes',
         type: ContentType.NOTE,
@@ -73,6 +82,7 @@ export class ContentService {
         updatedAt: new Date(),
       },
     ],
+    folder3: [],
   };
   findByParentId(parentId: string): Promise<Content[]> {
     return Promise.resolve(this.FAKE_TREE_DATA[parentId] || []);

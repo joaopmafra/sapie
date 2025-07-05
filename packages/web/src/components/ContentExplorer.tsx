@@ -9,10 +9,19 @@ import React, { useEffect, useState } from 'react';
 
 import { useAuth } from '../contexts/AuthContext';
 import { contentService } from '../lib/content';
-import type { Content } from '../lib/content';
+import type { Content, ContentType } from '../lib/content';
 
-interface TreeNode extends Content {
+interface TreeNode {
+  id: string;
+  name: string;
+  type: ContentType | 'dummy';
   children?: TreeNode[];
+  parentId: string | null;
+  ownerId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  contentUrl?: string;
+  size?: number;
 }
 
 const CustomTreeItem = React.forwardRef(function CustomTreeItem(
@@ -25,9 +34,9 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
   const icon =
     node?.type === 'directory' ? (
       <FolderIcon sx={{ marginRight: 1 }} />
-    ) : (
+    ) : node?.type === 'note' ? (
       <ArticleIcon sx={{ marginRight: 1 }} />
-    );
+    ) : null;
 
   return (
     <TreeItem
@@ -75,7 +84,20 @@ const ContentExplorer: React.FC = () => {
         );
         const childNodes: TreeNode[] = children.map(child => ({
           ...child,
-          children: child.type === 'directory' ? [] : undefined,
+          children:
+            child.type === 'directory'
+              ? [
+                  {
+                    id: `dummy_${child.id}`,
+                    name: 'Loading...',
+                    type: 'dummy',
+                    parentId: child.id,
+                    ownerId: child.ownerId,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                  },
+                ]
+              : undefined,
         }));
 
         if (isMounted) {
@@ -115,7 +137,7 @@ const ContentExplorer: React.FC = () => {
 
     const node = nodeMap.get(lastExpandedId);
 
-    if (node && node.type === 'directory' && node.children?.length === 0) {
+    if (node && node.type === 'directory' && node.children?.[0]?.type === 'dummy') {
       try {
         const children = await contentService.getContentByParentId(
           currentUser,
@@ -123,7 +145,20 @@ const ContentExplorer: React.FC = () => {
         );
         const childNodes: TreeNode[] = children.map(child => ({
           ...child,
-          children: child.type === 'directory' ? [] : undefined,
+          children:
+            child.type === 'directory'
+              ? [
+                  {
+                    id: `dummy_${child.id}`,
+                    name: 'Loading...',
+                    type: 'dummy',
+                    parentId: child.id,
+                    ownerId: child.ownerId,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                  },
+                ]
+              : undefined,
         }));
 
         setTree(prevTree => {
