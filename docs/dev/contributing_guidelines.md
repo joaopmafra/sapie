@@ -100,7 +100,8 @@ See [User Stories](https://www.mountaingoatsoftware.com/agile/user-stories) for 
   reasons (see detailed guidelines
   in [Iterative Development Approach](#iterative-development-approach))
 - ✅ **References to epics, features, and stories**: **ALWAYS** reference the epic, feature, and story that the PBI is
-  related to in the form of markdown links. Example: `[#23 Epic: Content Management Foundation](../pm/1-epics/23-epic-content_management_foundation.md)`.
+  related to in the form of markdown links. Example:
+  `[#23 Epic: Content Management Foundation](../pm/1-epics/23-epic-content_management_foundation.md)`.
 - ✅ **Acceptance criteria**: Only include acceptance criteria when refining a story
 - ✅ **Technical Requirements**: Only include technical requirements when refining a story
 - ✅ **Technical Details**: Only include technical details when refining a story
@@ -522,7 +523,11 @@ Instead of false claims, use honest documentation:
 - ❌ **NEVER write a summary claiming comprehensive test coverage without verifying tests work** - File existence ≠
   working tests
 - ❌ **NEVER commit code.** Stage changes and inform the user they are ready for review and commit.
-- ❌ **NEVER delete files unless they are directly part of the current task.** For example, when renaming a file, it is acceptable to remove the old file. However, do not remove other, unrelated files from the project, even if they appear to be unused.
+- ❌ **NEVER delete files unless they are directly part of the current task.** For example, when renaming a file, it is
+  acceptable to remove the old file. However, do not remove other, unrelated files from the project, even if they appear
+  to be unused.
+- ❌ **NEVER leave unused dependencies or code from abandoned implementation attempts.** If a package is installed or
+  code is written for an approach that is later discarded, it must be removed.
 
 #### Common AI Agent Mistakes to Avoid
 
