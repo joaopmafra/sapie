@@ -11,7 +11,7 @@ content.
 
 ## Feature Reference
 
-- [Feature 46: Content Navigation & Organization](../2-features/2-to-refine/46-feature-content_navigation_and_organization.md)
+- [Feature 46: Content Navigation & Organization](../2-features/1-ready/46-feature-content_navigation_and_organization.md)
 
 ## Resources
 
