@@ -10,7 +10,7 @@ Enable users to intuitively navigate and organize their notes and folders using 
 
 ## Stories
 
-- [Story 49: Implement Tree-Like Content Navigation Sidebar](../../5-done/49-story-tree_navigation_sidebar.md)
-- [Story 50: Support Folders and Nested Subfolders in Content Tree](../../3-stories/2-to-refine/50-story-nested_folders_support.md)
-- [Story 51: Highlight Selected Content Node in Sidebar](../../3-stories/2-to-refine/51-story-highlight_selected_node.md)
-- [Story 52: Implement Favorites Section in Sidebar](../../3-stories/2-to-refine/52-story-favorites_section_sidebar.md) 
+- [Story 49: Implement Tree-Like Content Navigation Sidebar](../../5-done/49-story-tree_navigation_sidebar.md) - done
+- [Story 50: Support Folders and Nested Subfolders in Content Tree](../../5-done/50-story-nested_folders_support.md) - done
+- [Story 51: Highlight Selected Content Node in Sidebar](../../5-done/51-story-highlight_selected_node.md) - done
+- ~~[Story 52: Implement Favorites Section in Sidebar](../../3-stories/2-to-refine/52-story-favorites_section_sidebar.md)~~ 
