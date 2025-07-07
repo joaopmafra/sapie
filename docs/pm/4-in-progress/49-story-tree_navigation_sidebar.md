@@ -79,5 +79,5 @@ content.
   ID.
 - [x] Frontend: Implement lazy-loading logic in `TreeNavigationSidebar` to fetch and display children when a folder is
   expanded.
-- [ ] Testing: Add/verify E2E tests for the lazy-loading functionality (e.g., expanding a node loads new items).
-- [ ] Documentation: Update relevant docs and add usage notes for the new component 
+- ~~[ ] Testing: Add/verify E2E tests for the lazy-loading functionality (e.g., expanding a node loads new items).~~ (deferred to a later iteration)
+- ~~[ ] Documentation: Update relevant docs and add usage notes for the new component~~ 

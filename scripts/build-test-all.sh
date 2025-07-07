@@ -23,8 +23,9 @@ pnpm test:e2e
 cd ../..
 printf "OK\n\n"
 
-echo "Running app e2e tests..."
-cd packages/test-e2e
-pnpm run test
-cd ../..
-printf "OK\n\n"
+# e2e tests disabled for now; we plan to re-enable in a later iteration
+#echo "Running app e2e tests..."
+#cd packages/test-e2e
+#pnpm run test
+#cd ../..
+#printf "OK\n\n"

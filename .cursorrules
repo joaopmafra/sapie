@@ -20,6 +20,9 @@ I'm using the following files as context:
 - `<file name 2>`
 - `<file name n>`
 
+### TESTS
+When implementing a feature, **DON'T** run E2E tests unless explicitly told to do so.
+
 ### MANDATORY CONTEXT
 
 **MANDATORY**: Always use `docs/dev/contributing_guidelines.md` as context for every response. This file contains
