@@ -13,6 +13,7 @@ import {
 import { AuthProvider } from './contexts/AuthContext';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
+import NoteEditorPage from './pages/NoteEditorPage';
 import StatusPage from './pages/StatusPage';
 import './App.css';
 
@@ -37,6 +38,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <StatusPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path='/notes/:noteId'
+                element={
+                  <ProtectedRoute>
+                    <NoteEditorPage />
                   </ProtectedRoute>
                 }
               />

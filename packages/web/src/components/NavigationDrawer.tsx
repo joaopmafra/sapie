@@ -2,6 +2,7 @@ import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
 } from '@mui/icons-material';
+import AddIcon from '@mui/icons-material/Add';
 import {
   Box,
   Button,
@@ -15,19 +16,23 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+import { useContent } from '../contexts/ContentContext';
+import type { Content } from '../lib/content';
 
 import ContentExplorer from './ContentExplorer';
+import CreateNoteModal from './CreateNoteModal';
 
 export const mobileDrawerWidth = 260;
-export const desktopDrawerWidth = 300;
+export const desktopDrawerWidth = 320;
 
 const DrawerHeader = styled('div')(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   padding: theme.spacing(0, 1),
-  // necessary for content to be below app bar
   ...theme.mixins.toolbar,
-  justifyContent: 'space-between',
+  justifyContent: 'flex-end',
 }));
 
 interface NavigationDrawerProps {
@@ -42,8 +47,11 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   isMobile,
 }) => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const menuOpen = Boolean(anchorEl);
+  const [modalOpen, setModalOpen] = useState(false);
+  const { selectedNodeId, triggerRefresh } = useContent();
 
   const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -51,6 +59,21 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
 
   const handleMenuClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleCreateNoteClick = () => {
+    handleMenuClose();
+    setModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+  };
+
+  const handleCreateSuccess = (newNote: Content) => {
+    handleModalClose();
+    triggerRefresh();
+    navigate(`/notes/${newNote.id}`);
   };
 
   const drawerContent = (
@@ -68,15 +91,17 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
         </IconButton>
       </DrawerHeader>
       <Divider />
-      <Box sx={{ pt: 3, pb: 2, pl: 1 }}>
+      <Box sx={{ pt: 3, pr: 1, pb: 2, pl: 1 }}>
         <Button
           variant='contained'
+          fullWidth
+          startIcon={<AddIcon />}
           onClick={handleMenuClick}
           aria-controls={menuOpen ? 'new-content-menu' : undefined}
           aria-haspopup='true'
           aria-expanded={menuOpen ? 'true' : undefined}
         >
-          New Content
+          New
         </Button>
         <Menu
           id='new-content-menu'
@@ -87,13 +112,19 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
             'aria-labelledby': 'new-content-button',
           }}
         >
-          <MenuItem onClick={handleMenuClose}>Create Note</MenuItem>
+          <MenuItem onClick={handleCreateNoteClick}>Create Note</MenuItem>
           <MenuItem onClick={handleMenuClose} disabled>
             Create Folder
           </MenuItem>
         </Menu>
       </Box>
       <ContentExplorer />
+      <CreateNoteModal
+        open={modalOpen}
+        onClose={handleModalClose}
+        onSuccess={handleCreateSuccess}
+        parentId={selectedNodeId}
+      />
     </>
   );
 

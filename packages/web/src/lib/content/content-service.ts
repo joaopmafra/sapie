@@ -115,6 +115,48 @@ export class ContentService {
     }
   }
 
+  async createNote(
+    currentUser: User,
+    title: string,
+    parentId: string
+  ): Promise<Content> {
+    try {
+      const config = await createAuthenticatedApiConfiguration(
+        this.basePath,
+        currentUser
+      );
+
+      const response = await fetch('/api/content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...config.baseOptions?.headers,
+        },
+        body: JSON.stringify({ title, parentId }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `Failed to create note: ${response.status} ${response.statusText}. ${errorText}`
+        );
+      }
+
+      const data = await response.json();
+
+      return {
+        ...data,
+        createdAt: new Date(data.createdAt),
+        updatedAt: new Date(data.updatedAt),
+      } as Content;
+    } catch (error) {
+      console.error('Failed to create note:', error);
+      throw new Error(
+        `Failed to create note: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
   /**
    * Checks if the user has a root directory.
    *

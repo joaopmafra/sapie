@@ -140,6 +140,9 @@ export class ContentController {
 
       const rootDirectory = await this.rootDirectoryService.ensureRootDirectory(userId);
 
+      // uncomment to test the loading indicator
+      //await new Promise(resolve => setTimeout(resolve, 1000));
+
       this.logger.debug(
         `Successfully retrieved root directory for user: ${userId}, directory ID: ${rootDirectory.id}`
       );
