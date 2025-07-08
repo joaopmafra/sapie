@@ -28,7 +28,7 @@ organize my content.
 - [x] **Task 1: [FE] Implement "New Content" Menu**:
   - Add a new menu button above the `ContentExplorer`.
   - The button will open a menu with "Create Note" and "Create Folder" options. "Create Folder" will be disabled.
-- [ ] **Task 2: [BE] Implement Note Creation Endpoint**:
+- [x] **Task 2: [BE] Implement Note Creation Endpoint**:
   - Create a `POST /content` endpoint to create a new note.
   - It will accept `title` and `parentId`.
   - It must validate against duplicate names in the same location.

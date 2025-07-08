@@ -64,3 +64,17 @@ export class ContentDto implements Content {
   })
   updatedAt: Date;
 }
+
+export class CreateContentDto {
+  @ApiProperty({
+    description: 'Title of the new content item',
+    example: 'My New Note',
+  })
+  title: string;
+
+  @ApiProperty({
+    description: 'ID of the parent directory',
+    example: 'clq0e8k1j0000c8v9a1b2c3d4',
+  })
+  parentId: string;
+}
