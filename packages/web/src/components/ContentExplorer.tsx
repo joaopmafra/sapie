@@ -9,7 +9,7 @@ import React, { useEffect, useState } from 'react';
 
 import { useAuth } from '../contexts/AuthContext';
 import { contentService } from '../lib/content';
-import type { Content, ContentType } from '../lib/content';
+import type { ContentType } from '../lib/content';
 
 interface TreeNode {
   id: string;
@@ -137,7 +137,11 @@ const ContentExplorer: React.FC = () => {
 
     const node = nodeMap.get(lastExpandedId);
 
-    if (node && node.type === 'directory' && node.children?.[0]?.type === 'dummy') {
+    if (
+      node &&
+      node.type === 'directory' &&
+      node.children?.[0]?.type === 'dummy'
+    ) {
       try {
         const children = await contentService.getContentByParentId(
           currentUser,

@@ -25,14 +25,14 @@ organize my content.
 
 ## Tasks
 
-- [ ] **Task 1: [FE] Implement "New Content" Menu**:
+- [x] **Task 1: [FE] Implement "New Content" Menu**:
   - Add a new menu button above the `ContentExplorer`.
   - The button will open a menu with "Create Note" and "Create Folder" options. "Create Folder" will be disabled.
 - [ ] **Task 2: [BE] Implement Note Creation Endpoint**:
   - Create a `POST /content` endpoint to create a new note.
   - It will accept `title` and `parentId`.
   - It must validate against duplicate names in the same location.
-  - It must validate if the user is the owner of the parent content.
+  - It must validate if the user is the owner of the parent folder.
 - [ ] **Task 3: [FE] Implement "Create Note" Modal & Logic**:
   - On "Create Note" click, open a modal with a title input.
   - The creation path (based on selected folder or root) should be displayed.

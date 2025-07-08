@@ -3,14 +3,18 @@ import {
   ChevronRight as ChevronRightIcon,
 } from '@mui/icons-material';
 import {
-  Drawer,
+  Box,
+  Button,
   Divider,
+  Drawer,
   IconButton,
+  Menu,
+  MenuItem,
   Typography,
   useTheme,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import React from 'react';
+import React, { useState } from 'react';
 
 import ContentExplorer from './ContentExplorer';
 
@@ -38,6 +42,16 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   isMobile,
 }) => {
   const theme = useTheme();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const menuOpen = Boolean(anchorEl);
+
+  const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
 
   const drawerContent = (
     <>
@@ -54,6 +68,31 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
         </IconButton>
       </DrawerHeader>
       <Divider />
+      <Box sx={{ pt: 3, pb: 2, pl: 1 }}>
+        <Button
+          variant='contained'
+          onClick={handleMenuClick}
+          aria-controls={menuOpen ? 'new-content-menu' : undefined}
+          aria-haspopup='true'
+          aria-expanded={menuOpen ? 'true' : undefined}
+        >
+          New Content
+        </Button>
+        <Menu
+          id='new-content-menu'
+          anchorEl={anchorEl}
+          open={menuOpen}
+          onClose={handleMenuClose}
+          MenuListProps={{
+            'aria-labelledby': 'new-content-button',
+          }}
+        >
+          <MenuItem onClick={handleMenuClose}>Create Note</MenuItem>
+          <MenuItem onClick={handleMenuClose} disabled>
+            Create Folder
+          </MenuItem>
+        </Menu>
+      </Box>
       <ContentExplorer />
     </>
   );
