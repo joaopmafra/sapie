@@ -1,15 +1,19 @@
-import { Controller, Get, Request, Logger } from '@nestjs/common';
+import { Controller, Get, Request, Logger, Query } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiUnauthorizedResponse,
   ApiInternalServerErrorResponse,
+  ApiOkResponse,
+  ApiQuery,
 } from '@nestjs/swagger';
-import { Auth } from '../../auth/auth.decorator';
+import { Auth } from '../../auth';
 import { AuthenticatedRequest } from '../../auth/auth.guard';
 import { RootDirectoryService } from '../services/root-directory.service';
 import { Content } from '../entities/content.entity';
+import { ContentService } from '../services/content.service';
+import { ContentDto } from '../dto/content.dto';
 
 /**
  * Content Controller
@@ -22,7 +26,48 @@ import { Content } from '../entities/content.entity';
 export class ContentController {
   private readonly logger = new Logger(ContentController.name);
 
-  constructor(private readonly rootDirectoryService: RootDirectoryService) {}
+  constructor(
+    private readonly rootDirectoryService: RootDirectoryService,
+    private readonly contentService: ContentService
+  ) {}
+
+  @Get()
+  @Auth()
+  @ApiOperation({
+    summary: 'Get content by parent ID',
+    description: 'Returns a list of content items for a given parent ID.',
+  })
+  @ApiQuery({
+    name: 'parentId',
+    required: true,
+    description: 'The ID of the parent content item.',
+    type: String,
+  })
+  @ApiOkResponse({
+    description: 'Content retrieved successfully.',
+    type: [ContentDto],
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Valid Firebase ID token required',
+  })
+  async getContent(
+    @Request() request: AuthenticatedRequest,
+    @Query('parentId') parentId: string
+  ): Promise<Content[]> {
+    const { user } = request;
+    this.logger.debug(`Getting content for user: ${user.uid} with parentId: ${parentId}`);
+
+    const rootDirectory = await this.rootDirectoryService.getRootDirectory(user.uid);
+
+    if (rootDirectory && rootDirectory.id === parentId) {
+      return this.contentService.findByParentId('root');
+    }
+
+    // uncomment to test the loading indicator
+    // await new Promise(resolve => setTimeout(resolve, 1000));
+
+    return this.contentService.findByParentId(parentId);
+  }
 
   /**
    * Get or create user's root directory
@@ -45,6 +90,7 @@ export class ContentController {
   @ApiResponse({
     status: 200,
     description: 'Root directory retrieved or created successfully',
+    type: ContentDto,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Valid Firebase ID token required',

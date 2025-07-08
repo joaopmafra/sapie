@@ -2,20 +2,22 @@
 
 ## Epic Summary
 
-Enable users to create, organize, and manage their study content in a digital environment, replacing scattered text files or paper notes with a centralized, reliable digital solution.
+Enable users to create, organize, and manage their study content in a digital environment, replacing scattered text
+files or paper notes with a centralized, reliable digital solution.
 
 ## Business Value
 
 **Primary User Need**: Users need a simple way to create, organize, and manage their study notes digitally.
 
-**Value Proposition**: Users can immediately start taking notes in a structured environment, accessing their content from anywhere while building toward advanced study features.
+**Value Proposition**: Users can immediately start taking notes in a structured environment, accessing their content
+from anywhere while building toward advanced study features.
 
 ## Epic Scope
 
 ### Features Included
 
 - **Feature 26**: Basic Note Management (Iteration 1)
-- **Feature 28**: Directory Structure & Navigation (Iteration 3) 
+- **Feature 28**: Directory Structure & Navigation (Iteration 3)
 - **Feature XX**: Multiple Content Types (Images, PDFs - Future)
 
 ### Success Criteria
@@ -54,7 +56,7 @@ Enable users to create, organize, and manage their study content in a digital en
 ## Timeline Estimate
 
 - **Feature 26 (Basic Notes)**: 2-3 weeks
-- **Feature 28 (Directories)**: 1-2 weeks  
+- **Feature 28 (Directories)**: 1-2 weeks
 - **Future Features**: TBD based on user feedback
 
 ## Risk Assessment

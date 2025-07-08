@@ -3,6 +3,8 @@
 # exit immediately if a command exits with a non-zero status
 set -e
 
+scripts/cleanup-firebase.sh
+
 echo "🚀 Starting Hybrid Local Development Environment..."
 echo "   - Web & API will run locally with hot reloading"
 echo "   - Firebase services will run in emulators"

@@ -15,6 +15,10 @@
 
 ## Overview & Requirements
 
+### Mockups
+
+![note_editing_mockup.png](note_editing_mockup.png)
+
 ### Supported Content Types
 
 We need to support the following types of content:

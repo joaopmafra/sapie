@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ContentController } from './controllers/content.controller';
 import { RootDirectoryService } from './services/root-directory.service';
+import { ContentService } from './services/content.service';
 
 /**
  * Content Module
@@ -14,8 +15,9 @@ import { RootDirectoryService } from './services/root-directory.service';
  * providing users with their personal workspace and content organization capabilities.
  */
 @Module({
+  imports: [],
   controllers: [ContentController],
-  providers: [RootDirectoryService],
-  exports: [RootDirectoryService],
+  providers: [RootDirectoryService, ContentService],
+  exports: [RootDirectoryService, ContentService],
 })
 export class ContentModule {}
