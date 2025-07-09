@@ -173,11 +173,11 @@ export type ContentDtoTypeEnum = typeof ContentDtoTypeEnum[keyof typeof ContentD
  */
 export interface CreateContentDto {
     /**
-     * Title of the new content item
+     * Name of the new content item
      * @type {string}
      * @memberof CreateContentDto
      */
-    'title': string;
+    'name': string;
     /**
      * ID of the parent directory
      * @type {string}
@@ -471,7 +471,7 @@ export class AuthenticationApi extends BaseAPI implements AuthenticationApiInter
 export const ContentApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
         /**
-         * Creates a new note with a given title and parent ID.
+         * Creates a new note with a given name and parent ID.
          * @summary Create a new note
          * @param {CreateContentDto} createContentDto 
          * @param {*} [options] Override http request option.
@@ -596,7 +596,7 @@ export const ContentApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = ContentApiAxiosParamCreator(configuration)
     return {
         /**
-         * Creates a new note with a given title and parent ID.
+         * Creates a new note with a given name and parent ID.
          * @summary Create a new note
          * @param {CreateContentDto} createContentDto 
          * @param {*} [options] Override http request option.
@@ -644,7 +644,7 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
     const localVarFp = ContentApiFp(configuration)
     return {
         /**
-         * Creates a new note with a given title and parent ID.
+         * Creates a new note with a given name and parent ID.
          * @summary Create a new note
          * @param {ContentApiContentControllerCreateContentRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -682,7 +682,7 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
  */
 export interface ContentApiInterface {
     /**
-     * Creates a new note with a given title and parent ID.
+     * Creates a new note with a given name and parent ID.
      * @summary Create a new note
      * @param {ContentApiContentControllerCreateContentRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -748,7 +748,7 @@ export interface ContentApiContentControllerGetContentRequest {
  */
 export class ContentApi extends BaseAPI implements ContentApiInterface {
     /**
-     * Creates a new note with a given title and parent ID.
+     * Creates a new note with a given name and parent ID.
      * @summary Create a new note
      * @param {ContentApiContentControllerCreateContentRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.

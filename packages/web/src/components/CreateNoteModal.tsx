@@ -16,6 +16,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useContent } from '../contexts/ContentContext';
 import { contentService } from '../lib/content';
 import type { Content } from '../lib/content';
+import { getErrorMessageOrDefault } from '../lib/utils.ts';
 
 interface CreateNoteModalProps {
   open: boolean;
@@ -59,9 +60,7 @@ const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
       );
       onSuccess(newNote);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'An unknown error occurred.'
-      );
+      setError(getErrorMessageOrDefault(err));
     } finally {
       setLoading(false);
     }

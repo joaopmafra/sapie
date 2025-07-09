@@ -11,7 +11,7 @@ All URIs are relative to *http://localhost*
 # **contentControllerCreateContent**
 > ContentDto contentControllerCreateContent(createContentDto)
 
-Creates a new note with a given title and parent ID.
+Creates a new note with a given name and parent ID.
 
 ### Example
 

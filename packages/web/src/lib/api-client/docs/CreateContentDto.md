@@ -5,7 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**title** | **string** | Title of the new content item | [default to undefined]
+**name** | **string** | Name of the new content item | [default to undefined]
 **parentId** | **string** | ID of the parent directory | [default to undefined]
 
 ## Example
@@ -14,7 +14,7 @@ Name | Type | Description | Notes
 import { CreateContentDto } from 'api-client';
 
 const instance: CreateContentDto = {
-    title,
+    name,
     parentId,
 };
 ```
