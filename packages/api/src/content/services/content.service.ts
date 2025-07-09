@@ -26,7 +26,7 @@ export class ContentService {
       );
   }
 
-  async create(title: string, parentId: string, ownerId: string): Promise<Content> {
+  async create(name: string, parentId: string, ownerId: string): Promise<Content> {
     const parent = await this.findById(parentId);
 
     if (!parent) {
@@ -40,17 +40,17 @@ export class ContentService {
     const existingContent = await this.firestore
       .collection(this.contentCollection)
       .where('parentId', '==', parentId)
-      .where('name', '==', title)
+      .where('name', '==', name)
       .limit(1)
       .get();
 
     if (!existingContent.empty) {
-      throw new ConflictException(`Content with name "${title}" already exists in this location`);
+      throw new ConflictException(`Content with name "${name}" already exists in this location`);
     }
 
     const now = new Date();
     const newContentData = {
-      name: title,
+      name: name,
       type: ContentType.NOTE,
       parentId,
       ownerId,

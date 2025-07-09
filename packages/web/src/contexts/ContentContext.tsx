@@ -17,7 +17,7 @@ interface ContentContextType {
   setNodeMap: React.Dispatch<
     React.SetStateAction<Map<string, EnrichedTreeNode>>
   >;
-  getParentPath: (id: string | null) => string;
+  getParentPath: (id: string | null | undefined) => string;
 }
 
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
@@ -33,8 +33,8 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({
 
   const triggerRefresh = () => setRefreshTrigger(prev => prev + 1);
 
-  const getParentPath = (id: string | null): string => {
-    if (!id) return '/';
+  const getParentPath = (id: string | null | undefined): string => {
+    if (!id) return '?';
     let path = '';
     let currentNode = nodeMap.get(id);
     while (currentNode) {
@@ -44,7 +44,7 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({
           : undefined;
         continue;
       }
-      path = `/${currentNode.name}${path}`;
+      path = `${currentNode.name}${path}`;
       if (currentNode.parentId === null) {
         break;
       }
@@ -52,7 +52,7 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({
         ? nodeMap.get(currentNode.parentId)
         : undefined;
     }
-    return path || '/';
+    return path || '?';
   };
 
   const value = {

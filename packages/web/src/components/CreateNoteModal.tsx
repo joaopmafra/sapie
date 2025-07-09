@@ -10,7 +10,7 @@ import {
   DialogTitle,
   TextField,
 } from '@mui/material';
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 import { useAuth } from '../contexts/AuthContext';
 import { useContent } from '../contexts/ContentContext';
@@ -21,7 +21,7 @@ interface CreateNoteModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: (newNote: Content) => void;
-  parentId: string | null;
+  parentId: string | null | undefined;
 }
 
 const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
@@ -32,7 +32,7 @@ const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
 }) => {
   const { currentUser } = useAuth();
   const { getParentPath } = useContent();
-  const [title, setTitle] = useState('');
+  const [noteName, setNoteName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,8 +43,8 @@ const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
       );
       return;
     }
-    if (!title.trim()) {
-      setError('Title is required.');
+    if (!noteName.trim()) {
+      setError('Name is required.');
       return;
     }
 
@@ -54,7 +54,7 @@ const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
     try {
       const newNote = await contentService.createNote(
         currentUser,
-        title,
+        noteName,
         parentId
       );
       onSuccess(newNote);
@@ -69,7 +69,7 @@ const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
 
   const handleClose = () => {
     if (loading) return;
-    setTitle('');
+    setNoteName('');
     setError(null);
     onClose();
   };
@@ -84,12 +84,12 @@ const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         <TextField
           margin='dense'
           id='title'
-          label='Note Title'
+          label='Note Name'
           type='text'
           fullWidth
           variant='outlined'
-          value={title}
-          onChange={e => setTitle(e.target.value)}
+          value={noteName}
+          onChange={e => setNoteName(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSubmit()}
           disabled={loading}
         />

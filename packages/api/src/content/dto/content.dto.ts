@@ -67,10 +67,10 @@ export class ContentDto implements Content {
 
 export class CreateContentDto {
   @ApiProperty({
-    description: 'Title of the new content item',
+    description: 'Name of the new content item',
     example: 'My New Note',
   })
-  title: string;
+  name: string;
 
   @ApiProperty({
     description: 'ID of the parent directory',

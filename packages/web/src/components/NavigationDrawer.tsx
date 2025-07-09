@@ -27,10 +27,12 @@ import CreateNoteModal from './CreateNoteModal';
 export const mobileDrawerWidth = 260;
 export const desktopDrawerWidth = 320;
 
+const paddingRL = 2;
+
 const DrawerHeader = styled('div')(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  padding: theme.spacing(0, 1),
+  padding: theme.spacing(0, paddingRL),
   ...theme.mixins.toolbar,
   justifyContent: 'flex-end',
 }));
@@ -49,12 +51,16 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   const theme = useTheme();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const menuOpen = Boolean(anchorEl);
+  const [menuWidth, setMenuWidth] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
-  const { selectedNodeId, triggerRefresh } = useContent();
+  const { selectedNodeId, nodeMap, triggerRefresh } = useContent();
 
-  const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const menuOpen = Boolean(anchorEl);
+  const currentNodeId = selectedNodeId || nodeMap.get('root')?.id;
+
+  const handleNewButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
+    setMenuWidth(event.currentTarget.offsetWidth);
   };
 
   const handleMenuClose = () => {
@@ -79,7 +85,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   const drawerContent = (
     <>
       <DrawerHeader>
-        <Typography variant='h6' noWrap sx={{ flexGrow: 1, pl: 1 }}>
+        <Typography variant='h6' noWrap sx={{ flexGrow: 1 }}>
           Sapie
         </Typography>
         <IconButton onClick={onClose} data-testid='drawer-close-button'>
@@ -91,12 +97,12 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
         </IconButton>
       </DrawerHeader>
       <Divider />
-      <Box sx={{ pt: 3, pr: 1, pb: 2, pl: 1 }}>
+      <Box sx={{ pt: 3, pr: paddingRL, pb: 2, pl: paddingRL }}>
         <Button
           variant='contained'
           fullWidth
           startIcon={<AddIcon />}
-          onClick={handleMenuClick}
+          onClick={handleNewButtonClick}
           aria-controls={menuOpen ? 'new-content-menu' : undefined}
           aria-haspopup='true'
           aria-expanded={menuOpen ? 'true' : undefined}
@@ -106,10 +112,18 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
         <Menu
           id='new-content-menu'
           anchorEl={anchorEl}
+          marginThreshold={0} // prevent the menu from being shifted 16px to the right
           open={menuOpen}
           onClose={handleMenuClose}
-          MenuListProps={{
-            'aria-labelledby': 'new-content-button',
+          slotProps={{
+            list: {
+              'aria-labelledby': 'new-content-button',
+            },
+            paper: {
+              sx: {
+                width: menuWidth,
+              },
+            },
           }}
         >
           <MenuItem onClick={handleCreateNoteClick}>Create Note</MenuItem>
@@ -118,12 +132,14 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
           </MenuItem>
         </Menu>
       </Box>
-      <ContentExplorer />
+      <Box sx={{ p: paddingRL }}>
+        <ContentExplorer />
+      </Box>
       <CreateNoteModal
         open={modalOpen}
         onClose={handleModalClose}
         onSuccess={handleCreateSuccess}
-        parentId={selectedNodeId}
+        parentId={currentNodeId}
       />
     </>
   );

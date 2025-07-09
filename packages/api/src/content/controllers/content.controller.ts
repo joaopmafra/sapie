@@ -38,7 +38,7 @@ export class ContentController {
   @Auth()
   @ApiOperation({
     summary: 'Create a new note',
-    description: 'Creates a new note with a given title and parent ID.',
+    description: 'Creates a new note with a given name and parent ID.',
   })
   @ApiCreatedResponse({
     description: 'Note created successfully.',
@@ -58,11 +58,11 @@ export class ContentController {
     @Body() createContentDto: CreateContentDto
   ): Promise<Content> {
     const { user } = request;
-    const { title, parentId } = createContentDto;
+    const { name, parentId } = createContentDto;
     this.logger.debug(
-      `Creating note for user: ${user.uid} with title: ${title} and parentId: ${parentId}`
+      `Creating note for user: ${user.uid} with name: ${name} and parentId: ${parentId}`
     );
-    return this.contentService.create(title, parentId, user.uid);
+    return this.contentService.create(name, parentId, user.uid);
   }
 
   @Get()

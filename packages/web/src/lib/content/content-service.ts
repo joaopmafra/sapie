@@ -44,6 +44,7 @@ export class ContentService {
       );
 
       // Make the API request
+      // TODO use the api client
       const response = await fetch('/api/content/root', {
         method: 'GET',
         headers: {
@@ -85,6 +86,7 @@ export class ContentService {
         currentUser
       );
 
+      // TODO use the api client
       const response = await fetch(`/api/content?parentId=${parentId}`, {
         method: 'GET',
         headers: {
@@ -117,7 +119,7 @@ export class ContentService {
 
   async createNote(
     currentUser: User,
-    title: string,
+    name: string,
     parentId: string
   ): Promise<Content> {
     try {
@@ -126,13 +128,14 @@ export class ContentService {
         currentUser
       );
 
+      // TODO use the api client
       const response = await fetch('/api/content', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...config.baseOptions?.headers,
         },
-        body: JSON.stringify({ title, parentId }),
+        body: JSON.stringify({ name, parentId }),
       });
 
       if (!response.ok) {

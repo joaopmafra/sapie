@@ -100,6 +100,7 @@ const ContentExplorer: React.FC = () => {
           };
           setTree([rootNode]);
           const newMap = new Map<string, EnrichedTreeNode>();
+          newMap.set('root', rootNode);
           newMap.set(rootNode.id, rootNode);
           childNodes.forEach(child => newMap.set(child.id, child));
           setNodeMap(newMap);
@@ -205,7 +206,7 @@ const ContentExplorer: React.FC = () => {
 
   if (error) {
     return (
-      <Box p={2}>
+      <Box>
         <Alert severity='error'>{error}</Alert>
       </Box>
     );
@@ -213,7 +214,6 @@ const ContentExplorer: React.FC = () => {
 
   return (
     <Box
-      p={1}
       sx={{
         flexGrow: 1,
         maxHeight: 'calc(100vh - 64px)',
