@@ -8,24 +8,11 @@ import { TreeItem, type TreeItemProps } from '@mui/x-tree-view/TreeItem';
 import React, { useEffect, useState } from 'react';
 
 import { useAuth } from '../contexts/AuthContext';
+import { useContent, type EnrichedTreeNode } from '../contexts/ContentContext';
 import { contentService } from '../lib/content';
-import type { Content, ContentType } from '../lib/content';
-
-interface TreeNode {
-  id: string;
-  name: string;
-  type: ContentType | 'dummy';
-  children?: TreeNode[];
-  parentId: string | null;
-  ownerId: string;
-  createdAt: Date;
-  updatedAt: Date;
-  contentUrl?: string;
-  size?: number;
-}
 
 const CustomTreeItem = React.forwardRef(function CustomTreeItem(
-  props: TreeItemProps & { nodeMap: Map<string, TreeNode> },
+  props: TreeItemProps & { nodeMap: Map<string, EnrichedTreeNode> },
   ref: React.Ref<HTMLLIElement>
 ) {
   const { itemId, label, nodeMap, ...other } = props;
@@ -60,8 +47,14 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
 
 const ContentExplorer: React.FC = () => {
   const { currentUser, loading: authLoading } = useAuth();
-  const [tree, setTree] = useState<TreeNode[]>([]);
-  const [nodeMap, setNodeMap] = useState(new Map<string, TreeNode>());
+  const {
+    selectedNodeId,
+    setSelectedNodeId,
+    refreshTrigger,
+    nodeMap,
+    setNodeMap,
+  } = useContent();
+  const [tree, setTree] = useState<EnrichedTreeNode[]>([]);
   const [expanded, setExpanded] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -82,7 +75,7 @@ const ContentExplorer: React.FC = () => {
           currentUser,
           rootDir.id
         );
-        const childNodes: TreeNode[] = children.map(child => ({
+        const childNodes: EnrichedTreeNode[] = children.map(child => ({
           ...child,
           children:
             child.type === 'directory'
@@ -101,9 +94,13 @@ const ContentExplorer: React.FC = () => {
         }));
 
         if (isMounted) {
-          const rootNode: TreeNode = { ...rootDir, children: childNodes };
+          const rootNode: EnrichedTreeNode = {
+            ...rootDir,
+            children: childNodes,
+          };
           setTree([rootNode]);
-          const newMap = new Map<string, TreeNode>();
+          const newMap = new Map<string, EnrichedTreeNode>();
+          newMap.set('root', rootNode);
           newMap.set(rootNode.id, rootNode);
           childNodes.forEach(child => newMap.set(child.id, child));
           setNodeMap(newMap);
@@ -122,7 +119,7 @@ const ContentExplorer: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [currentUser, authLoading]);
+  }, [currentUser, authLoading, refreshTrigger, setNodeMap]);
 
   const handleExpandedItemsChange = async (
     _event: React.SyntheticEvent | null,
@@ -137,13 +134,17 @@ const ContentExplorer: React.FC = () => {
 
     const node = nodeMap.get(lastExpandedId);
 
-    if (node && node.type === 'directory' && node.children?.[0]?.type === 'dummy') {
+    if (
+      node &&
+      node.type === 'directory' &&
+      node.children?.[0]?.type === 'dummy'
+    ) {
       try {
         const children = await contentService.getContentByParentId(
           currentUser,
           node.id
         );
-        const childNodes: TreeNode[] = children.map(child => ({
+        const childNodes: EnrichedTreeNode[] = children.map(child => ({
           ...child,
           children:
             child.type === 'directory'
@@ -163,7 +164,9 @@ const ContentExplorer: React.FC = () => {
 
         setTree(prevTree => {
           const newTree = JSON.parse(JSON.stringify(prevTree));
-          const updateChildren = (nodes: TreeNode[]): TreeNode[] => {
+          const updateChildren = (
+            nodes: EnrichedTreeNode[]
+          ): EnrichedTreeNode[] => {
             return nodes.map(n => {
               if (n.id === node.id) {
                 return { ...n, children: childNodes };
@@ -203,7 +206,7 @@ const ContentExplorer: React.FC = () => {
 
   if (error) {
     return (
-      <Box p={2}>
+      <Box>
         <Alert severity='error'>{error}</Alert>
       </Box>
     );
@@ -211,7 +214,6 @@ const ContentExplorer: React.FC = () => {
 
   return (
     <Box
-      p={1}
       sx={{
         flexGrow: 1,
         maxHeight: 'calc(100vh - 64px)',
@@ -226,6 +228,10 @@ const ContentExplorer: React.FC = () => {
           expandIcon: ChevronRightIcon,
           item: props => <CustomTreeItem {...props} nodeMap={nodeMap} />,
         }}
+        selectedItems={selectedNodeId}
+        onSelectedItemsChange={(_event, ids) =>
+          setSelectedNodeId(Array.isArray(ids) ? ids[0] : ids)
+        }
         expandedItems={expanded}
         onExpandedItemsChange={handleExpandedItemsChange}
         sx={{ flexGrow: 1 }}

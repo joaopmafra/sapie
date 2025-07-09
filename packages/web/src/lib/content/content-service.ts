@@ -1,13 +1,14 @@
 import type { User } from 'firebase/auth';
 
+import {
+  ContentApi,
+  type ContentDto,
+  type CreateContentDto,
+} from '../api-client';
 import { createAuthenticatedApiConfiguration } from '../auth-utils';
 
 import type { Content } from './types';
-
-interface RawContent extends Omit<Content, 'createdAt' | 'updatedAt'> {
-  createdAt: string;
-  updatedAt: string;
-}
+import { ContentType } from './types';
 
 /**
  * Content Service
@@ -20,9 +21,27 @@ interface RawContent extends Omit<Content, 'createdAt' | 'updatedAt'> {
  */
 export class ContentService {
   private readonly basePath: string;
+  private readonly contentApi: ContentApi;
 
   constructor(basePath?: string) {
     this.basePath = basePath || '';
+    // The first argument to ContentApi is a Configuration object, which we can leave undefined
+    // because we will pass authentication headers on each request.
+    this.contentApi = new ContentApi(undefined, this.basePath);
+  }
+
+  private mapContentDtoToContent(dto: ContentDto): Content {
+    return {
+      id: dto.id,
+      name: dto.name,
+      ownerId: dto.ownerId,
+      type: dto.type as ContentType,
+      parentId: dto.parentId as string | null,
+      contentUrl: dto.contentUrl as string | undefined,
+      size: dto.size as number | undefined,
+      createdAt: new Date(dto.createdAt),
+      updatedAt: new Date(dto.updatedAt),
+    };
   }
 
   /**
@@ -37,41 +56,19 @@ export class ContentService {
    */
   async getRootDirectory(currentUser: User): Promise<Content> {
     try {
-      // Create authenticated API configuration
       const config = await createAuthenticatedApiConfiguration(
         this.basePath,
         currentUser
       );
 
-      // Make the API request
-      const response = await fetch('/api/content/root', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...config.baseOptions?.headers,
-        },
-      });
+      const response = await this.contentApi.contentControllerGetRootDirectory(
+        config.baseOptions
+      );
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `Failed to get root directory: ${response.status} ${response.statusText}. ${errorText}`
-        );
-      }
-
-      const data = await response.json();
-
-      // Convert date strings back to Date objects
-      return {
-        ...data,
-        createdAt: new Date(data.createdAt),
-        updatedAt: new Date(data.updatedAt),
-      } as Content;
+      return this.mapContentDtoToContent(response.data);
     } catch (error) {
       console.error('Failed to get root directory:', error);
-      throw new Error(
-        `Failed to get root directory: ${error instanceof Error ? error.message : String(error)}`
-      );
+      throw error;
     }
   }
 
@@ -85,33 +82,43 @@ export class ContentService {
         currentUser
       );
 
-      const response = await fetch(`/api/content?parentId=${parentId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...config.baseOptions?.headers,
-        },
-      });
+      const response = await this.contentApi.contentControllerGetContent(
+        { parentId },
+        config.baseOptions
+      );
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `Failed to get content: ${response.status} ${response.statusText}. ${errorText}`
-        );
-      }
-
-      const data = await response.json();
-
-      return data.map((item: RawContent) => ({
-        ...item,
-        createdAt: new Date(item.createdAt),
-        updatedAt: new Date(item.updatedAt),
-      })) as Content[];
+      return response.data.map(item => this.mapContentDtoToContent(item));
     } catch (error) {
       console.error('Failed to get content:', error);
-      throw new Error(
-        `Failed to get content: ${error instanceof Error ? error.message : String(error)}`
+      throw error;
+    }
+  }
+
+  async createNote(
+    currentUser: User,
+    name: string,
+    parentId: string
+  ): Promise<Content> {
+    try {
+      const config = await createAuthenticatedApiConfiguration(
+        this.basePath,
+        currentUser
       );
+
+      const createContentDto: CreateContentDto = {
+        name,
+        parentId,
+      };
+
+      const response = await this.contentApi.contentControllerCreateContent(
+        { createContentDto },
+        config.baseOptions
+      );
+
+      return this.mapContentDtoToContent(response.data);
+    } catch (error) {
+      console.error('Failed to create note:', error);
+      throw error;
     }
   }
 

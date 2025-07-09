@@ -1,4 +1,4 @@
-import { Controller, Get, Request, Logger, Query } from '@nestjs/common';
+import { Controller, Get, Request, Logger, Query, Post, Body } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -7,13 +7,16 @@ import {
   ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiQuery,
+  ApiCreatedResponse,
+  ApiConflictResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 import { Auth } from '../../auth';
 import { AuthenticatedRequest } from '../../auth/auth.guard';
 import { RootDirectoryService } from '../services/root-directory.service';
 import { Content } from '../entities/content.entity';
 import { ContentService } from '../services/content.service';
-import { ContentDto } from '../dto/content.dto';
+import { ContentDto, CreateContentDto } from '../dto/content.dto';
 
 /**
  * Content Controller
@@ -30,6 +33,37 @@ export class ContentController {
     private readonly rootDirectoryService: RootDirectoryService,
     private readonly contentService: ContentService
   ) {}
+
+  @Post()
+  @Auth()
+  @ApiOperation({
+    summary: 'Create a new note',
+    description: 'Creates a new note with a given name and parent ID.',
+  })
+  @ApiCreatedResponse({
+    description: 'Note created successfully.',
+    type: ContentDto,
+  })
+  @ApiConflictResponse({
+    description: 'A note with the same name already exists in the target location.',
+  })
+  @ApiForbiddenResponse({
+    description: 'User is not the owner of the parent folder.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Valid Firebase ID token required',
+  })
+  async createContent(
+    @Request() request: AuthenticatedRequest,
+    @Body() createContentDto: CreateContentDto
+  ): Promise<Content> {
+    const { user } = request;
+    const { name, parentId } = createContentDto;
+    this.logger.debug(
+      `Creating note for user: ${user.uid} with name: ${name} and parentId: ${parentId}`
+    );
+    return this.contentService.create(name, parentId, user.uid);
+  }
 
   @Get()
   @Auth()
@@ -105,6 +139,9 @@ export class ContentController {
       this.logger.debug(`Getting root directory for user: ${userId}`);
 
       const rootDirectory = await this.rootDirectoryService.ensureRootDirectory(userId);
+
+      // uncomment to test the loading indicator
+      //await new Promise(resolve => setTimeout(resolve, 1000));
 
       this.logger.debug(
         `Successfully retrieved root directory for user: ${userId}, directory ID: ${rootDirectory.id}`

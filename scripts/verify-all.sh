@@ -14,5 +14,7 @@ echo "Verifying web..."
 cd packages/web
 pnpm run lint
 pnpm run format:check
+printf "\nChecking types..."
+pnpm run verify:types
 cd ../..
 printf "OK\n\n"

@@ -10,7 +10,7 @@
 
 ## User Story
 
-As a user, I want to create notes and edit the title of them directly in the editor so that I can easily update and
+As a user, I want to create notes and edit the name of them directly in the editor so that I can easily update and
 organize my content.
 
 ## Details
@@ -18,32 +18,32 @@ organize my content.
 - Add a menu button above the Content Explorer. When clicked, it will open a menu with the following options:
   - Create Note
   - Create Folder (we won't implement the folder creation for now)
-- When the user clicks "Create Note", a modal opens with a form to create a new note. The form should show which path the note will be created in and have a title field.
+- When the user clicks "Create Note", a modal opens with a form to create a new note. The form should show which path the note will be created in and have a name field.
 - The Create Note modal should not allow the user to create a note in a path that already has a note with the same name.
 - When the user clicks "Create" in the Create Note modal, the note is created and the user is redirected to the note editor.
-- The note editor should have just a title field that is editable for now. When the user is editing a note's title and hit Enter, the note gets renamed and its title is updated in the Content Explorer and in the note editor.
+- The note editor should have just a name field that is editable for now. When the user is editing a note's name and hit Enter, the note gets renamed and its name is updated in the Content Explorer and in the note editor.
 
 ## Tasks
 
-- [ ] **Task 1: [FE] Implement "New Content" Menu**:
+- [x] **Task 1: [FE] Implement "New Content" Menu**:
   - Add a new menu button above the `ContentExplorer`.
   - The button will open a menu with "Create Note" and "Create Folder" options. "Create Folder" will be disabled.
-- [ ] **Task 2: [BE] Implement Note Creation Endpoint**:
+- [x] **Task 2: [BE] Implement Note Creation Endpoint**:
   - Create a `POST /content` endpoint to create a new note.
-  - It will accept `title` and `parentId`.
+  - It will accept `name` and `parentId`.
   - It must validate against duplicate names in the same location.
-  - It must validate if the user is the owner of the parent content.
-- [ ] **Task 3: [FE] Implement "Create Note" Modal & Logic**:
-  - On "Create Note" click, open a modal with a title input.
+  - It must validate if the user is the owner of the parent folder.
+- [x] **Task 3: [FE] Implement "Create Note" Modal & Logic**:
+  - On "Create Note" click, open a modal with a name input.
   - The creation path (based on selected folder or root) should be displayed.
   - On submission, call the backend, handle success/errors, refresh the content explorer, and navigate to the new note.
-- [ ] **Task 4: [FE] Basic Note Editor with Editable Title**:
-  - Create a view for the note editor that displays an editable title.
+- [ ] **Task 4: [FE] Basic Note Editor with Editable Name**:
+  - Create a view for the note editor that displays an editable name.
 - [ ] **Task 5: [BE] Implement Note Renaming Endpoint**:
-  - Create a `PATCH /content/:id` endpoint to update a note's title.
+  - Create a `PATCH /content/:id` endpoint to update a note's name.
   - It must validate against duplicate names in the same location.
-- [ ] **Task 6: [FE] Implement Title Renaming Logic**:
-  - In the editor, on "Enter" after editing the title, call the renaming endpoint.
+- [ ] **Task 6: [FE] Implement Name Renaming Logic**:
+  - In the editor, on "Enter" after editing the name, call the renaming endpoint.
   - Update the UI in the editor and `ContentExplorer` on success.
   - Display an inline error message if an error occurs.
 - [ ] **Task 7: [E2E] Write E2E Tests**:
