@@ -13,6 +13,10 @@
 As a user, I want to create notes and edit the name of them directly in the editor so that I can easily update and
 organize my content.
 
+## Mockups
+
+![Note Editing](../../research/content_features_and_implementation/note_editing_mockup.png)
+
 ## Details
 
 - Add a menu button above the Content Explorer. When clicked, it will open a menu with the following options:
