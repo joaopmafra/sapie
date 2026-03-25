@@ -205,7 +205,22 @@ function App() {
 
 ### Step 3: Add `getContentById` to ContentService
 
-`NoteEditorPage` needs to fetch a single content item by ID. This method does not currently exist.
+`NoteEditorPage` needs to fetch a single content item by ID. This method does not currently exist in the
+frontend service, and **the backend endpoint does not exist either** — `GET /api/content/:id` is not yet
+implemented in `ContentController`. Adding this endpoint is the first backend task of
+[Story 55](../../pm/3-stories/2-to-refine/55-story-note_content_editor.md), which lists it as a prerequisite
+for the TanStack Query refactor. Confirm the endpoint exists before implementing this step.
+
+**Important scope note:** `getContentById` returns **content metadata only** (name, type, parentId, etc.). It
+does not return the note body text. Note body content is stored in Cloud Storage and accessed via a separate
+signed URL flow implemented in Story 55:
+
+- `GET /api/content/:id` → metadata (this step)
+- `GET /api/content/:id/body` → signed URL pointing to Cloud Storage (Story 55)
+- Client fetches markdown directly from Cloud Storage using the signed URL (Story 55)
+
+This TanStack Query refactor only concerns itself with the metadata query (`useContentItem`). The content body
+queries (`useContentBody`, `useNoteBody`) are defined in Story 55 and build on top of the foundation laid here.
 
 **File:** `packages/web/src/lib/content/content-service.ts`
 
@@ -219,9 +234,6 @@ async getContentById(currentUser: User, id: string): Promise<Content> {
   return this.mapContentDtoToContent(response.data);
 }
 ```
-
-> This also requires a `GET /content/:id` endpoint on the backend. If it does not exist, add it to the API before
-> implementing this step. Check `packages/api/src/content/controllers/content.controller.ts`.
 
 ### Step 4: Create Content Query Hooks
 

@@ -4,10 +4,13 @@ This file is used to track the PBI (product backlog item), which is the number o
 
 ## Current Last PBI Number
 
-61
+64
 
 ## Recent PBIs Created (limited to 10)
 
+- **64**: Story - Content Deletion
+- **63**: Story - Folder Creation
+- **62**: Story - TanStack Query Refactor
 - **61**: Story - Refactor Root Directory Creation
 - **60**: Story - Denormalize Folder Data for Frontend Optimization
 - **59**: Story - Toggle Information Pane
@@ -15,6 +18,3 @@ This file is used to track the PBI (product backlog item), which is the number o
 - **57**: Story - Context Menu on Tree Nodes
 - **56**: Story - Common Actions Menu
 - **55**: Story - Note Content Editor
-- **54**: Story - Save Status Display
-- **53**: Story - Editable Note Title
-- **52**: Story - Favorites Section Sidebar
