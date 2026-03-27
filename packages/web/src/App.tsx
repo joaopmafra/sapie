@@ -1,3 +1,4 @@
+import { SnackbarProvider } from 'notistack';
 import {
   // routing does not work after reloading the page; consider using HashRouter instead
   BrowserRouter as Router,
@@ -19,51 +20,59 @@ import './App.css';
 
 function App() {
   return (
-    <AuthErrorBoundary>
-      <AuthProvider>
-        <Router>
-          <div className='App'>
-            <Routes>
-              {/* Protected routes - require authentication */}
-              <Route
-                path='/'
-                element={
-                  <ProtectedRoute>
-                    <HomePage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path='/status'
-                element={
-                  <ProtectedRoute>
-                    <StatusPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path='/notes/:noteId'
-                element={
-                  <ProtectedRoute>
-                    <NoteEditorPage />
-                  </ProtectedRoute>
-                }
-              />
+    <SnackbarProvider
+      anchorOrigin={{
+        vertical: 'top',
+        horizontal: 'right',
+      }}
+      maxSnack={3}
+    >
+      <AuthErrorBoundary>
+        <AuthProvider>
+          <Router>
+            <div className='App'>
+              <Routes>
+                {/* Protected routes - require authentication */}
+                <Route
+                  path='/'
+                  element={
+                    <ProtectedRoute>
+                      <HomePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path='/status'
+                  element={
+                    <ProtectedRoute>
+                      <StatusPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path='/notes/:noteId'
+                  element={
+                    <ProtectedRoute>
+                      <NoteEditorPage />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Public routes - redirect authenticated users away */}
-              <Route
-                path='/login'
-                element={
-                  <PublicRoute>
-                    <LoginPage />
-                  </PublicRoute>
-                }
-              />
-            </Routes>
-          </div>
-        </Router>
-      </AuthProvider>
-    </AuthErrorBoundary>
+                {/* Public routes - redirect authenticated users away */}
+                <Route
+                  path='/login'
+                  element={
+                    <PublicRoute>
+                      <LoginPage />
+                    </PublicRoute>
+                  }
+                />
+              </Routes>
+            </div>
+          </Router>
+        </AuthProvider>
+      </AuthErrorBoundary>
+    </SnackbarProvider>
   );
 }
 

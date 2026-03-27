@@ -12,7 +12,7 @@ import {
   ApiForbiddenResponse,
 } from '@nestjs/swagger';
 import { Auth } from '../../auth';
-import { AuthenticatedRequest } from '../../auth/auth.guard';
+import { AuthenticatedRequest } from '../../auth';
 import { RootDirectoryService } from '../services/root-directory.service';
 import { Content } from '../entities/content.entity';
 import { ContentService } from '../services/content.service';
@@ -91,16 +91,10 @@ export class ContentController {
     const { user } = request;
     this.logger.debug(`Getting content for user: ${user.uid} with parentId: ${parentId}`);
 
-    const rootDirectory = await this.rootDirectoryService.getRootDirectory(user.uid);
-
-    if (rootDirectory && rootDirectory.id === parentId) {
-      return this.contentService.findByParentId('root');
-    }
-
     // uncomment to test the loading indicator
     // await new Promise(resolve => setTimeout(resolve, 1000));
 
-    return this.contentService.findByParentId(parentId);
+    return this.contentService.findByParentIdAndOwnerId(parentId, request.user.uid);
   }
 
   /**
@@ -137,7 +131,6 @@ export class ContentController {
 
     try {
       this.logger.debug(`Getting root directory for user: ${userId}`);
-
       const rootDirectory = await this.rootDirectoryService.ensureRootDirectory(userId);
 
       // uncomment to test the loading indicator
@@ -146,11 +139,9 @@ export class ContentController {
       this.logger.debug(
         `Successfully retrieved root directory for user: ${userId}, directory ID: ${rootDirectory.id}`
       );
-
       return rootDirectory;
     } catch (error) {
       this.logger.error(`Failed to get root directory for user: ${userId}`, error);
-
       throw error;
     }
   }

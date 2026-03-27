@@ -24,7 +24,12 @@ fi
 echo "🔧 Starting Firebase emulators in background..."
 
 # Start Firebase emulators with local-dev project
-firebase emulators:start --only=auth,firestore,storage --project local-dev &
+firebase emulators:start \
+  --only=auth,firestore,storage \
+  --project local-dev \
+  --import=./firebase-data \
+  --export-on-exit=./firebase-data \
+  &
 FIREBASE_PID=$!
 
 # Wait a bit for emulators to start

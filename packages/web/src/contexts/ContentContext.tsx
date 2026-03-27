@@ -18,6 +18,7 @@ interface ContentContextType {
     React.SetStateAction<Map<string, EnrichedTreeNode>>
   >;
   getParentPath: (id: string | null | undefined) => string;
+  addNoteToMap: (note: Content) => void;
 }
 
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
@@ -32,6 +33,18 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({
   );
 
   const triggerRefresh = () => setRefreshTrigger(prev => prev + 1);
+
+  const addNoteToMap = (note: Content) => {
+    setNodeMap(prevMap => {
+      const newMap = new Map(prevMap);
+      const enrichedNote: EnrichedTreeNode = {
+        ...note,
+        children: undefined, // Notes don't have children
+      };
+      newMap.set(note.id, enrichedNote);
+      return newMap;
+    });
+  };
 
   const getParentPath = (id: string | null | undefined): string => {
     if (!id) return '?';
@@ -63,6 +76,7 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({
     nodeMap,
     setNodeMap,
     getParentPath,
+    addNoteToMap,
   };
 
   return (

@@ -146,24 +146,4 @@ export class RootDirectoryService {
       updatedAt: data.updatedAt.toDate(),
     };
   }
-
-  /**
-   * Gets the root directory for a user.
-   * Throws an error if the root directory doesn't exist.
-   *
-   * @param userId - The ID of the user
-   * @returns Promise<Content> - The user's root directory
-   */
-  async getRootDirectory(userId: string): Promise<Content> {
-    try {
-      const rootDirectory = await this.findRootDirectory(userId);
-      if (!rootDirectory) {
-        throw new Error(`Root directory not found for user: ${userId}`);
-      }
-      return rootDirectory;
-    } catch (error) {
-      this.logger.error(`Failed to get root directory for user ${userId}:`, error);
-      throw error;
-    }
-  }
 }

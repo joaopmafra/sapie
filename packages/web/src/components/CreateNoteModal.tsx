@@ -22,7 +22,7 @@ interface CreateNoteModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: (newNote: Content) => void;
-  parentId: string | null | undefined;
+  parentId: string;
 }
 
 const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
@@ -58,6 +58,7 @@ const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         noteName,
         parentId
       );
+      setNoteName('');
       onSuccess(newNote);
     } catch (err) {
       setError(getErrorMessageOrDefault(err));
@@ -66,7 +67,7 @@ const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
     }
   };
 
-  const handleClose = () => {
+  const handleCancel = () => {
     if (loading) return;
     setNoteName('');
     setError(null);
@@ -74,7 +75,7 @@ const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth='sm'>
+    <Dialog open={open} onClose={handleCancel} fullWidth maxWidth='sm'>
       <DialogTitle>Create New Note</DialogTitle>
       <DialogContent>
         <DialogContentText sx={{ mb: 2 }}>
@@ -99,7 +100,7 @@ const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         )}
       </DialogContent>
       <DialogActions sx={{ p: '0 24px 12px' }}>
-        <Button onClick={handleClose} disabled={loading}>
+        <Button onClick={handleCancel} disabled={loading}>
           Cancel
         </Button>
         <Box sx={{ position: 'relative' }}>

@@ -14,16 +14,15 @@ export class ContentService {
     return this.firebaseAdminService.getFirestore();
   }
 
-  findByParentId(parentId: string): Promise<Content[]> {
-    return this.firestore
+  async findByParentIdAndOwnerId(parentId: string, ownerId: string): Promise<Content[]> {
+    const snapshot = await this.firestore
       .collection(this.contentCollection)
       .where('parentId', '==', parentId)
-      .get()
-      .then(snapshot =>
-        snapshot.docs.map(doc =>
-          this.convertDocumentToContent(doc.id, doc.data() as ContentDocument)
-        )
-      );
+      .where('ownerId', '==', ownerId)
+      .get();
+    return snapshot.docs.map(doc =>
+      this.convertDocumentToContent(doc.id, doc.data() as ContentDocument)
+    );
   }
 
   async create(name: string, parentId: string, ownerId: string): Promise<Content> {

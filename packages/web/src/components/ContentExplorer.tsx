@@ -6,10 +6,11 @@ import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
 import { TreeItem, type TreeItemProps } from '@mui/x-tree-view/TreeItem';
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../contexts/AuthContext';
 import { useContent, type EnrichedTreeNode } from '../contexts/ContentContext';
-import { contentService } from '../lib/content';
+import { contentService, ContentType } from '../lib/content';
 
 const CustomTreeItem = React.forwardRef(function CustomTreeItem(
   props: TreeItemProps & { nodeMap: Map<string, EnrichedTreeNode> },
@@ -54,6 +55,7 @@ const ContentExplorer: React.FC = () => {
     nodeMap,
     setNodeMap,
   } = useContent();
+  const navigate = useNavigate();
   const [tree, setTree] = useState<EnrichedTreeNode[]>([]);
   const [expanded, setExpanded] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -229,9 +231,18 @@ const ContentExplorer: React.FC = () => {
           item: props => <CustomTreeItem {...props} nodeMap={nodeMap} />,
         }}
         selectedItems={selectedNodeId}
-        onSelectedItemsChange={(_event, ids) =>
-          setSelectedNodeId(Array.isArray(ids) ? ids[0] : ids)
-        }
+        onSelectedItemsChange={(_event, ids) => {
+          const nodeId = Array.isArray(ids) ? ids[0] : ids;
+          setSelectedNodeId(nodeId);
+
+          // Navigate to note editor if a note is selected
+          if (nodeId) {
+            const selectedNode = nodeMap.get(nodeId);
+            if (selectedNode && selectedNode.type === ContentType.NOTE) {
+              navigate(`/notes/${nodeId}`);
+            }
+          }
+        }}
         expandedItems={expanded}
         onExpandedItemsChange={handleExpandedItemsChange}
         sx={{ flexGrow: 1 }}

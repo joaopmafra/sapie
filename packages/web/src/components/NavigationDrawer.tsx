@@ -19,7 +19,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useContent } from '../contexts/ContentContext';
-import type { Content } from '../lib/content';
+import { useAppSnackbar } from '../hooks/useAppSnackbar';
+import { type Content, ContentType } from '../lib/content';
 
 import ContentExplorer from './ContentExplorer';
 import CreateNoteModal from './CreateNoteModal';
@@ -53,10 +54,13 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [menuWidth, setMenuWidth] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
-  const { selectedNodeId, nodeMap, triggerRefresh } = useContent();
+  const snackbar = useAppSnackbar();
+  const { selectedNodeId, nodeMap, triggerRefresh, addNoteToMap } =
+    useContent();
 
   const menuOpen = Boolean(anchorEl);
-  const currentNodeId = selectedNodeId || nodeMap.get('root')?.id;
+  const currentNode = nodeMap.get(selectedNodeId || 'root');
+  const newContentParentId = getNewContentParentId();
 
   const handleNewButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -69,6 +73,10 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
 
   const handleCreateNoteClick = () => {
     handleMenuClose();
+    if (!currentNode) {
+      snackbar.showError('No node selected');
+      return;
+    }
     setModalOpen(true);
   };
 
@@ -78,9 +86,19 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
 
   const handleCreateSuccess = (newNote: Content) => {
     handleModalClose();
+    // Add the note to the nodeMap immediately for instant access
+    addNoteToMap(newNote);
+    // Still trigger refresh to update the tree structure and get any server-side changes
     triggerRefresh();
     navigate(`/notes/${newNote.id}`);
   };
+
+  function getNewContentParentId() {
+    if (currentNode?.type === ContentType.DIRECTORY) return currentNode.id;
+    else if (currentNode?.type === ContentType.NOTE)
+      return currentNode.parentId ?? '';
+    else return '';
+  }
 
   const drawerContent = (
     <>
@@ -139,7 +157,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
         open={modalOpen}
         onClose={handleModalClose}
         onSuccess={handleCreateSuccess}
-        parentId={currentNodeId}
+        parentId={newContentParentId}
       />
     </>
   );
