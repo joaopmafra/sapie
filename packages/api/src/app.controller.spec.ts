@@ -1,20 +1,32 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AppController } from './app.controller';
+import { ConsoleLogger, INestApplication } from '@nestjs/common';
+import * as request from 'supertest';
+import { AppModule } from './app.module';
 
 describe('AppController', () => {
-  let appController: AppController;
+  let app: INestApplication;
 
   beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
-      controllers: [AppController],
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
     }).compile();
 
-    appController = app.get<AppController>(AppController);
+    app = moduleFixture.createNestApplication({
+      logger: new ConsoleLogger({ logLevels: ['error'] }),
+    });
+    await app.init();
+
+    // TODO: convert to a test
+    console.log('process.env.CURRENT_ENV:', process.env.CURRENT_ENV);
   });
 
-  describe('root', () => {
-    it('should return "Sapie API"', () => {
-      expect(appController.getHello()).toBe('Sapie API');
-    });
+  it('/api (GET)', () => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return request(app.getHttpServer()).get('/api').expect(200).expect('Sapie API');
+  });
+
+  // cleans up resources; see https://www.google.com/search?q=nestjs+e2e+test+aftereach+app.close
+  afterEach(async () => {
+    await app.close();
   });
 });

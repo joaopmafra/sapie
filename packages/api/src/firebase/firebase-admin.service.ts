@@ -20,14 +20,6 @@ export class FirebaseAdminService implements OnModuleInit {
    * - Development/Emulator/Local: Uses emulator or service account key file
    */
   private initializeFirebaseAdmin(): void {
-    const useFirebaseEmulator = process.env.USE_FIREBASE_EMULATOR === 'true';
-
-    // set firebase emulator hosts
-    if (useFirebaseEmulator) {
-      process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099';
-      process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
-    }
-
     try {
       const projectId = process.env.GCLOUD_PROJECT;
       this.app = admin.initializeApp({

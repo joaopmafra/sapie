@@ -1,6 +1,7 @@
 {
   "projects": {
     "emulator": "demo-emulator",
+    "test-unit": "demo-test-unit",
     "test-e2e": "demo-test-e2e",
     "local-dev": "demo-local-dev",
     "dev": "sapie-dev",
