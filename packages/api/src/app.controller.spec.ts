@@ -15,9 +15,10 @@ describe('AppController', () => {
       logger: new ConsoleLogger({ logLevels: ['error'] }),
     });
     await app.init();
+  });
 
-    // TODO: convert to a test
-    console.log('process.env.CURRENT_ENV:', process.env.CURRENT_ENV);
+  it('should be using the correct environment', () => {
+    expect(process.env.CURRENT_ENV).toBe('test-unit');
   });
 
   it('/api (GET)', () => {

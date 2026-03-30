@@ -1,8 +1,8 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 
 @Injectable()
-export class FirebaseAdminService implements OnModuleInit {
+export class FirebaseAdminService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(FirebaseAdminService.name);
   private app: admin.app.App;
 
@@ -10,6 +10,11 @@ export class FirebaseAdminService implements OnModuleInit {
 
   onModuleInit() {
     this.initializeFirebaseAdmin();
+  }
+
+  onModuleDestroy() {
+    // Intentionally left empty for now; Firebase Admin app reuse is handled
+    // at process level, and explicit deletion is not required in tests yet.
   }
 
   /**
@@ -21,6 +26,14 @@ export class FirebaseAdminService implements OnModuleInit {
    */
   private initializeFirebaseAdmin(): void {
     try {
+      const existingApp = admin.apps[0];
+
+      if (existingApp) {
+        this.app = existingApp;
+        this.logger.debug('Reusing existing Firebase Admin app instance');
+        return;
+      }
+
       const projectId = process.env.GCLOUD_PROJECT;
       this.app = admin.initializeApp({
         // this is not needed, but we're keeping it here to make it explicit
