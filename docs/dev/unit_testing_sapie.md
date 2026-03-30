@@ -11,11 +11,12 @@ rationale for each design decision.
 
 - [Overview](#overview)
 - [Technology Stack](#technology-stack)
-- [Test Layer Architecture](#test-layer-architecture)
+- [Test Architecture](#test-architecture)
 - [Firestore Emulator Setup](#firestore-emulator-setup)
 - [Authentication in Tests](#authentication-in-tests)
 - [Data Isolation Strategy](#data-isolation-strategy)
 - [Test Lifecycle](#test-lifecycle)
+- [Future Evolution](#future-evolution)
 - [Open Questions](#open-questions)
 
 ---
@@ -32,14 +33,20 @@ in-memory fakes for Firestore, we use the **official Firebase Emulator** running
 container as the test database. This gives us real Firestore semantics — query behavior,
 constraint enforcement, index behavior — without the latency of a remote connection.
 
+The Firebase Emulator is a sophisticated fake, not a real external system. Tests that use it
+are still unit tests by the Classical school's definition: they run in isolation, use a fake
+for the external boundary, and verify observable behavior. There is no meaningful categorical
+distinction between a test that uses a hand-written in-memory fake and one that uses the
+emulator — only a difference in the fidelity and implementation complexity of the fake.
+
 ---
 
 ## Technology Stack
 
 | Concern | Technology |
 |---|---|
-| Test runner | Jest (already configured in `packages/api/`) |
-| HTTP test client | `supertest` (already available via `@nestjs/testing`) |
+| Test runner | Jest (configured in `packages/api/package.json`) |
+| HTTP test client | `supertest` (via `@nestjs/testing`) |
 | Test module wiring | `@nestjs/testing` — `Test.createTestingModule()` |
 | Firestore (test) | Firebase Emulator running in Docker with `tmpfs` |
 | Authentication (test) | Fake `AuthGuard` injected via `overrideProvider()` |
@@ -52,53 +59,54 @@ tests continuously on every file save. Tests are run deliberately as a checkpoin
 completing a meaningful unit of implementation — not as a background alarm between keystrokes.
 
 Additionally, the emulator-backed test suite involves app bootstrap and I/O that makes it
-unsuitable for tight watch-mode cycles. If narrow, fast in-memory tests are added to `src/` in
-the future, watch mode over that subset can be invoked directly via
-`jest --watch --testPathPattern=src/` without a dedicated script.
+unsuitable for tight watch-mode cycles.
 
 For the full rationale on watch mode and why it has poor signal-to-noise ratio in both mockist
 and slower classical suites, see
 [Watch Mode and the Limits of Mockist Tests](unit_testing_strategy.md#watch-mode-and-the-limits-of-mockist-tests).
 
+**`test:e2e` is reserved for future use.** It points to `test/jest-e2e.json` and is intended
+for future real E2E tests (tests that hit a fully deployed environment with no fakes). No tests
+of this type exist currently.
+
 ---
 
-## Test Layer Architecture
+## Test Architecture
 
-Following the Testing Pyramid, the Sapie API has three test layers:
+All unit tests are **co-located with their source files** in `packages/api/src/`, following
+the `*.spec.ts` naming convention. A test for `content.controller.ts` lives in
+`content.controller.spec.ts` in the same directory.
 
-### Unit Tests — Primary Layer
+The existing Jest configuration in `package.json` (`rootDir: "src"`,
+`testRegex: ".*\.spec\.ts$"`) covers this layout with no changes required.
 
-**What they cover:** Service behaviors. Every significant behavior in a service class
-(business rules, validation, error cases, permission enforcement) has a corresponding unit test.
+**What tests cover:** Every significant behavior in a controller or service — business rules,
+HTTP validation, error cases, permission enforcement — has a corresponding test. Tests exercise
+the complete request-handling stack via `supertest`: HTTP request → guard → controller →
+service → Firestore emulator → HTTP response.
 
-**How they run:** The full NestJS application is bootstrapped via `Test.createTestingModule()`
-with `supertest` making real HTTP requests. This tests the complete request-handling stack
-including DTO validation, guards, controllers, and services in one pass.
+**What is replaced:** Only the `AuthGuard` is replaced with a fake (see
+[Authentication in Tests](#authentication-in-tests)). Everything else, including Firestore
+access via `FirebaseAdminService`, runs against the real emulator.
 
-**What is replaced:** The `AuthGuard` is replaced by a fake (see
-[Authentication in Tests](#authentication-in-tests)). Everything else — including Firestore
-access via `FirebaseAdminService` — runs against the real emulator.
+**Test helpers and doubles** (shared `FakeAuthGuard`, `clearFirestoreData()`, `createTestApp()`)
+live in `src/test-helpers/` and are excluded from production coverage reporting.
 
-**Location:** `packages/api/src/**/*.spec.ts` (co-located with source files).
+### The `test/` Directory
 
-**Expected count and speed:** Many tests; execution in seconds (in-memory emulator).
+The `test/` directory is **not used for unit tests**. It is reserved exclusively for future
+real E2E tests (against a deployed environment) and contains only `jest-e2e.json`.
 
-### Integration Tests — Secondary Layer
-
-> **Status: Not yet implemented. Reserved for future use.**
-
-Integration tests would cover concerns that the emulator does not fully replicate — for
-example, real Firebase Auth token verification flows, production Firestore security rules, or
-cross-service behaviors that require a fully configured environment.
-
-**Location (when implemented):** `packages/api/test/**/*.e2e-spec.ts`.
+The two boilerplate files generated by the NestJS CLI (`test/app.e2e-spec.ts`,
+`test/health/health.e2e-spec.ts`) are deleted as part of the initial setup — their coverage
+is absorbed by the co-located spec files in `src/`.
 
 ### E2E Tests — Playwright
 
 > **Status: Deprioritized for MVP. Existing tests are not actively maintained.**
 
 The Playwright E2E suite in `packages/test-e2e/` covers complete user journeys through the
-browser. These are not considered part of the API unit testing strategy.
+browser. It is not part of the API unit testing strategy.
 
 ---
 
@@ -116,21 +124,27 @@ emulator instance for tests in a Docker container** ensures:
 
 ### Container Configuration
 
-The test emulator container must expose at minimum:
+The test emulator container exposes services on host ports distinct from the development
+emulator to allow both to run simultaneously:
 
-- **Firestore** on a port distinct from the development emulator (e.g. `8181` instead of
-  `8080`) to prevent collisions when both are running simultaneously.
-- **Firebase Auth** on a distinct port (e.g. `9199` instead of `9099`) for the same reason.
-- **Emulator UI** (optional, e.g. port `4001`) for debugging test state.
+- **Firestore:** container port `8080` → host port `8181`
+- **Firebase Auth:** container port `9099` → host port `9199`
+- **Emulator UI:** container port `4000` → host port `4001` (optional, for debugging)
 
-The `tmpfs` mount should be applied to the Firestore data directory inside the container.
-Relevant emulator flags for speed (`--innodb`-style equivalents for Firebase) include disabling
-data export on exit, since test data is intentionally ephemeral.
+The existing `firebase.json` defines which emulators to start and their internal ports. The
+container reuses it without modification. The port remapping is handled entirely at the Docker
+level.
+
+The `tmpfs` mount is applied to the Firestore data directory inside the container. Data export
+on exit is disabled — test data is intentionally ephemeral.
+
+> **Docker image:** Use a custom `Dockerfile` rather than a pre-built third-party image for
+> reliability. Pre-built images may lag Firebase CLI releases. Pin the Firebase CLI version
+> in the `Dockerfile` for reproducibility.
 
 ### Environment Variables
 
-Tests connect to the test emulator via environment variables. The test environment file
-(`.env.test`, separate from the existing `.env.test-e2e`) must set:
+The `test` script in `package.json` sets the emulator environment variables inline:
 
 ```
 CURRENT_ENV=test
@@ -140,20 +154,19 @@ FIREBASE_AUTH_EMULATOR_HOST=localhost:9199
 GCLOUD_PROJECT=sapie-test
 ```
 
-`FirebaseAdminService.onModuleInit()` already reads `FIRESTORE_EMULATOR_HOST` and
-`FIREBASE_AUTH_EMULATOR_HOST` from `process.env` when `USE_FIREBASE_EMULATOR=true`, so no code
-changes are required in the service to support the test container.
+`FirebaseAdminService.onModuleInit()` already reads these from `process.env`, so no code
+changes are required in the service.
 
 ### Container Lifecycle
 
 The emulator container is intended to be **long-lived** — started once and kept running between
-`npm test` executions. This eliminates container startup time from the developer feedback loop:
+`pnpm test` executions. This eliminates container startup time from the developer feedback loop:
 
 - **First run:** container starts (one-time cost of ~10–15 seconds).
 - **Subsequent runs:** container is already running; tests connect immediately.
 
-A helper script (`scripts/start-test-emulator.sh`) should handle starting the container if it
-is not already running, and a companion stop script should be provided for teardown.
+A helper script (`scripts/start-test-emulator.sh`) handles starting the container if not
+already running. A companion `scripts/stop-test-emulator.sh` is provided for teardown.
 
 Firestore data is **not** persisted between runs — the `tmpfs` filesystem is ephemeral by
 design, and data is cleared before each test (see
@@ -165,27 +178,18 @@ design, and data is cleared before each test (see
 
 ### The Problem
 
-Every authenticated API endpoint in the Sapie API passes through `AuthGuard`, which:
-
-1. Extracts the Bearer token from the `Authorization` header.
-2. Calls `FirebaseAdminService.verifyIdToken()` to verify it with Firebase Auth.
-3. Attaches the decoded token (containing `uid` and other claims) to `request.user`.
-
-In tests, we need to control which user identity each request runs as — without the ceremony of
-creating real Firebase Auth users and obtaining real ID tokens for every test.
+Every authenticated API endpoint passes through `AuthGuard`, which verifies a Firebase ID
+token and attaches the decoded user to `request.user`. In tests, we need to control which user
+identity each request runs as without the ceremony of creating real Firebase Auth users.
 
 ### The Solution: Fake `AuthGuard`
 
-The `AuthGuard` is replaced in the test module with a **fake guard** using NestJS's
-`overrideProvider()` mechanism. The fake guard:
+The `AuthGuard` is replaced in the test module using NestJS's `overrideProvider()`. The fake
+guard:
 
-1. Reads a test user ID from a request header (e.g. `X-Test-User-Id`).
-2. Constructs a minimal `DecodedIdToken`-shaped object with that UID.
-3. Attaches it to `request.user`.
-4. Always returns `true` (allows the request through).
-
-This is the NestJS equivalent of Spring Boot's `@MockBean` on a security component. The overall
-wiring in the test module looks like:
+1. Reads a test user ID from a `X-Test-User-Id` request header.
+2. Constructs a minimal object with that UID and attaches it to `request.user`.
+3. Always returns `true`.
 
 ```
 Test.createTestingModule({ imports: [AppModule] })
@@ -194,21 +198,16 @@ Test.createTestingModule({ imports: [AppModule] })
   .compile()
 ```
 
-Tests then specify the user identity by passing `X-Test-User-Id: <uid>` as a request header.
-Multi-user scenarios (e.g. testing that user A cannot access user B's notes) are trivial —
-alternate the header value between requests.
+Tests specify the user identity by passing `X-Test-User-Id: <uid>` as a request header.
+Multi-user scenarios (e.g. user A cannot access user B's notes) are handled by alternating
+the header value between requests.
 
 ### What This Does Not Test
 
-The `AuthGuard` logic itself — token extraction from the header, the `verifyIdToken` call, error
-handling for missing or invalid tokens — is not exercised by unit tests that use the fake guard.
-That behavior is:
-
-- Narrow and well-defined (no significant business logic).
-- Verifiable in isolation with a small dedicated test if needed.
-- Covered in production by Firebase Auth's own guarantees.
-
-This is an explicit, deliberate trade-off in favor of test simplicity for the MVP phase.
+The `AuthGuard` logic itself — token extraction, `verifyIdToken`, error handling for missing
+or expired tokens — is not exercised by tests that use the fake guard. This is a deliberate
+trade-off: that behavior is narrow, has no meaningful business logic, and is covered by
+Firebase Auth's own guarantees.
 
 ---
 
@@ -221,24 +220,22 @@ execution order.
 
 ### Solution: Emulator Clear API
 
-The Firebase Firestore Emulator exposes a REST endpoint to delete all documents in a project's
-database:
+The Firebase Firestore Emulator exposes a REST endpoint to delete all documents in a project:
 
 ```
 DELETE http://localhost:{FIRESTORE_PORT}/emulator/v1/projects/{PROJECT_ID}/databases/(default)/documents
 ```
 
-This is an in-memory operation — it completes in milliseconds regardless of how much data was
-present. It is called in the `beforeEach` hook of every test suite.
+This is an in-memory operation completing in milliseconds. It is called in the `beforeEach`
+hook of every test suite via a shared `clearFirestoreData()` helper in `src/test-helpers/`.
 
-Because we are using a fake `AuthGuard` (not the real Firebase Auth emulator), there are no
-Auth emulator users to clear.
+Because the `AuthGuard` is faked rather than using the real Firebase Auth emulator, there are
+no Auth emulator users to clear.
 
 ### Why Not Container Restart
 
-Restarting the container before each test run would add 10–15 seconds of startup latency per
-`npm test` invocation, defeating the purpose of fast unit tests. The clear API call achieves
-the same result in under 100ms.
+Restarting the container before each test run would add 10–15 seconds of startup latency,
+defeating the purpose of a fast unit test suite.
 
 ### Why Not Database Transactions with Rollback
 
@@ -249,8 +246,6 @@ databases do. The clear API is the idiomatic isolation mechanism for Firestore e
 
 ## Test Lifecycle
 
-A complete unit test run follows this sequence:
-
 ```
 [One-time, before development session]
   Developer runs: scripts/start-test-emulator.sh
@@ -258,24 +253,79 @@ A complete unit test run follows this sequence:
   → Firestore emulator comes up on port 8181
   → Container remains running indefinitely
 
-[Per npm test invocation]
+[Per pnpm test invocation]
   Jest starts
+  → Reads emulator env vars from the test script
   → NestJS app bootstrapped with FakeAuthGuard overriding AuthGuard
   → App connects to emulator at localhost:8181
 
   [Per test suite (describe block)]
     beforeEach:
-      → HTTP DELETE to Firestore emulator clear endpoint
+      → clearFirestoreData() → HTTP DELETE to Firestore emulator clear endpoint
       → Firestore is empty
 
     [Per test (it block)]
-      → Test seeds required data via HTTP requests or direct Firestore emulator API
-      → Test makes HTTP request(s) with X-Test-User-Id header
+      → Test seeds required state by calling API endpoints (e.g. GET /api/content/root)
+      → Test performs the action under test via supertest with X-Test-User-Id header
       → Test asserts on HTTP response status and body
 
   Jest reports results
   → Container remains running for next invocation
 ```
+
+---
+
+## Future Evolution
+
+The current design uses one type of fake for all tests (the Firebase Emulator). If the suite
+grows to a point where the emulator's startup and I/O overhead is felt as friction during
+development, a two-layer structure can be introduced without reorganising the test files:
+
+- **Fast layer:** hand-written in-memory fakes for Firebase, used in the same `*.spec.ts`
+  files, providing a sub-second inner feedback loop.
+- **Emulator layer:** the current approach, retained as a second, slightly slower suite for
+  higher-fidelity verification.
+
+If this separation ever needs to be reflected in the directory structure — for example, to allow
+CI to run the fast layer on every push and the emulator layer on merge — the natural layout
+would be:
+
+- `src/` — fast-fake tests (co-located)
+- `test/` — emulator-backed tests (currently reserved for real E2E, but this could be expanded)
+- `test-e2e/` — real E2E tests
+
+This restructuring should be done when the pain of not having it is felt, not speculatively.
+
+---
+
+## Test Data Seeding Strategy
+
+### Business Logic Tests: Seed via API
+
+For tests that verify business rules (ownership, uniqueness, permissions, content retrieval),
+prerequisite state is seeded by calling the application's own API endpoints. For example,
+before testing note creation, the parent directory is obtained by calling
+`GET /api/content/root`.
+
+This approach has one representation of how data is written — the production code. The write
+path and the read path always change together, so there is no risk of a format mismatch between
+seeded data and what the application expects to read. It also means the seeding step itself
+exercises application logic, which surfaces bugs for free.
+
+### Migration Tests: Seed via Firestore Admin SDK
+
+When the internal Firestore document structure changes (field added, renamed, removed, or
+restructured), data already present in production is still in the old format. A migration test
+verifies that the new read code handles old-format documents correctly.
+
+For these tests, seed data is written **directly via the Firestore Admin SDK**, bypassing
+application write code entirely. The SDK write encodes the old schema explicitly — it acts as
+a snapshot of what Firestore contains in production at the time of the migration. If the read
+code is updated but fails to handle the old format, the test fails.
+
+SDK seeding is **not** appropriate for business logic tests. It creates a second encoding of
+the write logic that must be kept in sync with the production code — exactly the same
+divergence risk as a fake that drifts from its real implementation.
 
 ---
 
@@ -288,16 +338,6 @@ tests are written:
    `tomasvotava/firebase-emulators`) vs. a custom `Dockerfile` built from the official Firebase
    CLI. See `docs/research/run_firebase_emulator_container.md`.
 
-2. **Test data seeding approach.** Tests may need to seed Firestore with initial state before
-   exercising behavior. Options:
-   - Seed via the service's own API endpoints (slower, but tests the full stack).
-   - Seed directly via the Firestore emulator's REST API (faster, bypasses business logic).
-   - A test fixture helper that seeds via a direct Firestore Admin SDK connection.
-   The choice affects how tightly tests are coupled to the service's write path.
-
-3. **Jest global setup integration.** The Firestore clear call in `beforeEach` requires knowing
+2. **Jest global setup integration.** The Firestore clear call in `beforeEach` requires knowing
    the emulator host and project ID. Whether this configuration is read from environment
    variables or from a shared Jest global setup file is an implementation detail to decide.
-
-4. **Naming and file structure for test doubles.** Where fake guard implementations, fixture
-   helpers, and other test infrastructure live in the source tree.

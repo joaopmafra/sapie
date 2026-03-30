@@ -15,6 +15,7 @@ For project-specific guidance (technology choices, infrastructure, test lifecycl
 - [Test Double Taxonomy](#test-double-taxonomy)
 - [Why We Prefer the Classical School](#why-we-prefer-the-classical-school)
 - [The Fake Divergence Problem](#the-fake-divergence-problem)
+- [Test Data Seeding Strategy](#test-data-seeding-strategy)
 - [The Testing Pyramid](#the-testing-pyramid)
 - [Watch Mode and the Limits of Mockist Tests](#watch-mode-and-the-limits-of-mockist-tests)
 - [Escape Hatches](#escape-hatches)
@@ -248,6 +249,53 @@ Contract tests also act as living documentation of the repository's expected beh
 When a repository interface gains a new method, TypeScript forces the fake (which implements
 the interface) to implement the new method before the code compiles. Unlike mocks, fakes cannot
 silently diverge when the interface changes.
+
+---
+
+## Test Data Seeding Strategy
+
+Most tests require some initial state in the external system (a database record, a file, a
+queue entry) before the behavior under test can be exercised. How that state is created is a
+meaningful design decision that affects what the tests actually verify.
+
+### Business Logic Tests: Seed Through the Application
+
+For tests that verify business rules — permissions, uniqueness constraints, data retrieval,
+state transitions — prerequisite state should be seeded by calling the application's own
+write path. If a test needs a parent folder before testing note creation, create it by calling
+the same endpoint or service method that production code uses.
+
+This approach has a single source of truth for how data is written: the production code. The
+write path and the read path change together. There is no risk of a format mismatch between
+seeded state and what the application expects to read. The seeding step also exercises
+application logic implicitly, surfacing bugs that would otherwise go undetected.
+
+Seeding through the application is appropriate whenever the goal of the test is to verify
+behavior, not storage format.
+
+### Migration Tests: Seed Directly Against the Storage Layer
+
+When the internal storage schema changes — a field is renamed, a type changes, a document is
+restructured — data already present in production is still in the old format. A migration test
+verifies that updated read code handles old-format records correctly.
+
+For these tests, seed data is written **directly against the storage layer** (e.g., via a
+database SDK), bypassing application write code entirely. The direct write encodes the old
+schema explicitly — it acts as a snapshot of what the storage layer contains in production
+before the migration. If the new read code fails to handle the old format, the test fails and
+catches the regression before deployment.
+
+This is the **only** class of tests where direct storage writes are appropriate. Using direct
+storage writes in business logic tests creates a second encoding of the write logic that must
+be kept in sync with production code — exactly the same divergence risk described in
+[The Fake Divergence Problem](#the-fake-divergence-problem).
+
+### Summary
+
+| Seeding method | Use for | Risk if misused |
+|---|---|---|
+| Through the application (API / service) | Business logic tests | None — single source of truth |
+| Directly against the storage layer | Migration / backward-compatibility tests | Creates a second encoding of write logic that can drift |
 
 ---
 
