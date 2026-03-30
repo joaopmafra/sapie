@@ -49,6 +49,8 @@ Leave `test` unchanged for now — emulator env vars will be added in Phase 2.
 **Verify:** Run `pnpm test`. All existing tests pass. Confirm `test:watch` and `test:all` are
 gone from the scripts.
 
+Status: Done
+
 ---
 
 ## Phase 2 — Firebase Emulator Test Container
@@ -78,6 +80,8 @@ curl http://localhost:8181/
 
 Confirm the dev emulator (if running) is unaffected on its own ports.
 
+Status: Pending
+
 ---
 
 ### Step 4 — Create helper scripts for the test container
@@ -94,6 +98,8 @@ it is, supporting the long-lived container workflow.
 already-running container and not start a duplicate. Run `stop-test-emulator.sh` and confirm
 the container exits. Run the start script again to confirm a clean restart.
 
+Status: Pending
+
 ---
 
 ### Step 5 — Wire the test suite to the test emulator
@@ -107,6 +113,8 @@ Update the `test` script in `package.json` to set the emulator environment varia
 **Verify:** With the test container running, run `pnpm test`. All existing tests pass. With
 the container stopped, run `pnpm test` — expect the NestJS app to fail to initialise,
 confirming the suite now depends on the emulator.
+
+Status: Pending
 
 ---
 
@@ -125,6 +133,8 @@ using `overrideProvider(AuthGuard).useClass(FakeAuthGuard)` and make a real HTTP
 `supertest`. Run `pnpm test` and confirm the test passes. This validates the override wiring
 before any new tests are written.
 
+Status: Pending
+
 ---
 
 ### Step 7 — Create the Firestore clear helper
@@ -141,6 +151,8 @@ Port and project ID are read from the `FIRESTORE_EMULATOR_HOST` and `GCLOUD_PROJ
 **Verify:** Write a temporary test that seeds a document directly via the Firestore Admin SDK,
 calls `clearFirestoreData()`, then reads the same collection and asserts it is empty.
 
+Status: Pending
+
 ---
 
 ### Step 8 — Create a shared test app factory
@@ -155,6 +167,8 @@ Update `src/health/health.controller.spec.ts` and `src/app.controller.spec.ts` t
 `createTestApp()` and add `clearFirestoreData()` in their `beforeEach`.
 
 **Verify:** Run `pnpm test`. All existing tests pass using the shared factory.
+
+Status: Pending
 
 ---
 
@@ -177,6 +191,8 @@ user.
 
 **Verify:** Run `pnpm test`. New test passes.
 
+Status: Pending
+
 ---
 
 ### Step 10 — Test: create a note (happy path)
@@ -188,6 +204,8 @@ user.
 
 **Verify:** Run `pnpm test`. New test passes.
 
+Status: Pending
+
 ---
 
 ### Step 11 — Test: duplicate name is rejected
@@ -197,6 +215,8 @@ user.
 - Assert: 409 Conflict.
 
 **Verify:** Run `pnpm test`. New test passes.
+
+Status: Pending
 
 ---
 
@@ -208,6 +228,8 @@ user.
 
 **Verify:** Run `pnpm test`. New test passes.
 
+Status: Pending
+
 ---
 
 ### Step 13 — Test: list content
@@ -218,6 +240,8 @@ user.
 - Assert: 200, body contains exactly the two notes belonging to `user-1`, not `user-2`'s note.
 
 **Verify:** Run `pnpm test`. All tests pass.
+
+Status: Pending
 
 ---
 
@@ -234,3 +258,5 @@ actual decisions made during implementation:
   `beforeEach`).
 
 **Verify:** Read through the document and confirm it accurately reflects the implemented state.
+
+Status: Pending
