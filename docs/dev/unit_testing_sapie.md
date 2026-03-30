@@ -17,7 +17,7 @@ rationale for each design decision.
 - [Data Isolation Strategy](#data-isolation-strategy)
 - [Test Lifecycle](#test-lifecycle)
 - [Future Evolution](#future-evolution)
-- [Open Questions](#open-questions)
+- [Implementation decisions](#implementation-decisions)
 
 ---
 
@@ -144,18 +144,36 @@ on exit is disabled — test data is intentionally ephemeral.
 
 ### Environment Variables
 
-The `test` script in `package.json` sets the emulator environment variables inline:
+Jest is configured with `setupFiles` pointing at `src/jest.setup.ts` (see
+`packages/api/package.json`). That file runs **once per test file, before any `describe` or
+`beforeEach`**, and sets `process.env.CURRENT_ENV = 'test-unit'`.
 
-```
-CURRENT_ENV=test
-USE_FIREBASE_EMULATOR=true
-FIRESTORE_EMULATOR_HOST=localhost:8181
-FIREBASE_AUTH_EMULATOR_HOST=localhost:9199
-GCLOUD_PROJECT=sapie-test
-```
+`AppModule` uses `ConfigModule.forRoot` with `envFilePath` set to the file
+`.env.<CURRENT_ENV>` (for example `.env.test-unit` when `CURRENT_ENV` is `test-unit`).
+Production Firebase code such as `FirebaseAdminService` reads configuration from `process.env`
+only.
 
-`FirebaseAdminService.onModuleInit()` already reads these from `process.env`, so no code
-changes are required in the service.
+**Why `.env.test-unit` is visible before `compile()` or `init()`:** Spec files that
+`import { AppModule } from './app.module'` load `AppModule` when the test file is first
+evaluated (after `jest.setup.ts` has set `CURRENT_ENV`). Nest’s `ConfigModule.forRoot()` runs as
+part of building that module’s metadata: it reads the env file **synchronously** and assigns
+values into `process.env` for any key that is not already set (see `@nestjs/config`
+`loadEnvFile` / `assignVariablesToProcess`). So emulator-related keys from `.env.test-unit` are
+often already present at the start of `beforeEach`, even before
+`Test.createTestingModule({ imports: [AppModule] }).compile()`. This is not accidental
+inheritance from the shell alone (though the shell can still pre-populate keys, which blocks
+file overrides for those keys).
+
+**Specs that never import `AppModule`:** If a test file needs `process.env` values from
+`.env.test-unit` but does not import `AppModule` (or any module that runs `forRoot` with that
+`envFilePath`), load the file in `jest.setup.ts` (for example with `dotenv`) or set variables in
+the process environment. The same applies to helpers that run before any importing module has
+been loaded.
+
+When the test Docker stack from the implementation plan is in place, prefer the host ports and
+project id agreed there (for example `FIRESTORE_EMULATOR_HOST=localhost:8181` and
+`GCLOUD_PROJECT=sapie-test`); until then, `.env.test-unit` may use local defaults such as
+`localhost:8080` aligned with your dev emulator.
 
 ### Container Lifecycle
 
@@ -255,9 +273,10 @@ databases do. The clear API is the idiomatic isolation mechanism for Firestore e
 
 [Per pnpm test invocation]
   Jest starts
-  → Reads emulator env vars from the test script
-  → NestJS app bootstrapped with FakeAuthGuard overriding AuthGuard
-  → App connects to emulator at localhost:8181
+  → `jest.setup.ts` sets CURRENT_ENV=test-unit
+  → Importing `AppModule` runs `ConfigModule.forRoot()` → `.env.test-unit` merged into process.env
+  → NestJS app bootstrapped via `compile()` / `init()` (FakeAuthGuard override when wired)
+  → App connects to the Firestore emulator host from env (e.g. localhost:8181 when using the test container)
 
   [Per test suite (describe block)]
     beforeEach:
@@ -329,15 +348,22 @@ divergence risk as a fake that drifts from its real implementation.
 
 ---
 
-## Open Questions
+## Implementation decisions
 
-The following implementation details are not yet decided and must be resolved before the first
-tests are written:
+Previously open design choices are settled as follows:
 
-1. **Docker image choice.** Pre-built images (`spine3/firebase-emulator`,
-   `tomasvotava/firebase-emulators`) vs. a custom `Dockerfile` built from the official Firebase
-   CLI. See `docs/research/run_firebase_emulator_container.md`.
+1. **Docker image for the test emulator.** Use a **custom `Dockerfile`** based on an official
+   Node image, install and **pin the Firebase CLI** version, and start emulators with the repo’s
+   `firebase.json`. Rationale and alternatives are in
+   `docs/research/run_firebase_emulator_container.md`. Compose file and scripts follow
+   [Unit Testing Implementation Plan](unit_testing_implementation_plan.md) once added to the repo.
 
-2. **Jest global setup integration.** The Firestore clear call in `beforeEach` requires knowing
-   the emulator host and project ID. Whether this configuration is read from environment
-   variables or from a shared Jest global setup file is an implementation detail to decide.
+2. **Where Jest gets emulator host and project id.** Use **both** a small Jest bootstrap file and
+   Nest’s env loading: `setupFiles` → `src/jest.setup.ts` sets `CURRENT_ENV=test-unit`;
+   **`packages/api/.env.test-unit`** supplies `FIRESTORE_EMULATOR_HOST`, `GCLOUD_PROJECT`, and
+   related keys via `ConfigModule.forRoot()` as soon as **`AppModule` is imported** (usual for
+   specs); `compile()` / `init()` do not need to run first for those vars to appear in
+   `process.env`. This is preferred over duplicating those values only in a `globalSetup` script
+   or only in an inline `test` script. Specs or helpers that never import a module with that
+   `forRoot` must load `.env.test-unit` in `jest.setup.ts` or the process environment (see
+   [Environment Variables](#environment-variables)).
