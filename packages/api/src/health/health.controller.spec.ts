@@ -1,24 +1,32 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { HealthController } from './health.controller';
+import { INestApplication } from '@nestjs/common';
+import * as request from 'supertest';
+import { AppModule } from '../app.module';
 
-describe('HealthController', () => {
-  let controller: HealthController;
+describe('HealthController (e2e)', () => {
+  let app: INestApplication;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [HealthController],
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
     }).compile();
 
-    controller = module.get<HealthController>(HealthController);
+    app = moduleFixture.createNestApplication();
+    await app.init();
   });
 
-  describe('getHealth', () => {
-    it('should return health status object', () => {
-      const result = controller.getHealth();
-      expect(result).toHaveProperty('status', 'ok');
-      expect(result).toHaveProperty('timestamp');
-      expect(typeof result.timestamp).toBe('string');
-      expect(new Date(result.timestamp).toString()).not.toBe('Invalid Date');
-    });
+  afterEach(async () => {
+    await app.close();
+  });
+
+  it('/api/health (GET)', () => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return request(app.getHttpServer())
+      .get('/api/health')
+      .expect(200)
+      .then(response => {
+        expect(response.body).toHaveProperty('status', 'ok');
+        expect(response.body).toHaveProperty('timestamp');
+      });
   });
 });

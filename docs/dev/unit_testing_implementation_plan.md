@@ -30,6 +30,8 @@ tests.
 matched by the default Jest config anyway, since it uses `rootDir: "src"`). All existing tests
 in `src/` still pass.
 
+Status: Done
+
 ---
 
 ### Step 2 — Simplify test scripts in `package.json`
