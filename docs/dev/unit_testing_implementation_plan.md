@@ -121,7 +121,7 @@ Update the `test` script in `package.json` to set the emulator environment varia
 the container stopped, run `pnpm test` — expect the NestJS app to fail to initialise,
 confirming the suite now depends on the emulator.
 
-Status: Pending
+Status: Done
 
 ---
 
