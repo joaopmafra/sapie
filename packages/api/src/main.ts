@@ -1,9 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { MillisecondLogger } from './logger/millisecond.logger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: new MillisecondLogger(),
+  });
 
   // Set up Swagger only in development or Firebase emulator
   const isDevelopment = process.env.NODE_ENV !== 'production';

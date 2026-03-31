@@ -3,10 +3,10 @@ import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../app.module';
 
-describe('HealthController (e2e)', () => {
+describe('HealthController', () => {
   let app: INestApplication;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -15,18 +15,14 @@ describe('HealthController (e2e)', () => {
     await app.init();
   });
 
-  afterEach(async () => {
+  afterAll(async () => {
     await app.close();
   });
 
-  it('/api/health (GET)', () => {
+  it('/api/health (GET)', async () => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    return request(app.getHttpServer())
-      .get('/api/health')
-      .expect(200)
-      .then(response => {
-        expect(response.body).toHaveProperty('status', 'ok');
-        expect(response.body).toHaveProperty('timestamp');
-      });
+    const response = await request(app.getHttpServer()).get('/api/health').expect(200);
+    expect(response.body).toHaveProperty('status', 'ok');
+    expect(response.body).toHaveProperty('timestamp');
   });
 });

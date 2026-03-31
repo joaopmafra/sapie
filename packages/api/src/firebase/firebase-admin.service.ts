@@ -12,9 +12,12 @@ export class FirebaseAdminService implements OnModuleInit, OnModuleDestroy {
     this.initializeFirebaseAdmin();
   }
 
-  onModuleDestroy() {
-    // Intentionally left empty for now; Firebase Admin app reuse is handled
-    // at process level, and explicit deletion is not required in tests yet.
+  async onModuleDestroy(): Promise<void> {
+    if (!this.app) {
+      return;
+    }
+    await this.app.delete();
+    this.app = undefined as unknown as admin.app.App;
   }
 
   /**

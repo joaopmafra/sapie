@@ -86,6 +86,8 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
+    "maxWorkers": "1",
+    "openHandlesTimeout": 5000,
     "setupFiles": [
       "<rootDir>/jest.setup.ts"
     ]

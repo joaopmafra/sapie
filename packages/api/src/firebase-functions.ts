@@ -2,12 +2,15 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { onRequest } from 'firebase-functions/v2/https';
 import { HttpServer } from '@nestjs/common/interfaces/http/http-server.interface';
+import { MillisecondLogger } from './logger/millisecond.logger';
 
 let cachedApp: HttpServer;
 
 async function createNestServer() {
   if (!cachedApp) {
-    const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create(AppModule, {
+      logger: new MillisecondLogger(),
+    });
 
     // Enable CORS for cross-origin requests
     app.enableCors({

@@ -6,7 +6,7 @@ import { AppModule } from './app.module';
 describe('AppController', () => {
   let app: INestApplication;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -27,7 +27,7 @@ describe('AppController', () => {
   });
 
   // cleans up resources; see https://www.google.com/search?q=nestjs+e2e+test+aftereach+app.close
-  afterEach(async () => {
+  afterAll(async () => {
     await app.close();
   });
 });

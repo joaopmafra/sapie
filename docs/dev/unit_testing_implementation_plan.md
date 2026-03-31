@@ -105,7 +105,7 @@ it is, supporting the long-lived container workflow.
 already-running container and not start a duplicate. Run `stop-test-emulator.sh` and confirm
 the container exits. Run the start script again to confirm a clean restart.
 
-Status: Pending
+Status: Done
 
 ---
 
