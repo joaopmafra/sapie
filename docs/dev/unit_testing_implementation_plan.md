@@ -57,17 +57,24 @@ Status: Done
 
 ### Step 3 — Create the test emulator Docker setup
 
-Create a `docker-compose.test.yml` in the project root. The container re-uses the existing
-`firebase.json` (which defines the emulators and their internal ports) but exposes them on
-host ports distinct from the dev emulator to allow both to run simultaneously:
+Create a `docker-compose.test.yml` in the project root. Use a dedicated
+`firebase.test-unit.json` for the test container so **host and container use the same
+emulator ports** (the Emulator UI runs in the browser and follows URLs advertised by the
+suite; remapping e.g. `8181:8080` breaks Firestore and the WebSocket `requests` channel).
 
-- Firestore: container port `8080` → host port `8181`
-- Firebase Auth: container port `9099` → host port `9199`
-- Emulator UI: container port `4000` → host port `4001` (optional, for debugging)
+Typical ports in that file (see repo root `firebase.test-unit.json`):
+
+- Firestore HTTP: `8181`
+- Firestore WebSocket (UI): `9160` (`websocketPort`; avoids host conflict with dev default `9150`)
+- Auth: `9199`
+- Emulator UI: `4001`
+- Emulator Hub: `4410` (avoids clashing with a local dev hub on `4400`)
+- Logging: `4510`
 
 Use a custom `Dockerfile` based on `node:22-alpine` rather than a pre-built third-party image.
 Install the Firebase CLI (pin the version) and OpenJDK (required by the emulators). Copy
-`firebase.json` and `.firebaserc` into the container and run `firebase emulators:start`.
+`firebase.test-unit.json` and `.firebaserc` into the container and run
+`firebase emulators:start --config firebase.test-unit.json`.
 
 Apply a `tmpfs` mount to the Firestore data directory for in-memory speed and ephemeral data.
 
@@ -80,7 +87,7 @@ curl http://localhost:8181/
 
 Confirm the dev emulator (if running) is unaffected on its own ports.
 
-Status: Pending
+Status: Done
 
 ---
 

@@ -124,16 +124,21 @@ emulator instance for tests in a Docker container** ensures:
 
 ### Container Configuration
 
-The test emulator container exposes services on host ports distinct from the development
-emulator to allow both to run simultaneously:
+The test stack uses `firebase.test-unit.json` so **host and container ports match** for each
+emulator (the Emulator Suite UI runs in your browser and connects to `127.0.0.1` using the
+ports advertised by the suite; asymmetric maps like `8181:8080` break Firestore and the
+WebSocket used by the UI). Typical mappings (see repo root files):
 
-- **Firestore:** container port `8080` → host port `8181`
-- **Firebase Auth:** container port `9099` → host port `9199`
-- **Emulator UI:** container port `4000` → host port `4001` (optional, for debugging)
+- **Firestore HTTP:** `8181`
+- **Firestore WebSocket (UI / requests):** `9160` (`websocketPort`; local dev defaults to
+  `9150`, so tests and dev can run in parallel without clashing)
+- **Auth:** `9199`
+- **Emulator UI:** `4001`
+- **Emulator Hub:** `4410` (separate from a local dev hub on `4400`)
+- **Logging:** `4510`
 
-The existing `firebase.json` defines which emulators to start and their internal ports. The
-container reuses it without modification. The port remapping is handled entirely at the Docker
-level.
+Local development continues to use root `firebase.json` (e.g. Firestore `8080`, Auth `9099`, UI
+`4000`) without the Docker test file.
 
 The `tmpfs` mount is applied to the Firestore data directory inside the container. Data export
 on exit is disabled — test data is intentionally ephemeral.
