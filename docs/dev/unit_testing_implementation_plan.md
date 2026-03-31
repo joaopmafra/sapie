@@ -140,7 +140,7 @@ using `overrideProvider(AuthGuard).useClass(FakeAuthGuard)` and make a real HTTP
 `supertest`. Run `pnpm test` and confirm the test passes. This validates the override wiring
 before any new tests are written.
 
-Status: Pending
+Status: Done
 
 ---
 
@@ -158,7 +158,7 @@ Port and project ID are read from the `FIRESTORE_EMULATOR_HOST` and `GCLOUD_PROJ
 **Verify:** Write a temporary test that seeds a document directly via the Firestore Admin SDK,
 calls `clearFirestoreData()`, then reads the same collection and asserts it is empty.
 
-Status: Pending
+Status: Done
 
 ---
 
