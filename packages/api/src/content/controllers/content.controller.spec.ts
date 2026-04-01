@@ -2,12 +2,10 @@ import { ContentRepository } from '../repositories/content-repository.service';
 import { ContentControllerFixture } from './content.controller.fixture';
 
 describe('ContentController', () => {
-  // we need to initialize the fixture to be able to access its constants
-  let fixture = new ContentControllerFixture();
+  const fixture = new ContentControllerFixture();
 
   beforeAll(async () => {
-    fixture = new ContentControllerFixture();
-    await fixture.buildAndInit();
+    await fixture.init();
   });
 
   beforeEach(async () => {
