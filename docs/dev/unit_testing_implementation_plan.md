@@ -211,7 +211,7 @@ Status: Done
 
 **Verify:** Run `pnpm test`. New test passes.
 
-Status: In Progress
+Status: Done
 
 ---
 
