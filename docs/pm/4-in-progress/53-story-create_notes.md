@@ -45,7 +45,7 @@ organize my content.
     - The creation path (based on selected folder or root) should be displayed.
     - On submission, call the backend, handle success/errors, refresh the content explorer, and navigate to the new
       note.
-- [ ] **Task 4: [FE] Basic Note Editor with Editable Name**:
+- [x] **Task 4: [FE] Basic Note Editor with Editable Name**:
     - Create a view for the note editor that displays an editable name.
 - [ ] **Task 5: [BE] Implement Note Renaming Endpoint**:
     - Create a `PATCH /content/:id` endpoint to update a note's name.
@@ -54,7 +54,7 @@ organize my content.
     - In the editor, on "Enter" after editing the name, call the renaming endpoint.
     - Update the UI in the editor and `ContentExplorer` on success.
     - Display an inline error message if an error occurs.
-- [ ] **Task 7: [E2E] Write E2E Tests**:
-    - Add Playwright tests for the note creation and renaming flows.
+- [ ] ~~**Task 7: [E2E] Write E2E Tests**:~~
+    - ~~Add Playwright tests for the note creation and renaming flows.~~
 - [ ] **Task 8: [DOCS] Update Documentation**:
     - Update API documentation for the new/changed endpoints.
