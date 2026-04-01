@@ -1,5 +1,6 @@
 import { ContentRepository } from '../repositories/content-repository.service';
 import { ContentControllerFixture } from './content.controller.fixture';
+import { HttpStatus } from '@nestjs/common';
 
 describe('ContentController', () => {
   const fixture = new ContentControllerFixture();
@@ -59,5 +60,23 @@ describe('ContentController', () => {
     expect(response.body).toHaveProperty('name', 'My Note');
     expect(response.body).toHaveProperty('type', 'note');
     expect(response.body).toHaveProperty('ownerId', fixture.TEST_USER_ID);
+  });
+
+  it(`POST ${fixture.API_CONTENT} rejects duplicate name in same parent with 409`, async () => {
+    const rootDirectory = await fixture.callApiGetRootDirectoryExpectingOkAsContent(
+      fixture.TEST_USER_ID
+    );
+
+    await fixture.callApiCreateNoteExpectingCreated(fixture.TEST_USER_ID, {
+      name: 'My Note',
+      parentId: rootDirectory.id,
+    });
+
+    await fixture
+      .callApiCreateNote(fixture.TEST_USER_ID, {
+        name: 'My Note',
+        parentId: rootDirectory.id,
+      })
+      .expect(HttpStatus.CONFLICT);
   });
 });
