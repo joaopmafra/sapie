@@ -175,7 +175,7 @@ Update `src/health/health.controller.spec.ts` and `src/app.controller.spec.ts` t
 
 **Verify:** Run `pnpm test`. All existing tests pass using the shared factory.
 
-Status: Pending
+Status: Done
 
 ---
 

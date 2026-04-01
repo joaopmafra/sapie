@@ -1,20 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ConsoleLogger, INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppModule } from './app.module';
+import { AppFixture } from './test-helpers/app.fixture';
 
 describe('AppController', () => {
-  let app: INestApplication;
+  let appFixture: AppFixture;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication({
-      logger: new ConsoleLogger({ logLevels: ['error'] }),
-    });
-    await app.init();
+    appFixture = new AppFixture();
+    await appFixture.withFakeAuth().buildAndInit();
   });
 
   it('should be using the correct environment', () => {
@@ -23,11 +15,10 @@ describe('AppController', () => {
 
   it('/api (GET)', () => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    return request(app.getHttpServer()).get('/api').expect(200).expect('Sapie API');
+    return request(appFixture.getHttpServer()).get('/api').expect(200).expect('Sapie API');
   });
 
-  // cleans up resources; see https://www.google.com/search?q=nestjs+e2e+test+aftereach+app.close
   afterAll(async () => {
-    await app.close();
+    await appFixture.close();
   });
 });

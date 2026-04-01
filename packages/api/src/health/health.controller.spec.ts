@@ -1,27 +1,21 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppModule } from '../app.module';
+import { AppFixture } from '../test-helpers/app.fixture';
 
 describe('HealthController', () => {
-  let app: INestApplication;
+  let appFixture: AppFixture;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
+    appFixture = new AppFixture();
+    await appFixture.withFakeAuth().buildAndInit();
   });
 
   afterAll(async () => {
-    await app.close();
+    await appFixture.close();
   });
 
   it('/api/health (GET)', async () => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    const response = await request(app.getHttpServer()).get('/api/health').expect(200);
+    const response = await request(appFixture.getHttpServer()).get('/api/health').expect(200);
     expect(response.body).toHaveProperty('status', 'ok');
     expect(response.body).toHaveProperty('timestamp');
   });

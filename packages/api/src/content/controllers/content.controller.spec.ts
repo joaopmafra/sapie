@@ -1,34 +1,27 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppModule } from '../../app.module';
-import { AuthGuard } from '../../auth';
-import { FakeAuthGuard } from '../../test-helpers/fake-auth.guard';
+import { AppFixture } from '../../test-helpers/app.fixture';
 
 describe('ContentController', () => {
-  let app: INestApplication;
+  let appFixture: AppFixture;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideGuard(AuthGuard)
-      .useClass(FakeAuthGuard)
-      .compile();
+    appFixture = new AppFixture();
+    await appFixture.withFakeAuth().buildAndInit();
+  });
 
-    app = moduleFixture.createNestApplication();
-    await app.init();
+  beforeEach(async () => {
+    await appFixture.clearDatabase();
   });
 
   afterAll(async () => {
-    await app.close();
+    await appFixture.close();
   });
 
   it('/api/content/root (GET) uses FakeAuthGuard user from header', async () => {
     const testUserId = 'content-test-user';
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    const response = await request(app.getHttpServer())
+    const response = await request(appFixture.getHttpServer())
       .get('/api/content/root')
       .set('X-Test-User-Id', testUserId)
       .expect(200);
