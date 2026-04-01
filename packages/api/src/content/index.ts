@@ -16,6 +16,9 @@ export {
 // Services
 export { RootDirectoryService } from './services/root-directory.service';
 
+// Repositories
+export { ContentRepository } from './repositories/content-repository.service';
+
 // Controllers
 export { ContentController } from './controllers/content.controller';
 

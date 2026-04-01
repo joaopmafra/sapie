@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { FirebaseAdminService } from '../../firebase';
-import { Content, ContentDocument, ContentType } from '../entities/content.entity';
+import { Content, ContentType } from '../entities/content.entity';
+import { ContentRepository } from '../repositories/content-repository.service';
 
 /**
  * Root Directory Service
@@ -15,7 +16,10 @@ export class RootDirectoryService {
   private readonly logger = new Logger(RootDirectoryService.name);
   private readonly contentCollection = 'content';
 
-  constructor(private readonly firebaseAdminService: FirebaseAdminService) {}
+  constructor(
+    private readonly firebaseAdminService: FirebaseAdminService,
+    private readonly rootDirectoryRepository: ContentRepository
+  ) {}
 
   private get firestore(): admin.firestore.Firestore {
     return this.firebaseAdminService.getFirestore();
@@ -34,7 +38,7 @@ export class RootDirectoryService {
       this.logger.debug(`Ensuring root directory exists for user: ${userId}`);
 
       // First, try to find existing root directory
-      const existingRoot = await this.findRootDirectory(userId);
+      const existingRoot = await this.rootDirectoryRepository.findRootDirectory(userId);
       if (existingRoot) {
         this.logger.debug(`Root directory already exists for user: ${userId}`);
         return existingRoot;
@@ -48,35 +52,6 @@ export class RootDirectoryService {
       throw new Error(
         `Failed to ensure root directory: ${error instanceof Error ? error.message : String(error)}`
       );
-    }
-  }
-
-  /**
-   * Finds the existing root directory for a user.
-   *
-   * @param userId - The ID of the user
-   * @returns Promise<Content | null> - The root directory or null if not found
-   */
-  async findRootDirectory(userId: string): Promise<Content | null> {
-    try {
-      const querySnapshot = await this.firestore
-        .collection(this.contentCollection)
-        .where('ownerId', '==', userId)
-        .where('parentId', '==', null)
-        .where('type', '==', ContentType.DIRECTORY)
-        .limit(1)
-        .get();
-
-      if (querySnapshot.empty) {
-        return null;
-      }
-
-      const doc = querySnapshot.docs[0];
-      const data = doc.data() as ContentDocument;
-      return this.convertDocumentToContent(doc.id, data);
-    } catch (error) {
-      this.logger.error(`Failed to find root directory for user ${userId}:`, error);
-      throw error;
     }
   }
 
@@ -124,26 +99,5 @@ export class RootDirectoryService {
       this.logger.error(`Failed to create root directory for user ${userId}:`, error);
       throw error;
     }
-  }
-
-  /**
-   * Converts a Firestore document to a Content entity.
-   *
-   * @param id - The document ID
-   * @param data - The document data
-   * @returns Content - The converted content entity
-   */
-  private convertDocumentToContent(id: string, data: ContentDocument): Content {
-    return {
-      id,
-      name: data.name,
-      type: data.type as ContentType,
-      parentId: data.parentId,
-      ownerId: data.ownerId,
-      contentUrl: data.contentUrl,
-      size: data.size,
-      createdAt: data.createdAt.toDate(),
-      updatedAt: data.updatedAt.toDate(),
-    };
   }
 }

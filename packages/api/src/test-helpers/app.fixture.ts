@@ -2,11 +2,10 @@ import { AppModule } from '../app.module';
 import { Test, TestingModule, TestingModuleBuilder } from '@nestjs/testing';
 import { AuthGuard } from '../auth';
 import { FakeAuthGuard } from './fake-auth.guard';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, Type } from '@nestjs/common';
 import { MillisecondLogger } from '../logger/millisecond.logger';
 import { LoggerService } from '@nestjs/common/services/logger.service';
 import { clearFirestoreData } from './firestore.helper';
-import { RootDirectoryService } from '../content';
 
 export class AppFixture {
   testingModuleBuilder: TestingModuleBuilder;
@@ -53,7 +52,7 @@ export class AppFixture {
     return this.app.getHttpServer();
   }
 
-  getRootDirectoryService() {
-    return this.testingModule.get(RootDirectoryService);
+  getComponent<T>(token: Type<T>): T {
+    return this.testingModule.get(token);
   }
 }
