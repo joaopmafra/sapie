@@ -1,5 +1,6 @@
 # Example Docker configuration for Firebase Emulators:
-# https://github.com/AndreySenov/firebase-tools-docker
+# - https://github.com/AndreySenov/firebase-tools-docker
+# - https://hub.docker.com/r/andreysenov/firebase-tools
 
 FROM node:22-alpine
 
