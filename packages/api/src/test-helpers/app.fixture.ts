@@ -8,15 +8,16 @@ import { LoggerService } from '@nestjs/common/services/logger.service';
 import { clearFirestoreData } from './firestore.helper';
 
 export class AppFixture {
-  testingModuleBuilder: TestingModuleBuilder;
-  testingModule: TestingModule;
-  logger: LoggerService;
-  app: INestApplication;
+  protected testingModuleBuilder: TestingModuleBuilder;
+  protected testingModule: TestingModule;
+  protected logger: LoggerService;
+  protected app: INestApplication;
 
-  constructor() {
+  createTestingModuleBuilder() {
     this.testingModuleBuilder = Test.createTestingModule({
       imports: [AppModule],
     });
+    return this;
   }
 
   withFakeAuth() {

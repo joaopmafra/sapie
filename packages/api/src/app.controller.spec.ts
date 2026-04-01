@@ -6,7 +6,7 @@ describe('AppController', () => {
 
   beforeAll(async () => {
     appFixture = new AppFixture();
-    await appFixture.withFakeAuth().buildAndInit();
+    await appFixture.createTestingModuleBuilder().withFakeAuth().buildAndInit();
   });
 
   it('should be using the correct environment', () => {

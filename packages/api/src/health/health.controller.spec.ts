@@ -6,7 +6,7 @@ describe('HealthController', () => {
 
   beforeAll(async () => {
     appFixture = new AppFixture();
-    await appFixture.withFakeAuth().buildAndInit();
+    await appFixture.createTestingModuleBuilder().withFakeAuth().buildAndInit();
   });
 
   afterAll(async () => {
