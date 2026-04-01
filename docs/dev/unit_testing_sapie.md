@@ -49,7 +49,7 @@ emulator — only a difference in the fidelity and implementation complexity of 
 | HTTP test client | `supertest` (via `@nestjs/testing`) |
 | Test module wiring | `@nestjs/testing` — `Test.createTestingModule()` |
 | Firestore (test) | Firebase Emulator running in Docker with `tmpfs` |
-| Authentication (test) | Fake `AuthGuard` injected via `overrideProvider()` |
+| Authentication (test) | Fake `AuthGuard` injected via `overrideGuard()` |
 | Data isolation | Firestore Emulator REST API (`DELETE /emulator/v1/...`) |
 
 ### Script Decisions
@@ -89,7 +89,7 @@ service → Firestore emulator → HTTP response.
 [Authentication in Tests](#authentication-in-tests)). Everything else, including Firestore
 access via `FirebaseAdminService`, runs against the real emulator.
 
-**Test helpers and doubles** (shared `FakeAuthGuard`, `clearFirestoreData()`, `createTestApp()`)
+**Test helpers and doubles** (shared `FakeAuthGuard`, `clearFirestoreData()`, `AppFixture`)
 live in `src/test-helpers/` and are excluded from production coverage reporting.
 
 ### The `test/` Directory
@@ -207,7 +207,7 @@ identity each request runs as without the ceremony of creating real Firebase Aut
 
 ### The Solution: Fake `AuthGuard`
 
-The `AuthGuard` is replaced in the test module using NestJS's `overrideProvider()`. The fake
+The `AuthGuard` is replaced in the test module using NestJS's `overrideGuard()`. The fake
 guard:
 
 1. Reads a test user ID from a `X-Test-User-Id` request header.
@@ -216,7 +216,7 @@ guard:
 
 ```
 Test.createTestingModule({ imports: [AppModule] })
-  .overrideProvider(AuthGuard)
+  .overrideGuard(AuthGuard)
   .useClass(FakeAuthGuard)
   .compile()
 ```
