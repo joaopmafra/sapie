@@ -4,6 +4,7 @@ import { HttpStatus } from '@nestjs/common';
 
 describe('ContentController', () => {
   const fixture = new ContentControllerFixture();
+  const OTHER_USER_ID = 'content-test-user-2';
 
   beforeAll(async () => {
     await fixture.init();
@@ -78,5 +79,18 @@ describe('ContentController', () => {
         parentId: rootDirectory.id,
       })
       .expect(HttpStatus.CONFLICT);
+  });
+
+  it(`POST ${fixture.API_CONTENT} rejects wrong owner with 403`, async () => {
+    const rootDirectoryOfUserOne = await fixture.callApiGetRootDirectoryExpectingOkAsContent(
+      fixture.TEST_USER_ID
+    );
+
+    await fixture
+      .callApiCreateNote(OTHER_USER_ID, {
+        name: 'My Note',
+        parentId: rootDirectoryOfUserOne.id,
+      })
+      .expect(HttpStatus.FORBIDDEN);
   });
 });
