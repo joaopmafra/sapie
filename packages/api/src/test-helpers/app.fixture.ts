@@ -6,6 +6,7 @@ import { INestApplication } from '@nestjs/common';
 import { MillisecondLogger } from '../logger/millisecond.logger';
 import { LoggerService } from '@nestjs/common/services/logger.service';
 import { clearFirestoreData } from './firestore.helper';
+import { RootDirectoryService } from '../content';
 
 export class AppFixture {
   testingModuleBuilder: TestingModuleBuilder;
@@ -50,5 +51,9 @@ export class AppFixture {
   getHttpServer() {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return this.app.getHttpServer();
+  }
+
+  getRootDirectoryService() {
+    return this.testingModule.get(RootDirectoryService);
   }
 }

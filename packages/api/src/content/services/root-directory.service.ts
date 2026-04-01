@@ -57,7 +57,7 @@ export class RootDirectoryService {
    * @param userId - The ID of the user
    * @returns Promise<Content | null> - The root directory or null if not found
    */
-  private async findRootDirectory(userId: string): Promise<Content | null> {
+  async findRootDirectory(userId: string): Promise<Content | null> {
     try {
       const querySnapshot = await this.firestore
         .collection(this.contentCollection)
