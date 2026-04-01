@@ -22,6 +22,7 @@ decisions below reflect that discussion and should be treated as settled unless 
 The core feature. Notes are the primary content type.
 
 **Scope for MVP:**
+
 - Create notes in folders (modal with name + location)
 - Editable note name (inline in editor)
 - Rich text editor with: headings, bold/italic, lists, **code blocks with syntax highlighting** (essential for DSA
@@ -37,6 +38,7 @@ Essential for organizing notes across 4 study domains (AI, DSA, System Design, D
 Without folders, all content lands in the root directory and becomes unmanageable immediately.
 
 **Scope for MVP:**
+
 - Create folder (from the "New" menu, same as notes)
 - Delete notes and folders (with confirmation; folders must be empty or recursively deleted)
 
@@ -53,6 +55,7 @@ folder tree. This was chosen because:
 - Cleaner MCP server interface: `createDeck(parentId: noteId)` is unambiguous
 
 **UI design:**
+
 - Sidebar tree shows **folders and notes only** — decks are not shown in the tree (would create noise)
 - Note editor has an **Attachments section** showing the note's decks (and future attachment types)
 - Deck view shows the deck's cards and a Study button
@@ -63,6 +66,7 @@ Decks store a denormalized `folderId` field (the folder containing their parent 
 This is consistent with the denormalization approach already planned in Story 60.
 
 **Scope for MVP:**
+
 - Create a flashcard deck from the note editor's Attachments section
 - Create cards inside a deck (front/back, markdown only)
 - Edit and delete cards
@@ -78,10 +82,12 @@ Even though the UI uses two buttons, the card schema stores fields needed for sp
 becomes a UI change only, not a schema migration.
 
 **Study flows:**
+
 - Study a single deck (from the deck view)
 - Study all decks under a folder (right-click folder → "Study")
 
 **Session behavior:**
+
 - Show cards one at a time (front → reveal back → rate)
 - Cards answered "I don't know" are re-queued in the current session
 - Session ends when all cards have been answered "I know" at least once
@@ -101,6 +107,7 @@ The app must be usable on a mobile phone. This is a cross-cutting constraint, no
 component built for the MVP must be mobile-tested.
 
 **Key surfaces:**
+
 - Navigation drawer: already has mobile/desktop switching (temporary overlay on mobile)
 - Note editor: full-width on mobile, no persistent sidebar
 - Study mode: touch-friendly card flip, large tap targets for "I know"/"I don't know" buttons
@@ -128,18 +135,18 @@ Full plan: `docs/research/client_state_management/phase_1_tanstack_query.md`
 
 ## Implementation Priority Order
 
-| Priority | Feature | Depends On |
-|---|---|---|
-| 1 | Complete Story 53 (Tasks 4–6): note editor shell + rename API | — |
-| 2 | TanStack Query refactor | Story 53 complete |
-| 3 | Note content editor with auto-save (Story 55) | TanStack Query |
-| 4 | Folder creation | Story 53 complete |
-| 5 | Content deletion (notes + folders) | Story 53 complete |
-| 6 | Flashcard deck + card creation (in note editor) | Note editor |
-| 7 | Study mode — single deck | Flashcard creation |
-| 8 | Study result tracking | Study mode |
-| 9 | Folder-level study ("Study all") | Study result tracking |
-| 10 | Responsive polish (mobile testing pass) | All above |
+| Priority | Feature                                                       | Depends On            |
+|----------|---------------------------------------------------------------|-----------------------|
+| 1        | Complete Story 53 (Tasks 4–6): note editor shell + rename API | —                     |
+| 2        | TanStack Query refactor                                       | Story 53 complete     |
+| 3        | Note content editor with auto-save (Story 55)                 | TanStack Query        |
+| 4        | Folder creation                                               | Story 53 complete     |
+| 5        | Content deletion (notes + folders)                            | Story 53 complete     |
+| 6        | Flashcard deck + card creation (in note editor)               | Note editor           |
+| 7        | Study mode — single deck                                      | Flashcard creation    |
+| 8        | Study result tracking                                         | Study mode            |
+| 9        | Folder-level study ("Study all")                              | Study result tracking |
+| 10       | Responsive polish (mobile testing pass)                       | All above             |
 
 ---
 
@@ -147,21 +154,21 @@ Full plan: `docs/research/client_state_management/phase_1_tanstack_query.md`
 
 The following were considered and explicitly deferred — do not implement them as part of the MVP:
 
-| Feature | Reason |
-|---|---|
-| Spaced repetition (FSRS / SM-2) | Data model is upgrade-ready; UI upgrade deferred |
-| Per-session study summaries / streaks | Nice-to-have; per-card tracking is sufficient |
-| Full-text search | Planned (FlexSearch, Phase 2); not needed until content volume grows |
-| Note-to-note linking | Future; not needed for studying |
-| Math/LaTeX in editor | Future; not needed for initial study domains |
-| Sharing / collaboration | Out of scope for personal tool |
-| Offline mode | Explicitly deferred; online-only for now |
-| MCP server for AI agents | Planned; requires stable content model first; implement alongside content versioning |
-| Content versioning + soft-delete | Planned; implement alongside MCP server — required before MCP goes live |
-| Agent changeset approval flow | Planned; Phase 2 after MCP server ships; see `docs/research/content_versioning.md` |
-| Flashcard deck visible in sidebar tree | UX decision; decks shown in note editor only |
-| Tags, favorites, focus mode | Future organization features |
-| AI-generated content (audio, video) | Future; requires stable content + MCP foundation |
+| Feature                                | Reason                                                                               |
+|----------------------------------------|--------------------------------------------------------------------------------------|
+| Spaced repetition (FSRS / SM-2)        | Data model is upgrade-ready; UI upgrade deferred                                     |
+| Per-session study summaries / streaks  | Nice-to-have; per-card tracking is sufficient                                        |
+| Full-text search                       | Planned (FlexSearch, Phase 2); not needed until content volume grows                 |
+| Note-to-note linking                   | Future; not needed for studying                                                      |
+| Math/LaTeX in editor                   | Future; not needed for initial study domains                                         |
+| Sharing / collaboration                | Out of scope for personal tool                                                       |
+| Offline mode                           | Explicitly deferred; online-only for now                                             |
+| MCP server for AI agents               | Planned; requires stable content model first; implement alongside content versioning |
+| Content versioning + soft-delete       | Planned; implement alongside MCP server — required before MCP goes live              |
+| Agent changeset approval flow          | Planned; Phase 2 after MCP server ships; see `docs/research/content_versioning.md`   |
+| Flashcard deck visible in sidebar tree | UX decision; decks shown in note editor only                                         |
+| Tags, favorites, focus mode            | Future organization features                                                         |
+| AI-generated content (audio, video)    | Future; requires stable content + MCP foundation                                     |
 
 ---
 

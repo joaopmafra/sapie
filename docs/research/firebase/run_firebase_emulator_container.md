@@ -37,7 +37,7 @@ FROM node:18-alpine
 RUN apk add --no-cache openjdk11 bash curl
 RUN npm install -g firebase-tools
 # Copy project files into the container
-COPY . /srv/firebase
+COPY .. /srv/firebase
 WORKDIR /srv/firebase
 # Expose emulator ports (adjust as needed)
 EXPOSE 4000 8080 9099 5001
