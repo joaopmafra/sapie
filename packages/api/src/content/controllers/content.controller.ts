@@ -12,7 +12,9 @@ import {
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiBadRequestResponse,
+  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
+import { apiProblemDetailsSchema } from '../../common/dto/problem-details.dto';
 import { Auth } from '../../auth';
 import { AuthenticatedRequest } from '../../auth';
 import { RootDirectoryService } from '../services/root-directory.service';
@@ -48,15 +50,23 @@ export class ContentController {
   })
   @ApiConflictResponse({
     description: 'A note with the same name already exists in the target location.',
+    ...apiProblemDetailsSchema,
   })
   @ApiForbiddenResponse({
     description: 'User is not the owner of the parent folder.',
+    ...apiProblemDetailsSchema,
   })
   @ApiBadRequestResponse({
-    description: 'Invalid name (length or disallowed characters).',
+    description: 'Malformed request body or parameters.',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiUnprocessableEntityResponse({
+    description: 'Semantic validation failed (e.g. name length or disallowed characters).',
+    ...apiProblemDetailsSchema,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Valid Firebase ID token required',
+    ...apiProblemDetailsSchema,
   })
   async createContent(
     @Request() request: AuthenticatedRequest,
@@ -84,15 +94,23 @@ export class ContentController {
   @ApiNotFoundResponse({
     description:
       'Content not found, or the authenticated user does not own it (same response to avoid leaking ids).',
+    ...apiProblemDetailsSchema,
   })
   @ApiConflictResponse({
     description: 'Another item with the same name already exists in this location.',
+    ...apiProblemDetailsSchema,
   })
   @ApiBadRequestResponse({
-    description: 'Invalid name (length or disallowed characters).',
+    description: 'Malformed request body or parameters.',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiUnprocessableEntityResponse({
+    description: 'Semantic validation failed (e.g. name length or disallowed characters).',
+    ...apiProblemDetailsSchema,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Valid Firebase ID token required',
+    ...apiProblemDetailsSchema,
   })
   /**
    * TODO: Currently this endpoint implements only content renaming. In the future it's likely that we will need to
@@ -127,6 +145,7 @@ export class ContentController {
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Valid Firebase ID token required',
+    ...apiProblemDetailsSchema,
   })
   async getContent(
     @Request() request: AuthenticatedRequest,
@@ -166,9 +185,11 @@ export class ContentController {
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Valid Firebase ID token required',
+    ...apiProblemDetailsSchema,
   })
   @ApiInternalServerErrorResponse({
     description: 'Internal server error - Failed to ensure root directory',
+    ...apiProblemDetailsSchema,
   })
   async getRootDirectory(@Request() request: AuthenticatedRequest): Promise<Content> {
     const userId = request.user.uid;

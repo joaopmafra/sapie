@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { ProblemDetailsDto, ProblemDetailsErrorItemDto } from './common/dto/problem-details.dto';
 import { MillisecondLogger } from './logger/millisecond.logger';
 import { applyHttpAppConfiguration } from './common/http/apply-http-app-configuration';
 
@@ -34,7 +35,9 @@ async function bootstrap() {
       )
       .build();
 
-    const document = SwaggerModule.createDocument(app, config);
+    const document = SwaggerModule.createDocument(app, config, {
+      extraModels: [ProblemDetailsDto, ProblemDetailsErrorItemDto],
+    });
     SwaggerModule.setup('api/docs', app, document);
 
     console.log('Swagger UI is available at /api/docs');

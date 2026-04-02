@@ -8,16 +8,9 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 
-/** RFC 9457 Problem Details for HTTP APIs (subset + extension members). */
-export interface ProblemDetailsBody {
-  type: string;
-  title: string;
-  status: number;
-  detail: string;
-  instance: string;
-  /** Validation failures (extension); each `path` is a JSON Pointer. */
-  errors?: Array<{ path: string; messages: string[] }>;
-}
+import type { ProblemDetailsBody } from '../dto/problem-details.dto';
+
+export type { ProblemDetailsBody } from '../dto/problem-details.dto';
 
 function typeUriForStatus(status: number): string {
   return `https://httpstatuses.com/${status}`;
