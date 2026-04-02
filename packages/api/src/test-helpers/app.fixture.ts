@@ -2,7 +2,7 @@ import { AppModule } from '../app.module';
 import { Test, TestingModule, TestingModuleBuilder } from '@nestjs/testing';
 import { AuthGuard } from '../auth';
 import { FakeAuthGuard } from './fake-auth.guard';
-import { INestApplication, Type } from '@nestjs/common';
+import { INestApplication, Type, ValidationPipe } from '@nestjs/common';
 import { MillisecondLogger } from '../logger/millisecond.logger';
 import { LoggerService } from '@nestjs/common/services/logger.service';
 import { clearFirestoreData } from './firestore.helper';
@@ -37,6 +37,13 @@ export class AppFixture {
     this.app = this.testingModule.createNestApplication({
       logger: this.logger ?? undefined,
     });
+    this.app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      })
+    );
     await this.app.init();
   }
 

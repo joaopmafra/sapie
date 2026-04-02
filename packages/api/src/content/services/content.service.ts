@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { Content } from '../entities/content.entity';
 import { ContentRepository } from '../repositories/content-repository.service';
-import { assertValidContentName } from '../validation/content-name.validation';
 
 @Injectable()
 export class ContentService {
@@ -17,8 +16,6 @@ export class ContentService {
   }
 
   async create(name: string, parentId: string, ownerId: string): Promise<Content> {
-    assertValidContentName(name);
-
     const parent = await this.contentRepository.findById(parentId);
 
     if (!parent) {
@@ -44,9 +41,10 @@ export class ContentService {
     });
   }
 
+  /**
+   * TODO: Currently we are allowing root directories renaming. Maybe this operation should not be allowed?
+   */
   async renameContent(id: string, name: string, ownerId: string): Promise<Content> {
-    assertValidContentName(name);
-
     const existing = await this.contentRepository.findById(id);
 
     if (!existing || existing.ownerId !== ownerId) {

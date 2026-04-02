@@ -29,7 +29,9 @@
     "test": "jest",
     "test:e2e": "CURRENT_ENV=test-e2e jest --config ./test/jest-e2e.json",
     "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand"
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "validate:fast": "pnpm tsc && pnpm test",
+    "validate": "pnpm tsc && pnpm lint:check && pnpm format:check && pnpm test"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -38,6 +40,8 @@
     "@nestjs/mapped-types": "*",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.2.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
     "firebase-admin": "^12.6.0",
     "firebase-functions": "^6.0.1",
     "reflect-metadata": "^0.2.2",

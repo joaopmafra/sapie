@@ -1,9 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsString, Length } from 'class-validator';
 import { Content, ContentType } from '../entities/content.entity';
 import {
   CONTENT_NAME_MAX_LENGTH,
   CONTENT_NAME_MIN_LENGTH,
 } from '../validation/content-name.validation';
+import { IsContentNameSafeForFileName } from '../validation/content-name.validator';
 
 export class ContentDto implements Content {
   @ApiProperty({
@@ -78,12 +80,16 @@ export class CreateContentDto {
     minLength: CONTENT_NAME_MIN_LENGTH,
     maxLength: CONTENT_NAME_MAX_LENGTH,
   })
+  @IsString()
+  @Length(CONTENT_NAME_MIN_LENGTH, CONTENT_NAME_MAX_LENGTH)
+  @IsContentNameSafeForFileName()
   name: string;
 
   @ApiProperty({
     description: 'ID of the parent directory',
     example: 'clq0e8k1j0000c8v9a1b2c3d4',
   })
+  @IsString()
   parentId: string;
 }
 
@@ -96,5 +102,8 @@ export class UpdateContentNameDto {
     minLength: CONTENT_NAME_MIN_LENGTH,
     maxLength: CONTENT_NAME_MAX_LENGTH,
   })
+  @IsString()
+  @Length(CONTENT_NAME_MIN_LENGTH, CONTENT_NAME_MAX_LENGTH)
+  @IsContentNameSafeForFileName()
   name: string;
 }

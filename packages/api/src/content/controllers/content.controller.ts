@@ -94,6 +94,11 @@ export class ContentController {
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Valid Firebase ID token required',
   })
+  /**
+   * TODO: Currently this endpoint implements only content renaming. In the future it's likely that we will need to
+   *  add support for other fields and content files (the content entity contains only metadata) as well. About the
+   *  content files handling, maybe we should create a new controller for that.
+   */
   async renameContent(
     @Request() request: AuthenticatedRequest,
     @Param('id') id: string,
