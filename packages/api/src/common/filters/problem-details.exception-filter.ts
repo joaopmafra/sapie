@@ -72,6 +72,13 @@ function extractDetail(
   return { detail: titleForHttpStatus(status) };
 }
 
+function applyRequestInstance(body: ProblemDetailsBody, req: Request): void {
+  const url = req.url?.trim();
+  if (url) {
+    body.instance = url;
+  }
+}
+
 @Catch()
 export class ProblemDetailsExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(ProblemDetailsExceptionFilter.name);
@@ -102,8 +109,9 @@ export class ProblemDetailsExceptionFilter implements ExceptionFilter {
         title: normalizeTitle(status, nestErrorField),
         status,
         detail,
-        instance: req.url ?? '',
       };
+
+      applyRequestInstance(body, req);
 
       if (errors) {
         body.errors = errors;
@@ -122,8 +130,9 @@ export class ProblemDetailsExceptionFilter implements ExceptionFilter {
       title: titleForHttpStatus(status),
       status,
       detail: 'An unexpected error occurred',
-      instance: req.url ?? '',
     };
+
+    applyRequestInstance(body, req);
 
     res.status(status).setHeader('Content-Type', 'application/problem+json').json(body);
   }

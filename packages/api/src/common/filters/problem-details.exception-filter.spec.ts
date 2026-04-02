@@ -44,7 +44,7 @@ function getProblemBodyFromJsonMock(json: jest.Mock): ProblemDetailsBody {
   return first[0];
 }
 
-/** Asserts RFC 9457 core members present and typed (plus optional `errors`). */
+/** Asserts RFC 9457 core members present and typed (plus optional `errors`, optional `instance`). */
 function assertProblemDetailsEnvelope(body: ProblemDetailsBody): void {
   expect(typeof body.type).toBe('string');
   expect(body.type.startsWith('https://')).toBe(true);
@@ -52,7 +52,9 @@ function assertProblemDetailsEnvelope(body: ProblemDetailsBody): void {
   expect(body.title.length).toBeGreaterThan(0);
   expect(typeof body.status).toBe('number');
   expect(typeof body.detail).toBe('string');
-  expect(typeof body.instance).toBe('string');
+  if (body.instance !== undefined) {
+    expect(typeof body.instance).toBe('string');
+  }
   if (body.errors !== undefined) {
     expect(Array.isArray(body.errors)).toBe(true);
     for (const e of body.errors) {
@@ -165,6 +167,27 @@ describe('ProblemDetailsExceptionFilter', () => {
       detail: 'Custom',
       instance: '/x',
     });
+  });
+
+  it('omits instance when request URL is missing or blank', () => {
+    const json = jest.fn();
+    const setHeader = jest.fn().mockReturnValue({ json });
+    const status = jest.fn().mockReturnValue({ setHeader });
+    const res = { status } as unknown as Response;
+    const req = { url: '' } as Request;
+
+    const host = {
+      switchToHttp: () => ({
+        getResponse: () => res,
+        getRequest: () => req,
+      }),
+    } as ArgumentsHost;
+
+    filter.catch(new ConflictException('x'), host);
+
+    const body = getProblemBodyFromJsonMock(json);
+    assertProblemDetailsEnvelope(body);
+    expect(body.instance).toBeUndefined();
   });
 
   it('maps non-Http Error to 500 problem+json with full shape', () => {

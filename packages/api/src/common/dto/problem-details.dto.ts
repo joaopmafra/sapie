@@ -48,11 +48,12 @@ export class ProblemDetailsDto {
   })
   detail!: string;
 
-  @ApiProperty({
-    description: 'URI reference identifying this specific occurrence',
+  @ApiPropertyOptional({
+    description:
+      'URI reference identifying this specific occurrence (e.g. request path). Omitted when not available, such as before a resource identifier exists.',
     example: '/api/content/clq0e8k1j0000c8v9a1b2c3d4',
   })
-  instance!: string;
+  instance?: string;
 
   @ApiPropertyOptional({
     type: ProblemDetailsErrorItemDto,
@@ -68,7 +69,7 @@ export type ProblemDetailsBody = {
   title: string;
   status: number;
   detail: string;
-  instance: string;
+  instance?: string;
   errors?: Array<{ path: string; messages: string[] }>;
 };
 
