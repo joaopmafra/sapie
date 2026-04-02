@@ -15,6 +15,8 @@ docs/ContentDto.md
 docs/CreateContentDto.md
 docs/HealthApi.md
 docs/HealthControllerGetHealth200Response.md
+docs/ProblemDetailsDto.md
+docs/ProblemDetailsErrorItemDto.md
 docs/ProviderDataDto.md
 docs/UpdateContentNameDto.md
 git_push.sh

@@ -58,10 +58,11 @@ const { status, data } = await apiInstance.contentControllerCreateContent(
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 |**201** | Note created successfully. |  -  |
-|**400** | Invalid name (length or disallowed characters). |  -  |
+|**400** | Malformed request body or parameters. |  -  |
 |**401** | Unauthorized - Valid Firebase ID token required |  -  |
 |**403** | User is not the owner of the parent folder. |  -  |
 |**409** | A note with the same name already exists in the target location. |  -  |
+|**422** | Semantic validation failed (e.g. name length or disallowed characters). |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -215,10 +216,11 @@ const { status, data } = await apiInstance.contentControllerRenameContent(
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 |**200** | Content renamed successfully. |  -  |
-|**400** | Invalid name (length or disallowed characters). |  -  |
+|**400** | Malformed request body or parameters. |  -  |
 |**401** | Unauthorized - Valid Firebase ID token required |  -  |
 |**404** | Content not found, or the authenticated user does not own it (same response to avoid leaking ids). |  -  |
 |**409** | Another item with the same name already exists in this location. |  -  |
+|**422** | Semantic validation failed (e.g. name length or disallowed characters). |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

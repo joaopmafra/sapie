@@ -213,6 +213,68 @@ export interface HealthControllerGetHealth200Response {
 /**
  * 
  * @export
+ * @interface ProblemDetailsDto
+ */
+export interface ProblemDetailsDto {
+    /**
+     * URI reference that identifies the problem type
+     * @type {string}
+     * @memberof ProblemDetailsDto
+     */
+    'type': string;
+    /**
+     * Short, human-readable summary of the problem type
+     * @type {string}
+     * @memberof ProblemDetailsDto
+     */
+    'title': string;
+    /**
+     * HTTP status code
+     * @type {number}
+     * @memberof ProblemDetailsDto
+     */
+    'status': number;
+    /**
+     * Human-readable explanation specific to this occurrence
+     * @type {string}
+     * @memberof ProblemDetailsDto
+     */
+    'detail': string;
+    /**
+     * URI reference identifying this specific occurrence
+     * @type {string}
+     * @memberof ProblemDetailsDto
+     */
+    'instance': string;
+    /**
+     * Per-field validation failures (extension member)
+     * @type {Array<ProblemDetailsErrorItemDto>}
+     * @memberof ProblemDetailsDto
+     */
+    'errors'?: Array<ProblemDetailsErrorItemDto>;
+}
+/**
+ * 
+ * @export
+ * @interface ProblemDetailsErrorItemDto
+ */
+export interface ProblemDetailsErrorItemDto {
+    /**
+     * JSON Pointer to the invalid value
+     * @type {string}
+     * @memberof ProblemDetailsErrorItemDto
+     */
+    'path': string;
+    /**
+     * Human-readable messages for this pointer
+     * @type {Array<string>}
+     * @memberof ProblemDetailsErrorItemDto
+     */
+    'messages': Array<string>;
+}
+/**
+ * 
+ * @export
  * @interface ProviderDataDto
  */
 export interface ProviderDataDto {

@@ -67,6 +67,8 @@ Class | Method | HTTP request | Description
  - [ContentDto](docs/ContentDto.md)
  - [CreateContentDto](docs/CreateContentDto.md)
  - [HealthControllerGetHealth200Response](docs/HealthControllerGetHealth200Response.md)
+ - [ProblemDetailsDto](docs/ProblemDetailsDto.md)
+ - [ProblemDetailsErrorItemDto](docs/ProblemDetailsErrorItemDto.md)
  - [ProviderDataDto](docs/ProviderDataDto.md)
  - [UpdateContentNameDto](docs/UpdateContentNameDto.md)
 
