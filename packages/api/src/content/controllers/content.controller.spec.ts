@@ -2,6 +2,7 @@ import { ContentRepository } from '../repositories/content-repository.service';
 import { ContentControllerFixture } from './content.controller.fixture';
 import { HttpStatus } from '@nestjs/common';
 import { CONTENT_NAME_MAX_LENGTH } from '../validation/content-name.validation';
+import type { ProblemDetailsBody } from '../../common/filters/problem-details.exception-filter';
 
 describe('ContentController', () => {
   const fixture = new ContentControllerFixture();
@@ -82,23 +83,33 @@ describe('ContentController', () => {
       .expect(HttpStatus.FORBIDDEN);
   });
 
-  it(`POST ${fixture.API_CONTENT} returns 400 for empty name`, async () => {
+  it(`POST ${fixture.API_CONTENT} returns 422 problem+json for empty name`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
 
-    await fixture
+    const response = await fixture
       .callApiCreateNote(fixture.TEST_USER_ID, { name: '', parentId: root.id })
-      .expect(HttpStatus.BAD_REQUEST);
+      .expect(HttpStatus.UNPROCESSABLE_ENTITY);
+
+    expect(response.headers['content-type']).toMatch(/application\/problem\+json/);
+    const body = response.body as unknown as ProblemDetailsBody;
+    expect(body).toMatchObject({
+      status: HttpStatus.UNPROCESSABLE_ENTITY,
+      title: 'Unprocessable Entity',
+    });
+    const nameErrors = body.errors?.find(e => e.path === '/name');
+    expect(nameErrors).toBeDefined();
+    expect(nameErrors?.messages.length).toBeGreaterThan(0);
   });
 
-  it(`POST ${fixture.API_CONTENT} returns 400 when name contains path separator`, async () => {
+  it(`POST ${fixture.API_CONTENT} returns 422 when name contains path separator`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
 
     await fixture
       .callApiCreateNote(fixture.TEST_USER_ID, { name: 'a/b', parentId: root.id })
-      .expect(HttpStatus.BAD_REQUEST);
+      .expect(HttpStatus.UNPROCESSABLE_ENTITY);
   });
 
-  it(`POST ${fixture.API_CONTENT} returns 400 when name exceeds max length`, async () => {
+  it(`POST ${fixture.API_CONTENT} returns 422 when name exceeds max length`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
 
     await fixture
@@ -106,7 +117,7 @@ describe('ContentController', () => {
         name: 'x'.repeat(CONTENT_NAME_MAX_LENGTH + 1),
         parentId: root.id,
       })
-      .expect(HttpStatus.BAD_REQUEST);
+      .expect(HttpStatus.UNPROCESSABLE_ENTITY);
   });
 
   it(`GET ${fixture.API_CONTENT} lists only content for parent and owner`, async () => {
@@ -133,13 +144,13 @@ describe('ContentController', () => {
     ]);
   });
 
-  it(`PATCH ${fixture.API_CONTENT}/:id returns 400 for invalid new name`, async () => {
+  it(`PATCH ${fixture.API_CONTENT}/:id returns 422 for invalid new name`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
     const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Ok', root.id);
 
     await fixture
       .callApiPatchContentName(fixture.TEST_USER_ID, note.id, { name: 'bad:name' })
-      .expect(HttpStatus.BAD_REQUEST);
+      .expect(HttpStatus.UNPROCESSABLE_ENTITY);
   });
 
   it(`PATCH ${fixture.API_CONTENT}/:id renames a note (happy path)`, async () => {

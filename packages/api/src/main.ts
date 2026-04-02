@@ -1,21 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { MillisecondLogger } from './logger/millisecond.logger';
+import { applyHttpAppConfiguration } from './common/http/apply-http-app-configuration';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: new MillisecondLogger(),
   });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    })
-  );
+  applyHttpAppConfiguration(app);
 
   // Set up Swagger only in development or Firebase emulator
   const isDevelopment = process.env.NODE_ENV !== 'production';
