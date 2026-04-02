@@ -241,11 +241,11 @@ export interface ProblemDetailsDto {
      */
     'detail': string;
     /**
-     * URI reference identifying this specific occurrence
+     * URI reference identifying this specific occurrence (e.g. request path). Omitted when not available, such as before a resource identifier exists.
      * @type {string}
      * @memberof ProblemDetailsDto
      */
-    'instance': string;
+    'instance'?: string;
     /**
      * Per-field validation failures (extension member)
      * @type {Array<ProblemDetailsErrorItemDto>}
