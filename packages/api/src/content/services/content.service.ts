@@ -1,32 +1,25 @@
-import { Injectable, Logger, ConflictException, ForbiddenException } from '@nestjs/common';
-import * as admin from 'firebase-admin';
-import { FirebaseAdminService } from '../../firebase';
-import { Content, ContentDocument, ContentType } from '../entities/content.entity';
+import {
+  Injectable,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
+import { Content } from '../entities/content.entity';
+import { ContentRepository } from '../repositories/content-repository.service';
+import { assertValidContentName } from '../validation/content-name.validation';
 
 @Injectable()
 export class ContentService {
-  private readonly logger = new Logger(ContentService.name);
-  private readonly contentCollection = 'content';
-
-  constructor(private readonly firebaseAdminService: FirebaseAdminService) {}
-
-  private get firestore(): admin.firestore.Firestore {
-    return this.firebaseAdminService.getFirestore();
-  }
+  constructor(private readonly contentRepository: ContentRepository) {}
 
   async findByParentIdAndOwnerId(parentId: string, ownerId: string): Promise<Content[]> {
-    const snapshot = await this.firestore
-      .collection(this.contentCollection)
-      .where('parentId', '==', parentId)
-      .where('ownerId', '==', ownerId)
-      .get();
-    return snapshot.docs.map(doc =>
-      this.convertDocumentToContent(doc.id, doc.data() as ContentDocument)
-    );
+    return this.contentRepository.findByParentIdAndOwnerId(parentId, ownerId);
   }
 
   async create(name: string, parentId: string, ownerId: string): Promise<Content> {
-    const parent = await this.findById(parentId);
+    assertValidContentName(name);
+
+    const parent = await this.contentRepository.findById(parentId);
 
     if (!parent) {
       throw new Error(`Parent with ID ${parentId} not found`);
@@ -36,58 +29,49 @@ export class ContentService {
       throw new ForbiddenException('User is not the owner of the parent folder');
     }
 
-    const existingContent = await this.firestore
-      .collection(this.contentCollection)
-      .where('parentId', '==', parentId)
-      .where('name', '==', name)
-      .limit(1)
-      .get();
-
-    if (!existingContent.empty) {
+    const nameCollision = await this.contentRepository.findFirstByParentIdAndName(parentId, name);
+    if (nameCollision) {
       throw new ConflictException(`Content with name "${name}" already exists in this location`);
     }
 
     const now = new Date();
-    const newContentData = {
-      name: name,
-      type: ContentType.NOTE,
+    return this.contentRepository.addNote({
+      name,
       parentId,
       ownerId,
-      contentUrl: null,
-      size: null,
       createdAt: now,
       updatedAt: now,
-    };
-
-    const docRef = await this.firestore.collection(this.contentCollection).add(newContentData);
-
-    return {
-      id: docRef.id,
-      ...newContentData,
-    };
+    });
   }
 
-  private async findById(id: string): Promise<Content | null> {
-    const doc = await this.firestore.collection(this.contentCollection).doc(id).get();
+  async renameContent(id: string, name: string, ownerId: string): Promise<Content> {
+    assertValidContentName(name);
 
-    if (!doc.exists) {
-      return null;
+    const existing = await this.contentRepository.findById(id);
+
+    if (!existing || existing.ownerId !== ownerId) {
+      throw new NotFoundException(`Content with ID ${id} not found`);
     }
 
-    return this.convertDocumentToContent(doc.id, doc.data() as ContentDocument);
-  }
+    if (existing.name === name) {
+      return existing;
+    }
 
-  private convertDocumentToContent(id: string, data: ContentDocument): Content {
-    return {
-      id,
-      name: data.name,
-      type: data.type as ContentType,
-      parentId: data.parentId,
-      ownerId: data.ownerId,
-      contentUrl: data.contentUrl,
-      size: data.size,
-      createdAt: data.createdAt.toDate(),
-      updatedAt: data.updatedAt.toDate(),
-    };
+    const nameCollision = await this.contentRepository.findFirstByParentIdAndName(
+      existing.parentId,
+      name
+    );
+    if (nameCollision && nameCollision.id !== id) {
+      throw new ConflictException(`Content with name "${name}" already exists in this location`);
+    }
+
+    const now = new Date();
+    await this.contentRepository.updateContentName(id, name, now);
+
+    const updated = await this.contentRepository.findById(id);
+    if (!updated) {
+      throw new Error(`Content with ID ${id} disappeared after update`);
+    }
+    return updated;
   }
 }

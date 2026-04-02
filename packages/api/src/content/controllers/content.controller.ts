@@ -1,4 +1,4 @@
-import { Controller, Get, Request, Logger, Query, Post, Body } from '@nestjs/common';
+import { Controller, Get, Request, Logger, Query, Post, Body, Patch, Param } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -10,13 +10,15 @@ import {
   ApiCreatedResponse,
   ApiConflictResponse,
   ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiBadRequestResponse,
 } from '@nestjs/swagger';
 import { Auth } from '../../auth';
 import { AuthenticatedRequest } from '../../auth';
 import { RootDirectoryService } from '../services/root-directory.service';
 import { Content } from '../entities/content.entity';
 import { ContentService } from '../services/content.service';
-import { ContentDto, CreateContentDto } from '../dto/content.dto';
+import { ContentDto, CreateContentDto, UpdateContentNameDto } from '../dto/content.dto';
 
 /**
  * Content Controller
@@ -50,6 +52,9 @@ export class ContentController {
   @ApiForbiddenResponse({
     description: 'User is not the owner of the parent folder.',
   })
+  @ApiBadRequestResponse({
+    description: 'Invalid name (length or disallowed characters).',
+  })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Valid Firebase ID token required',
   })
@@ -63,6 +68,40 @@ export class ContentController {
       `Creating note for user: ${user.uid} with name: ${name} and parentId: ${parentId}`
     );
     return this.contentService.create(name, parentId, user.uid);
+  }
+
+  @Patch(':id')
+  @Auth()
+  @ApiOperation({
+    summary: 'Rename content',
+    description:
+      'Updates the display name of a note or folder. Names must be unique among siblings (same parent).',
+  })
+  @ApiOkResponse({
+    description: 'Content renamed successfully.',
+    type: ContentDto,
+  })
+  @ApiNotFoundResponse({
+    description:
+      'Content not found, or the authenticated user does not own it (same response to avoid leaking ids).',
+  })
+  @ApiConflictResponse({
+    description: 'Another item with the same name already exists in this location.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid name (length or disallowed characters).',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Valid Firebase ID token required',
+  })
+  async renameContent(
+    @Request() request: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() updateContentNameDto: UpdateContentNameDto
+  ): Promise<Content> {
+    const { user } = request;
+    this.logger.debug(`Renaming content ${id} for user: ${user.uid}`);
+    return this.contentService.renameContent(id, updateContentNameDto.name, user.uid);
   }
 
   @Get()

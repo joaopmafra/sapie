@@ -1,5 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Content, ContentType } from '../entities/content.entity';
+import {
+  CONTENT_NAME_MAX_LENGTH,
+  CONTENT_NAME_MIN_LENGTH,
+} from '../validation/content-name.validation';
 
 export class ContentDto implements Content {
   @ApiProperty({
@@ -67,8 +71,12 @@ export class ContentDto implements Content {
 
 export class CreateContentDto {
   @ApiProperty({
-    description: 'Name of the new content item',
+    description:
+      `Display name (${CONTENT_NAME_MIN_LENGTH}–${CONTENT_NAME_MAX_LENGTH} chars). ` +
+      'Spaces allowed. Cannot contain \\ / : * ? " < > | or control characters.',
     example: 'My New Note',
+    minLength: CONTENT_NAME_MIN_LENGTH,
+    maxLength: CONTENT_NAME_MAX_LENGTH,
   })
   name: string;
 
@@ -77,4 +85,16 @@ export class CreateContentDto {
     example: 'clq0e8k1j0000c8v9a1b2c3d4',
   })
   parentId: string;
+}
+
+export class UpdateContentNameDto {
+  @ApiProperty({
+    description:
+      `New display name (${CONTENT_NAME_MIN_LENGTH}–${CONTENT_NAME_MAX_LENGTH} chars). ` +
+      'Spaces allowed. Cannot contain \\ / : * ? " < > | or control characters.',
+    example: 'Renamed Item',
+    minLength: CONTENT_NAME_MIN_LENGTH,
+    maxLength: CONTENT_NAME_MAX_LENGTH,
+  })
+  name: string;
 }

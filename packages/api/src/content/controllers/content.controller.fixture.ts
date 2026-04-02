@@ -60,6 +60,26 @@ export class ContentControllerFixture extends AppFixture {
       .send(payload);
   }
 
+  callApiPatchContentName(
+    testUserId: string,
+    contentId: string,
+    payload: { name: string }
+  ): supertest.Test {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return supertest(this.getHttpServer())
+      .patch(`${this.API_CONTENT}/${contentId}`)
+      .set(TEST_USER_ID_HEADER, testUserId)
+      .send(payload);
+  }
+
+  async callApiPatchContentNameExpectingOk(
+    testUserId: string,
+    contentId: string,
+    payload: { name: string }
+  ): Promise<supertest.Response> {
+    return this.callApiPatchContentName(testUserId, contentId, payload).expect(HttpStatus.OK);
+  }
+
   async callApiGetContentByParentIdExpectingOkAsContentArray(
     testUserId: string,
     parentId: string

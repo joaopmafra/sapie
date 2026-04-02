@@ -71,8 +71,9 @@ export class RootDirectoryService {
         ownerId: userId,
         contentUrl: null,
         size: null,
-        createdAt: now, // Firestore will convert Date to Timestamp
-        updatedAt: now, // Firestore will convert Date to Timestamp
+        // Firestore will convert Date to Timestamp
+        createdAt: now,
+        updatedAt: now,
       };
 
       const docRef = await this.firestore.collection(this.contentCollection).add(rootDirectoryData);
@@ -81,8 +82,7 @@ export class RootDirectoryService {
         `Successfully created root directory with ID: ${docRef.id} for user: ${userId}`
       );
 
-      // Create the response object with proper Date objects
-      const content: Content = {
+      return {
         id: docRef.id,
         name: rootDirectoryData.name,
         type: rootDirectoryData.type,
@@ -93,8 +93,6 @@ export class RootDirectoryService {
         createdAt: now,
         updatedAt: now,
       };
-
-      return content;
     } catch (error) {
       this.logger.error(`Failed to create root directory for user ${userId}:`, error);
       throw error;
