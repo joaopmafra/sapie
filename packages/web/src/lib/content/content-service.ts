@@ -4,6 +4,7 @@ import {
   ContentApi,
   type ContentDto,
   type CreateContentDto,
+  type UpdateContentNameDto,
 } from '../api-client';
 import { createAuthenticatedApiConfiguration } from '../auth-utils';
 
@@ -118,6 +119,31 @@ export class ContentService {
       return this.mapContentDtoToContent(response.data);
     } catch (error) {
       console.error('Failed to create note:', error);
+      throw error;
+    }
+  }
+
+  async renameContent(
+    currentUser: User,
+    id: string,
+    name: string
+  ): Promise<Content> {
+    try {
+      const config = await createAuthenticatedApiConfiguration(
+        this.basePath,
+        currentUser
+      );
+
+      const updateContentNameDto: UpdateContentNameDto = { name };
+
+      const response = await this.contentApi.contentControllerRenameContent(
+        { id, updateContentNameDto },
+        config.baseOptions
+      );
+
+      return this.mapContentDtoToContent(response.data);
+    } catch (error) {
+      console.error('Failed to rename content:', error);
       throw error;
     }
   }

@@ -19,6 +19,7 @@ interface ContentContextType {
   >;
   getParentPath: (id: string | null | undefined) => string;
   addNoteToMap: (note: Content) => void;
+  updateContentInMap: (content: Content) => void;
 }
 
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
@@ -42,6 +43,23 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({
         children: undefined, // Notes don't have children
       };
       newMap.set(note.id, enrichedNote);
+      return newMap;
+    });
+  };
+
+  const updateContentInMap = (content: Content) => {
+    setNodeMap(prevMap => {
+      const newMap = new Map(prevMap);
+      const existing = newMap.get(content.id);
+      if (!existing) {
+        return prevMap;
+      }
+      const updated: EnrichedTreeNode = {
+        ...existing,
+        ...content,
+        children: existing.children,
+      };
+      newMap.set(content.id, updated);
       return newMap;
     });
   };
@@ -77,6 +95,7 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({
     setNodeMap,
     getParentPath,
     addNoteToMap,
+    updateContentInMap,
   };
 
   return (

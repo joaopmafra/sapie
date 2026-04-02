@@ -224,7 +224,7 @@ const ContentExplorer: React.FC = () => {
     >
       <RichTreeView
         items={tree}
-        getItemLabel={item => item.name}
+        getItemLabel={item => nodeMap.get(item.id)?.name ?? item.name}
         slots={{
           collapseIcon: ExpandMoreIcon,
           expandIcon: ChevronRightIcon,

@@ -1,5 +1,4 @@
 import {
-  Alert,
   Box,
   Button,
   CircularProgress,
@@ -16,7 +15,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useContent } from '../contexts/ContentContext';
 import { contentService } from '../lib/content';
 import type { Content } from '../lib/content';
-import { getErrorMessageOrDefault } from '../lib/utils.ts';
+
+import { ClientErrorAlert } from './ClientErrorAlert';
 
 interface CreateNoteModalProps {
   open: boolean;
@@ -35,7 +35,7 @@ const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
   const { getParentPath } = useContent();
   const [noteName, setNoteName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown | null>(null);
 
   const handleSubmit = async () => {
     if (!currentUser || !parentId) {
@@ -61,7 +61,7 @@ const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
       setNoteName('');
       onSuccess(newNote);
     } catch (err) {
-      setError(getErrorMessageOrDefault(err));
+      setError(err);
     } finally {
       setLoading(false);
     }
@@ -93,11 +93,7 @@ const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
           onKeyDown={e => e.key === 'Enter' && handleSubmit()}
           disabled={loading}
         />
-        {error && (
-          <Alert severity='error' sx={{ mt: 2 }}>
-            {error}
-          </Alert>
-        )}
+        <ClientErrorAlert value={error} sx={{ mt: 2 }} />
       </DialogContent>
       <DialogActions sx={{ p: '0 24px 12px' }}>
         <Button onClick={handleCancel} disabled={loading}>

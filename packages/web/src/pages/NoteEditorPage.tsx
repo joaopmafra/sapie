@@ -9,17 +9,23 @@ import {
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 
+import { ClientErrorAlert } from '../components/ClientErrorAlert';
+import { useAuth } from '../contexts/AuthContext';
 import { useContent } from '../contexts/ContentContext';
-import { ContentType } from '../lib/content';
+import { contentService, ContentType } from '../lib/content';
 
 const NoteEditorPage = () => {
   const { noteId } = useParams<{ noteId: string }>();
-  const { nodeMap } = useContent();
+  const { currentUser } = useAuth();
+  const { nodeMap, updateContentInMap } = useContent();
   const [noteName, setNoteName] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [renameError, setRenameError] = useState<unknown | null>(null);
+  const [isRenaming, setIsRenaming] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const renameInProgressRef = useRef(false);
 
   // Get note data from the nodeMap
   const note = noteId ? nodeMap.get(noteId) : undefined;
@@ -58,7 +64,7 @@ const NoteEditorPage = () => {
   const handleNameKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      handleNameSave();
+      void handleNameSave();
     }
     if (event.key === 'Escape') {
       event.preventDefault();
@@ -66,18 +72,54 @@ const NoteEditorPage = () => {
     }
   };
 
-  const handleNameSave = () => {
-    // TODO: Implement actual name saving in Task 5
-    // For now, just update the local state and exit editing mode
-    console.log('Note name would be saved:', noteName);
-    setIsEditing(false);
+  const handleNameSave = async () => {
+    if (!noteId || !note || renameInProgressRef.current) {
+      return;
+    }
+
+    const trimmed = noteName.trim();
+    if (!trimmed) {
+      setRenameError('Name is required.');
+      return;
+    }
+
+    if (trimmed === note.name) {
+      setRenameError(null);
+      setIsEditing(false);
+      return;
+    }
+
+    if (!currentUser) {
+      setRenameError('You must be signed in to rename this note.');
+      return;
+    }
+
+    renameInProgressRef.current = true;
+    setIsRenaming(true);
+    setRenameError(null);
+
+    try {
+      const updated = await contentService.renameContent(
+        currentUser,
+        noteId,
+        trimmed
+      );
+      updateContentInMap(updated);
+      setNoteName(updated.name);
+      setIsEditing(false);
+    } catch (err) {
+      setRenameError(err);
+    } finally {
+      renameInProgressRef.current = false;
+      setIsRenaming(false);
+    }
   };
 
   const handleNameCancel = () => {
-    // Reset to original name and exit editing mode
     if (note) {
       setNoteName(note.name);
     }
+    setRenameError(null);
     setIsEditing(false);
   };
 
@@ -112,7 +154,7 @@ const NoteEditorPage = () => {
 
   if (!note) {
     return createError(
-      'Note note found. Please navigate to the note from the sidebar.'
+      'Note not found. Please navigate to the note from the sidebar.'
     );
   }
 
@@ -122,22 +164,27 @@ const NoteEditorPage = () => {
         {/* Note Header */}
         <Box sx={{ mb: 3 }}>
           {isEditing ? (
-            <TextField
-              fullWidth
-              value={noteName}
-              onChange={e => setNoteName(e.target.value)}
-              onKeyDown={handleNameKeyDown}
-              onBlur={handleNameSave}
-              autoFocus
-              variant='outlined'
-              placeholder='Enter note name...'
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  fontSize: '1.5rem',
-                  fontWeight: 500,
-                },
-              }}
-            />
+            <Box>
+              <TextField
+                fullWidth
+                inputRef={nameInputRef}
+                value={noteName}
+                onChange={e => setNoteName(e.target.value)}
+                onKeyDown={handleNameKeyDown}
+                onBlur={() => void handleNameSave()}
+                disabled={isRenaming}
+                variant='outlined'
+                placeholder='Enter note name...'
+                error={Boolean(renameError)}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    fontSize: '1.5rem',
+                    fontWeight: 500,
+                  },
+                }}
+              />
+              <ClientErrorAlert value={renameError} sx={{ mt: 1 }} />
+            </Box>
           ) : (
             <Typography
               variant='h4'
@@ -151,7 +198,10 @@ const NoteEditorPage = () => {
                 borderRadius: 1,
                 transition: 'background-color 0.2s',
               }}
-              onClick={() => setIsEditing(true)}
+              onClick={() => {
+                setRenameError(null);
+                setIsEditing(true);
+              }}
               title='Click to edit name'
             >
               {noteName || 'Untitled Note'}
