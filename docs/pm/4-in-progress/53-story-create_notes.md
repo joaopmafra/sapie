@@ -47,7 +47,7 @@ organize my content.
       note.
 - [x] **Task 4: [FE] Basic Note Editor with Editable Name**:
     - Create a view for the note editor that displays an editable name.
-- [ ] **Task 5: [BE] Implement Note Renaming Endpoint**:
+- [x] **Task 5: [BE] Implement Note Renaming Endpoint**:
     - Create a `PATCH /content/:id` endpoint to update a note's name.
     - It must validate against duplicate names in the same location.
 - [ ] **Task 6: [FE] Implement Name Renaming Logic**:
