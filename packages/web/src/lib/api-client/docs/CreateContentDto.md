@@ -5,7 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**name** | **string** | Name of the new content item | [default to undefined]
+**name** | **string** | Display name (1–200 chars). Spaces allowed. Cannot contain \\ / : * ? \&quot; &lt; &gt; | or control characters. | [default to undefined]
 **parentId** | **string** | ID of the parent directory | [default to undefined]
 
 ## Example

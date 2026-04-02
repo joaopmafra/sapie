@@ -7,6 +7,7 @@ All URIs are relative to *http://localhost*
 |[**contentControllerCreateContent**](#contentcontrollercreatecontent) | **POST** /api/content | Create a new note|
 |[**contentControllerGetContent**](#contentcontrollergetcontent) | **GET** /api/content | Get content by parent ID|
 |[**contentControllerGetRootDirectory**](#contentcontrollergetrootdirectory) | **GET** /api/content/root | Get or create user\&#39;s root directory|
+|[**contentControllerRenameContent**](#contentcontrollerrenamecontent) | **PATCH** /api/content/{id} | Rename content|
 
 # **contentControllerCreateContent**
 > ContentDto contentControllerCreateContent(createContentDto)
@@ -57,6 +58,7 @@ const { status, data } = await apiInstance.contentControllerCreateContent(
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 |**201** | Note created successfully. |  -  |
+|**400** | Invalid name (length or disallowed characters). |  -  |
 |**401** | Unauthorized - Valid Firebase ID token required |  -  |
 |**403** | User is not the owner of the parent folder. |  -  |
 |**409** | A note with the same name already exists in the target location. |  -  |
@@ -158,6 +160,65 @@ This endpoint does not have any parameters.
 |**200** | Root directory retrieved or created successfully |  -  |
 |**401** | Unauthorized - Valid Firebase ID token required |  -  |
 |**500** | Internal server error - Failed to ensure root directory |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **contentControllerRenameContent**
+> ContentDto contentControllerRenameContent(updateContentNameDto)
+
+Updates the display name of a note or folder. Names must be unique among siblings (same parent).
+
+### Example
+
+```typescript
+import {
+    ContentApi,
+    Configuration,
+    UpdateContentNameDto
+} from 'api-client';
+
+const configuration = new Configuration();
+const apiInstance = new ContentApi(configuration);
+
+let id: string; // (default to undefined)
+let updateContentNameDto: UpdateContentNameDto; //
+
+const { status, data } = await apiInstance.contentControllerRenameContent(
+    id,
+    updateContentNameDto
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **updateContentNameDto** | **UpdateContentNameDto**|  | |
+| **id** | [**string**] |  | defaults to undefined|
+
+
+### Return type
+
+**ContentDto**
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Content renamed successfully. |  -  |
+|**400** | Invalid name (length or disallowed characters). |  -  |
+|**401** | Unauthorized - Valid Firebase ID token required |  -  |
+|**404** | Content not found, or the authenticated user does not own it (same response to avoid leaking ids). |  -  |
+|**409** | Another item with the same name already exists in this location. |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

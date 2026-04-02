@@ -173,7 +173,7 @@ export type ContentDtoTypeEnum = typeof ContentDtoTypeEnum[keyof typeof ContentD
  */
 export interface CreateContentDto {
     /**
-     * Name of the new content item
+     * Display name (1–200 chars). Spaces allowed. Cannot contain \\ / : * ? \" < > | or control characters.
      * @type {string}
      * @memberof CreateContentDto
      */
@@ -222,6 +222,19 @@ export interface ProviderDataDto {
      * @memberof ProviderDataDto
      */
     'providerId': string;
+}
+/**
+ * 
+ * @export
+ * @interface UpdateContentNameDto
+ */
+export interface UpdateContentNameDto {
+    /**
+     * New display name (1–200 chars). Spaces allowed. Cannot contain \\ / : * ? \" < > | or control characters.
+     * @type {string}
+     * @memberof UpdateContentNameDto
+     */
+    'name': string;
 }
 
 /**
@@ -585,6 +598,50 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
                 options: localVarRequestOptions,
             };
         },
+        /**
+         * Updates the display name of a note or folder. Names must be unique among siblings (same parent).
+         * @summary Rename content
+         * @param {string} id 
+         * @param {UpdateContentNameDto} updateContentNameDto 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        contentControllerRenameContent: async (id: string, updateContentNameDto: UpdateContentNameDto, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('contentControllerRenameContent', 'id', id)
+            // verify required parameter 'updateContentNameDto' is not null or undefined
+            assertParamExists('contentControllerRenameContent', 'updateContentNameDto', updateContentNameDto)
+            const localVarPath = `/api/content/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(updateContentNameDto, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
     }
 };
 
@@ -633,6 +690,20 @@ export const ContentApiFp = function(configuration?: Configuration) {
             const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerGetRootDirectory']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
+        /**
+         * Updates the display name of a note or folder. Names must be unique among siblings (same parent).
+         * @summary Rename content
+         * @param {string} id 
+         * @param {UpdateContentNameDto} updateContentNameDto 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async contentControllerRenameContent(id: string, updateContentNameDto: UpdateContentNameDto, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ContentDto>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerRenameContent(id, updateContentNameDto, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerRenameContent']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
     }
 };
 
@@ -672,6 +743,16 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
         contentControllerGetRootDirectory(options?: RawAxiosRequestConfig): AxiosPromise<ContentDto> {
             return localVarFp.contentControllerGetRootDirectory(options).then((request) => request(axios, basePath));
         },
+        /**
+         * Updates the display name of a note or folder. Names must be unique among siblings (same parent).
+         * @summary Rename content
+         * @param {ContentApiContentControllerRenameContentRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        contentControllerRenameContent(requestParameters: ContentApiContentControllerRenameContentRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentDto> {
+            return localVarFp.contentControllerRenameContent(requestParameters.id, requestParameters.updateContentNameDto, options).then((request) => request(axios, basePath));
+        },
     };
 };
 
@@ -710,6 +791,16 @@ export interface ContentApiInterface {
      */
     contentControllerGetRootDirectory(options?: RawAxiosRequestConfig): AxiosPromise<ContentDto>;
 
+    /**
+     * Updates the display name of a note or folder. Names must be unique among siblings (same parent).
+     * @summary Rename content
+     * @param {ContentApiContentControllerRenameContentRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ContentApiInterface
+     */
+    contentControllerRenameContent(requestParameters: ContentApiContentControllerRenameContentRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentDto>;
+
 }
 
 /**
@@ -738,6 +829,27 @@ export interface ContentApiContentControllerGetContentRequest {
      * @memberof ContentApiContentControllerGetContent
      */
     readonly parentId: string
+}
+
+/**
+ * Request parameters for contentControllerRenameContent operation in ContentApi.
+ * @export
+ * @interface ContentApiContentControllerRenameContentRequest
+ */
+export interface ContentApiContentControllerRenameContentRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof ContentApiContentControllerRenameContent
+     */
+    readonly id: string
+
+    /**
+     * 
+     * @type {UpdateContentNameDto}
+     * @memberof ContentApiContentControllerRenameContent
+     */
+    readonly updateContentNameDto: UpdateContentNameDto
 }
 
 /**
@@ -780,6 +892,18 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
      */
     public contentControllerGetRootDirectory(options?: RawAxiosRequestConfig) {
         return ContentApiFp(this.configuration).contentControllerGetRootDirectory(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Updates the display name of a note or folder. Names must be unique among siblings (same parent).
+     * @summary Rename content
+     * @param {ContentApiContentControllerRenameContentRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ContentApi
+     */
+    public contentControllerRenameContent(requestParameters: ContentApiContentControllerRenameContentRequest, options?: RawAxiosRequestConfig) {
+        return ContentApiFp(this.configuration).contentControllerRenameContent(requestParameters.id, requestParameters.updateContentNameDto, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
