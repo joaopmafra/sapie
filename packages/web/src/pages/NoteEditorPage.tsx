@@ -13,7 +13,7 @@ import { ClientErrorAlert } from '../components/ClientErrorAlert';
 import { useAuth } from '../contexts/AuthContext';
 import { useContent } from '../contexts/ContentContext';
 import { contentService, ContentType } from '../lib/content';
-import { PROBLEM_DETAILS_JSON_POINTER_NAME } from '../lib/utils';
+import { PROBLEM_DETAILS_POINTERS } from '../lib/problemDetailsPointers.ts';
 
 const NoteEditorPage = () => {
   const { noteId } = useParams<{ noteId: string }>();
@@ -187,7 +187,7 @@ const NoteEditorPage = () => {
               <ClientErrorAlert
                 value={renameError}
                 sx={{ mt: 1 }}
-                problemDetailJsonPointer={PROBLEM_DETAILS_JSON_POINTER_NAME}
+                problemDetailJsonPointer={PROBLEM_DETAILS_POINTERS.CONTENT.name}
               />
             </Box>
           ) : (

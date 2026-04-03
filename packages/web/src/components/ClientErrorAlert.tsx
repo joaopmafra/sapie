@@ -7,7 +7,7 @@ import React from 'react';
 import {
   getClientErrorAlertModel,
   type GetClientErrorAlertModelOptions,
-} from '../lib/utils';
+} from '../lib/error-messages-utils.ts';
 
 export interface ClientErrorAlertProps {
   /** `string` for local validation messages; otherwise pass the caught value (e.g. Axios error). */
@@ -23,7 +23,7 @@ export interface ClientErrorAlertProps {
 }
 
 /**
- * Renders RFC 9457 API errors (`ProblemDetailsDto`).
+ * Renders RFC 9457 Problem Details API errors (`ProblemDetailsDto`).
  * With {@link ClientErrorAlertProps.problemDetailJsonPointer}, shows one plain line or a bullet list only (no `detail` heading).
  * Without it, shows `detail:` plus bullets for a full-form summary.
  */

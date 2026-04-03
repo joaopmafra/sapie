@@ -15,7 +15,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useContent } from '../contexts/ContentContext';
 import { contentService } from '../lib/content';
 import type { Content } from '../lib/content';
-import { PROBLEM_DETAILS_JSON_POINTER_NAME } from '../lib/utils';
+import { PROBLEM_DETAILS_POINTERS } from '../lib/problemDetailsPointers.ts';
 
 import { ClientErrorAlert } from './ClientErrorAlert';
 
@@ -97,7 +97,7 @@ const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         <ClientErrorAlert
           value={error}
           sx={{ mt: 2 }}
-          problemDetailJsonPointer={PROBLEM_DETAILS_JSON_POINTER_NAME}
+          problemDetailJsonPointer={PROBLEM_DETAILS_POINTERS.CONTENT.name}
         />
       </DialogContent>
       <DialogActions sx={{ p: '0 24px 12px' }}>

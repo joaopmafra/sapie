@@ -1,5 +1,3 @@
-// TODO: rename this file to something like 'error-message-utils'
-
 import { AxiosError } from 'axios';
 
 import type { ProblemDetailsDto } from './api-client';
@@ -9,21 +7,12 @@ export type {
   ProblemDetailsErrorItemDto,
 } from './api-client';
 
-/**
- * JSON Pointer for the note/content `name` field in create/rename bodies (matches API flattening).
- *
- * TODO: do we really need a constant for this? And in this file?
- *
- * @see packages/api/src/common/validation/flatten-validation-errors.ts
- */
-export const PROBLEM_DETAILS_JSON_POINTER_NAME = '/name' as const;
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /**
- * True when `data` matches the API's RFC 9457 JSON shape ({@link ProblemDetailsDto}).
+ * True when `data` matches the API's RFC 9457 Problem Details JSON shape ({@link ProblemDetailsDto}).
  */
 export function isProblemDetailsDto(data: unknown): data is ProblemDetailsDto {
   if (!isRecord(data)) {
@@ -75,7 +64,7 @@ export function collectProblemValidationMessages(
 }
 
 /**
- * Builds a single-line string from RFC 9457 `detail` and all validation messages
+ * Builds a single-line string from RFC 9457 Problem Details `detail` and all validation messages
  * (for logs or non-field-specific fallbacks).
  */
 function messageFromProblemDetails(data: ProblemDetailsDto): string {
