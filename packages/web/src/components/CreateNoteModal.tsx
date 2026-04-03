@@ -15,6 +15,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useContent } from '../contexts/ContentContext';
 import { contentService } from '../lib/content';
 import type { Content } from '../lib/content';
+import { PROBLEM_DETAILS_JSON_POINTER_NAME } from '../lib/utils';
 
 import { ClientErrorAlert } from './ClientErrorAlert';
 
@@ -93,7 +94,11 @@ const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
           onKeyDown={e => e.key === 'Enter' && handleSubmit()}
           disabled={loading}
         />
-        <ClientErrorAlert value={error} sx={{ mt: 2 }} />
+        <ClientErrorAlert
+          value={error}
+          sx={{ mt: 2 }}
+          problemDetailJsonPointer={PROBLEM_DETAILS_JSON_POINTER_NAME}
+        />
       </DialogContent>
       <DialogActions sx={{ p: '0 24px 12px' }}>
         <Button onClick={handleCancel} disabled={loading}>

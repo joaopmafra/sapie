@@ -1,63 +1,91 @@
+// TODO: rename this file to something like 'error-message-utils'
+
 import { AxiosError } from 'axios';
 
+import type { ProblemDetailsDto } from './api-client';
+
+export type {
+  ProblemDetailsDto,
+  ProblemDetailsErrorItemDto,
+} from './api-client';
+
 /**
- * RFC 9457 Problem Details (`application/problem+json`) as produced by
- * `ProblemDetailsExceptionFilter` in `@sapie/api`, including the `errors` extension.
+ * JSON Pointer for the note/content `name` field in create/rename bodies (matches API flattening).
  *
- * @see packages/api/src/common/filters/problem-details.exception-filter.ts
+ * TODO: do we really need a constant for this? And in this file?
+ *
+ * @see packages/api/src/common/validation/flatten-validation-errors.ts
  */
-type ProblemDetailsLike = {
-  detail: string;
-  errors?: Array<{ path?: string; messages?: string[] }>;
-};
+export const PROBLEM_DETAILS_JSON_POINTER_NAME = '/name' as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function isProblemDetailsLike(
-  data: Record<string, unknown>
-): data is ProblemDetailsLike {
-  return typeof data.detail === 'string';
+/**
+ * True when `data` matches the API's RFC 9457 JSON shape ({@link ProblemDetailsDto}).
+ */
+export function isProblemDetailsDto(data: unknown): data is ProblemDetailsDto {
+  if (!isRecord(data)) {
+    return false;
+  }
+  return (
+    typeof data.type === 'string' &&
+    typeof data.title === 'string' &&
+    typeof data.status === 'number' &&
+    typeof data.detail === 'string' &&
+    (data.instance === undefined || typeof data.instance === 'string')
+  );
 }
 
-function extractProblemDetailAndFirstMessages(data: ProblemDetailsLike): {
-  detail: string;
-  firstMessages: string[];
-} {
-  const detail = data.detail.trim();
+/**
+ * Collects validation messages from `ProblemDetailsDto.errors`, in API order.
+ *
+ * @param data
+ * @param jsonPointer - If set (RFC 6901, e.g. `/name`), only entries with that `path` are included;
+ *   every string in each matching `messages` array is kept. If omitted, all errors and all messages are included.
+ */
+export function collectProblemValidationMessages(
+  data: ProblemDetailsDto,
+  jsonPointer?: string
+): string[] {
   const errors = data.errors;
-  const firstMessages: string[] = [];
+  const out: string[] = [];
   if (!Array.isArray(errors)) {
-    return { detail, firstMessages };
+    return out;
   }
   for (const entry of errors) {
     if (!entry || typeof entry !== 'object') {
+      continue;
+    }
+    if (jsonPointer !== undefined && entry.path !== jsonPointer) {
       continue;
     }
     const messages = entry.messages;
     if (!Array.isArray(messages)) {
       continue;
     }
-    const first = messages[0];
-    if (typeof first === 'string' && first.trim()) {
-      firstMessages.push(first.trim());
+    for (const m of messages) {
+      if (typeof m === 'string' && m.trim()) {
+        out.push(m.trim());
+      }
     }
   }
-  return { detail, firstMessages };
+  return out;
 }
 
 /**
- * Builds a single-line / semicolon string from RFC 9457 `detail` and
- * `errors[*].messages[0]` (e.g. for logs or non-Alert UIs).
+ * Builds a single-line string from RFC 9457 `detail` and all validation messages
+ * (for logs or non-field-specific fallbacks).
  */
-function messageFromProblemDetails(data: ProblemDetailsLike): string {
-  const { detail, firstMessages } = extractProblemDetailAndFirstMessages(data);
-  if (firstMessages.length === 0) {
+function messageFromProblemDetails(data: ProblemDetailsDto): string {
+  const detail = data.detail.trim();
+  const messages = collectProblemValidationMessages(data);
+  if (messages.length === 0) {
     return detail;
   }
-  const specifics = firstMessages.join('; ');
-  if (firstMessages.length === 1 && specifics === detail) {
+  const specifics = messages.join('; ');
+  if (messages.length === 1 && specifics === detail) {
     return detail;
   }
   return `${detail}: ${specifics}`;
@@ -92,7 +120,7 @@ function messageFromAxiosResponseData(data: unknown): string | null {
     return null;
   }
 
-  if (isProblemDetailsLike(data)) {
+  if (isProblemDetailsDto(data)) {
     const parsed = messageFromProblemDetails(data);
     if (parsed) {
       return parsed;
@@ -102,25 +130,50 @@ function messageFromAxiosResponseData(data: unknown): string | null {
   return messageFromLegacyNestBody(data);
 }
 
+// TODO: simplify this
 export type ClientErrorAlertModel =
-  | { kind: 'bulletList'; detail: string; items: string[] }
-  | { kind: 'plain'; text: string };
+  | { kind: 'plain'; text: string }
+  | {
+      kind: 'bulletList';
+      items: string[];
+      /** When set, shown as a heading above the list (e.g. full-form summary). Omitted for per-field alerts. */
+      detail?: string;
+    };
+
+export type GetClientErrorAlertModelOptions = {
+  /**
+   * When set, only messages for this JSON Pointer are shown (per-field errors under one input).
+   * When omitted, every message from every `errors` entry is shown (all errors at top of form).
+   */
+  problemDetailJsonPointer?: string;
+};
 
 /**
  * Maps an API/client error to content for {@link ClientErrorAlert}.
- * For RFC 9457 bodies with field errors, returns a bullet list (`detail` + `errors[*].messages[0]`).
+ * With `problemDetailJsonPointer`, a single message is plain text; multiple messages are a list without the problem `detail` heading.
+ * Without a pointer, `detail` is shown above the full list (summary at top of form).
  */
 export function getClientErrorAlertModel(
   error: unknown,
-  defaultMessage: string
+  defaultMessage: string,
+  options?: GetClientErrorAlertModelOptions
 ): ClientErrorAlertModel {
   if (error instanceof AxiosError && error.response?.data !== undefined) {
     const data = error.response.data;
-    if (isRecord(data) && isProblemDetailsLike(data)) {
-      const { detail, firstMessages } =
-        extractProblemDetailAndFirstMessages(data);
-      if (firstMessages.length > 0) {
-        return { kind: 'bulletList', detail, items: firstMessages };
+    if (isProblemDetailsDto(data)) {
+      const detail = data.detail.trim();
+      const items = collectProblemValidationMessages(
+        data,
+        options?.problemDetailJsonPointer
+      );
+      if (items.length > 0) {
+        if (options?.problemDetailJsonPointer !== undefined) {
+          if (items.length === 1) {
+            return { kind: 'plain', text: items[0] };
+          }
+          return { kind: 'bulletList', items };
+        }
+        return { kind: 'bulletList', detail, items };
       }
       if (detail) {
         return { kind: 'plain', text: detail };
