@@ -44,7 +44,7 @@ function getProblemBodyFromJsonMock(json: jest.Mock): ProblemDetailsBody {
   return first[0];
 }
 
-/** Asserts RFC 9457 core members present and typed (plus optional `errors`, optional `instance`). */
+/** Asserts RFC 9457 Problem Details core members present and typed (plus optional `errors`, optional `instance`). */
 function assertProblemDetailsEnvelope(body: ProblemDetailsBody): void {
   expect(typeof body.type).toBe('string');
   expect(body.type.startsWith('https://')).toBe(true);
