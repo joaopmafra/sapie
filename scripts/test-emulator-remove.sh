@@ -15,13 +15,13 @@ if [ -z "${CONTAINER_ID}" ]; then
 fi
 
 echo "⚠️  WARNING: This will stop the Firebase test emulator container"
-echo "   and REMOVE all related Docker resources (container, network, volumes)."
+echo "   and REMOVE all related Docker resources (container, network, volumes, image)."
 read -r -p "Are you sure you want to proceed? [y/N]: " CONFIRM
 
 case "${CONFIRM}" in
   [yY])
-    echo "🛑 Removing Firebase test emulator and related volumes using ${COMPOSE_FILE}..."
-    docker compose -f "${COMPOSE_FILE}" down -v
+    echo "🛑 Removing Firebase test emulator and related resources using ${COMPOSE_FILE}..."
+    docker compose -f "${COMPOSE_FILE}" down --rmi all -v --remove-orphans firebase-test-emulator
     echo "✅ Firebase test emulator and related volumes removed."
     ;;
   *)

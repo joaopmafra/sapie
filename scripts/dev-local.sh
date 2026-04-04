@@ -27,8 +27,8 @@ echo "🔧 Starting Firebase emulators in background..."
 firebase emulators:start \
   --only=auth,firestore,storage \
   --project local-dev \
-  --import=./firebase-data \
-  --export-on-exit=./firebase-data \
+  --import=./firebase/data \
+  --export-on-exit=./firebase/data \
   &
 FIREBASE_PID=$!
 

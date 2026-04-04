@@ -49,7 +49,7 @@ export class HealthController {
 
     if (environment !== 'production') {
       response.firebaseProjectId = process.env.GCLOUD_PROJECT;
-      response.usingFirebaseEmulator = process.env.FIREBASE_USE_EMULATOR === 'true';
+      response.usingFirebaseEmulator = !!process.env.FIRESTORE_EMULATOR_HOST;
     }
 
     return response;

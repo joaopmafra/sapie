@@ -18,9 +18,11 @@ services:
       - "4410:4410"
       # Logging service (emulators.logging.port)
       - "4510:4510"
+    # Use a named volume to persist Firestore emulators cache
+    volumes:
+      - ./firebase/emulator-cache:/root/.cache/firebase/emulators
     # Use tmpfs for Firestore data for in-memory speed and ephemeral state
     tmpfs:
       - /srv/firebase/firestore-data
     working_dir: /srv/firebase
     restart: unless-stopped
-

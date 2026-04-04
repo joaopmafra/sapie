@@ -114,7 +114,7 @@ Status: Done
 Update the `test` script in `package.json` to set the emulator environment variables:
 
 ```json
-"test": "CURRENT_ENV=test FIREBASE_USE_EMULATOR=true FIRESTORE_EMULATOR_HOST=localhost:8181 FIREBASE_AUTH_EMULATOR_HOST=localhost:9199 GCLOUD_PROJECT=sapie-test jest"
+"test": "CURRENT_ENV=test FIRESTORE_EMULATOR_HOST=localhost:8181 FIREBASE_AUTH_EMULATOR_HOST=localhost:9199 GCLOUD_PROJECT=sapie-test jest"
 ```
 
 **Verify:** With the test container running, run `pnpm test`. All existing tests pass. With
