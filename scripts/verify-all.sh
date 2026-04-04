@@ -5,16 +5,12 @@ set -e
 
 echo "Verifying api..."
 cd packages/api
-pnpm run lint:check
-pnpm run format:check
+pnpm run verify:all
 cd ../..
-printf "OK\n\n"
+printf "OK!\n\n"
 
 echo "Verifying web..."
 cd packages/web
-pnpm run lint
-pnpm run format:check
-printf "\nChecking types..."
-pnpm run verify:types
+pnpm run verify:all
 cd ../..
-printf "OK\n\n"
+printf "OK!\n\n"

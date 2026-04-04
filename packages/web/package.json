@@ -8,6 +8,7 @@
     "dev": "vite",
     "dev:local": "vite --mode local-dev",
     "dev:emulator": "NODE_ENV=development vite build --watch --mode emulator",
+    "generate:api-client": "../../scripts/generate-api-client.sh",
     "build": "tsc -b && vite build",
     "build:emulator": "tsc -b && NODE_ENV=development vite build --mode emulator",
     "build:test-e2e": "tsc -b && NODE_ENV=development vite build --mode test-e2e",
@@ -15,14 +16,15 @@
     "build:staging": "tsc -b && NODE_ENV=production vite build --mode staging",
     "build:prod": "tsc -b && NODE_ENV=production vite build --mode production",
     "preview": "vite preview",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,json,css,md}\"",
-    "verify:types": "tsc -b",
+    "lint": "eslint . --fix",
+    "lint:check": "eslint .",
     "test": "NODE_OPTIONS='--disable-warning=DEP0040' jest",
     "test:watch": "NODE_OPTIONS='--disable-warning=DEP0040' jest --watch",
-    "generate:api-client": "../../scripts/generate-api-client.sh"
+    "verify:types": "tsc --noEmit",
+    "verify:fast": "pnpm verify:types && pnpm test",
+    "verify:all": "pnpm format:check && pnpm lint:check && pnpm verify:types && pnpm test"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
