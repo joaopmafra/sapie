@@ -22,7 +22,7 @@ As a user, I want to create folders in my content tree so that I can organise my
 
 ## Dependencies
 
-- [ ] [Story 53](../../4-in-progress/53-story-create_notes.md) — Must be complete. The "New" menu and
+- [ ] [Story 53](../../5-done/53-story-create_notes.md) — Must be complete. The "New" menu and
   `CreateNoteModal` pattern are reused here.
 - [ ] [Story 62](./62-story-tanstack_query_refactor.md) — TanStack Query must be in place so folder creation
   invalidates only the affected parent's children query.

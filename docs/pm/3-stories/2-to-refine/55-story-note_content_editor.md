@@ -40,7 +40,7 @@ focus on my study material without worrying about losing changes.
 
 ## Dependencies
 
-- [ ] [Story 53](../../4-in-progress/53-story-create_notes.md) — Tasks 4–6 must be complete (note editor
+- [ ] [Story 53](../../5-done/53-story-create_notes.md) — Tasks 4–6 must be complete (note editor
   shell and rename endpoint must exist before adding content editing)
 - [ ] [Story 62](../1-ready/62-story-tanstack_query_refactor.md) — TanStack Query refactor must be complete
   so `NoteEditorPage` can fetch note metadata independently (direct navigation must work before adding
