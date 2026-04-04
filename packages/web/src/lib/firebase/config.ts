@@ -30,10 +30,15 @@ export const auth = getAuth(app);
 // export const db = getFirestore(app);
 
 // Connect to Firebase Auth emulator in development
-if (import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true') {
+if (
+  import.meta.env.VITE_CURRENT_ENV !== 'production' &&
+  import.meta.env.VITE_CURRENT_ENV !== 'staging' &&
+  import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST
+) {
   try {
     if (!auth.emulatorConfig) {
-      connectAuthEmulator(auth, 'http://127.0.0.1:9099', {
+      const authEmulatorUrl = `http://${import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST}`;
+      connectAuthEmulator(auth, authEmulatorUrl, {
         disableWarnings: false,
       });
     }

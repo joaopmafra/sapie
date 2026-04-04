@@ -7,3 +7,17 @@
 body {
   min-height: 100vh;
 }
+
+.notistack-SnackbarContainer {
+  font-family: 'Roboto', sans-serif;
+
+  .notistack-MuiContent-success .MuiButton-root,
+  .notistack-MuiContent-error .MuiButton-root {
+    color: #fff;
+  }
+
+  & .MuiButton-root:hover,
+  .MuiIconButton-root:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+}

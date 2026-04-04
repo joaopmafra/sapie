@@ -1,0 +1,28 @@
+services:
+  firebase-test-emulator:
+    build:
+      context: .
+      dockerfile: Dockerfile.emulator-test-unit
+    container_name: sapie-firebase-test-emulator
+    ports:
+      # Firestore HTTP (must match firebase.test-unit.json emulators.firestore.port)
+      - "8181:8181"
+      # Firestore WebSocket (UI + requests tab; emulators.firestore.websocketPort).
+      # Use 9160 here so the default dev websocket (9150) can run on the host in parallel.
+      - "9160:9160"
+      # Auth (must match emulators.auth.port)
+      - "9199:9199"
+      # Emulator UI (must match emulators.ui.port)
+      - "4001:4001"
+      # Emulator Hub (browser/UI discover emulators; emulators.hub.port)
+      - "4410:4410"
+      # Logging service (emulators.logging.port)
+      - "4510:4510"
+    # Use a named volume to persist Firestore emulators cache
+    volumes:
+      - ./firebase/emulator-cache:/root/.cache/firebase/emulators
+    # Use tmpfs for Firestore data for in-memory speed and ephemeral state
+    tmpfs:
+      - /srv/firebase/firestore-data
+    working_dir: /srv/firebase
+    restart: unless-stopped

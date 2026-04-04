@@ -1,90 +1,75 @@
-import { Injectable } from '@nestjs/common';
-import { Content, ContentType } from '../entities/content.entity';
+import {
+  Injectable,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
+import { Content } from '../entities/content.entity';
+import { ContentRepository } from '../repositories/content-repository.service';
 
 @Injectable()
 export class ContentService {
-  private readonly FAKE_TREE_DATA: Record<string, Content[]> = {
-    root: [
-      {
-        id: 'folder1',
-        name: 'Math',
-        type: ContentType.DIRECTORY,
-        parentId: 'root',
-        ownerId: 'dummy-owner',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 'folder2',
-        name: 'Science',
-        type: ContentType.DIRECTORY,
-        parentId: 'root',
-        ownerId: 'dummy-owner',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 'folder3',
-        name: 'Empty',
-        type: ContentType.DIRECTORY,
-        parentId: 'folder1',
-        ownerId: 'dummy-owner',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 'note5',
-        name: 'General Notes',
-        type: ContentType.NOTE,
-        parentId: 'root',
-        ownerId: 'dummy-owner',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ],
-    folder1: [
-      {
-        id: 'note1',
-        name: 'Algebra Notes',
-        type: ContentType.NOTE,
-        parentId: 'folder1',
-        ownerId: 'dummy-owner',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 'note2',
-        name: 'Geometry Notes',
-        type: ContentType.NOTE,
-        parentId: 'folder1',
-        ownerId: 'dummy-owner',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ],
-    folder2: [
-      {
-        id: 'note3',
-        name: 'Physics Notes',
-        type: ContentType.NOTE,
-        parentId: 'folder2',
-        ownerId: 'dummy-owner',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 'note4',
-        name: 'Chemistry Notes',
-        type: ContentType.NOTE,
-        parentId: 'folder2',
-        ownerId: 'dummy-owner',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ],
-    folder3: [],
-  };
-  findByParentId(parentId: string): Promise<Content[]> {
-    return Promise.resolve(this.FAKE_TREE_DATA[parentId] || []);
+  constructor(private readonly contentRepository: ContentRepository) {}
+
+  async findByParentIdAndOwnerId(parentId: string, ownerId: string): Promise<Content[]> {
+    return this.contentRepository.findByParentIdAndOwnerId(parentId, ownerId);
+  }
+
+  async create(name: string, parentId: string, ownerId: string): Promise<Content> {
+    const parent = await this.contentRepository.findById(parentId);
+
+    if (!parent) {
+      throw new Error(`Parent with ID ${parentId} not found`);
+    }
+
+    if (parent.ownerId !== ownerId) {
+      throw new ForbiddenException('User is not the owner of the parent folder');
+    }
+
+    const nameCollision = await this.contentRepository.findFirstByParentIdAndName(parentId, name);
+    if (nameCollision) {
+      throw new ConflictException(`Content with name "${name}" already exists in this location`);
+    }
+
+    const now = new Date();
+    return this.contentRepository.addNote({
+      name,
+      parentId,
+      ownerId,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  /**
+   * TODO: Currently we are allowing root directories renaming. Maybe this operation should not be allowed?
+   */
+  async renameContent(id: string, name: string, ownerId: string): Promise<Content> {
+    const existing = await this.contentRepository.findById(id);
+
+    if (!existing || existing.ownerId !== ownerId) {
+      throw new NotFoundException(`Content with ID ${id} not found`);
+    }
+
+    if (existing.name === name) {
+      return existing;
+    }
+
+    const nameCollision = await this.contentRepository.findFirstByParentIdAndName(
+      existing.parentId,
+      name
+    );
+    if (nameCollision && nameCollision.id !== id) {
+      throw new ConflictException(`Content with name "${name}" already exists in this location`);
+    }
+
+    const now = new Date();
+    await this.contentRepository.updateContentName(id, name, now);
+
+    const updated = await this.contentRepository.findById(id);
+    if (!updated) {
+      throw new Error(`Content with ID ${id} disappeared after update`);
+    }
+    return updated;
   }
 }

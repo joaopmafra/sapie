@@ -61,7 +61,7 @@ perfect architecture**. This allows us to iterate quickly, gather user feedback,
     - Create baseline dataset for consistent development and testing
     - Update build scripts to use emulator data persistence for faster setup
     - Document emulator data management workflows for team collaboration
-    - Look at [save_data_firebase_emulator.md](../../../research/save_data_firebase_emulator.md) for more details
+    - Look at [save_data_firebase_emulator.md](../../../research/firebase/save_data_firebase_emulator.md) for more details
 
 ### Phase 2: Short-term Optimizations (Next Sprint)
 

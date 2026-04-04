@@ -1,24 +1,22 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { HealthController } from './health.controller';
+import * as request from 'supertest';
+import { AppFixture } from '../test-helpers/app.fixture';
 
 describe('HealthController', () => {
-  let controller: HealthController;
+  let appFixture: AppFixture;
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [HealthController],
-    }).compile();
-
-    controller = module.get<HealthController>(HealthController);
+  beforeAll(async () => {
+    appFixture = new AppFixture();
+    await appFixture.createTestingModuleBuilder().withFakeAuth().buildAndInit();
   });
 
-  describe('getHealth', () => {
-    it('should return health status object', () => {
-      const result = controller.getHealth();
-      expect(result).toHaveProperty('status', 'ok');
-      expect(result).toHaveProperty('timestamp');
-      expect(typeof result.timestamp).toBe('string');
-      expect(new Date(result.timestamp).toString()).not.toBe('Invalid Date');
-    });
+  afterAll(async () => {
+    await appFixture.close();
+  });
+
+  it('/api/health (GET)', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    const response = await request(appFixture.getHttpServer()).get('/api/health').expect(200);
+    expect(response.body).toHaveProperty('status', 'ok');
+    expect(response.body).toHaveProperty('timestamp');
   });
 });

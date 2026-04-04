@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ContentController } from './controllers/content.controller';
 import { RootDirectoryService } from './services/root-directory.service';
 import { ContentService } from './services/content.service';
+import { ContentRepository } from './repositories/content-repository.service';
 
 /**
  * Content Module
@@ -17,7 +18,7 @@ import { ContentService } from './services/content.service';
 @Module({
   imports: [],
   controllers: [ContentController],
-  providers: [RootDirectoryService, ContentService],
-  exports: [RootDirectoryService, ContentService],
+  providers: [RootDirectoryService, ContentRepository, ContentService],
+  exports: [RootDirectoryService, ContentRepository, ContentService],
 })
 export class ContentModule {}

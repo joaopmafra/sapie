@@ -13,4 +13,6 @@ fi
 
 scripts/build-all.sh "$ENV"
 
+printf "\n\nDeploying to Firebase..."
 firebase deploy --project "$ENV"
+echo "Done!"

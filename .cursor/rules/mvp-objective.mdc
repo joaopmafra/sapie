@@ -1,0 +1,47 @@
+---
+description: MVP objective and feature priorities for Sapie
+alwaysApply: true
+---
+
+# Current MVP Objective
+
+Sapie's owner is on a sabbatical studying AI engineering, DSA, system design, and DevSecOps.
+**The overriding priority is to ship a functional study tool as quickly as possible.**
+Architectural elegance is secondary to getting a working tool into daily use.
+
+Full details: `docs/research/mvp_objective.md`
+
+## Implementation Priority (in order)
+
+1. Complete Story 53 (Tasks 4–6): note editor shell + rename API
+2. TanStack Query refactor (plan: `docs/research/client_state_management/phase_1_tanstack_query.md`)
+3. Note content editor with auto-save (Story 55)
+4. Folder creation
+5. Content deletion (notes + folders)
+6. Flashcard deck + card creation (attached to notes)
+7. Study mode — single deck ("I know" / "I don't know")
+8. Study result tracking (per-card)
+9. Folder-level study ("Study all" from right-click)
+10. Responsive mobile polish
+
+## Settled Design Decisions
+
+- **Flashcard decks are children of notes** (`parentId = noteId`), not siblings in the folder tree.
+  Decks are shown in the note editor's Attachments section, not in the sidebar tree.
+- **Sidebar tree shows folders and notes only.** Decks and cards are not shown in the tree.
+- **Decks store a denormalized `folderId`** (the folder of their parent note) for efficient folder-level study queries.
+- **Study data model is designed for FSRS upgrade** even though UI uses 2 buttons for now.
+  Cards store: `dueDate`, `interval`, `repetitions`, `lastResult`.
+- **TanStack Query must be implemented before the note content editor** to fix the broken
+  direct navigation bug and prevent auto-save from thrashing the sidebar tree.
+
+## Do Not Implement Yet (Deferred)
+
+Spaced repetition algorithm, per-session summaries, full-text search, offline mode, math/LaTeX,
+tags, favorites, sharing, AI-generated content.
+
+## Implement Alongside MCP Server (not MVP, but required before MCP goes live)
+
+Content versioning (pre-operation snapshots, soft-delete/trash, operation log, version history UI,
+markdown diff view). Full design: `docs/research/content_versioning.md`.
+The agent changeset approval flow (Phase 2 of versioning) comes after the MCP server ships.

@@ -1,4 +1,4 @@
-import { Controller, Get, Request, Logger, Query } from '@nestjs/common';
+import { Controller, Get, Request, Logger, Post, Body, Patch, Param } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -6,14 +6,21 @@ import {
   ApiUnauthorizedResponse,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
-  ApiQuery,
+  ApiCreatedResponse,
+  ApiConflictResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiBadRequestResponse,
+  ApiUnprocessableEntityResponse,
+  ApiParam,
 } from '@nestjs/swagger';
+import { apiProblemDetailsSchema } from '../../common/dto/problem-details.dto';
 import { Auth } from '../../auth';
-import { AuthenticatedRequest } from '../../auth/auth.guard';
+import { AuthenticatedRequest } from '../../auth';
 import { RootDirectoryService } from '../services/root-directory.service';
 import { Content } from '../entities/content.entity';
 import { ContentService } from '../services/content.service';
-import { ContentDto } from '../dto/content.dto';
+import { ContentDto, CreateContentDto, UpdateContentNameDto } from '../dto/content.dto';
 
 /**
  * Content Controller
@@ -31,16 +38,111 @@ export class ContentController {
     private readonly contentService: ContentService
   ) {}
 
-  @Get()
+  @Post()
   @Auth()
   @ApiOperation({
-    summary: 'Get content by parent ID',
+    summary: 'Create a new note',
+    description: 'Creates a new note with a given name and parent ID.',
+  })
+  @ApiCreatedResponse({
+    description: 'Note created successfully.',
+    type: ContentDto,
+  })
+  @ApiConflictResponse({
+    description: 'A note with the same name already exists in the target location.',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiForbiddenResponse({
+    description: 'User is not the owner of the parent folder.',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiBadRequestResponse({
+    description: 'Malformed request body or parameters.',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiUnprocessableEntityResponse({
+    description: 'Semantic validation failed (e.g. name length or disallowed characters).',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Valid Firebase ID token required',
+    ...apiProblemDetailsSchema,
+  })
+  async createContent(
+    @Request() request: AuthenticatedRequest,
+    @Body() createContentDto: CreateContentDto
+  ): Promise<Content> {
+    const { user } = request;
+    const { name, parentId } = createContentDto;
+    this.logger.debug(
+      `Creating note for user: ${user.uid} with name: ${name} and parentId: ${parentId}`
+    );
+    return this.contentService.create(name, parentId, user.uid);
+  }
+
+  @Patch(':id')
+  @Auth()
+  @ApiOperation({
+    summary: 'Rename content',
+    description:
+      'Updates the display name of a content. Names must be unique among siblings (same parent).',
+  })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The ID of the content.',
+    type: String,
+  })
+  @ApiOkResponse({
+    description: 'Content renamed successfully.',
+    type: ContentDto,
+  })
+  @ApiNotFoundResponse({
+    description:
+      'Content not found, or the authenticated user does not own it (same response to avoid leaking ids).',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiConflictResponse({
+    description: 'Another item with the same name already exists in this location.',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiBadRequestResponse({
+    description: 'Malformed request body or parameters.',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiUnprocessableEntityResponse({
+    description: 'Semantic validation failed (e.g. name length or disallowed characters).',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Valid Firebase ID token required',
+    ...apiProblemDetailsSchema,
+  })
+  /**
+   * TODO: Currently this endpoint implements only content renaming. In the future it's likely that we will need to
+   *  add support for other fields and content files (the content entity contains only metadata) as well. About the
+   *  content files handling, maybe we should create a new controller for that.
+   */
+  async renameContent(
+    @Request() request: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() updateContentNameDto: UpdateContentNameDto
+  ): Promise<Content> {
+    const { user } = request;
+    this.logger.debug(`Renaming content ${id} for user: ${user.uid}`);
+    return this.contentService.renameContent(id, updateContentNameDto.name, user.uid);
+  }
+
+  @Get(':id/children')
+  @Auth()
+  @ApiOperation({
+    summary: "List a parent's children",
     description: 'Returns a list of content items for a given parent ID.',
   })
-  @ApiQuery({
-    name: 'parentId',
+  @ApiParam({
+    name: 'id',
     required: true,
-    description: 'The ID of the parent content item.',
+    description: 'The ID of the parent content.',
     type: String,
   })
   @ApiOkResponse({
@@ -49,24 +151,19 @@ export class ContentController {
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Valid Firebase ID token required',
+    ...apiProblemDetailsSchema,
   })
-  async getContent(
+  async listContents(
     @Request() request: AuthenticatedRequest,
-    @Query('parentId') parentId: string
+    @Param('id') id: string
   ): Promise<Content[]> {
     const { user } = request;
-    this.logger.debug(`Getting content for user: ${user.uid} with parentId: ${parentId}`);
-
-    const rootDirectory = await this.rootDirectoryService.getRootDirectory(user.uid);
-
-    if (rootDirectory && rootDirectory.id === parentId) {
-      return this.contentService.findByParentId('root');
-    }
+    this.logger.debug(`Getting content for user: ${user.uid} with parent content ID: ${id}`);
 
     // uncomment to test the loading indicator
     // await new Promise(resolve => setTimeout(resolve, 1000));
 
-    return this.contentService.findByParentId(parentId);
+    return this.contentService.findByParentIdAndOwnerId(id, request.user.uid);
   }
 
   /**
@@ -94,26 +191,28 @@ export class ContentController {
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Valid Firebase ID token required',
+    ...apiProblemDetailsSchema,
   })
   @ApiInternalServerErrorResponse({
     description: 'Internal server error - Failed to ensure root directory',
+    ...apiProblemDetailsSchema,
   })
   async getRootDirectory(@Request() request: AuthenticatedRequest): Promise<Content> {
     const userId = request.user.uid;
 
     try {
       this.logger.debug(`Getting root directory for user: ${userId}`);
-
       const rootDirectory = await this.rootDirectoryService.ensureRootDirectory(userId);
+
+      // uncomment to test the loading indicator
+      //await new Promise(resolve => setTimeout(resolve, 1000));
 
       this.logger.debug(
         `Successfully retrieved root directory for user: ${userId}, directory ID: ${rootDirectory.id}`
       );
-
       return rootDirectory;
     } catch (error) {
       this.logger.error(`Failed to get root directory for user: ${userId}`, error);
-
       throw error;
     }
   }

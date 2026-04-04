@@ -1,6 +1,7 @@
 import { Box, useMediaQuery, useTheme } from '@mui/material';
 import React from 'react';
 
+import { ContentProvider } from '../contexts/ContentContext';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 import Header from './Header';
@@ -47,37 +48,39 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, showNavigation }) => {
 
   // Main layout with navigation
   return (
-    <Box sx={{ display: 'flex' }}>
-      <Header
-        onMenuClick={handleDrawerToggle}
-        showMenuButton={true}
-        drawerOpen={drawerOpen}
-        isMobile={isMobile}
-      />
-      <NavigationDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        isMobile={isMobile}
-      />
-      <Box
-        component='main'
-        sx={{
-          flexGrow: 1,
-          p: 3,
-          transition: theme.transitions.create('margin', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-          }),
-          marginLeft: drawerOpen && !isMobile ? `${desktopDrawerWidth}px` : 0,
-          minHeight: '100vh',
-          // Add top padding to account for AppBar
-          paddingTop: `calc(${theme.spacing(3)} + 64px)`, // 64px is typical AppBar height
-          width: '100%',
-        }}
-      >
-        {children}
+    <ContentProvider>
+      <Box sx={{ display: 'flex' }}>
+        <Header
+          onMenuClick={handleDrawerToggle}
+          showMenuButton={true}
+          drawerOpen={drawerOpen}
+          isMobile={isMobile}
+        />
+        <NavigationDrawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          isMobile={isMobile}
+        />
+        <Box
+          component='main'
+          sx={{
+            flexGrow: 1,
+            p: 3,
+            transition: theme.transitions.create('margin', {
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.leavingScreen,
+            }),
+            marginLeft: drawerOpen && !isMobile ? `${desktopDrawerWidth}px` : 0,
+            minHeight: '100vh',
+            // Add top padding to account for AppBar
+            paddingTop: `calc(${theme.spacing(3)} + 64px)`, // 64px is typical AppBar height
+            width: '100%',
+          }}
+        >
+          {children}
+        </Box>
       </Box>
-    </Box>
+    </ContentProvider>
   );
 };
 

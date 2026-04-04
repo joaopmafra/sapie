@@ -45,6 +45,15 @@ export interface Content {
 }
 
 /**
+ * Tree Node Interface
+ *
+ * Represents a node in the content explorer tree, extending the base Content entity.
+ */
+export interface TreeNode extends Content {
+  children?: TreeNode[];
+}
+
+/**
  * Create Content Request Interface
  *
  * Represents the data required to create a new content item.

@@ -349,3 +349,14 @@ firebase deploy --only functions
 - **Node.js**: 22.x (see `.nvmrc` in workspace root)
 - **Package Manager**: pnpm@10.12.1 (defined in `packageManager` field)
 - **Firebase CLI**: Required for deployment and emulators
+
+## Useful commands
+
+### Generate Auth Token in Firebase Emulator
+```shell
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"email":"<your_email>","password":"<your_password>","returnSecureToken":true}' \
+  "http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=demo-api-key"
+```
+

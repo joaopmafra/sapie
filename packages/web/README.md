@@ -514,7 +514,7 @@ const healthResponse = await healthApi.healthControllerGetHealth();
 ### Important Notes
 
 - The `src/lib/api-client/` directory is auto-generated and should not be edited manually
-- This directory is excluded from version control via `.gitignore`
+- This directory and its contents are under version control
 - Regenerate the client after any API schema changes
 - The client uses axios for HTTP requests and provides full TypeScript typing
 

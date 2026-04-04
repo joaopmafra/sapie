@@ -6,6 +6,7 @@ import {
   ApiUnauthorizedResponse,
   ApiNotFoundResponse,
 } from '@nestjs/swagger';
+import { apiProblemDetailsSchema } from '../common/dto/problem-details.dto';
 import { AuthService, AuthenticatedUser } from './auth.service';
 import { Auth } from './auth.decorator';
 import { AuthenticatedRequest } from './auth.guard';
@@ -43,9 +44,11 @@ export class AuthController {
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Valid Firebase ID token required',
+    ...apiProblemDetailsSchema,
   })
   @ApiNotFoundResponse({
     description: 'User not found in Firebase Auth',
+    ...apiProblemDetailsSchema,
   })
   async getCurrentUser(@Request() request: AuthenticatedRequest): Promise<AuthenticatedUser> {
     const uid = request.user.uid;

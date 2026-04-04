@@ -1,0 +1,26 @@
+# Example Docker configuration for Firebase Emulators:
+# - https://github.com/AndreySenov/firebase-tools-docker
+# - https://hub.docker.com/r/andreysenov/firebase-tools
+
+FROM node:22-alpine
+
+WORKDIR /srv/firebase
+
+# Install OS dependencies
+RUN apk add --no-cache openjdk17-jre bash curl
+
+# Install Firebase CLI (pinned)
+RUN npm install -g firebase-tools@13.25.0
+
+# Emulator config: dedicated file so host port mapping matches advertised URLs (see docker-compose.test.yml).
+COPY firebase.test-unit.json ./firebase.json
+COPY .firebaserc ./
+
+# Default project for the emulators
+ENV FIREBASE_PROJECT=demo-test-unit
+
+# Expose emulator ports (container-side; must match firebase.test-unit.json)
+EXPOSE 8181 9160 9199 4001 4410 4510
+
+# Start emulators; project is resolved from .firebaserc + FIREBASE_PROJECT
+CMD ["firebase", "emulators:start", "--project", "demo-test-unit", "--only", "firestore,auth,ui"]
