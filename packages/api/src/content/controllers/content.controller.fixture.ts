@@ -7,6 +7,7 @@ import { HttpStatus } from '@nestjs/common';
 export class ContentControllerFixture extends AppFixture {
   readonly API_CONTENT = '/api/content';
   readonly API_CONTENT_ROOT = `${this.API_CONTENT}/root`;
+  readonly API_CONTENT_CHILDREN = `${this.API_CONTENT}/:id/children`;
 
   readonly TEST_USER_ID = 'content-test-user';
   readonly OTHER_USER_ID = 'content-test-user-2';
@@ -86,8 +87,7 @@ export class ContentControllerFixture extends AppFixture {
   ): Promise<Content[]> {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const response = await supertest(this.getHttpServer())
-      .get(this.API_CONTENT)
-      .query({ parentId })
+      .get(this.API_CONTENT_CHILDREN.replace(':id', parentId))
       .set(TEST_USER_ID_HEADER, testUserId)
       .expect(HttpStatus.OK);
 

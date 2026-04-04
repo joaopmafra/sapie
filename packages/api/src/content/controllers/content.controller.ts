@@ -1,4 +1,4 @@
-import { Controller, Get, Request, Logger, Query, Post, Body, Patch, Param } from '@nestjs/common';
+import { Controller, Get, Request, Logger, Post, Body, Patch, Param } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -6,7 +6,6 @@ import {
   ApiUnauthorizedResponse,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
-  ApiQuery,
   ApiCreatedResponse,
   ApiConflictResponse,
   ApiForbiddenResponse,
@@ -134,16 +133,16 @@ export class ContentController {
     return this.contentService.renameContent(id, updateContentNameDto.name, user.uid);
   }
 
-  @Get()
+  @Get(':id/children')
   @Auth()
   @ApiOperation({
-    summary: 'List contents by parent ID',
+    summary: "List a parent's children",
     description: 'Returns a list of content items for a given parent ID.',
   })
-  @ApiQuery({
-    name: 'parentId',
+  @ApiParam({
+    name: 'id',
     required: true,
-    description: 'The ID of the parent content item.',
+    description: 'The ID of the parent content.',
     type: String,
   })
   @ApiOkResponse({
@@ -156,15 +155,15 @@ export class ContentController {
   })
   async listContents(
     @Request() request: AuthenticatedRequest,
-    @Query('parentId') parentId: string
+    @Param('id') id: string
   ): Promise<Content[]> {
     const { user } = request;
-    this.logger.debug(`Getting content for user: ${user.uid} with parentId: ${parentId}`);
+    this.logger.debug(`Getting content for user: ${user.uid} with parent content ID: ${id}`);
 
     // uncomment to test the loading indicator
     // await new Promise(resolve => setTimeout(resolve, 1000));
 
-    return this.contentService.findByParentIdAndOwnerId(parentId, request.user.uid);
+    return this.contentService.findByParentIdAndOwnerId(id, request.user.uid);
   }
 
   /**

@@ -621,15 +621,16 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * Returns a list of content items for a given parent ID.
-         * @summary List contents by parent ID
-         * @param {string} parentId The ID of the parent content item.
+         * @summary List children contents of parent
+         * @param {string} id The ID of the parent content.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        contentControllerListContents: async (parentId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'parentId' is not null or undefined
-            assertParamExists('contentControllerListContents', 'parentId', parentId)
-            const localVarPath = `/api/content`;
+        contentControllerListContents: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('contentControllerListContents', 'id', id)
+            const localVarPath = `/api/content/{id}/children`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -644,10 +645,6 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             // authentication bearer required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            if (parentId !== undefined) {
-                localVarQueryParameter['parentId'] = parentId;
-            }
 
 
     
@@ -741,13 +738,13 @@ export const ContentApiFp = function(configuration?: Configuration) {
         },
         /**
          * Returns a list of content items for a given parent ID.
-         * @summary List contents by parent ID
-         * @param {string} parentId The ID of the parent content item.
+         * @summary List children contents of parent
+         * @param {string} id The ID of the parent content.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async contentControllerListContents(parentId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ContentDto>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerListContents(parentId, options);
+        async contentControllerListContents(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ContentDto>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerListContents(id, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerListContents']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -797,13 +794,13 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * Returns a list of content items for a given parent ID.
-         * @summary List contents by parent ID
+         * @summary List children contents of parent
          * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         contentControllerListContents(requestParameters: ContentApiContentControllerListContentsRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ContentDto>> {
-            return localVarFp.contentControllerListContents(requestParameters.parentId, options).then((request) => request(axios, basePath));
+            return localVarFp.contentControllerListContents(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
          * Updates the display name of a content. Names must be unique among siblings (same parent).
@@ -845,7 +842,7 @@ export interface ContentApiInterface {
 
     /**
      * Returns a list of content items for a given parent ID.
-     * @summary List contents by parent ID
+     * @summary List children contents of parent
      * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -886,11 +883,11 @@ export interface ContentApiContentControllerCreateContentRequest {
  */
 export interface ContentApiContentControllerListContentsRequest {
     /**
-     * The ID of the parent content item.
+     * The ID of the parent content.
      * @type {string}
      * @memberof ContentApiContentControllerListContents
      */
-    readonly parentId: string
+    readonly id: string
 }
 
 /**
@@ -946,14 +943,14 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
 
     /**
      * Returns a list of content items for a given parent ID.
-     * @summary List contents by parent ID
+     * @summary List children contents of parent
      * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ContentApi
      */
     public contentControllerListContents(requestParameters: ContentApiContentControllerListContentsRequest, options?: RawAxiosRequestConfig) {
-        return ContentApiFp(this.configuration).contentControllerListContents(requestParameters.parentId, options).then((request) => request(this.axios, this.basePath));
+        return ContentApiFp(this.configuration).contentControllerListContents(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

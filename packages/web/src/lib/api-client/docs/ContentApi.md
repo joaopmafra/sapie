@@ -6,7 +6,7 @@ All URIs are relative to *http://localhost*
 |------------- | ------------- | -------------|
 |[**contentControllerCreateContent**](#contentcontrollercreatecontent) | **POST** /api/content | Create a new note|
 |[**contentControllerGetRootDirectory**](#contentcontrollergetrootdirectory) | **GET** /api/content/root | Get or create user\&#39;s root directory|
-|[**contentControllerListContents**](#contentcontrollerlistcontents) | **GET** /api/content | List contents by parent ID|
+|[**contentControllerListContents**](#contentcontrollerlistcontents) | **GET** /api/content/{id}/children | List children contents of parent|
 |[**contentControllerRenameContent**](#contentcontrollerrenamecontent) | **PATCH** /api/content/{id} | Rename content|
 
 # **contentControllerCreateContent**
@@ -128,10 +128,10 @@ import {
 const configuration = new Configuration();
 const apiInstance = new ContentApi(configuration);
 
-let parentId: string; //The ID of the parent content item. (default to undefined)
+let id: string; //The ID of the parent content. (default to undefined)
 
 const { status, data } = await apiInstance.contentControllerListContents(
-    parentId
+    id
 );
 ```
 
@@ -139,7 +139,7 @@ const { status, data } = await apiInstance.contentControllerListContents(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **parentId** | [**string**] | The ID of the parent content item. | defaults to undefined|
+| **id** | [**string**] | The ID of the parent content. | defaults to undefined|
 
 
 ### Return type

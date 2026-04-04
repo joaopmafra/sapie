@@ -84,7 +84,7 @@ export class ContentService {
       );
 
       const response = await this.contentApi.contentControllerListContents(
-        { parentId },
+        { id: parentId },
         config.baseOptions
       );
 
