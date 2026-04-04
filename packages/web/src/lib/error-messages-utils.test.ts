@@ -1,12 +1,12 @@
 import { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
-import type { ProblemDetailsDto } from '../api-client';
+import type { ProblemDetailsDto } from './api-client';
 import {
   collectProblemValidationMessages,
   getClientErrorAlertModel,
   isProblemDetailsDto,
-} from '../error-messages-utils';
-import { PROBLEM_DETAILS_POINTERS } from '../problemDetailsPointers';
+} from './error-messages-utils.ts';
+import { PROBLEM_DETAILS_POINTERS } from './problemDetailsPointers.ts';
 
 const NAME_POINTER = PROBLEM_DETAILS_POINTERS.CONTENT.name;
 

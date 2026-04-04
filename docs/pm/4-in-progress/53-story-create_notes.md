@@ -50,7 +50,7 @@ organize my content.
 - [x] **Task 5: [BE] Implement Note Renaming Endpoint**:
     - Create a `PATCH /content/:id` endpoint to update a note's name.
     - It must validate against duplicate names in the same location.
-- [ ] **Task 6: [FE] Implement Note Renaming Logic**:
+- [x] **Task 6: [FE] Implement Note Renaming Logic**:
     - In the editor, on "Enter" after editing the name, call the renaming endpoint.
     - Update the UI in the editor and `ContentExplorer` on success.
     - Display an inline error message if an error occurs.
