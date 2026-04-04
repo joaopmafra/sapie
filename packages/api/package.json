@@ -26,7 +26,7 @@
     "dev:local": "CURRENT_ENV=local-dev nest start --watch",
     "start:debug": "CURRENT_ENV=local-dev nest start --debug --watch",
     "start:prod": "node dist/main",
-    "test": "jest",
+    "test": "NODE_OPTIONS='--disable-warning=DEP0040' jest",
     "test:e2e": "CURRENT_ENV=test-e2e jest --config ./test/jest-e2e.json",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",

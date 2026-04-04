@@ -22,6 +22,7 @@ const instance: ProblemDetailsDto = {
     title,
     status,
     detail,
+    instance,
     errors,
 };
 ```

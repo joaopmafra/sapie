@@ -54,8 +54,8 @@ Class | Method | HTTP request | Description
 *AppApi* | [**appControllerGetHello**](docs/AppApi.md#appcontrollergethello) | **GET** /api | Get API status
 *AuthenticationApi* | [**authControllerGetCurrentUser**](docs/AuthenticationApi.md#authcontrollergetcurrentuser) | **GET** /api/auth | Get current user information
 *ContentApi* | [**contentControllerCreateContent**](docs/ContentApi.md#contentcontrollercreatecontent) | **POST** /api/content | Create a new note
-*ContentApi* | [**contentControllerGetContent**](docs/ContentApi.md#contentcontrollergetcontent) | **GET** /api/content | Get content by parent ID
 *ContentApi* | [**contentControllerGetRootDirectory**](docs/ContentApi.md#contentcontrollergetrootdirectory) | **GET** /api/content/root | Get or create user\&#39;s root directory
+*ContentApi* | [**contentControllerListContents**](docs/ContentApi.md#contentcontrollerlistcontents) | **GET** /api/content | List contents by parent ID
 *ContentApi* | [**contentControllerRenameContent**](docs/ContentApi.md#contentcontrollerrenamecontent) | **PATCH** /api/content/{id} | Rename content
 *HealthApi* | [**healthControllerGetHealth**](docs/HealthApi.md#healthcontrollergethealth) | **GET** /api/health | Health check endpoint
 

@@ -13,6 +13,7 @@ import {
   ApiNotFoundResponse,
   ApiBadRequestResponse,
   ApiUnprocessableEntityResponse,
+  ApiParam,
 } from '@nestjs/swagger';
 import { apiProblemDetailsSchema } from '../../common/dto/problem-details.dto';
 import { Auth } from '../../auth';
@@ -85,7 +86,13 @@ export class ContentController {
   @ApiOperation({
     summary: 'Rename content',
     description:
-      'Updates the display name of a note or folder. Names must be unique among siblings (same parent).',
+      'Updates the display name of a content. Names must be unique among siblings (same parent).',
+  })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The ID of the content.',
+    type: String,
   })
   @ApiOkResponse({
     description: 'Content renamed successfully.',
@@ -130,7 +137,7 @@ export class ContentController {
   @Get()
   @Auth()
   @ApiOperation({
-    summary: 'Get content by parent ID',
+    summary: 'List contents by parent ID',
     description: 'Returns a list of content items for a given parent ID.',
   })
   @ApiQuery({
@@ -147,7 +154,7 @@ export class ContentController {
     description: 'Unauthorized - Valid Firebase ID token required',
     ...apiProblemDetailsSchema,
   })
-  async getContent(
+  async listContents(
     @Request() request: AuthenticatedRequest,
     @Query('parentId') parentId: string
   ): Promise<Content[]> {

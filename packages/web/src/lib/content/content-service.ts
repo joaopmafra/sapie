@@ -83,7 +83,7 @@ export class ContentService {
         currentUser
       );
 
-      const response = await this.contentApi.contentControllerGetContent(
+      const response = await this.contentApi.contentControllerListContents(
         { parentId },
         config.baseOptions
       );

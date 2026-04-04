@@ -586,47 +586,6 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Returns a list of content items for a given parent ID.
-         * @summary Get content by parent ID
-         * @param {string} parentId The ID of the parent content item.
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        contentControllerGetContent: async (parentId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'parentId' is not null or undefined
-            assertParamExists('contentControllerGetContent', 'parentId', parentId)
-            const localVarPath = `/api/content`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication bearer required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-            if (parentId !== undefined) {
-                localVarQueryParameter['parentId'] = parentId;
-            }
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Returns the authenticated user\'s root directory (\"My Contents\"). If the directory doesn\'t exist, it will be automatically created. This is the entry point for all content management operations.
          * @summary Get or create user\'s root directory
          * @param {*} [options] Override http request option.
@@ -661,9 +620,50 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Updates the display name of a note or folder. Names must be unique among siblings (same parent).
+         * Returns a list of content items for a given parent ID.
+         * @summary List contents by parent ID
+         * @param {string} parentId The ID of the parent content item.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        contentControllerListContents: async (parentId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'parentId' is not null or undefined
+            assertParamExists('contentControllerListContents', 'parentId', parentId)
+            const localVarPath = `/api/content`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (parentId !== undefined) {
+                localVarQueryParameter['parentId'] = parentId;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Updates the display name of a content. Names must be unique among siblings (same parent).
          * @summary Rename content
-         * @param {string} id 
+         * @param {string} id The ID of the content.
          * @param {UpdateContentNameDto} updateContentNameDto 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -728,19 +728,6 @@ export const ContentApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Returns a list of content items for a given parent ID.
-         * @summary Get content by parent ID
-         * @param {string} parentId The ID of the parent content item.
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async contentControllerGetContent(parentId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ContentDto>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerGetContent(parentId, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerGetContent']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
          * Returns the authenticated user\'s root directory (\"My Contents\"). If the directory doesn\'t exist, it will be automatically created. This is the entry point for all content management operations.
          * @summary Get or create user\'s root directory
          * @param {*} [options] Override http request option.
@@ -753,9 +740,22 @@ export const ContentApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Updates the display name of a note or folder. Names must be unique among siblings (same parent).
+         * Returns a list of content items for a given parent ID.
+         * @summary List contents by parent ID
+         * @param {string} parentId The ID of the parent content item.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async contentControllerListContents(parentId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ContentDto>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerListContents(parentId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerListContents']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Updates the display name of a content. Names must be unique among siblings (same parent).
          * @summary Rename content
-         * @param {string} id 
+         * @param {string} id The ID of the content.
          * @param {UpdateContentNameDto} updateContentNameDto 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -787,16 +787,6 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.contentControllerCreateContent(requestParameters.createContentDto, options).then((request) => request(axios, basePath));
         },
         /**
-         * Returns a list of content items for a given parent ID.
-         * @summary Get content by parent ID
-         * @param {ContentApiContentControllerGetContentRequest} requestParameters Request parameters.
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        contentControllerGetContent(requestParameters: ContentApiContentControllerGetContentRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ContentDto>> {
-            return localVarFp.contentControllerGetContent(requestParameters.parentId, options).then((request) => request(axios, basePath));
-        },
-        /**
          * Returns the authenticated user\'s root directory (\"My Contents\"). If the directory doesn\'t exist, it will be automatically created. This is the entry point for all content management operations.
          * @summary Get or create user\'s root directory
          * @param {*} [options] Override http request option.
@@ -806,7 +796,17 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.contentControllerGetRootDirectory(options).then((request) => request(axios, basePath));
         },
         /**
-         * Updates the display name of a note or folder. Names must be unique among siblings (same parent).
+         * Returns a list of content items for a given parent ID.
+         * @summary List contents by parent ID
+         * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        contentControllerListContents(requestParameters: ContentApiContentControllerListContentsRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ContentDto>> {
+            return localVarFp.contentControllerListContents(requestParameters.parentId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Updates the display name of a content. Names must be unique among siblings (same parent).
          * @summary Rename content
          * @param {ContentApiContentControllerRenameContentRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -835,16 +835,6 @@ export interface ContentApiInterface {
     contentControllerCreateContent(requestParameters: ContentApiContentControllerCreateContentRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentDto>;
 
     /**
-     * Returns a list of content items for a given parent ID.
-     * @summary Get content by parent ID
-     * @param {ContentApiContentControllerGetContentRequest} requestParameters Request parameters.
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof ContentApiInterface
-     */
-    contentControllerGetContent(requestParameters: ContentApiContentControllerGetContentRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ContentDto>>;
-
-    /**
      * Returns the authenticated user\'s root directory (\"My Contents\"). If the directory doesn\'t exist, it will be automatically created. This is the entry point for all content management operations.
      * @summary Get or create user\'s root directory
      * @param {*} [options] Override http request option.
@@ -854,7 +844,17 @@ export interface ContentApiInterface {
     contentControllerGetRootDirectory(options?: RawAxiosRequestConfig): AxiosPromise<ContentDto>;
 
     /**
-     * Updates the display name of a note or folder. Names must be unique among siblings (same parent).
+     * Returns a list of content items for a given parent ID.
+     * @summary List contents by parent ID
+     * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ContentApiInterface
+     */
+    contentControllerListContents(requestParameters: ContentApiContentControllerListContentsRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ContentDto>>;
+
+    /**
+     * Updates the display name of a content. Names must be unique among siblings (same parent).
      * @summary Rename content
      * @param {ContentApiContentControllerRenameContentRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -880,15 +880,15 @@ export interface ContentApiContentControllerCreateContentRequest {
 }
 
 /**
- * Request parameters for contentControllerGetContent operation in ContentApi.
+ * Request parameters for contentControllerListContents operation in ContentApi.
  * @export
- * @interface ContentApiContentControllerGetContentRequest
+ * @interface ContentApiContentControllerListContentsRequest
  */
-export interface ContentApiContentControllerGetContentRequest {
+export interface ContentApiContentControllerListContentsRequest {
     /**
      * The ID of the parent content item.
      * @type {string}
-     * @memberof ContentApiContentControllerGetContent
+     * @memberof ContentApiContentControllerListContents
      */
     readonly parentId: string
 }
@@ -900,7 +900,7 @@ export interface ContentApiContentControllerGetContentRequest {
  */
 export interface ContentApiContentControllerRenameContentRequest {
     /**
-     * 
+     * The ID of the content.
      * @type {string}
      * @memberof ContentApiContentControllerRenameContent
      */
@@ -934,18 +934,6 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
     }
 
     /**
-     * Returns a list of content items for a given parent ID.
-     * @summary Get content by parent ID
-     * @param {ContentApiContentControllerGetContentRequest} requestParameters Request parameters.
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof ContentApi
-     */
-    public contentControllerGetContent(requestParameters: ContentApiContentControllerGetContentRequest, options?: RawAxiosRequestConfig) {
-        return ContentApiFp(this.configuration).contentControllerGetContent(requestParameters.parentId, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
      * Returns the authenticated user\'s root directory (\"My Contents\"). If the directory doesn\'t exist, it will be automatically created. This is the entry point for all content management operations.
      * @summary Get or create user\'s root directory
      * @param {*} [options] Override http request option.
@@ -957,7 +945,19 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
     }
 
     /**
-     * Updates the display name of a note or folder. Names must be unique among siblings (same parent).
+     * Returns a list of content items for a given parent ID.
+     * @summary List contents by parent ID
+     * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ContentApi
+     */
+    public contentControllerListContents(requestParameters: ContentApiContentControllerListContentsRequest, options?: RawAxiosRequestConfig) {
+        return ContentApiFp(this.configuration).contentControllerListContents(requestParameters.parentId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Updates the display name of a content. Names must be unique among siblings (same parent).
      * @summary Rename content
      * @param {ContentApiContentControllerRenameContentRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.

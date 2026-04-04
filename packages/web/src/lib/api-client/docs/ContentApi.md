@@ -5,8 +5,8 @@ All URIs are relative to *http://localhost*
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|
 |[**contentControllerCreateContent**](#contentcontrollercreatecontent) | **POST** /api/content | Create a new note|
-|[**contentControllerGetContent**](#contentcontrollergetcontent) | **GET** /api/content | Get content by parent ID|
 |[**contentControllerGetRootDirectory**](#contentcontrollergetrootdirectory) | **GET** /api/content/root | Get or create user\&#39;s root directory|
+|[**contentControllerListContents**](#contentcontrollerlistcontents) | **GET** /api/content | List contents by parent ID|
 |[**contentControllerRenameContent**](#contentcontrollerrenamecontent) | **PATCH** /api/content/{id} | Rename content|
 
 # **contentControllerCreateContent**
@@ -66,58 +66,6 @@ const { status, data } = await apiInstance.contentControllerCreateContent(
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **contentControllerGetContent**
-> Array<ContentDto> contentControllerGetContent()
-
-Returns a list of content items for a given parent ID.
-
-### Example
-
-```typescript
-import {
-    ContentApi,
-    Configuration
-} from 'api-client';
-
-const configuration = new Configuration();
-const apiInstance = new ContentApi(configuration);
-
-let parentId: string; //The ID of the parent content item. (default to undefined)
-
-const { status, data } = await apiInstance.contentControllerGetContent(
-    parentId
-);
-```
-
-### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **parentId** | [**string**] | The ID of the parent content item. | defaults to undefined|
-
-
-### Return type
-
-**Array<ContentDto>**
-
-### Authorization
-
-[bearer](../README.md#bearer)
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**200** | Content retrieved successfully. |  -  |
-|**401** | Unauthorized - Valid Firebase ID token required |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
 # **contentControllerGetRootDirectory**
 > ContentDto contentControllerGetRootDirectory()
 
@@ -164,10 +112,62 @@ This endpoint does not have any parameters.
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **contentControllerListContents**
+> Array<ContentDto> contentControllerListContents()
+
+Returns a list of content items for a given parent ID.
+
+### Example
+
+```typescript
+import {
+    ContentApi,
+    Configuration
+} from 'api-client';
+
+const configuration = new Configuration();
+const apiInstance = new ContentApi(configuration);
+
+let parentId: string; //The ID of the parent content item. (default to undefined)
+
+const { status, data } = await apiInstance.contentControllerListContents(
+    parentId
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **parentId** | [**string**] | The ID of the parent content item. | defaults to undefined|
+
+
+### Return type
+
+**Array<ContentDto>**
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Content retrieved successfully. |  -  |
+|**401** | Unauthorized - Valid Firebase ID token required |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **contentControllerRenameContent**
 > ContentDto contentControllerRenameContent(updateContentNameDto)
 
-Updates the display name of a note or folder. Names must be unique among siblings (same parent).
+Updates the display name of a content. Names must be unique among siblings (same parent).
 
 ### Example
 
@@ -181,7 +181,7 @@ import {
 const configuration = new Configuration();
 const apiInstance = new ContentApi(configuration);
 
-let id: string; // (default to undefined)
+let id: string; //The ID of the content. (default to undefined)
 let updateContentNameDto: UpdateContentNameDto; //
 
 const { status, data } = await apiInstance.contentControllerRenameContent(
@@ -195,7 +195,7 @@ const { status, data } = await apiInstance.contentControllerRenameContent(
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
 | **updateContentNameDto** | **UpdateContentNameDto**|  | |
-| **id** | [**string**] |  | defaults to undefined|
+| **id** | [**string**] | The ID of the content. | defaults to undefined|
 
 
 ### Return type
