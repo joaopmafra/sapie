@@ -290,7 +290,7 @@ function App() {
 }
 ```
 
-For comprehensive documentation on route protection setup and usage, see the **[Route Protection Guide](../../docs/dev/route_protection_guide.md)**.
+For comprehensive documentation on route protection setup and usage, see the **[Route Protection Guide](../../docs/research/route_protection_guide.md)**.
 
 ## Development Setup
 

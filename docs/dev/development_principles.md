@@ -67,7 +67,7 @@ Guidelines:
 - ✅ **Separate concerns** - Don't mix refactoring with feature work in the same commit
 - ✅ **Simplify then extend** - Make the foundation clear before building on it
 
-*See [detailed guide](../research/first_make_the_change_easy.md) for examples and when to apply this principle.*
+*See [detailed guide](first_make_the_change_easy.md) for examples and when to apply this principle.*
 
 ### Principle of the least astonishment (POLA)
 
