@@ -36,7 +36,7 @@ a short log line). Do not invent adoption — only record what the user confirms
 |     | Habit                                                                               | Status | Notes |
 |-----|-------------------------------------------------------------------------------------|--------|-------|
 | [ ] | Non-trivial work starts with OpenSpec change (proposal → tasks → delta)             |        |       |
-| [ ] | Implementation follows spec + [iterative_delivery.md](../../dev/iterative_delivery.md) |        |       |
+| [ ] | Implementation follows spec + [iterative_development.md](../../dev/iterative_development.md) |        |       |
 | [ ] | Verify with `./scripts/verify-all.sh`; UI with Playwright MCP when relevant         |        |       |
 
 ### Further research (optional ideas from the plan)

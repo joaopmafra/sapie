@@ -43,7 +43,7 @@ When adding a new PBI:
 - Place in the right folder (`1-ready` vs `2-to-refine` under epics, features, or stories).
 - Link related epics/features/stories with markdown links.
 - Default to **one full-stack story** when work spans API and web; split only for real dependency or complexity reasons
-  ([iterative delivery](../dev/iterative_delivery.md)).
+  ([iterative development](../dev/iterative_development.md)).
 - Add acceptance criteria, technical requirements, and technical details **when refining**, not before.
 
 See [User Stories (Mountain Goat Software)](https://www.mountaingoatsoftware.com/agile/user-stories) for classic story

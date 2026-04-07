@@ -6,7 +6,7 @@ Rules for automated assistants (Cursor, Copilot, etc.) working on Sapie. Human c
 
 ## Delivery style
 
-Prefer **small, end-to-end slices** ([iterative_delivery.md](iterative_delivery.md)): simplest thing that works, then
+Prefer **small, end-to-end slices** ([iterative_development.md](iterative_development.md)): simplest thing that works, then
 extend. Do not gold-plate architecture while the study tool is still incomplete.
 
 ## Story execution

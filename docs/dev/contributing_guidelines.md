@@ -27,7 +27,7 @@ Artifacts live under `docs/pm/`:
 
 **TDD (backend):** small steps — [tdd_baby_steps.md](tdd_baby_steps.md), [unit_testing_sapie.md](unit_testing_sapie.md).
 
-**Iterations:** ship vertical slices, not horizontal layers — [iterative_delivery.md](iterative_delivery.md).
+**Iterations:** ship vertical slices, not horizontal layers — [iterative_development.md](iterative_development.md).
 
 ### While implementing a story
 

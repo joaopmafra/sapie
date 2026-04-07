@@ -86,7 +86,7 @@ required). It **adds** a **targeted** way for agents to validate UI during featu
 
 1. **Define or update requirements** — OpenSpec change (proposal → tasks → spec delta) for non-trivial work.
 2. **Implement** — OpenCode + oMo (and/or Cursor with `.cursor/rules`) following the spec
-   and [iterative_delivery.md](../../dev/iterative_delivery.md).
+   and [iterative_development.md](../../dev/iterative_development.md).
 3. **Verify** — `./scripts/verify-all.sh`; for UI, use **Playwright MCP** for smoke checks; merge only after human
    review of spec delta + code.
 
@@ -117,7 +117,7 @@ These are **candidates**, not commitments — pick what reduces calendar time wi
 - [mvp_objective.md](../mvp_objective.md) — what we are building and in what order
 - [development_speed_optimization.md](../development_speed_optimization.md) — broader speed tactics (dev servers, hooks,
   etc.)
-- [iterative_delivery.md](../../dev/iterative_delivery.md) — vertical slices
+- [iterative_development.md](../../dev/iterative_development.md) — vertical slices
 - [ai_agent_guidelines.md](../../dev/ai_agent_guidelines.md) — verification and honesty for assistants
 - [contributing_guidelines.md](../../dev/contributing_guidelines.md) — testing expectations and E2E policy
 - [claude_code_roadmap_to_opencode.md](claude_code_roadmap_to_opencode.md) —

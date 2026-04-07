@@ -7,7 +7,7 @@ Suggested reading order:
 1. [MVP objective](../research/mvp_objective.md)
 2. [Development principles](development_principles.md)
 3. [Contributing guidelines](contributing_guidelines.md) — workflow, verify scripts, testing expectations
-4. [Iterative delivery](iterative_delivery.md) — vertical slices vs layers
+4. [Iterative development](iterative_development.md) — vertical slices, Gall’s law, Kniberg MVP diagram
 5. [Documentation guidelines](documentation_guidelines.md) — where to put docs
 
 Assistants: [ai_agent_guidelines.md](ai_agent_guidelines.md)

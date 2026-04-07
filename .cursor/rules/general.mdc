@@ -18,7 +18,7 @@ Use this order when ramping up (full index: [docs/dev/README.md](../../docs/dev/
 
 - [development_principles.md](../../docs/dev/development_principles.md) — KISS, YAGNI, POLA, TypeScript/Firebase notes
 - [contributing_guidelines.md](../../docs/dev/contributing_guidelines.md) — Story workflow, `./scripts/verify-all.sh`, testing expectations
-- [iterative_delivery.md](../../docs/dev/iterative_delivery.md) — Vertical slices (usable increments), full-stack default
+- [iterative_development.md](../../docs/dev/iterative_development.md) — Vertical slices (usable increments), full-stack default; Gall’s law and Kniberg MVP diagram
 - [documentation_guidelines.md](../../docs/dev/documentation_guidelines.md) — Root vs package vs `docs/`
 - [ai_agent_guidelines.md](../../docs/dev/ai_agent_guidelines.md) — Assistants: verification, honesty, repo hygiene
 - [unit_testing_sapie.md](../../docs/dev/unit_testing_sapie.md) — How we test Nest + Firestore in this repo
