@@ -9,19 +9,24 @@ TODO: add lean startup, MVP development, lean software development, agile and de
 
 We follow these fundamental development principles throughout the codebase:
 
-### Make it work, make it right, make it fast
-
-- ✅ **Make it work** - Get the basic functionality working first
-- ✅ **Make it right** - Clean up and improve after the feature works
-- ✅ **Make it fast** - Optimize for performance when there's a proven issue
-
 ### KISS (Keep It Simple, Stupid)
 
+_Simplicity is the ultimate sophistication_ - Leonardo Da Vinci
+
+We follow the Simplicity principle from Extreme Programming (XP). See the [xp_simplicity_is_the_key.md](xp_simplicity_is_the_key.md) document for details.
+
+Guidelines:
 - ✅ **Prefer simple solutions** - Choose the most straightforward approach that meets requirements
 - ✅ **Avoid over-engineering** - Don't add complexity for hypothetical future needs
 - ✅ **Write readable code** - Code should be self-documenting and easy to understand
 - ✅ **Small functions/components** - Keep functions focused on a single responsibility
 - ❌ **Don't build complex abstractions** unless there's clear, immediate value
+
+### Make it work, make it right, make it fast
+
+- ✅ **Make it work** - Get the basic functionality working first
+- ✅ **Make it right** - Clean up and improve after the feature works
+- ✅ **Make it fast** - Optimize for performance when there's a proven issue
 
 ### DRY (Don't Repeat Yourself)
 
@@ -40,6 +45,9 @@ We follow these fundamental development principles throughout the codebase:
 
 ### Single Responsibility Principle
 
+Sometimes, to keep the design simple, we need to relax this principle. When this happens, we should apply the higher principle of high cohesion, but the simplicity principle is more important.
+
+Guidelines:
 - ✅ **One purpose per function** - Each function should do one thing well
 - ✅ **One concern per component** - React components should have a single responsibility
 - ✅ **Focused modules** - Each module should have a clear, single purpose
@@ -53,7 +61,7 @@ We follow these fundamental development principles throughout the codebase:
 
 *See [detailed guide](../research/first_make_change_easy.md) for examples and when to apply this principle.*
 
-### Principle of least astonishment (POLA)
+### Principle of the least astonishment (POLA)
 
 People are part of the system. The design should match the user's experience, expectations, and mental models (https://en.wikipedia.org/wiki/Principle_of_least_astonishment#cite_note-SaltzerKaashoek2009-14).
 

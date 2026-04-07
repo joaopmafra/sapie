@@ -1,0 +1,29 @@
+---
+description: General context and guidelines for the project.
+alwaysApply: true
+---
+
+# Project Context
+Full-stack TypeScript knowledge management app:
+- **Backend**: NestJS + Firebase Admin + Firestore (`packages/api/`)
+- **Frontend**: React + Material-UI + Firebase Auth (`packages/web/`)
+- **E2E**: Playwright tests (`packages/test-e2e/`)
+- **Docs**: PM artifacts in `docs/pm/`, dev docs in `docs/dev/`
+
+## Current Objective: MVP
+
+We are working on developing an MVP that can be used by the project creator to study for job interviews for urgent job placement. So we need a working version ASAP.
+
+Full details: `docs/research/mvp_objective.md`
+
+## Development Principles
+
+We follow principles from true agile (based on the Agile Manifesto, not on Scrum), Extreme Programming, and Lean thinking. The most important principle is [xp_simplicity_is_the_key.md](../../docs/dev/xp_simplicity_is_the_key.md). There are important principles as well: [development_principles.md](../../docs/dev/development_principles.md).
+
+As strong believers in XP, we strive to write tests. For now, we're focusing on writing Classical TDD School tests, mainly for the backend. For an introduction to the Classical TDD School, see [unit_testing_strategy.md](../../docs/dev/unit_testing_strategy.md).
+
+There are already some E2E tests implemented, but they are not being maintained at the moment to simplify development.
+
+We strive to follow the [tdd_baby_steps.md](../../docs/dev/tdd_baby_steps.md) principle.
+
+Also, we're a Lean Startup, so we develop software in an iterative and incremental way.
