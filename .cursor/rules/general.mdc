@@ -4,26 +4,38 @@ alwaysApply: true
 ---
 
 # Project Context
+
 Full-stack TypeScript knowledge management app:
+
 - **Backend**: NestJS + Firebase Admin + Firestore (`packages/api/`)
 - **Frontend**: React + Material-UI + Firebase Auth (`packages/web/`)
 - **E2E**: Playwright tests (`packages/test-e2e/`)
-- **Docs**: PM artifacts in `docs/pm/`, dev docs in `docs/dev/`
+- **PM / research**: `docs/pm/`, `docs/research/`
 
-## Current Objective: MVP
+## Key documents (`docs/dev/`)
 
-We are working on developing an MVP that can be used by the project creator to study for job interviews for urgent job placement. So we need a working version ASAP.
+Use this order when ramping up (full index: [docs/dev/README.md](../../docs/dev/README.md)):
 
-Full details: `docs/research/mvp_objective.md`
+| Doc | Purpose |
+|-----|---------|
+| [development_principles.md](../../docs/dev/development_principles.md) | KISS, YAGNI, POLA, TypeScript/Firebase notes |
+| [contributing_guidelines.md](../../docs/dev/contributing_guidelines.md) | Story workflow, `./scripts/verify-all.sh`, testing expectations |
+| [iterative_delivery.md](../../docs/dev/iterative_delivery.md) | Vertical slices (usable increments), full-stack default |
+| [documentation_guidelines.md](../../docs/dev/documentation_guidelines.md) | Root vs package vs `docs/` |
+| [ai_agent_guidelines.md](../../docs/dev/ai_agent_guidelines.md) | Assistants: verification, honesty, repo hygiene |
 
-## Development Principles
+**Testing (API):** [unit_testing_sapie.md](../../docs/dev/unit_testing_sapie.md) (how we test Nest + Firestore). **Classical TDD background:** [unit_testing_strategy.md](../../docs/dev/unit_testing_strategy.md). **Rhythm:** [tdd_baby_steps.md](../../docs/dev/tdd_baby_steps.md).
 
-We follow principles from true agile (based on the Agile Manifesto, not on Scrum), Extreme Programming, and Lean thinking. The most important principle is [xp_simplicity_is_the_key.md](../../docs/dev/xp_simplicity_is_the_key.md). There are important principles as well: [development_principles.md](../../docs/dev/development_principles.md).
+**XP:** [xp_simplicity_is_the_key.md](../../docs/dev/xp_simplicity_is_the_key.md).
 
-As strong believers in XP, we strive to write tests. For now, we're focusing on writing Classical TDD School tests, mainly for the backend. For an introduction to the Classical TDD School, see [unit_testing_strategy.md](../../docs/dev/unit_testing_strategy.md).
+## Current objective: MVP
 
-There are already some E2E tests implemented, but they are not being maintained at the moment to simplify development.
+Ship a working study tool **as soon as practical** for interview prep. Full scope and order: [mvp_objective.md](../../docs/research/mvp_objective.md).
 
-We strive to follow the [tdd_baby_steps.md](../../docs/dev/tdd_baby_steps.md) principle.
+## Development principles (summary)
 
-Also, we're a Lean Startup, so we develop software in an iterative and incremental way.
+We follow **true Agile** (values from the Manifesto, not Scrum-by-default), **Extreme Programming**, **Lean**, and **iterative** delivery. The anchor habit is simplicity (XP rule of thumb — see `xp_simplicity_is_the_key.md` above).
+
+We strive to write tests: **Classical TDD** on the backend first (`unit_testing_strategy.md`, `unit_testing_sapie.md`). **E2E** tests exist but are **not maintained** during this MVP push unless a story explicitly requires them — see `contributing_guidelines.md`.
+
+For the full principle set and how they apply in code review, use [development_principles.md](../../docs/dev/development_principles.md).

@@ -31,8 +31,9 @@ Each package's `README.md` should:
 sapie/
 ├── README.md                    # High-level overview with package references
 ├── docs/
-│   ├── documentation_guidelines.md  # This file
-│   └── [other project docs]
+│   ├── dev/
+│   │   └── documentation_guidelines.md  # This file
+│   └── [pm/, research/, other/]
 └── packages/
     ├── web/
     │   └── README.md           # Complete web app documentation

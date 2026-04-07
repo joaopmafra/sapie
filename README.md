@@ -11,8 +11,7 @@ sapie/
 │   ├── api/          # NestJS API backend
 │   └── test-e2e/     # End-to-end tests (Playwright)
 ├── scripts/          # Build and verification scripts
-├── docs/             # Project documentation
-│   └── pm/           # Project management
+├── docs/             # Project documentation — see docs/README.md
 ├── firebase.json     # Firebase configuration
 └── README.md         # This file
 ```
@@ -43,8 +42,8 @@ sapie/
 
 Sapie follows core development principles to maintain code quality and consistency.
 
-For detailed development principles and their application during implementation, see the *
-*[Development Principles Documentation](docs/dev/development_principles.md)**.
+For how we work (MVP goal, principles, contributing), see **[Developer documentation](docs/dev/README.md)** and
+**[Development principles](docs/dev/development_principles.md)**.
 
 ## Quick Start
 
@@ -180,8 +179,7 @@ each package directory.
 
 ### Testing Philosophy
 
-For detailed testing philosophy and approach, see the *
-*[Testing Philosophy Documentation](docs/dev/contributing_guidelines.md#testing-requirements)**.
+For testing expectations (API vs web vs E2E), see **[Contributing guidelines](docs/dev/contributing_guidelines.md#testing-expectations)**.
 
 ## Code Quality
 

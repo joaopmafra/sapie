@@ -1,29 +1,15 @@
-# Documentation Hub
+# Documentation
 
-Welcome to the Sapie project documentation! Everything is organized by purpose and audience.
+Sapie documentation is grouped by audience:
 
-## 📁 Structure
+| Area | Purpose |
+|------|---------|
+| **[dev/](dev/README.md)** | Principles, contributing, testing, doc style — **start here for development**. |
+| **[research/](research/)** | Deeper notes: MVP details, technical spikes, ADR-style decisions. |
+| **[pm/](pm/README.md)** | Epics, features, stories, backlog folders. |
+| **[other/](other/)** | Cross-cutting integration notes (e.g. Nest + Firebase). |
 
-### 🛠 Development (`dev/`)
-Developer guides and standards:
-- **[Contributing Guidelines](dev/contributing_guidelines.md)** - How to contribute
-- **[Development Principles](dev/development_principles.md)** - Core principles
-- **[Documentation Guidelines](dev/documentation_guidelines.md)** - Writing standards
-- Other development guides...
+**Quick links**
 
-### 📋 Project Management (`pm/`)
-Project planning and management documentation. See the [PM README](pm/README.md) for details.
-
-### 🔬 Research (`research/`)
-Technical research and analysis. See individual files for specific topics.
-
-### 🔧 Other (`other/`)
-Technical integration guides and miscellaneous documentation.
-
-## 🎯 Quick Start
-
-**New Developers:** Start with [Contributing Guidelines](dev/contributing_guidelines.md)
-
-**Project Managers:** Check [Project Management](pm/) for planning and progress
-
-**Technical Research:** Browse [Research Documentation](research/) for decisions and analysis
+- Current product goal: [MVP objective](research/mvp_objective.md)
+- How to work on the repo: [Contributing guidelines](dev/contributing_guidelines.md)

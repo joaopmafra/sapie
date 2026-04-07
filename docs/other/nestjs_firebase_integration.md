@@ -338,7 +338,7 @@ The API includes comprehensive Swagger documentation:
 2. Enter Firebase ID token in the Bearer token field
 3. Test protected endpoints interactively
 
-For more information, see the [Contributing Guidelines](../contributing_guidelines.md)
+For more information, see the [Contributing Guidelines](../dev/contributing_guidelines.md)
 and [Development Principles](../development_principles.md).
 
 ## Useful links

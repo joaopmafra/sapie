@@ -3,7 +3,15 @@
 This document outlines the core development principles used throughout the Sapie project to maintain code quality,
 consistency, and maintainability.
 
-TODO: add lean startup, MVP development, lean software development, agile and devops principles
+## Product and process context
+
+- **MVP first**: The goal is a **working study tool quickly** — see [mvp_objective.md](../research/mvp_objective.md).
+  Prefer simple designs that ship over perfect architectures that do not.
+- **Lean Startup**: Build–measure–learn in small iterations; validate with real use.
+- **Agile (values, not Scrum-by-default)**: Favor collaboration, working software, and responding to change; use the
+  PM artifacts under `docs/pm/` as lightweight planning, not a rigid process.
+- **DevOps habit**: Automate verify/build scripts and keep main shippable; detailed environment notes live in research
+  and package READMEs when needed.
 
 ## Core Principles
 
@@ -59,7 +67,7 @@ Guidelines:
 - ✅ **Separate concerns** - Don't mix refactoring with feature work in the same commit
 - ✅ **Simplify then extend** - Make the foundation clear before building on it
 
-*See [detailed guide](../research/first_make_change_easy.md) for examples and when to apply this principle.*
+*See [detailed guide](../research/first_make_the_change_easy.md) for examples and when to apply this principle.*
 
 ### Principle of the least astonishment (POLA)
 
@@ -154,7 +162,7 @@ When reviewing code (or self-reviewing):
 
 For questions about applying these principles:
 
-1. **Check the [Contributing Guidelines](contributing_guidelines.md)** - See how principles integrate with the
-   development workflow
+1. **Check [Contributing guidelines](contributing_guidelines.md)** (and [AI agent guidelines](ai_agent_guidelines.md) for
+   assistants) — how principles tie to workflow and verification
 2. **Review existing code** - Look at how principles are applied in the current codebase
 3. **Ask the team** - When in doubt about how to apply a principle in a specific situation 
