@@ -37,6 +37,8 @@ see **intent and requirement shifts**, not only diffs.
 - Spec deltas make it easier for **humans and AI agents** to agree on what “done” means before or while coding.
 - Aligns with our **iterative** delivery: small, well-scoped changes with an explicit delta to the spec.
 
+**SDD tool comparison** (neutral write-up): OpenSpec vs GitHub Spec Kit vs BMAD — [sdd_tools.md](sdd_tools.md).
+
 **Adoption notes**
 
 - Install and conventions follow the upstream project; start with one capability (e.g. auth-session or a content
@@ -128,6 +130,7 @@ Single list: **Sapie** docs first, then **tools and upstream** (each external UR
 - [ai_agent_guidelines.md](../../dev/ai_agent_guidelines.md) — verification and honesty for assistants
 - [contributing_guidelines.md](../../dev/contributing_guidelines.md) — testing expectations and E2E policy
 - [ai_workflow_adoption_log.md](ai_workflow_adoption_log.md) — track which plan items you actually use
+- [sdd_tools.md](sdd_tools.md) — OpenSpec vs GitHub Spec Kit vs BMAD (neutral comparison)
 - [claude_code_roadmap_to_opencode.md](claude_code_roadmap_to_opencode.md) — map
   [roadmap.sh Claude Code](https://roadmap.sh/claude-code) topics to OpenCode (agents, skills, MCP, etc.)
 
