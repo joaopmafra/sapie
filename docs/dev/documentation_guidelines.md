@@ -2,6 +2,11 @@
 
 This document outlines the documentation structure and guidelines for the Sapie project.
 
+## Formatting and readability
+
+- Prefer **bullet or numbered lists** over **tables** when each row is mainly a short label plus a one-line description (hub pages, indexes, rule files). Lists are easier to read in source and when rendered on narrow viewports.
+- Use **tables** when multiple columns need to stay aligned for comparison, or when the data is naturally tabular (e.g. environment matrices with several short fields per row).
+
 ## Documentation Structure Philosophy
 
 The Sapie project follows a **distributed documentation approach** where detailed information is organized by package, with the root README serving as a clean, high-level overview.

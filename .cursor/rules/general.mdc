@@ -16,26 +16,49 @@ Full-stack TypeScript knowledge management app:
 
 Use this order when ramping up (full index: [docs/dev/README.md](../../docs/dev/README.md)):
 
-| Doc | Purpose |
-|-----|---------|
-| [development_principles.md](../../docs/dev/development_principles.md) | KISS, YAGNI, POLA, TypeScript/Firebase notes |
-| [contributing_guidelines.md](../../docs/dev/contributing_guidelines.md) | Story workflow, `./scripts/verify-all.sh`, testing expectations |
-| [iterative_delivery.md](../../docs/dev/iterative_delivery.md) | Vertical slices (usable increments), full-stack default |
-| [documentation_guidelines.md](../../docs/dev/documentation_guidelines.md) | Root vs package vs `docs/` |
-| [ai_agent_guidelines.md](../../docs/dev/ai_agent_guidelines.md) | Assistants: verification, honesty, repo hygiene |
-
-**Testing (API):** [unit_testing_sapie.md](../../docs/dev/unit_testing_sapie.md) (how we test Nest + Firestore). **Classical TDD background:** [unit_testing_strategy.md](../../docs/dev/unit_testing_strategy.md). **Rhythm:** [tdd_baby_steps.md](../../docs/dev/tdd_baby_steps.md).
-
-**XP:** [xp_simplicity_is_the_key.md](../../docs/dev/xp_simplicity_is_the_key.md).
+- [development_principles.md](../../docs/dev/development_principles.md) — KISS, YAGNI, POLA, TypeScript/Firebase notes
+- [contributing_guidelines.md](../../docs/dev/contributing_guidelines.md) — Story workflow, `./scripts/verify-all.sh`, testing expectations
+- [iterative_delivery.md](../../docs/dev/iterative_delivery.md) — Vertical slices (usable increments), full-stack default
+- [documentation_guidelines.md](../../docs/dev/documentation_guidelines.md) — Root vs package vs `docs/`
+- [ai_agent_guidelines.md](../../docs/dev/ai_agent_guidelines.md) — Assistants: verification, honesty, repo hygiene
+- [unit_testing_sapie.md](../../docs/dev/unit_testing_sapie.md) — How we test Nest + Firestore in this repo
+- [unit_testing_strategy.md](../../docs/dev/unit_testing_strategy.md) — Classical TDD background (Detroit vs London)
+- [tdd_baby_steps.md](../../docs/dev/tdd_baby_steps.md) — Small-step TDD rhythm
+- [xp_simplicity_is_the_key.md](../../docs/dev/xp_simplicity_is_the_key.md) — XP simplicity as the anchor habit
 
 ## Current objective: MVP
 
-Ship a working study tool **as soon as practical** for interview prep. Full scope and order: [mvp_objective.md](../../docs/research/mvp_objective.md).
+Ship a working study tool **as soon as practical** for interview prep. Full scope and
+order: [mvp_objective.md](../../docs/research/mvp_objective.md).
 
 ## Development principles (summary)
 
 We follow **true Agile** (values from the Manifesto, not Scrum-by-default), **Extreme Programming**, **Lean**, and **iterative** delivery. The anchor habit is simplicity (XP rule of thumb — see `xp_simplicity_is_the_key.md` above).
 
-We strive to write tests: **Classical TDD** on the backend first (`unit_testing_strategy.md`, `unit_testing_sapie.md`). **E2E** tests exist but are **not maintained** during this MVP push unless a story explicitly requires them — see `contributing_guidelines.md`.
+We strive to write tests: **Classical TDD** on the backend first (`unit_testing_strategy.md`, `unit_testing_sapie.md`).
+**E2E** tests exist but are **not maintained** during this MVP push unless a story explicitly requires them — see
+`contributing_guidelines.md`.
 
-For the full principle set and how they apply in code review, use [development_principles.md](../../docs/dev/development_principles.md).
+For the full principle set and how they apply in code review,
+use [development_principles.md](../../docs/dev/development_principles.md).
+
+## AI workflow research (OpenSpec, OpenCode, MCP)
+
+The owner is adopting practices from:
+
+- [ai_development_acceleration_plan.md](../../docs/research/ai_workflow/ai_development_acceleration_plan.md) —
+  toolchain (OpenSpec, OpenCode, oMo, Playwright MCP), workflow, optional research ideas
+- [claude_code_roadmap_to_opencode.md](../../docs/research/ai_workflow/claude_code_roadmap_to_opencode.md) — how Claude
+  Code roadmap topics map to OpenCode (agents, skills, commands, plugins, MCP, permissions)
+
+**Adoption log:** [ai_workflow_adoption_log.md](../../docs/research/ai_workflow/ai_workflow_adoption_log.md) —
+checklists and a short change log for what is actually in use.
+
+### Instructions for AI agents
+
+1. **Proactively suggest** relevant items from those two documents when they would help the current task (e.g. UI work →
+   Playwright MCP + acceleration plan; setting up OpenCode → skills/agents/MCP rows in the concept map; non-trivial
+   feature → OpenSpec delta + iterative delivery). Keep suggestions **short and actionable**; do not dump the whole doc.
+2. **Offer to update** `ai_workflow_adoption_log.md` when the user says they adopted, tried, or dropped a practice (
+   check the matching row, add a line under **Change log** with date and one sentence).
+3. **Do not** mark items adopted without the user’s confirmation.
