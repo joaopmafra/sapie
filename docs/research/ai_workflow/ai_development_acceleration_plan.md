@@ -5,10 +5,11 @@
 This document captures **how we intend to speed up MVP delivery** by combining spec-driven requirements, a capable
 coding agent stack, and automated browser verification. It complements the broader tactics
 in [development_speed_optimization.md](../development_speed_optimization.md) and the product scope
-in [mvp_objective.md](../mvp_objective.md).
+in [mvp_objective.md](../mvp_objective.md). Track what you actually adopt
+in [ai_workflow_adoption_log.md](ai_workflow_adoption_log.md).
 
 **Status:** active research — tools and workflows below are adoption targets, not fully rolled out until reflected in
-repo scripts and team habits.
+repo scripts and day-to-day habits.
 
 ---
 
@@ -96,23 +97,29 @@ required). It **adds** a **targeted** way for agents to validate UI during featu
 
 These are **candidates**, not commitments — pick what reduces calendar time without bloating process.
 
-| Area           | Idea                                                                                 | Why consider it                                                  |
-|----------------|--------------------------------------------------------------------------------------|------------------------------------------------------------------|
-| **Specs**      | Keep OpenSpec deltas **small** and tied to one story                                 | Matches XP / lean; avoids spec theater                           |
-| **Testing**    | **Component or integration tests** for tricky React state (in addition to MCP smoke) | Faster feedback than full E2E for some bugs                      |
-| **Agents**     | **Hierarchical `AGENTS.md`** (or equivalent) in hot paths                            | oMo and similar tools use this pattern; reduces repeated context |
-| **Quality**    | **Contract checks** for API (OpenAPI already in stack)                               | Catches drift between web and API early                          |
-| **Process**    | **Time-box** spec + plan before coding (e.g. 15–30 min)                              | Stops analysis paralysis while still aligning intent             |
-| **MCP**        | Use **official docs / repo search** MCPs when touching unfamiliar APIs               | Less hallucination on library details                            |
-| **Human loop** | **Review spec delta before large merges**                                            | Cheap guardrail for MVP correctness                              |
-| **Cost**       | **Model routing** (cheap model for refactors, stronger for design)                   | If using multi-model setups (see oMo docs)                       |
+- **Specs** — Keep OpenSpec deltas **small** and tied to one story (XP / lean; avoids spec theater).
+- **Testing** — **Component or integration tests** for tricky React state, in addition to MCP smoke (faster feedback
+  than full E2E for some bugs).
+- **Agents** — **Hierarchical `AGENTS.md`** (or equivalent) in hot paths (oMo and similar tools use this pattern; less
+  repeated context).
+- **Quality** — **Contract checks** for the API ([OpenAPI-generated client](../../../packages/web/README.md) in the web
+  package; regenerate when the API changes) — catches drift between web and API early.
+- **Process** — **Time-box** spec + plan before coding (e.g. 15–30 min) — aligns intent without analysis paralysis.
+- **MCP** — **Official docs / repo search** MCPs when touching unfamiliar APIs — fewer wrong library details.
+- **Human loop** — **Review spec delta before large merges** — cheap guardrail for MVP correctness.
+- **Cost** — **Model routing** (cheap model for refactors, stronger for design) if using multi-model setups (see oMo
+  docs).
 
 **Deferred by design (see [mvp_objective.md](../mvp_objective.md)):** full offline mode, heavy RL-style agent loops, or
 “generate the whole app from one prompt” — out of scope until the study tool is usable daily.
 
 ---
 
-## Related documentation
+## Related documentation and references
+
+Single list: **Sapie** docs first, then **tools and upstream** (each external URL once).
+
+### Sapie (this repo)
 
 - [mvp_objective.md](../mvp_objective.md) — what we are building and in what order
 - [development_speed_optimization.md](../development_speed_optimization.md) — broader speed tactics (dev servers, hooks,
@@ -120,17 +127,12 @@ These are **candidates**, not commitments — pick what reduces calendar time wi
 - [iterative_development.md](../../dev/iterative_development.md) — vertical slices
 - [ai_agent_guidelines.md](../../dev/ai_agent_guidelines.md) — verification and honesty for assistants
 - [contributing_guidelines.md](../../dev/contributing_guidelines.md) — testing expectations and E2E policy
-- [claude_code_roadmap_to_opencode.md](claude_code_roadmap_to_opencode.md) —
-  map [roadmap.sh Claude Code](https://roadmap.sh/claude-code) topics to OpenCode (agents, skills, MCP, etc.)
 - [ai_workflow_adoption_log.md](ai_workflow_adoption_log.md) — track which plan items you actually use
+- [claude_code_roadmap_to_opencode.md](claude_code_roadmap_to_opencode.md) — map
+  [roadmap.sh Claude Code](https://roadmap.sh/claude-code) topics to OpenCode (agents, skills, MCP, etc.)
 
----
+### Tools and upstream
 
-## References
-
--
-OpenSpec — [openspec.dev](https://openspec.dev/) · [GitHub: Fission-AI/OpenSpec](https://github.com/Fission-AI/OpenSpec/)
-- OpenCode — [opencode.ai](https://opencode.ai/)
-- oMo (Oh My OpenAgent) — [github.com/code-yeongyu/oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent)
-- Claude Code → OpenCode concept map — [claude_code_roadmap_to_opencode.md](claude_code_roadmap_to_opencode.md) (
-  source: [roadmap.sh/claude-code](https://roadmap.sh/claude-code))  
+- **OpenSpec** — [openspec.dev](https://openspec.dev/) · [GitHub: Fission-AI/OpenSpec](https://github.com/Fission-AI/OpenSpec/)
+- **OpenCode** — [opencode.ai](https://opencode.ai/)
+- **oMo (Oh My OpenAgent)** — [github.com/code-yeongyu/oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent)
