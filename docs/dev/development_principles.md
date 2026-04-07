@@ -69,7 +69,7 @@ Guidelines:
 
 *See [detailed guide](first_make_the_change_easy.md) for examples and when to apply this principle.*
 
-### Principle of the least astonishment (POLA)
+### Principle of least astonishment (POLA)
 
 People are part of the system. The design should match the user's experience, expectations, and mental models (https://en.wikipedia.org/wiki/Principle_of_least_astonishment#cite_note-SaltzerKaashoek2009-14).
 
