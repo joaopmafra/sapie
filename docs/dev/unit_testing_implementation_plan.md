@@ -66,15 +66,15 @@ Typical ports in that file (see repo root `firebase.test-unit.json`):
 
 - Firestore HTTP: `8181`
 - Firestore WebSocket (UI): `9160` (`websocketPort`; avoids host conflict with dev default `9150`)
-- Auth: `9199`
+- Auth: `9098` (not `9199`; local-dev uses `9199` for Storage)
 - Emulator UI: `4001`
 - Emulator Hub: `4410` (avoids clashing with a local dev hub on `4400`)
 - Logging: `4510`
 
 Use a custom `Dockerfile` based on `node:22-alpine` rather than a pre-built third-party image.
 Install the Firebase CLI (pin the version) and OpenJDK (required by the emulators). Copy
-`firebase.test-unit.json` and `.firebaserc` into the container and run
-`firebase emulators:start --config firebase.test-unit.json`.
+`firebase.test-unit.json` (mounted as `firebase.json` in the container) and `.firebaserc`, then run
+`firebase emulators:start` (default config file).
 
 Apply a `tmpfs` mount to the Firestore data directory for in-memory speed and ephemeral data.
 
@@ -114,7 +114,7 @@ Status: Done
 Update the `test` script in `package.json` to set the emulator environment variables:
 
 ```json
-"test": "CURRENT_ENV=test FIRESTORE_EMULATOR_HOST=localhost:8181 FIREBASE_AUTH_EMULATOR_HOST=localhost:9199 GCLOUD_PROJECT=sapie-test jest"
+"test": "CURRENT_ENV=test FIRESTORE_EMULATOR_HOST=localhost:8181 FIREBASE_AUTH_EMULATOR_HOST=localhost:9098 GCLOUD_PROJECT=sapie-test jest"
 ```
 
 **Verify:** With the test container running, run `pnpm test`. All existing tests pass. With

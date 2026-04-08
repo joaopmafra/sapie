@@ -35,7 +35,7 @@ This document is the **structured implementation plan** for running Firebase emu
 
 | Topic | Decision |
 |--------|-----------|
-| Dockerfile | One **generic** image: Node + JRE + pinned `firebase-tools`; copy **`.firebaserc`**; do **not** bake a single `firebase.json` into the image if avoidable—prefer **runtime** `--config` via compose `command` or a mounted config. |
+| Dockerfile | One **generic** image: Node + JRE + pinned `firebase-tools`; do **not** bake **`firebase.json`** or **`.firebaserc`** into the image—compose bind-mounts them at runtime. |
 | Local dev project | **`local-dev`** alias → `demo-local-dev` per [`.firebaserc`](../../.firebaserc). |
 | Local dev Firebase config | Prefer **`firebase.local-dev.json`** (emulator-only shape, `host: 0.0.0.0`, default ports). Root **`firebase.json`** stays the source of truth for hosting/functions/deploy; only adjust if we need to avoid duplication without drift. |
 | Storage in local dev | Include **Storage** in `--only` for local-dev compose even though the app does not use it yet, so the next feature does not require compose changes. Expose the **default Storage emulator port** in compose when present in config. |
@@ -50,7 +50,7 @@ This document is the **structured implementation plan** for running Firebase emu
 
 | Artifact | Role |
 |----------|------|
-| [`Dockerfile.firebase-emulators`](../../Dockerfile.firebase-emulators) | Generic image: Node + JRE + pinned `firebase-tools`; copies **`.firebaserc`** only; compose bind-mounts env JSON as **`firebase.json`** in the container and sets **`command`**. |
+| [`Dockerfile.firebase-emulators`](../../Dockerfile.firebase-emulators) | Generic image: Node + JRE + pinned `firebase-tools`; compose bind-mounts **`.firebaserc`**, env **`firebase.<profile>.json` → `firebase.json`**, and sets **`command`**. |
 | [`compose.test-unit.yml`](../../compose.test-unit.yml) | Maps test-unit ports; cache volume; tmpfs for Firestore data. |
 | [`firebase.test-unit.json`](../../firebase.test-unit.json) | Emulator ports 8181 / 9160 / **9098** (auth) / 4001 / hub / logging; `0.0.0.0`. Auth is not 9199 so it does not clash with local-dev **Storage** on 9199. |
 | [`firebase.json`](../../firebase.json) | Hosting, functions, emulators (default-style ports); used by full emulator and CLI. |
@@ -123,7 +123,7 @@ Prefer the option that minimizes drift from `firebase.json` and keeps `firebase 
 
 1. ~~Rename or refactor `Dockerfile.emulator-test-unit` to a **neutral** name (e.g. `Dockerfile.firebase-emulators`).~~ **Done:** [`Dockerfile.firebase-emulators`](../../Dockerfile.firebase-emulators); old file removed.
 2. Install OS deps + pinned `firebase-tools` (keep or bump pin consistently). **Done** (same pin as before: `firebase-tools@13.25.0`).
-3. Copy **`.firebaserc`**; copy **no** fixed `firebase.json` in the image—compose bind-mounts **`firebase.<env>.json` → `/srv/firebase/firebase.json`**. **Done.**
+3. **No** `.firebaserc` or `firebase.json` in the image—compose bind-mounts **`.firebaserc`** and **`firebase.<env>.json` → `/srv/firebase/firebase.json`**. **Done.**
 4. **`EXPOSE` omitted** in the image: it does not publish ports; each compose file lists `ports:` explicitly. **Done.**
 5. Default `CMD` is `firebase --version`; real emulator start is via compose. **Done**.
 
@@ -314,5 +314,5 @@ When this checklist is complete, mark this document with an **Implementation sta
 
 | Phase | Status | Notes |
 |-------|--------|--------|
-| **A — Generic Dockerfile** | Done (2026-04-08) | Added [`Dockerfile.firebase-emulators`](../../Dockerfile.firebase-emulators); removed `Dockerfile.emulator-test-unit`. [`compose.test-unit.yml`](../../compose.test-unit.yml) builds from the generic image; host `firebase.test-unit.json` is mounted as container **`firebase.json`**; `firebase emulators:start` uses the CLI default config path. |
+| **A — Generic Dockerfile** | Done (2026-04-08) | Added [`Dockerfile.firebase-emulators`](../../Dockerfile.firebase-emulators); removed `Dockerfile.emulator-test-unit`. Compose mounts **`.firebaserc`** and profile **`firebase.json`**; no project config baked into the image. |
 | **B — Compose: local dev** | Done (2026-04-08) | [`firebase.local-dev.json`](../../firebase.local-dev.json) (`0.0.0.0`; UI 4000, Auth 9099, Firestore 8080 / ws 9150, Storage 9199, hub 4400, logging 4500). [`compose.local-dev.yml`](../../compose.local-dev.yml) project `sapie-local-dev`; always **`--import` / `--export-on-exit`** on `./firebase/data-local-dev` (empty dir: CLI skips import, warns). [`scripts/dev-local.sh`](../../scripts/dev-local.sh): repo root, `mkdir -p firebase/emulator-cache`, Compose `up -d`, poll UI; trap `compose down` + stop web/API. [`scripts/cleanup-firebase.sh`](../../scripts/cleanup-firebase.sh): `compose.local-dev.yml down` first; legacy `pkill` only (no `lsof` port kills). |

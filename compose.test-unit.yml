@@ -1,40 +1,40 @@
+name: sapie-test-unit
+
 services:
   firebase-test-emulator:
     build:
       context: .
       dockerfile: Dockerfile.firebase-emulators
     container_name: sapie-firebase-test-emulator
+    working_dir: /srv/firebase
+    # Host firebase.test-unit.json is mounted as firebase.json (CLI default config path).
     command:
       [
         "firebase",
         "emulators:start",
-        "--config",
-        "firebase.test-unit.json",
         "--project",
         "demo-test-unit",
         "--only",
-        "firestore,auth,ui",
+        "auth,firestore,ui",
       ]
     ports:
-      # Firestore HTTP (must match firebase.test-unit.json emulators.firestore.port)
+      # Firestore HTTP (must match emulators.firestore.port in the mounted test-unit config)
       - "8181:8181"
       # Firestore WebSocket (UI + requests tab; emulators.firestore.websocketPort).
       # Use 9160 here so the default dev websocket (9150) can run on the host in parallel.
       - "9160:9160"
-      # Auth (must match emulators.auth.port)
-      - "9199:9199"
+      # Auth (must match emulators.auth.port). Deliberately not 9099/9199 so local-dev defaults can run in parallel.
+      - "9098:9098"
       # Emulator UI (must match emulators.ui.port)
       - "4001:4001"
       # Emulator Hub (browser/UI discover emulators; emulators.hub.port)
       - "4410:4410"
       # Logging service (emulators.logging.port)
       - "4510:4510"
-    # Use a named volume to persist Firestore emulators cache
     volumes:
-      - ./firebase.test-unit.json:/srv/firebase/firebase.test-unit.json:ro
+      - ./.firebaserc:/srv/firebase/.firebaserc:ro
+      - ./firebase.test-unit.json:/srv/firebase/firebase.json:ro
       - ./firebase/emulator-cache:/root/.cache/firebase/emulators
-    # Use tmpfs for Firestore data for in-memory speed and ephemeral state
     tmpfs:
       - /srv/firebase/firestore-data
-    working_dir: /srv/firebase
     restart: unless-stopped

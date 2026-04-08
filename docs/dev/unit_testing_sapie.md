@@ -132,7 +132,7 @@ WebSocket used by the UI). Typical mappings (see repo root files):
 - **Firestore HTTP:** `8181`
 - **Firestore WebSocket (UI / requests):** `9160` (`websocketPort`; local dev defaults to
   `9150`, so tests and dev can run in parallel without clashing)
-- **Auth:** `9199`
+- **Auth:** `9098` (avoids local-dev defaults: Auth `9099`, Storage `9199`)
 - **Emulator UI:** `4001`
 - **Emulator Hub:** `4410` (separate from a local dev hub on `4400`)
 - **Logging:** `4510`

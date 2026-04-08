@@ -3,25 +3,29 @@
     "singleProjectMode": true,
     "hub": {
       "host": "0.0.0.0",
-      "port": 4410
+      "port": 4400
     },
     "logging": {
       "host": "0.0.0.0",
-      "port": 4510
+      "port": 4500
     },
     "firestore": {
       "host": "0.0.0.0",
-      "port": 8181,
-      "websocketPort": 9160
+      "port": 8080,
+      "websocketPort": 9150
     },
     "auth": {
       "host": "0.0.0.0",
-      "port": 9098
+      "port": 9099
+    },
+    "storage": {
+      "host": "0.0.0.0",
+      "port": 9199
     },
     "ui": {
       "enabled": true,
       "host": "0.0.0.0",
-      "port": 4001
+      "port": 4000
     }
   }
 }

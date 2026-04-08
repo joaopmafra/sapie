@@ -31,6 +31,7 @@ services:
       - "9150:9150"
       - "9199:9199"
     volumes:
+      - ./.firebaserc:/srv/firebase/.firebaserc:ro
       - ./firebase.local-dev.json:/srv/firebase/firebase.json:ro
       - ./firebase/data-local-dev:/srv/firebase/data-local-dev
       - ./firebase/emulator-cache:/root/.cache/firebase/emulators

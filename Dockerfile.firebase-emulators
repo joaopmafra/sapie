@@ -1,5 +1,5 @@
 # Generic Firebase emulators image: Node + JRE + pinned firebase-tools.
-# Config and start flags come from compose (bind-mounted JSON + command), not the image.
+# Config: compose bind-mounts `.firebaserc` and firebase.<env>.json as ./firebase.json; start flags from compose `command`.
 # See docs/dev/firebase_emulators_docker_plan.md.
 
 FROM node:22-alpine
@@ -10,10 +10,9 @@ RUN apk add --no-cache openjdk17-jre bash curl
 
 RUN npm install -g firebase-tools@13.25.0
 
-COPY .firebaserc ./
+# No EXPOSE: it is only metadata (see `docker docs` on EXPOSE) and does not publish ports.
+# Which ports are reachable on the host is defined per profile in compose.*.yml `ports:`.
 
-# Superset of ports used across local-dev, test-unit, and full emulator compose profiles.
-EXPOSE 4000 4001 4400 4410 4510 5000 5001 8080 8181 9099 9160 9199
-
-# Compose supplies `firebase emulators:start …`; smoke-test with: docker run --rm <image> firebase --version
+# Compose supplies `firebase emulators:start …` plus bind mounts for `.firebaserc` and `firebase.json`.
+# Smoke-test image only: `docker run --rm <image> firebase --version` (no project config required).
 CMD ["firebase", "--version"]
