@@ -17,9 +17,9 @@ printf "OK\n\n"
 # Clean up any running Firebase instances before running tests
 ./scripts/cleanup-firebase.sh
 
-echo "Running api e2e tests..."
+echo "Running api unit tests..."
 cd packages/api
-pnpm test:e2e
+pnpm test
 cd ../..
 printf "OK\n\n"
 
