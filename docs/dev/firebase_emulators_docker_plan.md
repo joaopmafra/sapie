@@ -12,7 +12,7 @@ This document is the **structured implementation plan** for running Firebase emu
 
 - Local Firebase emulators started on the host sometimes fail to shut down cleanly, leaving ports and Java processes occupied and breaking the next start.
 - Hybrid development (`scripts/dev-local.sh`) backgrounds the emulator process and relies on cleanup scripts and signals; this is fragile and harder for tooling (including AI agents) to reproduce.
-- The test-unit stack already uses Docker (`Dockerfile.emulator-test-unit`, `compose.test-unit.yml`), but the image is tied to a single config baked at build time.
+- The test-unit stack uses Docker (`Dockerfile.firebase-emulators`, `compose.test-unit.yml`); emulator config is bind-mounted and the start command is set in compose (not baked into the image).
 
 ### 1.2 Intent
 
@@ -50,7 +50,7 @@ This document is the **structured implementation plan** for running Firebase emu
 
 | Artifact | Role |
 |----------|------|
-| [`Dockerfile.emulator-test-unit`](../../Dockerfile.emulator-test-unit) | Builds image with **`firebase.test-unit.json`** copied as `firebase.json`; fixed `CMD`. |
+| [`Dockerfile.firebase-emulators`](../../Dockerfile.firebase-emulators) | Generic image: Node + JRE + pinned `firebase-tools`; copies **`.firebaserc`** only; compose mounts **`firebase.test-unit.json`** and sets **`command`**. |
 | [`compose.test-unit.yml`](../../compose.test-unit.yml) | Maps test-unit ports; cache volume; tmpfs for Firestore data. |
 | [`firebase.test-unit.json`](../../firebase.test-unit.json) | Emulator ports 8181 / 9160 / 9199 / 4001 / hub / logging; `0.0.0.0`. |
 | [`firebase.json`](../../firebase.json) | Hosting, functions, emulators (default-style ports); used by full emulator and CLI. |
@@ -121,11 +121,11 @@ Prefer the option that minimizes drift from `firebase.json` and keeps `firebase 
 
 ### Phase A — Generic Dockerfile
 
-1. Rename or refactor [`Dockerfile.emulator-test-unit`](../../Dockerfile.emulator-test-unit) to a **neutral** name (e.g. `Dockerfile.firebase-emulators`).
-2. Install OS deps + pinned `firebase-tools` (keep or bump pin consistently).
-3. Copy **`.firebaserc`**; copy **no** fixed `firebase.json` **or** copy a minimal stub—prefer supplying config via compose `command` + bind-mounted file from repo (avoids rebuild when JSON changes).
-4. `EXPOSE`: document a superset of ports used across profiles, or rely on compose `ports` only (Docker does not require EXPOSE for mapping).
-5. Default `CMD` can be a no-op or `firebase --version`; real start is always via compose.
+1. ~~Rename or refactor `Dockerfile.emulator-test-unit` to a **neutral** name (e.g. `Dockerfile.firebase-emulators`).~~ **Done:** [`Dockerfile.firebase-emulators`](../../Dockerfile.firebase-emulators); old file removed.
+2. Install OS deps + pinned `firebase-tools` (keep or bump pin consistently). **Done** (same pin as before: `firebase-tools@13.25.0`).
+3. Copy **`.firebaserc`**; copy **no** fixed `firebase.json`—config via compose `command` + bind-mounted file. **Done** (`compose.test-unit.yml` mounts `firebase.test-unit.json`).
+4. `EXPOSE`: superset of ports across profiles. **Done** (see Dockerfile comments).
+5. Default `CMD` is `firebase --version`; real emulator start is via compose. **Done**.
 
 **Test progress**
 
@@ -258,7 +258,7 @@ Review each item after the Docker refactor; strike or update instructions that a
 | **New scripts (optional)** | Wrapper: `scripts/compose-emulators-local-dev.sh` / `…-test-e2e.sh` if it reduces duplication between README and CI. |
 | **[`compose.test-unit.yml`](../../compose.test-unit.yml)** (and renames) | Generic image, `command`, volumes, ports. |
 | **New compose files** | `compose.local-dev.yml`, `compose.emulator.yml`, `compose.test-e2e.yml` (names per §4). |
-| **[`Dockerfile.emulator-test-unit`](../../Dockerfile.emulator-test-unit)** (or successor) | Generic build; update every `docker build` / CI reference. |
+| **[`Dockerfile.firebase-emulators`](../../Dockerfile.firebase-emulators)** | Generic build; update every `docker build` / CI reference. |
 | **[`package.json`](../../package.json)** (root) | `emulator` and `dev` scripts still correct; add scripts for `compose up` helpers if desired. |
 | **CI workflows** | If/when `.github/workflows` run API tests, add steps to start the test-unit compose stack (and tear down). Currently absent in-repo; add to this table when introduced. |
 
@@ -297,7 +297,7 @@ Review each item after the Docker refactor; strike or update instructions that a
 
 ## 12. Checklist summary
 
-- [ ] Generic Dockerfile + naming
+- [x] Generic Dockerfile + naming (Phase A; `compose.test-unit.yml` wired to mount `firebase.test-unit.json` + `command`)
 - [ ] `firebase.local-dev.json`
 - [ ] `compose.local-dev.yml` + `dev-local.sh` + cleanup script review
 - [ ] `compose.test-unit.yml` migration + scripts/CI
@@ -307,3 +307,11 @@ Review each item after the Docker refactor; strike or update instructions that a
 - [ ] [§8 — Scripts & automation](#8-scripts-compose-and-automation-to-update-master-checklist): all rows reviewed
 
 When this checklist is complete, mark this document with an **Implementation status** section at the bottom (date + link to PR) or archive it per team habit.
+
+---
+
+## Implementation status
+
+| Phase | Status | Notes |
+|-------|--------|--------|
+| **A — Generic Dockerfile** | Done (2026-04-08) | Added [`Dockerfile.firebase-emulators`](../../Dockerfile.firebase-emulators); removed `Dockerfile.emulator-test-unit`. [`compose.test-unit.yml`](../../compose.test-unit.yml) builds from the generic image, read-only mount of `firebase.test-unit.json`, and explicit `firebase emulators:start` command (minimal Phase C wiring so the test stack keeps working). |

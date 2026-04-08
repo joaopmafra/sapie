@@ -2,8 +2,19 @@ services:
   firebase-test-emulator:
     build:
       context: .
-      dockerfile: Dockerfile.emulator-test-unit
+      dockerfile: Dockerfile.firebase-emulators
     container_name: sapie-firebase-test-emulator
+    command:
+      [
+        "firebase",
+        "emulators:start",
+        "--config",
+        "firebase.test-unit.json",
+        "--project",
+        "demo-test-unit",
+        "--only",
+        "firestore,auth,ui",
+      ]
     ports:
       # Firestore HTTP (must match firebase.test-unit.json emulators.firestore.port)
       - "8181:8181"
@@ -20,6 +31,7 @@ services:
       - "4510:4510"
     # Use a named volume to persist Firestore emulators cache
     volumes:
+      - ./firebase.test-unit.json:/srv/firebase/firebase.test-unit.json:ro
       - ./firebase/emulator-cache:/root/.cache/firebase/emulators
     # Use tmpfs for Firestore data for in-memory speed and ephemeral state
     tmpfs:
