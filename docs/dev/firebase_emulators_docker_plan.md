@@ -127,7 +127,13 @@ Prefer the option that minimizes drift from `firebase.json` and keeps `firebase 
 4. `EXPOSE`: document a superset of ports used across profiles, or rely on compose `ports` only (Docker does not require EXPOSE for mapping).
 5. Default `CMD` can be a no-op or `firebase --version`; real start is always via compose.
 
-**Verify:** `docker build -f Dockerfile.firebase-emulators .` succeeds.
+**Test progress**
+
+| Step | Command / action | Expected |
+|------|------------------|----------|
+| Image builds | From repo root: `docker build -f Dockerfile.firebase-emulators -t sapie-firebase-emulators:local .` (adjust `-f` / tag to match your chosen name) | Build completes with no errors. |
+| CLI inside image | `docker run --rm sapie-firebase-emulators:local firebase --version` | Prints pinned Firebase CLI version. |
+| API unit tests | **Only once** `compose.test-unit.yml` builds this image and supplies a valid `firebase emulators:start …` **command** (see Phase C). If Phase A alone removes or renames the Dockerfile that compose still references, the test stack may be broken until Phase C lands—prefer **one branch/PR that completes Phase A + C** before merging, or keep the previous Dockerfile path as a shim until then. When the test compose stack is wired: `docker compose -f compose.test-unit.yml up -d` then `cd packages/api && pnpm test` | Same pass/fail behavior as before refactor; with the emulator **down**, tests should fail to connect (confirms dependency on emulators). |
 
 ### Phase B — Compose: local dev
 
@@ -139,16 +145,33 @@ Prefer the option that minimizes drift from `firebase.json` and keeps `firebase 
 2. Update **`scripts/dev-local.sh`**: call `docker compose ... up` (detached or foreground in a subshell—choose one documented pattern); remove background `firebase emulators:start`; keep web/API starts and **trap** `docker compose ... down` (or `stop`).
 3. Revisit **`scripts/cleanup-firebase.sh`**: either narrow it to “legacy host emulators” or add **`docker compose ... down`** for the local-dev project name; avoid killing unrelated Java/Node processes.
 
-**Verify:** From repo root, hybrid dev: emulators UI and ports reachable; web and API connect; Ctrl+C stops stack; data survives restart when `./firebase/data` is present; delete directory resets.
+**Test progress**
+
+| Step | Command / action | Expected |
+|------|------------------|----------|
+| Emulators only | `docker compose -f compose.local-dev.yml up -d` (use the actual filename) | Container healthy; Emulator UI reachable at the documented URL (e.g. `curl -sf -o /dev/null -w "%{http_code}" http://localhost:4000` returns `200` or `302` as applicable). |
+| Firestore / Auth ports | `curl -sf http://localhost:8080` (and/or Auth emulator root if you use a known path) | No connection refused on published ports after a short wait. |
+| Full hybrid | `./scripts/dev-local.sh` (or equivalent) | Web and API start; sign-in or an API health check against emulators succeeds. |
+| Clean shutdown | Stop via script `trap` / `docker compose … down` | No zombie emulator on host; `docker ps` shows local-dev container stopped (or removed). |
+| Import/export | Create a doc in Firestore via app; `docker compose … down`; `docker compose … up -d` | Data still present when using existing `./firebase/data`; after **deleting** `./firebase/data` and starting fresh, empty or seed state as documented. |
+| API unit tests (optional) | With local-dev compose **up**, `cd packages/api && pnpm test` | **Usually skip:** API unit tests typically use **test-unit** emulator ports (`firebase.test-unit.json`), not local-dev defaults. If you align env vars for a one-off check, interpret results carefully. Primary API test signal remains **Phase C**. |
 
 ### Phase C — Compose: test-unit
 
 1. Point **`compose.test-unit.yml`** at the **generic** Dockerfile.
 2. Set `command:` to use **`firebase.test-unit.json`**, project **`demo-test-unit`** (or alias **`test-unit`** per CLI), `--only` matching today (firestore, auth, ui).
 3. Retain **tmpfs** and cache volume behavior.
-4. Update any **`scripts/start-test-emulator.sh`** / **`stop-test-emulator.sh`** / CI references to new Dockerfile name if changed.
+4. Update any **`scripts/test-emulator-start.sh`** / **`test-emulator-stop.sh`** / **`test-emulator-remove.sh`** / CI references to new Dockerfile name if changed.
 
-**Verify:** `docker compose -f compose.test-unit.yml up -d` then `pnpm test` in `packages/api` passes; same failure mode as today when container is down.
+**Test progress**
+
+| Step | Command / action | Expected |
+|------|------------------|----------|
+| Start stack | `docker compose -f compose.test-unit.yml up -d` | Container running; Emulator UI on test-unit port (e.g. `4001`). |
+| API unit tests | `cd packages/api && pnpm test` | All tests pass. |
+| Negative check | `docker compose -f compose.test-unit.yml stop` (or `down`), then `cd packages/api && pnpm test` | Suite fails in a way that shows Firestore/Auth emulator unreachable (confirms tests hit the container). |
+| Helper scripts | `./scripts/test-emulator-start.sh` twice | Second run reports already running (if that behavior is kept). `./scripts/test-emulator-stop.sh` stops cleanly. |
+| Repo test script | From repo root: `pnpm test` | Matches expectations for your pipeline (note: `build-test-all.sh` may need the emulator already up or adjusted—align script order with reality). |
 
 ### Phase D — Full emulator (`pnpm emulator`)
 
@@ -157,7 +180,14 @@ Prefer the option that minimizes drift from `firebase.json` and keeps `firebase 
    - Runs `firebase emulators:start --project emulator` with the correct `--config`.
 2. Update **`scripts/build-run-firebase-emulator.sh`**: after `scripts/build-all.sh emulator`, start compose instead of host CLI (or start compose with a pre-build step documented in README).
 
-**Verify:** `pnpm emulator` (or equivalent) serves app through emulator URLs as before.
+**Test progress**
+
+| Step | Command / action | Expected |
+|------|------------------|----------|
+| Build | `scripts/build-all.sh emulator` | `packages/web/dist` and `packages/api/dist` exist and are current. |
+| Full stack | `pnpm emulator` (or `docker compose -f compose.emulator.yml up` if that is the chosen entry) | Emulators start; no errors about missing `dist` or wrong paths. |
+| Hosting / Functions | Open Hosting URL from README (e.g. `http://localhost:5000`) and hit API via Functions URL (e.g. `curl` to health under `http://127.0.0.1:5001/.../api/...` as in [`packages/api/README.md`](../../packages/api/README.md)) | Same behavior as pre-refactor: app loads, API responds. |
+| Shutdown | `docker compose -f compose.emulator.yml down` (or script `trap`) | Ports freed; no orphaned Java on host. |
 
 ### Phase E — E2E
 
@@ -166,11 +196,26 @@ Prefer the option that minimizes drift from `firebase.json` and keeps `firebase 
 3. Update **`packages/test-e2e/playwright.config.ts`**: `reuseExistingServer: true` locally; document `docker compose ... up` before `pnpm test`; on CI, either run compose in a job step or use a wrapper script.
 4. Update **`packages/test-e2e/README.md`** with the new flow.
 
-**Verify:** With compose up, Playwright passes (or fails only on real test failures); no reliance on host `firebase emulators` for E2E.
+**Test progress**
+
+| Step | Command / action | Expected |
+|------|------------------|----------|
+| Emulators up | `docker compose -f compose.test-e2e.yml up -d` (actual filename) | Readiness URL used by Playwright (Functions and/or Hosting) returns success before tests run. |
+| No host emulator | Ensure no `firebase emulators:start` on host | Playwright must not spawn a second suite; `reuseExistingServer` / docs match this. |
+| Run E2E | `cd packages/test-e2e && pnpm test` (and optionally `pnpm test:headed` for debugging) | Tests execute against Compose-backed emulators; failures are assertion/timeouts, not “connection refused” to Firebase. |
+| CI shape (future) | In a job: `docker compose -f compose.test-e2e.yml up -d --wait` (or healthcheck loop), then `pnpm test` | Documented pattern works when workflows are added. |
 
 ### Phase F — Documentation and drift cleanup
 
 Execute the **master documentation checklist** in [§7](#7-documentation-to-update-master-checklist). During implementation, also fix historical drift (e.g. `unit_testing_implementation_plan.md` still references `docker-compose.test.yml` while the repo uses `compose.test-unit.yml`).
+
+**Test progress**
+
+| Step | Command / action | Expected |
+|------|------------------|----------|
+| Spot-check commands | Copy the “start emulators” snippets from updated **README** and **`docs/dev/ai_agent_guidelines.md`** into a clean shell | Each snippet matches a real compose file and project name; no stale `docker-compose.test.yml` or wrong ports. |
+| Full matrix | Run the checks in [§9](#9-verification-matrix-acceptance) | All environments still behave as described after doc-only changes (re-run if docs included a substantive command fix). |
+| Links | Open changed markdown links (relative paths to scripts and compose files) | No broken paths. |
 
 ---
 
