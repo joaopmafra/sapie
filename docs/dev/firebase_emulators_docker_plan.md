@@ -289,6 +289,7 @@ Review each item after the Docker refactor; strike or update instructions that a
 
 ## 11. Deferred (optional later)
 
+- **Compose / Dockerfile layout:** optional move under `docker/<env>/` so hand-run workflows can use `cd docker/test-unit && docker compose up -d` (no `-f`). See [docker_compose_layout_refactor.md](docker_compose_layout_refactor.md).
 - E2E or CI: **export on failure** to `./firebase/data-test-e2e-debug` for inspection.
 - Collapse test-unit to **default ports** if “one emulator at a time” is always true.
 - Compose **profiles** to merge YAML files if four files feel redundant.
