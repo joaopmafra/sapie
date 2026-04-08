@@ -1,6 +1,6 @@
 # Plan (deferred): Docker / Compose layout under `docker/`
 
-**Status:** deferred — implement after higher-priority emulator work (e.g. Phases D–F in [firebase_emulators_docker_plan.md](firebase_emulators_docker_plan.md)) if we still want cleaner hand-run Compose workflows.
+**Status:** deferred — implement after higher-priority emulator work (e.g. Phase E–F in [firebase_emulators_docker_plan.md](firebase_emulators_docker_plan.md)) if we still want cleaner hand-run Compose workflows.
 
 ## Objective
 
@@ -22,7 +22,7 @@ docker/
   test-unit/
     compose.yml
     firebase.json                  # today: firebase.test-unit.json
-  # Later: emulator/, test-e2e/ — same pattern
+  # Later: test-e2e/ — same pattern (full `pnpm emulator` stack stays on host; no compose folder for it)
 ```
 
 Keep **root** [`firebase.json`](../../firebase.json) as the source of truth for deploy / hosting / functions unless we explicitly split that story later.
@@ -46,4 +46,4 @@ Keep **root** [`firebase.json`](../../firebase.json) as the source of truth for 
 ## Risks / notes
 
 - Running `docker compose` from the **wrong cwd** breaks relative mounts; document “always `cd docker/<env>` first” or provide thin wrapper scripts.
-- This is a **churn-heavy** refactor with little runtime benefit if everything is already driven by scripts — revisit priority when adding `compose.emulator.yml` / `compose.test-e2e.yml`.
+- This is a **churn-heavy** refactor with little runtime benefit if everything is already driven by scripts — revisit priority when adding or reorganizing **`compose.test-e2e.yml`** (full `pnpm emulator` stack stays on the host; see [firebase_emulators_docker_plan.md](firebase_emulators_docker_plan.md) Phase D).

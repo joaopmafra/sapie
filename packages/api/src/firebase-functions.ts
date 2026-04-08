@@ -4,6 +4,10 @@ import { onRequest } from 'firebase-functions/v2/https';
 import { HttpServer } from '@nestjs/common/interfaces/http/http-server.interface';
 import { MillisecondLogger } from './logger/millisecond.logger';
 import { applyHttpAppConfiguration } from './common/http/apply-http-app-configuration';
+import { setupSwagger } from './swagger-setup';
+
+// This file is used only when running on Firebase or on the Emulator Suite. For local development,
+// the entrypoint is main.ts.
 
 let cachedApp: HttpServer;
 
@@ -20,6 +24,10 @@ async function createNestServer() {
       origin: true,
       credentials: true,
     });
+
+    // Set up Swagger when running on Firebase emulator (the emulator sets the FUNCTIONS_EMULATOR
+    // variable automatically)
+    if (process.env.FUNCTIONS_EMULATOR) setupSwagger(app);
 
     await app.init();
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
