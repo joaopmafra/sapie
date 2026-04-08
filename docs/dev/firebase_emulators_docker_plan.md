@@ -158,10 +158,10 @@ Prefer the option that minimizes drift from `firebase.json` and keeps `firebase 
 
 ### Phase C — Compose: test-unit
 
-1. Point **`compose.test-unit.yml`** at the **generic** Dockerfile.
-2. Set `command:` for project **`demo-test-unit`**, `--only` matching today (firestore, auth, ui); config file is **`firebase.test-unit.json` on the host**, mounted as **`firebase.json`** in the container.
-3. Retain **tmpfs** and cache volume behavior.
-4. Update any **`scripts/test-emulator-start.sh`** / **`test-emulator-stop.sh`** / **`test-emulator-remove.sh`** / CI references to new Dockerfile name if changed.
+1. ~~Point **`compose.test-unit.yml`** at the **generic** Dockerfile.~~ **Done:** [`compose.test-unit.yml`](../../compose.test-unit.yml) → [`Dockerfile.firebase-emulators`](../../Dockerfile.firebase-emulators).
+2. ~~Set `command:` for project **`demo-test-unit`**, `--only` matching today (firestore, auth, ui); config file is **`firebase.test-unit.json` on the host**, mounted as **`firebase.json`** in the container.~~ **Done** (same `command` and bind mount).
+3. ~~Retain **tmpfs** and cache volume behavior.~~ **Done** (`tmpfs` `/srv/firebase/firestore-data`; `./firebase/emulator-cache`).
+4. ~~Update any **`scripts/test-emulator-start.sh`** / **`test-emulator-stop.sh`** / **`test-emulator-remove.sh`** / CI references to new Dockerfile name if changed.~~ **Done:** scripts use `compose.test-unit.yml`; start uses detached `up -d` (2026-04-08). No in-repo CI workflows reference the old Dockerfile name.
 
 **Test progress**
 
@@ -300,7 +300,7 @@ Review each item after the Docker refactor; strike or update instructions that a
 - [x] Generic Dockerfile + naming (Phase A; `compose.test-unit.yml` wired to mount `firebase.test-unit.json` + `command`)
 - [x] `firebase.local-dev.json`
 - [x] `compose.local-dev.yml` + `dev-local.sh` + cleanup script review
-- [ ] `compose.test-unit.yml` migration + scripts/CI
+- [x] `compose.test-unit.yml` migration + scripts/CI (Phase C; 2026-04-08)
 - [ ] `compose.emulator.yml` + `build-run-firebase-emulator.sh`
 - [ ] `compose.test-e2e.yml` + Playwright + README
 - [ ] [§7 — Documentation](#7-documentation-to-update-master-checklist): all rows reviewed
@@ -316,3 +316,4 @@ When this checklist is complete, mark this document with an **Implementation sta
 |-------|--------|--------|
 | **A — Generic Dockerfile** | Done (2026-04-08) | Added [`Dockerfile.firebase-emulators`](../../Dockerfile.firebase-emulators); removed `Dockerfile.emulator-test-unit`. Compose mounts **`.firebaserc`** and profile **`firebase.json`**; no project config baked into the image. |
 | **B — Compose: local dev** | Done (2026-04-08) | [`firebase.local-dev.json`](../../firebase.local-dev.json) (`0.0.0.0`; UI 4000, Auth 9099, Firestore 8080 / ws 9150, Storage 9199, hub 4400, logging 4500). [`compose.local-dev.yml`](../../compose.local-dev.yml) project `sapie-local-dev`; always **`--import` / `--export-on-exit`** on `./firebase/data-local-dev` (empty dir: CLI skips import, warns). [`scripts/dev-local.sh`](../../scripts/dev-local.sh): repo root, `mkdir -p firebase/emulator-cache`, Compose `up -d`, poll UI; trap `compose down` + stop web/API. [`scripts/cleanup-firebase.sh`](../../scripts/cleanup-firebase.sh): `compose.local-dev.yml down` first; legacy `pkill` only (no `lsof` port kills). |
+| **C — Compose: test-unit** | Done (2026-04-08) | [`compose.test-unit.yml`](../../compose.test-unit.yml): image [`Dockerfile.firebase-emulators`](../../Dockerfile.firebase-emulators); `firebase emulators:start --project demo-test-unit --only auth,firestore,ui`; host [`firebase.test-unit.json`](../../firebase.test-unit.json) → `/srv/firebase/firebase.json`; tmpfs `firestore-data`; cache [`./firebase/emulator-cache`](../../firebase/emulator-cache). Helpers: [`scripts/test-emulator-start.sh`](../../scripts/test-emulator-start.sh) (`up -d`, idempotent), [`scripts/test-emulator-stop.sh`](../../scripts/test-emulator-stop.sh), [`scripts/test-emulator-remove.sh`](../../scripts/test-emulator-remove.sh). |
