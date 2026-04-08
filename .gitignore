@@ -12,7 +12,9 @@ firebase-debug.*.log*
 
 # Firebase cache
 .firebase/
-firebase/data/
+# Emulator export dir for local-dev compose: keep folder, ignore export contents
+firebase/data-test-unit/*
+!firebase/data-test-unit/.gitkeep
 firebase/emulator-cache/
 
 # Firebase config

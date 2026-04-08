@@ -1,0 +1,37 @@
+# Local hybrid dev: Auth + Firestore + Storage + UI, default host ports (see firebase.local-dev.json).
+# ./firebase/data-test-unit is bind-mounted (tracked via .gitkeep). Empty dir: CLI skips import with a warning.
+name: sapie-local-dev
+
+services:
+  firebase-local-dev-emulator:
+    build:
+      context: .
+      dockerfile: Dockerfile.firebase-emulators
+    container_name: sapie-firebase-local-dev
+    working_dir: /srv/firebase
+    command:
+      [
+        "firebase",
+        "emulators:start",
+        "--project",
+        "local-dev",
+        "--only",
+        "auth,firestore,storage,ui",
+        "--import",
+        "/srv/firebase/data-test-unit",
+        "--export-on-exit",
+        "/srv/firebase/data-test-unit",
+      ]
+    ports:
+      - "4000:4000"
+      - "4400:4400"
+      - "4500:4500"
+      - "8080:8080"
+      - "9099:9099"
+      - "9150:9150"
+      - "9199:9199"
+    volumes:
+      - ./firebase.local-dev.json:/srv/firebase/firebase.json:ro
+      - ./firebase/data-test-unit:/srv/firebase/data-test-unit
+      - ./firebase/emulator-cache:/root/.cache/firebase/emulators
+    restart: unless-stopped
