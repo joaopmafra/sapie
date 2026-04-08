@@ -78,7 +78,7 @@ docker compose up --build
 To save your emulated data between sessions, use the `--import` and `--export-on-exit` flags in your start command, combined with a Docker volume. Update the `CMD` in the `Dockerfile` to:
 
 ```dockerfile
-CMD ["sh", "-c", "firebase emulators:start --import=/srv/firebase/data-test-unit/ --export-on-exit=/srv/firebase/data-test-unit/ --project=${FB_PROJECT_ID}"]
+CMD ["sh", "-c", "firebase emulators:start --import=/srv/firebase/data-local-dev/ --export-on-exit=/srv/firebase/data-local-dev/ --project=${FB_PROJECT_ID}"]
 ```
 
 Ensure a `data` directory exists locally and is mounted as a volume in your `docker-compose.yml`.

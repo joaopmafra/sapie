@@ -20,7 +20,7 @@ This document is the **structured implementation plan** for running Firebase emu
 - Use **default emulator ports on the host** for local dev so `packages/web` and `packages/api` `.env.local-dev` (and similar) need no port churn.
 - Keep **`firebase.test-unit.json`** for unit tests (non-default ports are acceptable to avoid clashes with local-dev defaults when both workflows exist; see §4).
 - Add **`firebase.local-dev.json`** (or equivalent) so emulators bind **`0.0.0.0`** inside the container while keeping the same **logical** ports as today’s dev expectations (Firestore 8080, Auth 9099, UI 4000, Storage when enabled, plus hub/logging as needed).
-- Preserve **import/export** for hybrid local dev (`./firebase/data-test-unit`); developers reset state by **deleting** export contents under that directory (or the whole tree except `.gitkeep` if preferred).
+- Preserve **import/export** for hybrid local dev (`./firebase/data-local-dev`); developers reset state by **deleting** export contents under that directory (or the whole tree except `.gitkeep` if preferred).
 - **E2E:** do **not** persist emulator data in the first iteration; optional import/export for debugging can be added later.
 
 ### 1.3 Non-goals (this pass)
@@ -80,7 +80,7 @@ flowchart LR
 
 - **Build context:** repository root (same as today).
 - **Per compose file:** `command` (and optionally `environment`) selects `--config`, `--project`, `--only`, and import/export flags.
-- **Volumes:** local-dev binds **`./firebase/data-test-unit`** for import/export; bind **`./firebase/emulator-cache`** for downloads cache; test-unit may keep **tmpfs** for Firestore data and **no** durable export.
+- **Volumes:** local-dev binds **`./firebase/data-local-dev`** for import/export; bind **`./firebase/emulator-cache`** for downloads cache; test-unit may keep **tmpfs** for Firestore data and **no** durable export.
 
 Exact compose **filenames** are a project convention: e.g. `compose.local-dev.yml`, keep `compose.test-unit.yml` or rename consistently in scripts—pick one naming scheme and update all references (`package.json`, CI, docs).
 
@@ -88,7 +88,7 @@ Exact compose **filenames** are a project convention: e.g. `compose.local-dev.ym
 
 | Flow | Apps | Emulators | Notes |
 |------|------|-----------|--------|
-| **local-dev** | Vite + Nest on host | Docker (`local-dev`, import/export `./firebase/data-test-unit`) | `dev-local.sh` starts compose (or attaches), then web/API; trap runs `compose down`. |
+| **local-dev** | Vite + Nest on host | Docker (`local-dev`, import/export `./firebase/data-local-dev`) | `dev-local.sh` starts compose (or attaches), then web/API; trap runs `compose down`. |
 | **emulator** (full) | Served via Firebase Hosting + Functions in emulator | Docker (`emulator` → `demo-emulator`) | Requires **built** `packages/web/dist` and `packages/api/dist` available to the emulator (mount or build stage); mirror current `build-run-firebase-emulator.sh` semantics. |
 | **test-unit** | Jest in `packages/api` | Docker (`demo-test-unit`, `firebase.test-unit.json`) | Env vars remain `localhost:<test-port>`. |
 | **test-e2e** | Playwright | Docker (`test-e2e` → `demo-test-e2e`) | No data persistence v1; readiness URL must match Functions/Hosting as today. |
@@ -140,7 +140,7 @@ Prefer the option that minimizes drift from `firebase.json` and keeps `firebase 
 1. Add **`compose.local-dev.yml`** (name per convention) with:
    - Build from generic Dockerfile.
    - `command:` `firebase emulators:start --project local-dev --only=auth,firestore,storage,...` (config mounted as **`firebase.json`**) with **`--import`** and **`--export-on-exit`** on the bind-mounted data dir (directory must exist; if empty, the CLI skips import and logs a warning).
-   - Volumes: `./firebase/data-test-unit`, `./firebase/emulator-cache`.
+   - Volumes: `./firebase/data-local-dev`, `./firebase/emulator-cache`.
    - `ports:` map **host defaults** ↔ container (same numeric ports).
 2. Update **`scripts/dev-local.sh`**: call `docker compose ... up` (detached or foreground in a subshell—choose one documented pattern); remove background `firebase emulators:start`; keep web/API starts and **trap** `docker compose ... down` (or `stop`).
 3. Revisit **`scripts/cleanup-firebase.sh`**: either narrow it to “legacy host emulators” or add **`docker compose ... down`** for the local-dev project name; avoid killing unrelated Java/Node processes.
@@ -153,7 +153,7 @@ Prefer the option that minimizes drift from `firebase.json` and keeps `firebase 
 | Firestore / Auth ports | `curl -sf http://localhost:8080` (and/or Auth emulator root if you use a known path) | No connection refused on published ports after a short wait. |
 | Full hybrid | `./scripts/dev-local.sh` (or equivalent) | Web and API start; sign-in or an API health check against emulators succeeds. |
 | Clean shutdown | Stop via script `trap` / `docker compose … down` | No zombie emulator on host; `docker ps` shows local-dev container stopped (or removed). |
-| Import/export | Create a doc in Firestore via app; `docker compose … down`; `docker compose … up -d` | Data still present when using existing `./firebase/data-test-unit`; after **clearing** that directory’s export files and starting fresh, empty or seed state as documented. |
+| Import/export | Create a doc in Firestore via app; `docker compose … down`; `docker compose … up -d` | Data still present when using existing `./firebase/data-local-dev`; after **clearing** that directory’s export files and starting fresh, empty or seed state as documented. |
 | API unit tests (optional) | With local-dev compose **up**, `cd packages/api && pnpm test` | **Usually skip:** API unit tests typically use **test-unit** emulator ports (`firebase.test-unit.json`), not local-dev defaults. If you align env vars for a one-off check, interpret results carefully. Primary API test signal remains **Phase C**. |
 
 ### Phase C — Compose: test-unit
@@ -236,7 +236,7 @@ Review each item after the Docker refactor; strike or update instructions that a
 | [`packages/web/README.md`](../../packages/web/README.md) | If it documents env files or emulator ports, align with Compose. |
 | [`packages/test-e2e/README.md`](../../packages/test-e2e/README.md) | Automatic vs manual emulator startup; Compose-first workflow; CI note if applicable. |
 | [`docs/other/nestjs_firebase_integration.md`](../other/nestjs_firebase_integration.md) | Localhost emulator references remain valid; mention Docker only if the doc describes “how to start” emulators. |
-| [`docs/research/firebase/save_data_firebase_emulator.md`](../research/firebase/save_data_firebase_emulator.md) | If it describes import/export paths, ensure they match bind-mounted `./firebase/data-test-unit` for local-dev. |
+| [`docs/research/firebase/save_data_firebase_emulator.md`](../research/firebase/save_data_firebase_emulator.md) | If it describes import/export paths, ensure they match bind-mounted `./firebase/data-local-dev` for local-dev. |
 
 **Optional:** [`.cursor/rules/general.mdc`](../../.cursor/rules/general.mdc) — only if you want the canonical agent ramp-up to mention Compose-based emulators explicitly.
 
@@ -315,4 +315,4 @@ When this checklist is complete, mark this document with an **Implementation sta
 | Phase | Status | Notes |
 |-------|--------|--------|
 | **A — Generic Dockerfile** | Done (2026-04-08) | Added [`Dockerfile.firebase-emulators`](../../Dockerfile.firebase-emulators); removed `Dockerfile.emulator-test-unit`. [`compose.test-unit.yml`](../../compose.test-unit.yml) builds from the generic image; host `firebase.test-unit.json` is mounted as container **`firebase.json`**; `firebase emulators:start` uses the CLI default config path. |
-| **B — Compose: local dev** | Done (2026-04-08) | [`firebase.local-dev.json`](../../firebase.local-dev.json) (`0.0.0.0`; UI 4000, Auth 9099, Firestore 8080 / ws 9150, Storage 9199, hub 4400, logging 4500). [`compose.local-dev.yml`](../../compose.local-dev.yml) project `sapie-local-dev`; always **`--import` / `--export-on-exit`** on `./firebase/data-test-unit` (empty dir: CLI skips import, warns). [`scripts/dev-local.sh`](../../scripts/dev-local.sh): repo root, `mkdir -p firebase/emulator-cache`, Compose `up -d`, poll UI; trap `compose down` + stop web/API. [`scripts/cleanup-firebase.sh`](../../scripts/cleanup-firebase.sh): `compose.local-dev.yml down` first; legacy `pkill` only (no `lsof` port kills). |
+| **B — Compose: local dev** | Done (2026-04-08) | [`firebase.local-dev.json`](../../firebase.local-dev.json) (`0.0.0.0`; UI 4000, Auth 9099, Firestore 8080 / ws 9150, Storage 9199, hub 4400, logging 4500). [`compose.local-dev.yml`](../../compose.local-dev.yml) project `sapie-local-dev`; always **`--import` / `--export-on-exit`** on `./firebase/data-local-dev` (empty dir: CLI skips import, warns). [`scripts/dev-local.sh`](../../scripts/dev-local.sh): repo root, `mkdir -p firebase/emulator-cache`, Compose `up -d`, poll UI; trap `compose down` + stop web/API. [`scripts/cleanup-firebase.sh`](../../scripts/cleanup-firebase.sh): `compose.local-dev.yml down` first; legacy `pkill` only (no `lsof` port kills). |
