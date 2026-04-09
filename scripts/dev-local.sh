@@ -1,29 +1,28 @@
 #!/usr/bin/env bash
 
-# TODO simplify this script
-
 set -e
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
-COMPOSE_LOCAL_DEV="compose.local-dev.yml"
+COMPOSE_FILE="compose.local-dev.yml"
 
 echo "🚀 Starting Hybrid Local Development Environment..."
 echo "   - Web & API run on the host with hot reloading"
-echo "   - Firebase emulators run in Docker (${COMPOSE_LOCAL_DEV})"
+echo "   - Firebase emulators run in Docker (${COMPOSE_FILE})"
+echo "   - Press Ctrl+C to stop all services (Compose stack + web + API)"
 echo ""
 
 mkdir -p firebase/emulator-cache
 
-echo "🐳 Starting Firebase emulators (Docker Compose)..."
-docker compose -f "${COMPOSE_LOCAL_DEV}" up -d --build
+echo "🐳 Starting emulators (Docker Compose)..."
+docker compose -f "${COMPOSE_FILE}" up -d --build
 
 cleanup() {
   echo ""
   echo "🛑 Stopping all services..."
   cd "$REPO_ROOT" || true
-  docker compose -f "${COMPOSE_LOCAL_DEV}" stop
+  docker compose -f "${COMPOSE_FILE}" stop
   if [ -n "${WEB_PID:-}" ]; then kill "$WEB_PID" 2>/dev/null || true; fi
   if [ -n "${API_PID:-}" ]; then kill "$API_PID" 2>/dev/null || true; fi
   exit 0
@@ -31,7 +30,7 @@ cleanup() {
 
 trap cleanup SIGINT SIGTERM
 
-echo "⏳ Waiting for Firebase emulators (Emulator UI on port 4000)..."
+echo "⏳ Waiting for emulators..."
 for _ in $(seq 1 60); do
   if curl -sf -o /dev/null "http://localhost:4000"; then
     break
@@ -40,8 +39,8 @@ for _ in $(seq 1 60); do
 done
 if ! curl -sf -o /dev/null "http://localhost:4000"; then
   echo "❌ Emulator UI did not become ready on http://localhost:4000"
-  docker compose -f "${COMPOSE_LOCAL_DEV}" logs --tail 80 || true
-  docker compose -f "${COMPOSE_LOCAL_DEV}" down
+  docker compose -f "${COMPOSE_FILE}" logs --tail 80 || true
+  docker compose -f "${COMPOSE_FILE}" stop
   exit 1
 fi
 
@@ -56,17 +55,5 @@ cd packages/api
 pnpm run dev:local &
 API_PID=$!
 cd "$REPO_ROOT"
-
-echo ""
-echo "✅ Hybrid Local Development Environment is running!"
-echo ""
-echo "🌐 Web application: http://localhost:5173"
-echo "🔧 API server: http://localhost:3000"
-echo "🔥 Firebase emulators UI: http://localhost:4000"
-echo "🔐 Firebase Auth emulator: http://localhost:9099"
-echo "📁 Firestore emulator: http://localhost:8080"
-echo "📦 Storage emulator: http://localhost:9199"
-echo ""
-echo "Press Ctrl+C to stop all services (Compose stack + web + API)"
 
 wait

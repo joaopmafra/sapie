@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-# TODO: rename to test-all.sh
-
 # exit immediately if a command exits with a non-zero status
 set -e
 
@@ -12,7 +10,7 @@ cd ../..
 printf "OK\n\n"
 
 echo "Starting Firebase Emulators for unit tests..."
-./scripts/test-emulator-start.sh
+./scripts/emulator-test-unit-start.sh
 printf "OK\n\n"
 
 echo "Running api unit tests..."

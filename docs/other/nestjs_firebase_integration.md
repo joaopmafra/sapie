@@ -273,7 +273,7 @@ Authentication is tested with Playwright E2E tests:
 
 ```bash
 # Run all tests
-./scripts/build-test-all.sh
+./scripts/verify-test-all.sh
 
 # Run API tests only
 cd packages/api && pnpm test

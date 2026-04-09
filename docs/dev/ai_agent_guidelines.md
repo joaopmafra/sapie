@@ -24,7 +24,7 @@ Run scripts after substantive edits (exact names may vary; use repo scripts):
 
 - `./scripts/format-lint-all.sh` after code changes
 - `./scripts/verify-all.sh` before claiming work is clean
-- `./scripts/build-test-all.sh` when tests are part of the deliverable
+- `./scripts/verify-test-all.sh` when tests are part of the deliverable
 
 If a script fails, fix or report before moving on.
 
@@ -35,7 +35,7 @@ Copy-paste-oriented map (see [`docs/plans/firebase_emulators_docker_plan.md`](..
 | Goal | Compose file | Notes |
 |------|----------------|------|
 | Full stack, `emulator` → `demo-emulator` | [`compose.emulator.yml`](../../compose.emulator.yml) | `pnpm emulator` → [`scripts/build-run-on-emulator.sh`](../../scripts/build-run-on-emulator.sh) |
-| API unit tests | [`compose.test-unit.yml`](../../compose.test-unit.yml) | [`scripts/test-emulator-start.sh`](../../scripts/test-emulator-start.sh) / `stop` / `remove` |
+| API unit tests | [`compose.test-unit.yml`](../../compose.test-unit.yml) | [`scripts/test-emulator-start.sh`](../../scripts/emulator-test-unit-start.sh) / `stop` / `remove` |
 | Playwright E2E | [`compose.test-e2e.yml`](../../compose.test-e2e.yml) | `scripts/build-all.sh test-e2e` then `docker compose -f compose.test-e2e.yml up --build -d --wait`; same ports as full emulator — one stack at a time |
 | Local hybrid dev | [`compose.local-dev.yml`](../../compose.local-dev.yml) | [`scripts/dev-local.sh`](../../scripts/dev-local.sh) |
 

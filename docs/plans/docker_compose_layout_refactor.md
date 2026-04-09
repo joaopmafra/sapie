@@ -39,7 +39,7 @@ Keep **root** [`firebase.json`](../../firebase.json) as the source of truth for 
 2. **Build:** `build.context` = repo root (`..` / `../..` from the compose file — verify against Compose version). `dockerfile` path relative to **context** (e.g. `docker/Dockerfile.firebase-emulators`).
 3. **Volumes:** paths relative to the **compose file’s directory** — e.g. `../../.firebaserc`, `../../firebase/emulator-cache`, `../../firebase/data-local-dev`. Double-check every bind mount after the move.
 4. **Project name:** set `name:` in each compose file if we need stable container names (today: `sapie-test-unit`, `sapie-local-dev`) or accept Compose’s directory-derived default.
-5. Update scripts: [`scripts/dev-local.sh`](../../scripts/dev-local.sh), [`scripts/test-emulator-start.sh`](../../scripts/test-emulator-start.sh), [`scripts/test-emulator-stop.sh`](../../scripts/test-emulator-stop.sh), [`scripts/test-emulator-remove.sh`](../../scripts/test-emulator-remove.sh), [`scripts/build-test-all.sh`](../../scripts/build-test-all.sh) if referenced.
+5. Update scripts: [`scripts/dev-local.sh`](../../scripts/dev-local.sh), [`scripts/test-emulator-start.sh`](../../scripts/emulator-test-unit-start.sh), [`scripts/test-emulator-stop.sh`](../../scripts/emulator-test-unit-stop.sh), [`scripts/emulator-test-unit-remove.sh`](../../scripts/emulator-test-unit-remove.sh), [`scripts/verify-test-all.sh`](../../scripts/verify-test-all.sh) if referenced.
 6. Update [firebase_emulators_docker_plan.md](firebase_emulators_docker_plan.md) and any README / contributing / unit-testing doc paths.
 7. Grep the repo for `compose.local-dev`, `compose.test-unit`, `firebase.local-dev`, `firebase.test-unit`, `Dockerfile.firebase-emulators`.
 
