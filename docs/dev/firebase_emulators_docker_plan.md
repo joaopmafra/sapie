@@ -1,6 +1,6 @@
 # Plan: Firebase emulators in Docker (dev, test-unit, full emulator, E2E)
 
-This document is the **structured implementation plan** for running Firebase emulators in Docker for **local hybrid dev** and **test-unit**, plus (planned) E2E. **Full-stack** `pnpm emulator` (Hosting + Functions) stays on the **host** Firebase CLI (see §2, Phase D). Compose uses a **single generic emulator image** where Docker applies.
+This document is the **structured implementation plan** for running Firebase emulators in Docker for **local hybrid dev**, **test-unit**, and the **full emulator** (Hosting + Functions). **`pnpm emulator`** runs [`scripts/build-run-on-emulator.sh`](../../scripts/build-run-on-emulator.sh): `build-all.sh emulator`, cleanup, then [`compose.emulator.yml`](../../compose.emulator.yml) with **only** `packages/*/dist` mounts plus [`firebase.emulator.json`](../../firebase.emulator.json) (`0.0.0.0`). Compose uses one **generic** emulator image everywhere Docker applies.
 
 **Related docs:** [Unit testing — Sapie](unit_testing_sapie.md), [Unit testing implementation plan](unit_testing_implementation_plan.md) (Phase 2 describes the original test container; update its file names and commands after this refactor if they change).
 
@@ -22,7 +22,7 @@ This document is the **structured implementation plan** for running Firebase emu
 - Add **`firebase.local-dev.json`** (or equivalent) so emulators bind **`0.0.0.0`** inside the container while keeping the same **logical** ports as today’s dev expectations (Firestore 8080, Auth 9099, UI 4000, Storage when enabled, plus hub/logging as needed).
 - Preserve **import/export** for hybrid local dev (`./firebase/data-local-dev`); developers reset state by **deleting** export contents under that directory (or the whole tree except `.gitkeep` if preferred).
 - **E2E:** do **not** persist emulator data in the first iteration; optional import/export for debugging can be added later.
-- **Full emulator (`pnpm emulator`):** keep **host** `firebase emulators:start` after build; Docker for this path is out of scope for the generic image (Phase D deferred).
+- **Full emulator:** **`pnpm emulator`** → [`scripts/build-run-on-emulator.sh`](../../scripts/build-run-on-emulator.sh): build for **`emulator`**, then Docker Compose (**dist-only** mounts; no app source in the image). [`compose.emulator.yml`](../../compose.emulator.yml) runs **`pnpm install --prod --frozen-lockfile`** in **`packages/api`** using the mounted **`pnpm-lock.yaml`**, writing **`firebase/api-node_modules`** (Alpine image via [`Dockerfile.firebase-emulators`](../../Dockerfile.firebase-emulators) with Corepack `pnpm@10.12.1`).
 
 ### 1.3 Non-goals (this pass)
 
@@ -44,7 +44,7 @@ This document is the **structured implementation plan** for running Firebase emu
 | E2E data | **No** persistent export directory for E2E in v1; ephemeral runs only. Revisit if failed-run debugging needs a fixture export. |
 | Playwright | Replace or complement **in-process** `webServer` emulator start with **Docker compose** + **`reuseExistingServer`** (or a root script that runs compose then Playwright), so the suite does not spawn host emulators. |
 | Emulator cache | Continue mounting **`./firebase/emulator-cache`** (or equivalent) into the container for faster cold starts, consistent with test-unit. |
-| Full emulator (`pnpm emulator`) | **Host Firebase CLI** after `scripts/build-all.sh emulator` ([`build-run-firebase-emulator.sh`](../../scripts/build-run-firebase-emulator.sh)). **Not** the generic Docker image: Hosting + Functions emulators expect a real Node install under `packages/api/dist` (`npm install`, deps). Docker for this flow is **deferred** unless we add a dedicated image or bundle (see Phase D). |
+| Full emulator (`pnpm emulator`) | [`scripts/build-run-on-emulator.sh`](../../scripts/build-run-on-emulator.sh): **`build-all.sh emulator`**, cleanup, then [`compose.emulator.yml`](../../compose.emulator.yml) — mounts **`packages/web/dist`**, **`packages/api/dist`**, [`firebase.emulator.json`](../../firebase.emulator.json), lockfiles, **`firebase/api-node_modules`**; **`firebase emulators:start`** in container (same generic image as local-dev/test-unit). |
 
 ---
 
@@ -55,11 +55,12 @@ This document is the **structured implementation plan** for running Firebase emu
 | [`Dockerfile.firebase-emulators`](../../Dockerfile.firebase-emulators) | Generic image: Node + JRE + pinned `firebase-tools`; compose bind-mounts **`.firebaserc`**, env **`firebase.<profile>.json` → `firebase.json`**, and sets **`command`**. |
 | [`compose.test-unit.yml`](../../compose.test-unit.yml) | Maps test-unit ports; cache volume; tmpfs for Firestore data. |
 | [`firebase.test-unit.json`](../../firebase.test-unit.json) | Emulator ports 8181 / 9160 / **9098** (auth) / 4001 / hub / logging; `0.0.0.0`. Auth is not 9199 so it does not clash with local-dev **Storage** on 9199. |
-| [`firebase.json`](../../firebase.json) | Hosting, functions, emulators (default-style ports); used by full emulator and CLI. |
+| [`firebase.json`](../../firebase.json) | Hosting, functions, emulators (default-style ports); deploy and CLI. Full emulator in Docker uses [`firebase.emulator.json`](../../firebase.emulator.json). |
+| [`firebase.emulator.json`](../../firebase.emulator.json) | Same hosting/functions paths as root `firebase.json`; emulator `host: 0.0.0.0` for Docker publish. Mounted as `firebase.json` in [`compose.emulator.yml`](../../compose.emulator.yml). |
+| [`compose.emulator.yml`](../../compose.emulator.yml) | Full stack in Docker: **dist-only** mounts; **`pnpm install --prod --frozen-lockfile`** into **`firebase/api-node_modules`** using **`packages/api/pnpm-lock.yaml`**. |
 | [`scripts/dev-local.sh`](../../scripts/dev-local.sh) | Hybrid dev: Docker emulators (Compose) + web/API on host. |
-| [`scripts/build-run-firebase-emulator.sh`](../../scripts/build-run-firebase-emulator.sh) | Build all for **`emulator`**, then `firebase emulators:start --project emulator`. |
+| [`scripts/build-run-on-emulator.sh`](../../scripts/build-run-on-emulator.sh) | Build for **`emulator`** (`build-all.sh emulator`), cleanup, then `docker compose -f compose.emulator.yml up --build` (**`pnpm emulator`**). |
 | [`packages/test-e2e/playwright.config.ts`](../../packages/test-e2e/playwright.config.ts) | `webServer` runs `firebase emulators:start --project test-e2e`, waits on Functions URL. |
-| [`scripts/cleanup-firebase.sh`](../../scripts/cleanup-firebase.sh) | Kills host emulator processes and ports; **TODOs** note imprecision. |
 
 ---
 
@@ -74,7 +75,7 @@ flowchart LR
   end
   compose_dev[compose.local-dev.yml]
   compose_tu[compose.test-unit.yml]
-  compose_full[compose.test-e2e.yml (planned); full emulator = host CLI]
+  compose_full[compose.emulator.yml]
   compose_dev --> image
   compose_tu --> image
   compose_full --> image
@@ -91,7 +92,7 @@ Exact compose **filenames** are a project convention: e.g. `compose.local-dev.ym
 | Flow | Apps | Emulators | Notes |
 |------|------|-----------|--------|
 | **local-dev** | Vite + Nest on host | Docker (`local-dev`, import/export `./firebase/data-local-dev`) | `dev-local.sh` starts compose (or attaches), then web/API; trap runs `compose down`. |
-| **emulator** (full) | Served via Firebase Hosting + Functions in emulator | **Host** `firebase emulators:start --project emulator` | Requires **built** `packages/web/dist` and `packages/api/dist`; [`scripts/build-run-firebase-emulator.sh`](../../scripts/build-run-firebase-emulator.sh). Docker for this flow deferred (see Phase D). |
+| **emulator** (full) | Served via Firebase Hosting + Functions in emulator | Docker: [`scripts/build-run-on-emulator.sh`](../../scripts/build-run-on-emulator.sh) (`pnpm emulator`) | Requires **built** `packages/web/dist` and `packages/api/dist`. Same **logical** ports as `firebase.json`; do not run alongside **local-dev** Compose (shared 5000/8080/9099/…). **Requires Docker.** |
 | **test-unit** | Jest in `packages/api` | Docker (`demo-test-unit`, `firebase.test-unit.json`) | Env vars remain `localhost:<test-port>`. |
 | **test-e2e** | Playwright | Docker (`test-e2e` → `demo-test-e2e`) | No data persistence v1; readiness URL must match Functions/Hosting as today. |
 
@@ -110,12 +111,10 @@ Exact compose **filenames** are a project convention: e.g. `compose.local-dev.ym
 
 - No change unless we deliberately collapse to default ports (optional follow-up).
 
-### 5.3 Full emulator and E2E
+### 5.3 Full emulator (Docker) and E2E
 
-- **Option A:** Reuse root `firebase.json` inside the container with `--config firebase.json` and ensure emulator `host` entries allow Docker (may require a **`firebase.emulator-hosting.json`** overlay if we must not change localhost binding for non-Docker use—decide during implementation).
-- **Option B:** Small dedicated **`firebase.full-emulator.json`** (and optionally **`firebase.test-e2e.json`**) that duplicates only emulator + hosting + functions paths needed for `emulators:start`, with `0.0.0.0` bindings.
-
-Prefer the option that minimizes drift from `firebase.json` and keeps `firebase deploy` unaffected.
+- **Implemented:** [`firebase.emulator.json`](../../firebase.emulator.json) duplicates hosting/functions **paths** from root [`firebase.json`](../../firebase.json) and adds **`0.0.0.0`** on emulator ports for Compose. **Host** full emulator keeps using root `firebase.json` (localhost defaults).
+- **E2E:** remains separate (Playwright + `test-e2e` project); see Phase E and `packages/test-e2e`.
 
 ---
 
@@ -145,7 +144,6 @@ Prefer the option that minimizes drift from `firebase.json` and keeps `firebase 
    - Volumes: `./firebase/data-local-dev`, `./firebase/emulator-cache`.
    - `ports:` map **host defaults** ↔ container (same numeric ports).
 2. Update **`scripts/dev-local.sh`**: call `docker compose ... up` (detached or foreground in a subshell—choose one documented pattern); remove background `firebase emulators:start`; keep web/API starts and **trap** `docker compose ... down` (or `stop`).
-3. Revisit **`scripts/cleanup-firebase.sh`**: either narrow it to “legacy host emulators” or add **`docker compose ... down`** for the local-dev project name; avoid killing unrelated Java/Node processes.
 
 **Test progress**
 
@@ -175,20 +173,22 @@ Prefer the option that minimizes drift from `firebase.json` and keeps `firebase 
 | Helper scripts | `./scripts/test-emulator-start.sh` twice | Second run reports already running (if that behavior is kept). `./scripts/test-emulator-stop.sh` stops cleanly. |
 | Repo test script | From repo root: `pnpm test` | Matches expectations for your pipeline (note: `build-test-all.sh` may need the emulator already up or adjusted—align script order with reality). |
 
-### Phase D — Full emulator (`pnpm emulator`) — **deferred (host CLI)**
+### Phase D — Full emulator (Docker)
 
-**Status:** We keep **`pnpm emulator`** on the **host** via [`scripts/build-run-firebase-emulator.sh`](../../scripts/build-run-firebase-emulator.sh) (`firebase emulators:start --project emulator` after `build-all.sh emulator`). A **generic** Compose image works well for Auth/Firestore/UI-only stacks; **Hosting + Functions** emulators need a proper Node layout under `packages/api/dist` (e.g. `npm install`), which does not match bind-mounting `dist` into the thin emulator container without a dedicated build or image.
+**Model:** Hosting + Functions emulators consume **paths from `firebase.json`** — static `packages/web/dist` and compiled `packages/api/dist`. No app source in the container. Runtime **`require()`s** resolve from **`packages/api/node_modules`**, populated by **`pnpm install --prod --frozen-lockfile`** on each container start into the **`firebase/api-node_modules`** bind mount, using **`packages/api/pnpm-lock.yaml`** (read-only) for reproducibility.
 
-**If revisited:** multi-stage Dockerfile with `npm ci --omit=dev` in-image, or a bundled function artifact; separate from local-dev/test-unit compose.
+1. **Entrypoint:** [`scripts/build-run-on-emulator.sh`](../../scripts/build-run-on-emulator.sh) → **`pnpm emulator`** — `build-all.sh emulator`, then [`compose.emulator.yml`](../../compose.emulator.yml) (generic [`Dockerfile.firebase-emulators`](../../Dockerfile.firebase-emulators)), mounts dist dirs + [`.firebaserc`](../../.firebaserc) + [`firebase.emulator.json`](../../firebase.emulator.json) + emulator cache + API lockfile.
 
-**Test progress** (host flow)
+**Optional later:** multi-stage image that `COPY` dist and runs `pnpm install` at **image build** time (faster cold start).
+
+**Test progress**
 
 | Step | Command / action | Expected |
 |------|------------------|----------|
-| Build | `scripts/build-all.sh emulator` | `packages/web/dist` and `packages/api/dist` exist and are current. |
-| Full stack | `pnpm emulator` | Emulators start; no errors about missing `dist` or wrong paths. |
-| Hosting / Functions | Open Hosting URL from README (e.g. `http://localhost:5000`) and hit API via Functions URL (e.g. `curl` to health under `http://127.0.0.1:5001/.../api/...` as in [`packages/api/README.md`](../../packages/api/README.md)) | App loads, API responds. |
-| Shutdown | Ctrl+C / stop `firebase emulators` (and `cleanup-firebase.sh` if needed) | Ports freed for the next run. |
+| Build | `scripts/build-all.sh emulator` (or via `pnpm emulator`, which invokes it) | `packages/web/dist` and `packages/api/dist` exist and are current. |
+| Full stack | `pnpm emulator` | Docker container runs; Emulator UI / Hosting / Functions on expected localhost ports. |
+| Hosting / Functions | Open Hosting URL (e.g. `http://localhost:5000`) and hit API via Functions URL | App loads, API responds. |
+| Shutdown | Ctrl+C (stops compose) or `docker compose -f compose.emulator.yml down` | Container stopped; ports freed. |
 
 ### Phase E — E2E
 
@@ -248,19 +248,17 @@ Review each item after the Docker refactor; strike or update instructions that a
 | Artifact | Action |
 |----------|--------|
 | [`scripts/dev-local.sh`](../../scripts/dev-local.sh) | Start/stop **local-dev** emulators via Compose; trap `compose down`; adjust echoed URLs if ports change. |
-| [`scripts/build-run-firebase-emulator.sh`](../../scripts/build-run-firebase-emulator.sh) | After build, **`firebase emulators:start --project emulator`** on the **host** (full stack: Hosting + Functions); Docker deferred for this flow (Phase D). |
-| [`scripts/cleanup-firebase.sh`](../../scripts/cleanup-firebase.sh) | Narrow or replace **pkill** / port-kill logic; prefer `docker compose … down` for named projects; document when host cleanup is still needed. |
-| [`scripts/cleanup-firebase-data.sh`](../../scripts/cleanup-firebase-data.sh) | Confirm whether it should touch **Docker** cache dirs or only `.firebase/` on host; align comments with behavior. |
-| [`scripts/build-test-all.sh`](../../scripts/build-test-all.sh) | Order of operations vs test emulator (today calls `cleanup-firebase.sh`); remove duplicate `pnpm test` block if still present; ensure tests target the correct emulator ports. |
+| [`scripts/build-run-on-emulator.sh`](../../scripts/build-run-on-emulator.sh) | After `build-all.sh emulator` + cleanup, **`docker compose -f compose.emulator.yml up --build`** (**`pnpm emulator`**). |
+| [`scripts/build-test-all.sh`](../../scripts/build-test-all.sh) | Order of operations vs test emulator; remove duplicate `pnpm test` block if still present; ensure tests target the correct emulator ports. |
 | [`scripts/test-emulator-start.sh`](../../scripts/test-emulator-start.sh) | Point `COMPOSE_FILE` at test-unit compose; optional flags (`-d`); align container/service names after refactors. |
 | [`scripts/test-emulator-stop.sh`](../../scripts/test-emulator-stop.sh) | Same compose file and service naming as start script. |
 | [`scripts/test-emulator-remove.sh`](../../scripts/test-emulator-remove.sh) | `docker compose down` options vs new Dockerfile service name; do not drop dev data volumes by mistake. |
 | [`scripts/verify-all.sh`](../../scripts/verify-all.sh) | Only if it references emulators or Docker. |
 | **New scripts (optional)** | Wrapper: `scripts/compose-emulators-local-dev.sh` / `…-test-e2e.sh` if it reduces duplication between README and CI. |
 | **[`compose.test-unit.yml`](../../compose.test-unit.yml)** (and renames) | Generic image, `command`, volumes, ports. |
-| **New compose files** | `compose.local-dev.yml`, `compose.test-e2e.yml` (names per §4). Full emulator: **no** `compose.emulator.yml` (host CLI; see Phase D). |
+| **New compose files** | `compose.local-dev.yml` (done), [`compose.emulator.yml`](../../compose.emulator.yml) (full emulator, dist-only). E2E compose optional per Phase E. |
 | **[`Dockerfile.firebase-emulators`](../../Dockerfile.firebase-emulators)** | Generic build; update every `docker build` / CI reference. |
-| **[`package.json`](../../package.json)** (root) | `emulator` and `dev` scripts still correct; add scripts for `compose up` helpers if desired. |
+| **[`package.json`](../../package.json)** (root) | **`emulator`** → [`scripts/build-run-on-emulator.sh`](../../scripts/build-run-on-emulator.sh); `dev` script. |
 | **CI workflows** | If/when `.github/workflows` run API tests, add steps to start the test-unit compose stack (and tear down). Currently absent in-repo; add to this table when introduced. |
 
 ---
@@ -270,7 +268,7 @@ Review each item after the Docker refactor; strike or update instructions that a
 | Check | Command / action | Expected |
 |-------|------------------|----------|
 | Local hybrid | `./scripts/dev-local.sh` (or compose + manual web/api) | UI/API work; emulators on expected localhost ports; clean stop. |
-| Full emulator | `pnpm emulator` | Hosting + functions behavior unchanged vs pre-refactor. |
+| Full emulator | `pnpm emulator` (Docker Compose; requires Docker) | Hosting + Functions respond on expected localhost ports. |
 | API unit tests | Compose test-unit up → `pnpm test` in `packages/api` | All tests pass. |
 | E2E | Compose test-e2e up → `pnpm test` in `packages/test-e2e` | Suite runs against emulators (tests may be skipped/disabled today—still verify wiring). |
 | Agent / clean machine | Clone, install, follow README emulator section | No undocumented host Firebase install required for standard flows (optional: keep host CLI as advanced). |
@@ -284,14 +282,12 @@ Review each item after the Docker refactor; strike or update instructions that a
 | Emulator advertises wrong host URLs | Use **same** port inside container and on host; avoid asymmetric port maps for Firestore/UI. |
 | `firebase.json` vs Docker `host` | Use **`firebase.local-dev.json`** / dedicated full-emulator config with `0.0.0.0`. |
 | Full emulator image size / build time | Cache layers; mount `dist` from host after `build-all.sh`. |
-| `cleanup-firebase.sh` too aggressive | Scope kills to documented ports or deprecate in favor of compose down. |
 
 ---
 
 ## 11. Deferred (optional later)
 
 - **Compose / Dockerfile layout:** optional move under `docker/<env>/` so hand-run workflows can use `cd docker/test-unit && docker compose up -d` (no `-f`). See [docker_compose_layout_refactor.md](docker_compose_layout_refactor.md).
-- **Full emulator in Docker (`compose.emulator.yml`):** deferred; `pnpm emulator` stays on the host (Phase D).
 - E2E or CI: **export on failure** to `./firebase/data-test-e2e-debug` for inspection.
 - Collapse test-unit to **default ports** if “one emulator at a time” is always true.
 - Compose **profiles** to merge YAML files if four files feel redundant.
@@ -304,7 +300,7 @@ Review each item after the Docker refactor; strike or update instructions that a
 - [x] `firebase.local-dev.json`
 - [x] `compose.local-dev.yml` + `dev-local.sh` + cleanup script review
 - [x] `compose.test-unit.yml` migration + scripts/CI (Phase C; 2026-04-08)
-- [ ] ~~`compose.emulator.yml` + `build-run-firebase-emulator.sh`~~ **Deferred:** full emulator on **host** CLI (Phase D); Docker not pursued for Hosting+Functions with the generic image.
+- [x] [`compose.emulator.yml`](../../compose.emulator.yml) + [`scripts/build-run-on-emulator.sh`](../../scripts/build-run-on-emulator.sh) (`pnpm emulator`, Docker full stack)
 - [ ] `compose.test-e2e.yml` + Playwright + README
 - [ ] [§7 — Documentation](#7-documentation-to-update-master-checklist): all rows reviewed
 - [ ] [§8 — Scripts & automation](#8-scripts-compose-and-automation-to-update-master-checklist): all rows reviewed
@@ -318,6 +314,6 @@ When this checklist is complete, mark this document with an **Implementation sta
 | Phase | Status | Notes |
 |-------|--------|--------|
 | **A — Generic Dockerfile** | Done (2026-04-08) | Added [`Dockerfile.firebase-emulators`](../../Dockerfile.firebase-emulators); removed `Dockerfile.emulator-test-unit`. Compose mounts **`.firebaserc`** and profile **`firebase.json`**; no project config baked into the image. |
-| **B — Compose: local dev** | Done (2026-04-08) | [`firebase.local-dev.json`](../../firebase.local-dev.json) (`0.0.0.0`; UI 4000, Auth 9099, Firestore 8080 / ws 9150, Storage 9199, hub 4400, logging 4500). [`compose.local-dev.yml`](../../compose.local-dev.yml) project `sapie-local-dev`; always **`--import` / `--export-on-exit`** on `./firebase/data-local-dev` (empty dir: CLI skips import, warns). [`scripts/dev-local.sh`](../../scripts/dev-local.sh): repo root, `mkdir -p firebase/emulator-cache`, Compose `up -d`, poll UI; trap `compose down` + stop web/API. [`scripts/cleanup-firebase.sh`](../../scripts/cleanup-firebase.sh): `compose.local-dev.yml down` first; legacy `pkill` only (no `lsof` port kills). |
+| **B — Compose: local dev** | Done (2026-04-08) | [`firebase.local-dev.json`](../../firebase.local-dev.json) (`0.0.0.0`; UI 4000, Auth 9099, Firestore 8080 / ws 9150, Storage 9199, hub 4400, logging 4500). [`compose.local-dev.yml`](../../compose.local-dev.yml) project `sapie-local-dev`; always **`--import` / `--export-on-exit`** on `./firebase/data-local-dev` (empty dir: CLI skips import, warns). [`scripts/dev-local.sh`](../../scripts/dev-local.sh): repo root, `mkdir -p firebase/emulator-cache`, Compose `up -d`, poll UI; trap `compose down` + stop web/API. |
 | **C — Compose: test-unit** | Done (2026-04-08) | [`compose.test-unit.yml`](../../compose.test-unit.yml): image [`Dockerfile.firebase-emulators`](../../Dockerfile.firebase-emulators); `firebase emulators:start --project demo-test-unit --only auth,firestore,ui`; host [`firebase.test-unit.json`](../../firebase.test-unit.json) → `/srv/firebase/firebase.json`; tmpfs `firestore-data`; cache [`./firebase/emulator-cache`](../../firebase/emulator-cache). Helpers: [`scripts/test-emulator-start.sh`](../../scripts/test-emulator-start.sh) (`up -d`, idempotent), [`scripts/test-emulator-stop.sh`](../../scripts/test-emulator-stop.sh), [`scripts/test-emulator-remove.sh`](../../scripts/test-emulator-remove.sh). |
-| **D — Full emulator** | **Deferred** (2026-04-08) | [`scripts/build-run-firebase-emulator.sh`](../../scripts/build-run-firebase-emulator.sh) uses **host** `firebase emulators:start --project emulator` after `build-all.sh emulator`. No `compose.emulator.yml` — Hosting + Functions emulators need a full Node install under `packages/api/dist`; generic Docker image not used for this flow. |
+| **D — Full emulator** | Done | [`scripts/build-run-on-emulator.sh`](../../scripts/build-run-on-emulator.sh) (`pnpm emulator`): **`build-all.sh emulator`**, cleanup, [`compose.emulator.yml`](../../compose.emulator.yml) with [`firebase.emulator.json`](../../firebase.emulator.json), **`pnpm install --prod --frozen-lockfile`** → **`firebase/api-node_modules`**, dist mounts. Host script removed in favor of Docker-only flow. |

@@ -8,6 +8,10 @@ WORKDIR /srv/firebase
 
 RUN apk add --no-cache openjdk17-jre bash curl
 
+# pnpm for compose profiles that need a lockfile-accurate install (e.g. compose.emulator.yml).
+# Pin matches root package.json "packageManager" field.
+RUN corepack enable && corepack prepare pnpm@10.12.1 --activate
+
 RUN npm install -g firebase-tools@13.25.0
 
 # No EXPOSE: it is only metadata (see `docker docs` on EXPOSE) and does not publish ports.

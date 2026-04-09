@@ -12,7 +12,7 @@
     "verify": "scripts/verify-all.sh",
     "build": "scripts/build-all.sh",
     "test": "scripts/build-test-all.sh",
-    "emulator": "scripts/build-run-firebase-emulator.sh",
+    "emulator": "scripts/build-run-on-emulator.sh",
     "dev": "scripts/dev-local.sh",
     "deploy": "scripts/build-deploy-all.sh",
     "deploy:dev": "firebase deploy --project dev",

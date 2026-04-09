@@ -14,9 +14,6 @@ printf "OK\n\n"
 
 # TODO add web unit tests and run them here
 
-# Clean up any running Firebase instances before running tests
-./scripts/cleanup-firebase.sh
-
 echo "Running api unit tests..."
 cd packages/api
 pnpm test

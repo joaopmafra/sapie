@@ -23,7 +23,7 @@ sapie/
 - **Authentication**: Firebase Auth with FirebaseUI for login/logout flows
 - **Deployment**: Firebase Hosting (web) + Firebase Functions (API)
 - **Development**: Firebase Emulator Suite for local development
-- **Package Management**: Each package managed independently with PNPM
+- **Package Management**: Each package managed independently with PNPM (see [Firebase and monorepo tooling](#firebase-and-monorepo-tooling))
 - **Code Quality**: ESLint + Prettier integration across all packages
 - **CI/CD Pipeline**: NOT IMPLEMENTED YET
 
@@ -45,13 +45,30 @@ Sapie follows core development principles to maintain code quality and consisten
 For how we work (MVP goal, principles, contributing), see **[Developer documentation](docs/dev/README.md)** and
 **[Development principles](docs/dev/development_principles.md)**.
 
+## Firebase and monorepo tooling
+
+Firebase’s **Hosting** and **Cloud Functions** workflows (CLI, emulators, and deploy) assume dependencies can be
+resolved in a **classic layout** next to the built function code (for Sapie: under `packages/api/`). Tooling does
+**not** reliably support a **root-level PNPM/Yarn/npm workspace** with a **single root lockfile** and symlinked or
+virtual-store `node_modules` the way typical monorepos do. Similar limitations apply to other workspace-centric
+layouts: the Functions runtime and packaging step are not first-class monorepo citizens.
+
+**Implication for Sapie:** packages are installed **independently** (each package has its own `pnpm install` and
+lockfile where needed) so the API build output and `node_modules` stay predictable for emulators and deploy. Do not
+introduce a root-only PNPM workspace + single `pnpm-lock.yaml` for the whole repo expecting Firebase to “just work”
+without a dedicated bundling or deploy workaround.
+
+For emulator stacks in Docker (including prod-like deps for the Functions emulator), see
+**[firebase_emulators_docker_plan.md](docs/dev/firebase_emulators_docker_plan.md)**.
+
 ## Quick Start
 
 ### Prerequisites
 
 - **Node.js**: 22.x (see `.nvmrc` and `.npmrc`)
 - **Package Manager**: [pnpm](https://pnpm.io/installation) (required)
-- **Firebase CLI**: Required for deployment and emulators
+- **Docker** and Docker Compose v2: required for **`pnpm run emulator`** (full Hosting + Functions emulator in Compose)
+- **Firebase CLI**: required for **deployment**; optional if you only use Compose-based emulators
 
 Install NestJS CLI globally:
 
@@ -83,11 +100,11 @@ pnpm install
 # Build all packages
 pnpm run build
 
-# Start Firebase emulator with all services
+# Build for `emulator` and start full Firebase emulator stack (Docker Compose)
 pnpm run emulator
 ```
 
-This provides:
+Uses [`scripts/build-run-on-emulator.sh`](scripts/build-run-on-emulator.sh) (`compose.emulator.yml`). This provides:
 
 - **Web App**: http://localhost:5000
 - **API**: http://localhost:5001/demo-emulator/us-central1/api
@@ -114,19 +131,15 @@ For detailed authentication setup, configuration, and usage instructions, see th
 
 ## Development
 
-### Firebase Emulator (Recommended)
+### Firebase Emulator (full stack, recommended)
 
-Start the Firebase emulator to run both web and API locally:
-
-```bash
-firebase emulators:start
-```
-
-Or use the project-level script:
+Run the full emulator (Hosting + Functions + Auth + Firestore) via Docker:
 
 ```bash
 pnpm run emulator
 ```
+
+Advanced: from the repo root, after `scripts/build-all.sh emulator`, you can run **`firebase emulators:start --project emulator`** on the host if you prefer not to use Compose (you must have Firebase CLI and compatible `node_modules` for Functions).
 
 ### Development Servers (Alternative)
 
@@ -244,7 +257,7 @@ firebase use --clear
 ## Environment Requirements
 
 - **Node.js**: 22.x (see `.nvmrc`)
-- **Package Manager**: pnpm (defined in `packageManager` field in each package)
-- **Firebase CLI**: Required for deployment and emulators
-- **Package Management**: Each package is managed independently (no workspace configuration for Firebase Functions
-  compatibility)
+- **Package Manager**: pnpm (see `packageManager` in root and package `package.json` files)
+- **Docker + Compose**: Required for **`pnpm run emulator`**
+- **Firebase CLI**: Required for deployment; optional for local emulator if using Compose only
+- **Layout**: Independent installs per package — required for Firebase; see [Firebase and monorepo tooling](#firebase-and-monorepo-tooling)
