@@ -41,7 +41,7 @@ architecture patterns.
 - **Starting emulators:** from the repo root use Compose — hybrid local:
   [`scripts/dev-local.sh`](../../scripts/dev-local.sh) or `docker compose -f compose.local-dev.yml up -d`; full stack:
   `pnpm emulator` ([`compose.emulator.yml`](../../compose.emulator.yml)). See
-  [`docs/plans/firebase_emulators_docker_plan.md`](../plans/firebase_emulators_docker_plan.md).
+  [`docs/adr/0001-firebase-emulators-docker-compose.md`](../adr/0001-firebase-emulators-docker-compose.md).
 - Hybrid local (`CURRENT_ENV=local-dev`, `compose.local-dev.yml`): Auth `localhost:9100`, Firestore `localhost:8282`
   (see `.env.local-dev.example`)
 - Full emulator / E2E: Auth `localhost:9099`, Firestore `localhost:8080`

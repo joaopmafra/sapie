@@ -4,12 +4,16 @@ This document outlines the documentation structure and guidelines for the Sapie 
 
 ## Formatting and readability
 
-- Prefer **bullet or numbered lists** over **tables** when each row is mainly a short label plus a one-line description (hub pages, indexes, rule files). Lists are easier to read in source and when rendered on narrow viewports.
-- Use **tables** when multiple columns need to stay aligned for comparison, or when the data is naturally tabular (e.g. environment matrices with several short fields per row).
+- Prefer **bullet or numbered lists** over **tables** when each row is mainly a short label plus a one-line
+  description (hub pages, indexes, rule files). Lists are easier to read in source and when rendered on narrow
+  viewports.
+- Use **tables** when multiple columns need to stay aligned for comparison, or when the data is naturally tabular (e.g.
+  environment matrices with several short fields per row).
 
 ## Documentation Structure Philosophy
 
-The Sapie project follows a **distributed documentation approach** where detailed information is organized by package, with the root README serving as a clean, high-level overview.
+The Sapie project follows a **distributed documentation approach** where detailed information is organized by package,
+with the root README serving as a clean, high-level overview.
 
 ### Root README.md Principles
 
@@ -72,7 +76,8 @@ When documenting features in the root README, follow this pattern:
 
 **Key Capabilities**: [List 2-3 main capabilities]
 
-For detailed [feature] setup, configuration, and usage instructions, see the **[Package Name Documentation](./packages/[package]/README.md#[section])**.
+For detailed [feature] setup, configuration, and usage instructions, see the *
+*[Package Name Documentation](./packages/[package]/README.md#[section])**.
 ```
 
 ### Example - Authentication Section
@@ -82,9 +87,11 @@ For detailed [feature] setup, configuration, and usage instructions, see the **[
 
 Sapie includes user authentication powered by **Firebase Auth** with **FirebaseUI**.
 
-**Features**: Email/password authentication, Google Sign-In, email verification, password reset, and session persistence.
+**Features**: Email/password authentication, Google Sign-In, email verification, password reset, and session
+persistence.
 
-For detailed authentication setup, configuration, and usage instructions, see the **[Web App Authentication Documentation](./packages/web/README.md#authentication)**.
+For detailed authentication setup, configuration, and usage instructions, see the *
+*[Web App Authentication Documentation](./packages/web/README.md#authentication)**.
 ```
 
 ## Package Documentation Guidelines
@@ -118,6 +125,7 @@ Depending on the package:
 When working with documentation as an AI agent:
 
 ### DO:
+
 - ✅ **Keep root README clean** - Add only high-level information with package references
 - ✅ **Add details to package READMEs** - Put comprehensive information in the appropriate package
 - ✅ **Use consistent linking** - Link from root README to package sections using anchors
@@ -125,6 +133,7 @@ When working with documentation as an AI agent:
 - ✅ **Update both levels** - When adding features, update both root (brief) and package (detailed) documentation
 
 ### DON'T:
+
 - ❌ **Add detailed code examples to root README** - These belong in package documentation
 - ❌ **Duplicate information** - Keep detailed info in packages, summaries in root
 - ❌ **Create orphaned documentation** - Always link from root README to package details
@@ -156,8 +165,9 @@ Sapie includes comprehensive testing at multiple levels.
 **Testing Types**: Unit tests, integration tests, and end-to-end tests with Playwright.
 
 For package-specific testing instructions:
+
 - **[API Testing](./packages/api/README.md#testing)** - Backend unit and integration tests
-- **[Web Testing](./packages/web/README.md#testing)** - Frontend component and integration tests  
+- **[Web Testing](./packages/web/README.md#testing)** - Frontend component and integration tests
 - **[E2E Testing](./packages/test-e2e/README.md)** - Complete end-to-end test suite
 ```
 
@@ -167,7 +177,9 @@ For package-specific testing instructions:
 ## Testing ❌
 
 ### API Testing
+
 Run these commands to test the API:
+
 ```bash
 cd packages/api
 pnpm test
@@ -176,9 +188,11 @@ pnpm test:e2e
 ```
 
 The API uses Jest with these configuration options:
+
 - testEnvironment: 'node'
 - collectCoverageFrom: ['src/**/*.ts']
-[... continues with detailed configuration ...]
+  [... continues with detailed configuration ...]
+
 ```
 
 ## Maintenance

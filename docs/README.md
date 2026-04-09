@@ -8,6 +8,7 @@ Sapie documentation is grouped by audience:
   map, adoption log.
 - **[pm/](pm/README.md)** — Epics, features, stories, backlog folders.
 - **[plans/](plans/)** — Implementation plans.
+- **[adr/](adr/)** — Architecture Decision Records (accepted decisions).
 - **[other/](other/)** — Cross-cutting integration notes (e.g. Nest + Firebase).
 
 **Quick links**

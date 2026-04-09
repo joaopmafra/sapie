@@ -31,8 +31,7 @@ If a script fails, fix or report before moving on.
 
 ## Firebase emulators (Docker Compose)
 
-Copy-paste-oriented map (see [`docs/plans/firebase_emulators_docker_plan.md`](../plans/firebase_emulators_docker_plan.md)
-for full detail):
+Copy-paste-oriented map (decisions and inventory: [`docs/adr/0001-firebase-emulators-docker-compose.md`](../adr/0001-firebase-emulators-docker-compose.md)):
 
 - **Full stack, `emulator` → `demo-emulator`**
   - Compose: [`compose.emulator.yml`](../../compose.emulator.yml)

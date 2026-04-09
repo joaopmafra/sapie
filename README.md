@@ -59,8 +59,9 @@ lockfile where needed) so the API build output and `node_modules` stay predictab
 introduce a root-only PNPM workspace + single `pnpm-lock.yaml` for the whole repo expecting Firebase to “just work”
 without a dedicated bundling or deploy workaround.
 
-For emulator stacks in Docker (including prod-like deps for the Functions emulator), see
-**[firebase_emulators_docker_plan.md](docs/plans/firebase_emulators_docker_plan.md)**.
+For **why** Firebase emulators run in Docker and how profiles differ, see
+**[ADR 0001 — Firebase Emulator Suite in Docker](docs/adr/0001-firebase-emulators-docker-compose.md)**. For **commands**,
+use [Quick Start](#quick-start), the E2E section below, and [`docs/dev/ai_agent_guidelines.md`](docs/dev/ai_agent_guidelines.md).
 
 ## Quick Start
 
@@ -259,7 +260,8 @@ After deployment, your application will be available at [https://sapie-b09be.web
 ## Firebase Commands
 
 **Default local flows use Docker Compose** (see [Quick Start](#quick-start), E2E section above, and
-[`docs/plans/firebase_emulators_docker_plan.md`](docs/plans/firebase_emulators_docker_plan.md)). Use the Firebase CLI
+[`docs/dev/ai_agent_guidelines.md`](docs/dev/ai_agent_guidelines.md); rationale:
+[`docs/adr/0001-firebase-emulators-docker-compose.md`](docs/adr/0001-firebase-emulators-docker-compose.md)). Use the Firebase CLI
 on the host mainly for **deploy** or **advanced** debugging.
 
 ```bash

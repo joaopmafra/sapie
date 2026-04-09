@@ -1,0 +1,8 @@
+---
+description: General documentation guidelines for the project.
+alwaysApply: false
+---
+
+# Documentation Guidelines
+
+When writing documentation, **ALWAYS LOOK AT THE** [documentation guidelines](../../docs/dev/documentation_guidelines.md) **FIRST** to understand the project's documentation guidelines.

@@ -1,6 +1,6 @@
 # Generic Firebase emulators image: Node + JRE + pinned firebase-tools.
 # Config: compose bind-mounts `.firebaserc` and firebase.<env>.json as ./firebase.json; start flags from compose `command`.
-# See docs/dev/firebase_emulators_docker_plan.md.
+# See docs/adr/0001-firebase-emulators-docker-compose.md.
 
 FROM node:22-alpine
 

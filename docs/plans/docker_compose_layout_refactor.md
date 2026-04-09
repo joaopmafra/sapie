@@ -1,6 +1,6 @@
 # Plan (deferred): Docker / Compose layout under `docker/`
 
-**Status:** deferred — implement after higher-priority emulator work (e.g. Phase E–F in [firebase_emulators_docker_plan.md](firebase_emulators_docker_plan.md)) if we still want cleaner hand-run Compose workflows.
+**Status:** deferred — optional churn after [ADR 0001](../adr/0001-firebase-emulators-docker-compose.md) if we still want cleaner hand-run Compose workflows.
 
 ## Objective
 
@@ -22,7 +22,7 @@ docker/
   test-unit/
     compose.yml
     firebase.json                  # today: firebase.test-unit.json
-  # Later: test-e2e/ — same pattern (full `pnpm emulator` stack stays on host; no compose folder for it)
+  # Later: test-e2e/ — same pattern (today: root compose.test-e2e.yml / compose.emulator.yml per ADR 0001)
 ```
 
 Keep **root** [`firebase.json`](../../firebase.json) as the source of truth for deploy / hosting / functions unless we explicitly split that story later.
@@ -40,10 +40,10 @@ Keep **root** [`firebase.json`](../../firebase.json) as the source of truth for 
 3. **Volumes:** paths relative to the **compose file’s directory** — e.g. `../../.firebaserc`, `../../firebase/emulator-cache`, `../../firebase/data-local-dev`. Double-check every bind mount after the move.
 4. **Project name:** set `name:` in each compose file if we need stable container names (today: `sapie-test-unit`, `sapie-local-dev`) or accept Compose’s directory-derived default.
 5. Update scripts: [`scripts/dev-local.sh`](../../scripts/dev-local.sh), [`scripts/emulator-test-unit-start.sh`](../../scripts/emulator-test-unit-start.sh), [`scripts/emulator-test-unit-stop.sh`](../../scripts/emulator-test-unit-stop.sh), [`scripts/emulator-test-unit-remove.sh`](../../scripts/emulator-test-unit-remove.sh), [`scripts/verify-test-all.sh`](../../scripts/verify-test-all.sh) if referenced.
-6. Update [firebase_emulators_docker_plan.md](firebase_emulators_docker_plan.md) and any README / contributing / unit-testing doc paths.
+6. Update [ADR 0001](../adr/0001-firebase-emulators-docker-compose.md) and any README / contributing / unit-testing doc paths if paths change.
 7. Grep the repo for `compose.local-dev`, `compose.test-unit`, `firebase.local-dev`, `firebase.test-unit`, `Dockerfile.firebase-emulators`.
 
 ## Risks / notes
 
 - Running `docker compose` from the **wrong cwd** breaks relative mounts; document “always `cd docker/<env>` first” or provide thin wrapper scripts.
-- This is a **churn-heavy** refactor with little runtime benefit if everything is already driven by scripts — revisit priority when adding or reorganizing **`compose.test-e2e.yml`** (full `pnpm emulator` stack stays on the host; see [firebase_emulators_docker_plan.md](firebase_emulators_docker_plan.md) Phase D).
+- This is a **churn-heavy** refactor with little runtime benefit if everything is already driven by scripts — revisit priority when adding or reorganizing **`compose.test-e2e.yml`** / **`compose.emulator.yml`** (both Docker-based; see [ADR 0001](../adr/0001-firebase-emulators-docker-compose.md)).

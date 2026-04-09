@@ -16,8 +16,8 @@ Suggested reading order:
 Assistants: [ai_agent_guidelines.md](ai_agent_guidelines.md)
 
 Firebase Emulator Suite for dev and tests is started via **Docker Compose** at the repo root
-(`compose.local-dev.yml`, `compose.test-unit.yml`, `compose.emulator.yml`, `compose.test-e2e.yml`); see
-[firebase_emulators_docker_plan.md](../plans/firebase_emulators_docker_plan.md).
+(`compose.local-dev.yml`, `compose.test-unit.yml`, `compose.emulator.yml`, `compose.test-e2e.yml`). Rationale:
+[ADR 0001](../adr/0001-firebase-emulators-docker-compose.md). Commands: [ai_agent_guidelines.md](ai_agent_guidelines.md#firebase-emulators-docker-compose).
 
 Supporting material:
 
