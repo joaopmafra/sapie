@@ -32,13 +32,13 @@ trap cleanup SIGINT SIGTERM
 
 echo "⏳ Waiting for emulators..."
 for _ in $(seq 1 60); do
-  if curl -sf -o /dev/null "http://localhost:4000"; then
+  if curl -sf -o /dev/null "http://localhost:4002"; then
     break
   fi
   sleep 1
 done
-if ! curl -sf -o /dev/null "http://localhost:4000"; then
-  echo "❌ Emulator UI did not become ready on http://localhost:4000"
+if ! curl -sf -o /dev/null "http://localhost:4002"; then
+  echo "❌ Emulator UI did not become ready on http://localhost:4002"
   docker compose -f "${COMPOSE_FILE}" logs --tail 80 || true
   docker compose -f "${COMPOSE_FILE}" stop
   exit 1

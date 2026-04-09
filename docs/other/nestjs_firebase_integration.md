@@ -37,8 +37,9 @@ The Firebase Admin SDK is implemented as a NestJS module for proper dependency i
 #### Development with Firebase Emulator
 
 - Uses project ID configuration
-- Automatically connects to Firebase Auth emulator at `localhost:9099`
-- Firestore emulator at `localhost:8080`
+- Hybrid local (`CURRENT_ENV=local-dev`, `compose.local-dev.yml`): Auth `localhost:9100`, Firestore `localhost:8282`
+  (see `.env.local-dev.example`)
+- Full emulator / E2E: Auth `localhost:9099`, Firestore `localhost:8080`
 
 #### Local Development
 
@@ -239,7 +240,7 @@ const userInfo = await authApi.authControllerGetCurrentUser();
 # Optional: Path to Firebase service account key file
 FIREBASE_SERVICE_ACCOUNT_KEY_PATH=/path/to/service-account.json
 
-# Set by Firebase emulator automatically
+# Set by Firebase emulator automatically (full stack). Hybrid local uses e.g. localhost:9100 — see .env.local-dev.example
 FUNCTIONS_EMULATOR=true
 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
 ```

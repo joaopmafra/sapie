@@ -71,8 +71,8 @@ The API supports multiple development environments:
 3. **Access services**:
    - API: http://localhost:3000
    - API Swagger: http://localhost:3000/api/docs
-   - Firebase Auth Emulator: http://localhost:9099
-   - Firestore Emulator: http://localhost:8080
+   - Firebase Auth Emulator (hybrid local): http://localhost:9100
+   - Firestore Emulator (hybrid local): http://localhost:8282
 
 ## Environment Configuration
 
@@ -353,10 +353,12 @@ firebase deploy --only functions
 ## Useful commands
 
 ### Generate Auth Token in Firebase Emulator
+Hybrid local (`compose.local-dev.yml`) uses Auth on **9100**. Full emulator / E2E use **9099**.
+
 ```shell
 curl -X POST \
   -H "Content-Type: application/json" \
   -d '{"email":"<your_email>","password":"<your_password>","returnSecureToken":true}' \
-  "http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=demo-api-key"
+  "http://127.0.0.1:9100/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=demo-api-key"
 ```
 

@@ -3,7 +3,7 @@
 # exit immediately if a command exits with a non-zero status
 set -e
 
-scripts/verify-all-test-unit.sh
+scripts/verify-all.sh
 
 echo "Building all for E2E tests..."
 scripts/build-all.sh test-e2e

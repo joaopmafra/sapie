@@ -66,7 +66,7 @@ Typical ports in that file (see repo root `firebase.test-unit.json`):
 
 - Firestore HTTP: `8181`
 - Firestore WebSocket (UI): `9160` (`websocketPort`; avoids host conflict with dev default `9150`)
-- Auth: `9098` (not `9199`; local-dev uses `9199` for Storage)
+- Auth: `9098` (distinct from local-dev Storage on **9200** and full emulator Auth **9099**)
 - Emulator UI: `4001`
 - Emulator Hub: `4410` (avoids clashing with a local dev hub on `4400`)
 - Logging: `4510`

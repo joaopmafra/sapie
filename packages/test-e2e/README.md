@@ -1,6 +1,8 @@
 # Sapie E2E Tests
 
-End-to-end tests for the Sapie application using Playwright. Tests run against the **Firebase Emulator Suite** in Docker: the web app is served by the **Hosting** emulator and the Nest API runs as the **`api`** **Cloud Function** (same model as `compose.emulator.yml` / `pnpm emulator`).
+End-to-end tests for the Sapie application using Playwright. Tests run against the **Firebase Emulator Suite** in
+Docker: the web app is served by the **Hosting** emulator and the Nest API runs as the **`api`** **Cloud Function** (
+same model as `compose.emulator.yml` / `pnpm emulator`).
 
 ## Architecture
 
@@ -13,7 +15,8 @@ End-to-end tests for the Sapie application using Playwright. Tests run against t
 ### Firebase project naming
 
 - **CLI alias** (`.firebaserc`): `test-e2e`
-- **Emulator project id** (URLs, client config): `demo-test-e2e` — the `demo-` prefix keeps the Emulator Suite strictly local; see [firebase-demo-prefix.md](../../docs/research/firebase/firebase-demo-prefix.md).
+- **Emulator project id** (URLs, client config): `demo-test-e2e` — the `demo-` prefix keeps the Emulator Suite strictly
+  local; see [firebase-demo-prefix.md](../../docs/research/firebase/firebase-demo-prefix.md).
 
 ## Setup
 
@@ -65,11 +68,20 @@ pnpm run install
    docker compose -f compose.test-e2e.yml down
    ```
 
-Playwright’s `webServer` entry does **not** start Firebase on the host. It waits for **`GET /api/health`** on the Functions emulator (`playwright.config.ts` + [`scripts/wait-emulator-ready.sh`](./scripts/wait-emulator-ready.sh)). If the stack is already up, that URL is reused immediately (`reuseExistingServer: true`). Override polling via `E2E_READINESS_URL`, `E2E_READINESS_MAX_ATTEMPTS`, `E2E_READINESS_SLEEP_SEC` if needed.
+Playwright’s `webServer` entry does **not** start Firebase on the host. It waits for **`GET /api/health`** on the
+Functions emulator (`playwright.config.ts` + [`scripts/wait-emulator-ready.sh`](./scripts/wait-emulator-ready.sh)). If
+the stack is already up, that URL is reused immediately (`reuseExistingServer: true`). Override polling via
+`E2E_READINESS_URL`, `E2E_READINESS_MAX_ATTEMPTS`, `E2E_READINESS_SLEEP_SEC` if needed.
 
 ### Port overlap
 
-[`compose.test-e2e.yml`](../../compose.test-e2e.yml) publishes the same localhost ports as [`compose.emulator.yml`](../../compose.emulator.yml) (5000, 5001, 8080, 9099, 4000, etc.). **Only one** of these full stacks should run at a time.
+[`compose.test-e2e.yml`](../../compose.test-e2e.yml) publishes the same localhost ports as [
+`compose.emulator.yml`](../../compose.emulator.yml) (5000, 5001, 8080, 9099, 4000, etc.). **Only one** of these full
+stacks should run at a time.
+
+Hybrid local ([`compose.local-dev.yml`](../../compose.local-dev.yml)) uses a **separate** port block (see [
+`firebase.local-dev.json`](../../firebase.local-dev.json)), so you can keep local-dev emulators up while running this
+E2E stack or API unit tests (`compose.test-unit.yml`).
 
 ### Other commands
 
@@ -130,8 +142,10 @@ Do not rely on `firebase emulators:start` on the CI runner unless you intentiona
 
 ### Emulator / Docker
 
-- **Ports in use**: Stop the other full stack (`compose.emulator.yml` or any process on 5000/5001/8080/9099/4000).
-- **Timeout in Playwright**: Ensure compose is healthy (`docker compose -f compose.test-e2e.yml ps`) and that you ran `build-all.sh test-e2e` so `packages/web/dist` and `packages/api/dist` exist.
+- **Ports in use**: Stop the other full stack (`compose.emulator.yml` or any process on
+  5000/5001/8080/9099/4000/9150/4400/4500). Hybrid `compose.local-dev.yml` does not use those ports.
+- **Timeout in Playwright**: Ensure compose is healthy (`docker compose -f compose.test-e2e.yml ps`) and that you ran
+  `build-all.sh test-e2e` so `packages/web/dist` and `packages/api/dist` exist.
 - **Stale `dist`**: Re-run `scripts/build-all.sh test-e2e` after code changes.
 
 ### Test failures
@@ -149,23 +163,23 @@ Do not rely on `firebase emulators:start` on the CI runner unless you intentiona
 ### Basic Frontend Test
 
 ```typescript
-import { test, expect } from '@playwright/test';
+import {test, expect} from '@playwright/test';
 
-test('should display health status', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.getByText('API Health Status')).toBeVisible();
+test('should display health status', async ({page}) => {
+    await page.goto('/');
+    await expect(page.getByText('API Health Status')).toBeVisible();
 });
 ```
 
 ### API Integration Test
 
 ```typescript
-test('should fetch and display API data', async ({ page }) => {
-  await page.goto('/');
-  await page.waitForFunction(() =>
-    document
-      .querySelector('[data-testid="health-status"]')
-      ?.textContent?.includes('ok'),
-  );
+test('should fetch and display API data', async ({page}) => {
+    await page.goto('/');
+    await page.waitForFunction(() =>
+        document
+            .querySelector('[data-testid="health-status"]')
+            ?.textContent?.includes('ok'),
+    );
 });
 ```

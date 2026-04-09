@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+# exit immediately if a command exits with a non-zero status
+set -e
+
+echo "Verifying api..."
+cd packages/api
+pnpm verify:all
+cd ../..
+printf "OK\n\n"
+
+echo "Starting Firebase Emulators for unit tests..."
+./scripts/emulator-test-unit-start.sh
+printf "OK\n\n"
+
+echo "Running api unit tests..."
+cd packages/api
+pnpm test
+cd ../..
+printf "OK\n\n"
+
+if [ -n "${CI:-}" ]; then
+  echo "Stopping Firebase Emulators for unit tests (CI)..."
+  ./scripts/test-emulator-stop.sh
+  printf "OK\n\n"
+fi
+
+echo "Verifying web..."
+cd packages/web
+pnpm verify:all
+cd ../..
+printf "OK\n\n"
+
+echo "Running web unit tests..."
+cd packages/web
+pnpm test
+cd ../..
+printf "OK\n\n"

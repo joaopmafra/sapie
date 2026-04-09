@@ -130,15 +130,16 @@ ports advertised by the suite; asymmetric maps like `8181:8080` break Firestore 
 WebSocket used by the UI). Typical mappings (see repo root files):
 
 - **Firestore HTTP:** `8181`
-- **Firestore WebSocket (UI / requests):** `9160` (`websocketPort`; local dev defaults to
-  `9150`, so tests and dev can run in parallel without clashing)
-- **Auth:** `9098` (avoids local-dev defaults: Auth `9099`, Storage `9199`)
+- **Firestore WebSocket (UI / requests):** `9160` (`websocketPort`; distinct from hybrid local-dev Docker `9170` and
+  full emulator / E2E `9150`)
+- **Auth:** `9098` (distinct from hybrid local-dev Docker `9100` and full emulator / E2E `9099`)
 - **Emulator UI:** `4001`
-- **Emulator Hub:** `4410` (separate from a local dev hub on `4400`)
-- **Logging:** `4510`
+- **Emulator Hub:** `4410` (distinct from local-dev `4420` and full emulator `4400`)
+- **Logging:** `4510` (distinct from local-dev `4520` and full emulator `4500`)
 
-Local development continues to use root `firebase.json` (e.g. Firestore `8080`, Auth `9099`, UI
-`4000`) without the Docker test file.
+Hybrid local development uses [`firebase.local-dev.json`](../../firebase.local-dev.json) in Docker (Firestore **8282**,
+Auth **9100**, UI **4002**, etc.) so API unit tests (this stack) and E2E can run at the same time without port clashes.
+Root [`firebase.json`](../../firebase.json) remains the CLI default for deploy and non-Docker workflows.
 
 The `tmpfs` mount is applied to the Firestore data directory inside the container. Data export
 on exit is disabled — test data is intentionally ephemeral.
@@ -178,7 +179,7 @@ been loaded.
 When the test Docker stack from the implementation plan is in place, prefer the host ports and
 project id agreed there (for example `FIRESTORE_EMULATOR_HOST=localhost:8181` and
 `GCLOUD_PROJECT=sapie-test`); until then, `.env.test-unit` may use local defaults such as
-`localhost:8080` aligned with your dev emulator.
+`localhost:8181` aligned with the test-unit compose stack (not hybrid local-dev Firestore on `8282`).
 
 ### Container Lifecycle
 

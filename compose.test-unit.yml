@@ -21,9 +21,9 @@ services:
       # Firestore HTTP (must match emulators.firestore.port in the mounted test-unit config)
       - "8181:8181"
       # Firestore WebSocket (UI + requests tab; emulators.firestore.websocketPort).
-      # Use 9160 here so the default dev websocket (9150) can run on the host in parallel.
+      # Distinct from local-dev Docker (9170) and full emulator / E2E (9150).
       - "9160:9160"
-      # Auth (must match emulators.auth.port). Deliberately not 9099/9199 so local-dev defaults can run in parallel.
+      # Auth (must match emulators.auth.port). Distinct from local-dev Docker (9100) and E2E (9099).
       - "9098:9098"
       # Emulator UI (must match emulators.ui.port)
       - "4001:4001"
