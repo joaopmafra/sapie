@@ -1,7 +1,7 @@
 # Unit Testing Implementation Plan
 
 This document is a step-by-step plan to implement the unit testing infrastructure described in
-[Unit Testing — Sapie Implementation](unit_testing_sapie.md). Each step is small, independently
+[Unit Testing — Sapie Implementation](../dev/unit_testing_sapie.md). Each step is small, independently
 verifiable, and leaves the codebase in a working state.
 
 All unit tests are co-located with their source files in `src/` and follow the `*.spec.ts`

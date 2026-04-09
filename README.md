@@ -59,7 +59,7 @@ introduce a root-only PNPM workspace + single `pnpm-lock.yaml` for the whole rep
 without a dedicated bundling or deploy workaround.
 
 For emulator stacks in Docker (including prod-like deps for the Functions emulator), see
-**[firebase_emulators_docker_plan.md](docs/dev/firebase_emulators_docker_plan.md)**.
+**[firebase_emulators_docker_plan.md](docs/plans/firebase_emulators_docker_plan.md)**.
 
 ## Quick Start
 

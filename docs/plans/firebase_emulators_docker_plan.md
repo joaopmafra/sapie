@@ -2,7 +2,7 @@
 
 This document is the **structured implementation plan** for running Firebase emulators in Docker for **local hybrid dev**, **test-unit**, and the **full emulator** (Hosting + Functions). **`pnpm emulator`** runs [`scripts/build-run-on-emulator.sh`](../../scripts/build-run-on-emulator.sh): `build-all.sh emulator`, cleanup, then [`compose.emulator.yml`](../../compose.emulator.yml) with **only** `packages/*/dist` mounts plus [`firebase.emulator.json`](../../firebase.emulator.json) (`0.0.0.0`). Compose uses one **generic** emulator image everywhere Docker applies.
 
-**Related docs:** [Unit testing — Sapie](unit_testing_sapie.md), [Unit testing implementation plan](unit_testing_implementation_plan.md) (Phase 2 describes the original test container; update its file names and commands after this refactor if they change).
+**Related docs:** [Unit testing — Sapie](../dev/unit_testing_sapie.md), [Unit testing implementation plan](unit_testing_implementation_plan.md) (Phase 2 describes the original test container; update its file names and commands after this refactor if they change).
 
 ---
 
@@ -227,11 +227,11 @@ Review each item after the Docker refactor; strike or update instructions that a
 | Location | What to verify or update |
 |----------|---------------------------|
 | [`README.md`](../../README.md) | Emulator / local-dev / test flows; `pnpm dev`, `pnpm emulator`, unit tests; Docker Compose commands; troubleshooting (no more `pkill` as primary fix). |
-| [`docs/dev/README.md`](README.md) | Already indexes this plan; add a one-line pointer to “emulators via Compose” if helpful. |
-| [`docs/dev/contributing_guidelines.md`](contributing_guidelines.md) | Verify script names, prerequisite (Docker), and how to run API tests with the test emulator. |
-| [`docs/dev/unit_testing_sapie.md`](unit_testing_sapie.md) | Emulator host ports and env vars if they are spelled out; align with `firebase.test-unit.json`. |
+| [`docs/dev/README.md`](../dev/README.md) | Already indexes this plan; add a one-line pointer to “emulators via Compose” if helpful. |
+| [`docs/dev/contributing_guidelines.md`](../dev/contributing_guidelines.md) | Verify script names, prerequisite (Docker), and how to run API tests with the test emulator. |
+| [`docs/dev/unit_testing_sapie.md`](../dev/unit_testing_sapie.md) | Emulator host ports and env vars if they are spelled out; align with `firebase.test-unit.json`. |
 | [`docs/dev/unit_testing_implementation_plan.md`](unit_testing_implementation_plan.md) | Phase 2 Step 3+: compose filename, Dockerfile name, `docker compose` invocations. |
-| [`docs/dev/ai_agent_guidelines.md`](ai_agent_guidelines.md) | Short, copy-paste steps: which compose file for which task (local-dev, test-unit, E2E, full emulator). |
+| [`docs/dev/ai_agent_guidelines.md`](../dev/ai_agent_guidelines.md) | Short, copy-paste steps: which compose file for which task (local-dev, test-unit, E2E, full emulator). |
 | **This plan** ([`firebase_emulators_docker_plan.md`](firebase_emulators_docker_plan.md)) | Add an **Implementation status** footer (date, PR) when work lands. |
 | [`packages/api/README.md`](../../packages/api/README.md) | “Full emulator” and local-dev sections; health URLs; any “install Firebase CLI for emulators” wording. |
 | [`packages/web/README.md`](../../packages/web/README.md) | If it documents env files or emulator ports, align with Compose. |

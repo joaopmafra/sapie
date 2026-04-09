@@ -361,7 +361,7 @@ Previously open design choices are settled as follows:
    Node image, install and **pin the Firebase CLI** version, and start emulators with the repo’s
    `firebase.json`. Rationale and alternatives are in
    `docs/research/run_firebase_emulator_container.md`. Compose file and scripts follow
-   [Unit Testing Implementation Plan](unit_testing_implementation_plan.md) once added to the repo.
+   [Unit Testing Implementation Plan](../plans/unit_testing_implementation_plan.md) once added to the repo.
 
 2. **Where Jest gets emulator host and project id.** Use **both** a small Jest bootstrap file and
    Nest’s env loading: `setupFiles` → `src/jest.setup.ts` sets `CURRENT_ENV=test-unit`;

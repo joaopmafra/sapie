@@ -19,7 +19,5 @@ Supporting material:
 - [tdd_baby_steps.md](tdd_baby_steps.md)
 - [unit_testing_strategy.md](unit_testing_strategy.md)
 - [unit_testing_sapie.md](unit_testing_sapie.md)
-- [firebase_emulators_docker_plan.md](firebase_emulators_docker_plan.md) — Dockerized Firebase emulators across local dev, test-unit, full emulator, and E2E
-- [docker_compose_layout_refactor.md](docker_compose_layout_refactor.md) — **deferred** optional move of Compose + emulator configs under `docker/<env>/` for `cd`-based `docker compose` (no `-f`)
 
 Backlog structure: [pm README](../pm/README.md)

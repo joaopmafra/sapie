@@ -7,6 +7,7 @@ Sapie documentation is grouped by audience:
 - **[research/ai_workflow/](research/ai_workflow/)** — OpenSpec/OpenCode adoption, SDD tool comparison, roadmap→OpenCode
   map, adoption log.
 - **[pm/](pm/README.md)** — Epics, features, stories, backlog folders.
+- **[plans/](plans/)** — Implementation plans.
 - **[other/](other/)** — Cross-cutting integration notes (e.g. Nest + Firebase).
 
 **Quick links**
