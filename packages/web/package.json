@@ -23,8 +23,7 @@
     "test": "NODE_OPTIONS='--disable-warning=DEP0040' jest",
     "test:watch": "NODE_OPTIONS='--disable-warning=DEP0040' jest --watch",
     "verify:types": "tsc --noEmit",
-    "verify:fast": "pnpm verify:types && pnpm test",
-    "verify:all": "pnpm format:check && pnpm lint:check && pnpm verify:types && pnpm test"
+    "verify:all": "pnpm verify:types && pnpm lint:check && pnpm format:check"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

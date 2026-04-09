@@ -28,6 +28,17 @@ Run scripts after substantive edits (exact names may vary; use repo scripts):
 
 If a script fails, fix or report before moving on.
 
+## Firebase emulators (Docker Compose)
+
+Copy-paste-oriented map (see [`docs/plans/firebase_emulators_docker_plan.md`](../plans/firebase_emulators_docker_plan.md) for full detail):
+
+| Goal | Compose file | Notes |
+|------|----------------|------|
+| Full stack, `emulator` → `demo-emulator` | [`compose.emulator.yml`](../../compose.emulator.yml) | `pnpm emulator` → [`scripts/build-run-on-emulator.sh`](../../scripts/build-run-on-emulator.sh) |
+| API unit tests | [`compose.test-unit.yml`](../../compose.test-unit.yml) | [`scripts/test-emulator-start.sh`](../../scripts/test-emulator-start.sh) / `stop` / `remove` |
+| Playwright E2E | [`compose.test-e2e.yml`](../../compose.test-e2e.yml) | `scripts/build-all.sh test-e2e` then `docker compose -f compose.test-e2e.yml up --build -d --wait`; same ports as full emulator — one stack at a time |
+| Local hybrid dev | [`compose.local-dev.yml`](../../compose.local-dev.yml) | [`scripts/dev-local.sh`](../../scripts/dev-local.sh) |
+
 ## Honesty and verification
 
 **Do not claim what you have not verified.**

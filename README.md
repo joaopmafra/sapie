@@ -141,6 +141,18 @@ pnpm run emulator
 
 Advanced: from the repo root, after `scripts/build-all.sh emulator`, you can run **`firebase emulators:start --project emulator`** on the host if you prefer not to use Compose (you must have Firebase CLI and compatible `node_modules` for Functions).
 
+### E2E tests (Playwright + Compose)
+
+Playwright targets the same Hosting + Functions emulator model as the full stack above, but with the **`test-e2e`** Firebase alias (emulated project id **`demo-test-e2e`**). From the repo root:
+
+```bash
+scripts/build-all.sh test-e2e
+docker compose -f compose.test-e2e.yml up --build -d --wait
+cd packages/test-e2e && pnpm test
+```
+
+Uses [`compose.test-e2e.yml`](compose.test-e2e.yml). **Do not** run this alongside `pnpm run emulator` — the published ports overlap. Full steps: **[packages/test-e2e/README.md](./packages/test-e2e/README.md)**.
+
 ### Development Servers (Alternative)
 
 For faster development iteration, run services separately:

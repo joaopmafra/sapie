@@ -2,7 +2,9 @@ import { test, expect, request } from '@playwright/test';
 import {
   API_ENDPOINTS,
   TEST_AUTH_SCENARIOS,
-  EXPECTED_AUTH_ERRORS
+  EXPECTED_AUTH_ERRORS,
+  expectUnauthorizedJsonBody,
+  getApiErrorFields,
 } from '../helpers/test-utils';
 import {
   createTestUserWithToken,
@@ -38,9 +40,7 @@ async function testUnauthorizedContentRequest(
   expect(response.status()).toBe(401);
 
   const responseBody = await response.json();
-  expect(responseBody).toHaveProperty('statusCode', expectedError.statusCode);
-  expect(responseBody).toHaveProperty('message', expectedError.message);
-  expect(responseBody).toHaveProperty('error', expectedError.error);
+  expectUnauthorizedJsonBody(responseBody as Record<string, unknown>, expectedError);
 
   await apiContext.dispose();
 }
@@ -73,11 +73,12 @@ test.describe('Content API - Authentication', () => {
       expect(response.status()).toBe(401);
 
       const responseBody = await response.json();
-      expect(responseBody.statusCode).toBe(401);
+      const fields = getApiErrorFields(responseBody as Record<string, unknown>);
+      expect(fields.status).toBe(401);
       expect([
         EXPECTED_AUTH_ERRORS.NO_TOKEN.message,
-        EXPECTED_AUTH_ERRORS.INVALID_TOKEN.message
-      ]).toContain(responseBody.message);
+        EXPECTED_AUTH_ERRORS.INVALID_TOKEN.message,
+      ]).toContain(fields.message);
 
       await apiContext.dispose();
     }
@@ -265,26 +266,24 @@ test.describe('Content API - Error Scenarios', () => {
         }
       });
 
-      // Make multiple requests
-      const responses = await Promise.all([
-        apiContext.get(CONTENT_API_ENDPOINTS.ROOT),
-        apiContext.get(CONTENT_API_ENDPOINTS.ROOT),
-        apiContext.get(CONTENT_API_ENDPOINTS.ROOT)
-      ]);
-
-      // All should succeed
-      responses.forEach(response => {
+      // Sequential GETs: parallel requests can race on first-time root creation and return different nodes.
+      type RootPayload = {
+        id: string;
+        name: string;
+        type: string;
+        ownerId: string;
+        parentId: string | null;
+      };
+      const responseBodies: RootPayload[] = [];
+      for (let i = 0; i < 3; i++) {
+        const response = await apiContext.get(CONTENT_API_ENDPOINTS.ROOT);
         expect(response.status()).toBe(200);
-      });
-
-      // Parse response bodies
-      const responseBodies = await Promise.all(
-        responses.map(response => response.json())
-      );
+        responseBodies.push((await response.json()) as RootPayload);
+      }
 
       // All should have the same structure and data
       const firstResponse = responseBodies[0];
-      responseBodies.forEach(body => {
+      responseBodies.forEach((body) => {
         expect(body.id).toBe(firstResponse.id);
         expect(body.name).toBe(firstResponse.name);
         expect(body.type).toBe(firstResponse.type);

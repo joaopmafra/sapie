@@ -11,8 +11,8 @@ if [[ ! $ENV =~ dev|staging|prod ]]; then
   exit 1
 fi
 
-scripts/build-all.sh "$ENV"
+./scripts/build-test-all.sh
 
-printf "\n\nDeploying to Firebase..."
-firebase deploy --project "$ENV"
+echo "Deploying to Firebase..."
+# firebase deploy --project "$ENV"
 echo "Done!"

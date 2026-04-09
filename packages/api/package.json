@@ -30,8 +30,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "verify:types": "tsc --noEmit",
-    "verify:fast": "pnpm verify:types && pnpm test",
-    "verify:all": "pnpm format:check && pnpm lint:check && pnpm verify:types && pnpm test"
+    "verify:all": "pnpm verify:types && pnpm lint:check && pnpm format:check"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

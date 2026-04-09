@@ -71,6 +71,7 @@ task asked for unit/integration tests.
 ```bash
 cd packages/api && pnpm test
 cd packages/web && pnpm test
+# E2E: start the Compose-backed emulators first (see packages/test-e2e/README.md), then:
 cd packages/test-e2e && pnpm test
 ```
 
