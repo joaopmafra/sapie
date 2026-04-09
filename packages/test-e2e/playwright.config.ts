@@ -1,5 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
+/** Functions emulator URL for Nest `/api/health` (function name `api`). Project id is `demo-test-e2e` (alias `test-e2e` in .firebaserc). */
+const E2E_READINESS_URL =
+  'http://127.0.0.1:5001/demo-test-e2e/us-central1/api/api/health';
+
 /**
  * @see https://playwright.dev/docs/test-configuration
  */
@@ -62,12 +66,15 @@ export default defineConfig({
     // },
   ],
 
-  /* Run your local dev server before starting the tests */
+  /**
+   * Emulators run in Docker (`compose.test-e2e.yml`), not via `firebase` on the host.
+   * If the health URL already responds, reuse it. Otherwise `scripts/wait-emulator-ready.sh` polls, then idles for Playwright teardown.
+   */
   webServer: {
-    command: 'firebase emulators:start --project test-e2e',
-    url: 'http://127.0.0.1:5001/demo-test-e2e/us-central1/api/api',
-    reuseExistingServer: !process.env.CI,
-    cwd: '..',
-    timeout: 60 * 1000, // 1 minute timeout for emulator to start
+    command: 'bash scripts/wait-emulator-ready.sh',
+    url: E2E_READINESS_URL,
+    reuseExistingServer: true,
+    timeout: 200_000,
+    env: { E2E_READINESS_URL },
   },
 });

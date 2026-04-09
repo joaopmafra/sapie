@@ -38,6 +38,8 @@ export class FirebaseAdminService implements OnModuleInit, OnModuleDestroy {
       }
 
       const projectId = process.env.GCLOUD_PROJECT;
+      // The app automatically connects to the Auth and Firestore emulators if the variables
+      // FIREBASE_AUTH_EMULATOR_HOST and FIRESTORE_EMULATOR_HOST are set
       this.app = admin.initializeApp({
         // this is not needed, but we're keeping it here to make it explicit
         projectId: projectId,

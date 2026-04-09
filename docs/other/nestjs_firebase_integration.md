@@ -16,7 +16,8 @@ user management, and development setup.
 
 ## Firebase Admin SDK Configuration
 
-The Firebase Admin SDK is implemented as a NestJS module for proper dependency injection and follows modern NestJS architecture patterns.
+The Firebase Admin SDK is implemented as a NestJS module for proper dependency injection and follows modern NestJS
+architecture patterns.
 
 ### Architecture Overview
 
@@ -37,8 +38,13 @@ The Firebase Admin SDK is implemented as a NestJS module for proper dependency i
 #### Development with Firebase Emulator
 
 - Uses project ID configuration
-- Automatically connects to Firebase Auth emulator at `localhost:9099`
-- Firestore emulator at `localhost:8080`
+- **Starting emulators:** from the repo root use Compose — hybrid local:
+  [`scripts/dev-local.sh`](../../scripts/dev-local.sh) or `docker compose -f compose.local-dev.yml up -d`; full stack:
+  `pnpm emulator` ([`compose.emulator.yml`](../../compose.emulator.yml)). See
+  [`docs/adr/0001-firebase-emulators-docker-compose.md`](../adr/0001-firebase-emulators-docker-compose.md).
+- Hybrid local (`CURRENT_ENV=local-dev`, `compose.local-dev.yml`): Auth `localhost:9100`, Firestore `localhost:8282`
+  (see `.env.local-dev.example`)
+- Full emulator / E2E: Auth `localhost:9099`, Firestore `localhost:8080`
 
 #### Local Development
 
@@ -58,16 +64,17 @@ The Firebase Admin SDK is implemented as a NestJS module for proper dependency i
 **Example Usage**:
 
 ```typescript
-import { Injectable } from '@nestjs/common';
-import { FirebaseAdminService } from '../firebase';
+import {Injectable} from '@nestjs/common';
+import {FirebaseAdminService} from '../firebase';
 
 @Injectable()
 export class ExampleService {
-  constructor(private readonly firebaseAdminService: FirebaseAdminService) {}
+    constructor(private readonly firebaseAdminService: FirebaseAdminService) {
+    }
 
-  async authenticateUser(token: string) {
-    return await this.firebaseAdminService.verifyIdToken(token);
-  }
+    async authenticateUser(token: string) {
+        return await this.firebaseAdminService.verifyIdToken(token);
+    }
 }
 ```
 
@@ -239,7 +246,7 @@ const userInfo = await authApi.authControllerGetCurrentUser();
 # Optional: Path to Firebase service account key file
 FIREBASE_SERVICE_ACCOUNT_KEY_PATH=/path/to/service-account.json
 
-# Set by Firebase emulator automatically
+# Set by Firebase emulator automatically (full stack). Hybrid local uses e.g. localhost:9100 — see .env.local-dev.example
 FUNCTIONS_EMULATOR=true
 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
 ```
@@ -273,7 +280,7 @@ Authentication is tested with Playwright E2E tests:
 
 ```bash
 # Run all tests
-./scripts/build-test-all.sh
+./scripts/verify-test-all.sh
 
 # Run API tests only
 cd packages/api && pnpm test
@@ -338,7 +345,7 @@ The API includes comprehensive Swagger documentation:
 2. Enter Firebase ID token in the Bearer token field
 3. Test protected endpoints interactively
 
-For more information, see the [Contributing Guidelines](../contributing_guidelines.md)
+For more information, see the [Contributing Guidelines](../dev/contributing_guidelines.md)
 and [Development Principles](../development_principles.md).
 
 ## Useful links

@@ -123,7 +123,8 @@ The application is configured to automatically connect to emulators when running
 
 ### Emulator connection issues
 - Make sure Firebase emulators are running
-- Check that ports 9099 (Auth) and 8080 (Firestore) are available
+- Hybrid local (`compose.local-dev.yml`): Auth **9100** (see `VITE_FIREBASE_AUTH_EMULATOR_HOST` in `.env.local-dev.example`).
+  Full emulator / E2E: Auth **9099**, Firestore **8080**
 - Verify Firebase CLI is installed and project is initialized 
 
 ## References

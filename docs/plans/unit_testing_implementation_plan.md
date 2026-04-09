@@ -1,7 +1,7 @@
 # Unit Testing Implementation Plan
 
 This document is a step-by-step plan to implement the unit testing infrastructure described in
-[Unit Testing — Sapie Implementation](unit_testing_sapie.md). Each step is small, independently
+[Unit Testing — Sapie Implementation](../dev/unit_testing_sapie.md). Each step is small, independently
 verifiable, and leaves the codebase in a working state.
 
 All unit tests are co-located with their source files in `src/` and follow the `*.spec.ts`
@@ -57,28 +57,29 @@ Status: Done
 
 ### Step 3 — Create the test emulator Docker setup
 
-Create a `docker-compose.test.yml` in the project root. Use a dedicated
-`firebase.test-unit.json` for the test container so **host and container use the same
-emulator ports** (the Emulator UI runs in the browser and follows URLs advertised by the
+Add **`compose.test-unit.yml`** at the project root (not `docker-compose.test.yml`). Use a
+dedicated **`firebase.test-unit.json`** for the test container so **host and container use the
+same emulator ports** (the Emulator UI runs in the browser and follows URLs advertised by the
 suite; remapping e.g. `8181:8080` breaks Firestore and the WebSocket `requests` channel).
 
-Typical ports in that file (see repo root `firebase.test-unit.json`):
+Typical ports in that file (see repo root [`firebase.test-unit.json`](../../firebase.test-unit.json)):
 
 - Firestore HTTP: `8181`
 - Firestore WebSocket (UI): `9160` (`websocketPort`; avoids host conflict with dev default `9150`)
-- Auth: `9199`
+- Auth: `9098` (distinct from local-dev Storage on **9200** and full emulator Auth **9099**)
 - Emulator UI: `4001`
 - Emulator Hub: `4410` (avoids clashing with a local dev hub on `4400`)
 - Logging: `4510`
 
-Use a custom `Dockerfile` based on `node:22-alpine` rather than a pre-built third-party image.
-Install the Firebase CLI (pin the version) and OpenJDK (required by the emulators). Copy
-`firebase.test-unit.json` and `.firebaserc` into the container and run
-`firebase emulators:start --config firebase.test-unit.json`.
+Use a custom image from **[`Dockerfile.firebase-emulators`](../../Dockerfile.firebase-emulators)**
+(generic Node + JRE + pinned `firebase-tools`) rather than a pre-built third-party image.
+Compose bind-mounts **`.firebaserc`** and mounts **`firebase.test-unit.json`** as
+`/srv/firebase/firebase.json`; the **`command`** runs
+`firebase emulators:start --project demo-test-unit --only auth,firestore,ui` (see the compose file).
 
 Apply a `tmpfs` mount to the Firestore data directory for in-memory speed and ephemeral data.
 
-**Verify:** Run `docker compose -f docker-compose.test.yml up`. The emulator UI should be
+**Verify:** Run `docker compose -f compose.test-unit.yml up -d`. The emulator UI should be
 accessible at `http://localhost:4001`. Confirm Firestore is reachable:
 
 ```bash
@@ -93,17 +94,18 @@ Status: Done
 
 ### Step 4 — Create helper scripts for the test container
 
-Create two scripts:
+Create scripts (current names in repo):
 
-- `scripts/start-test-emulator.sh` — starts the container if not already running
-- `scripts/stop-test-emulator.sh` — stops and removes the container
+- [`scripts/emulator-test-unit-start.sh`](../../scripts/emulator-test-unit-start.sh) — `docker compose -f compose.test-unit.yml up -d`; idempotent if already running
+- [`scripts/emulator-test-unit-stop.sh`](../../scripts/emulator-test-unit-stop.sh) — stops the stack
+- [`scripts/emulator-test-unit-remove.sh`](../../scripts/emulator-test-unit-remove.sh) — `compose down` with optional cleanup
 
 The start script should check whether the container is already running and exit gracefully if
 it is, supporting the long-lived container workflow.
 
-**Verify:** Run `start-test-emulator.sh` twice. The second invocation should detect the
-already-running container and not start a duplicate. Run `stop-test-emulator.sh` and confirm
-the container exits. Run the start script again to confirm a clean restart.
+**Verify:** Run `emulator-test-unit-start.sh` twice. The second invocation should detect the
+already-running container and not start a duplicate. Run `emulator-test-unit-stop.sh` and confirm
+the stack stops. Run the start script again to confirm a clean restart.
 
 Status: Done
 
@@ -114,7 +116,7 @@ Status: Done
 Update the `test` script in `package.json` to set the emulator environment variables:
 
 ```json
-"test": "CURRENT_ENV=test FIRESTORE_EMULATOR_HOST=localhost:8181 FIREBASE_AUTH_EMULATOR_HOST=localhost:9199 GCLOUD_PROJECT=sapie-test jest"
+"test": "CURRENT_ENV=test FIRESTORE_EMULATOR_HOST=localhost:8181 FIREBASE_AUTH_EMULATOR_HOST=localhost:9098 GCLOUD_PROJECT=sapie-test jest"
 ```
 
 **Verify:** With the test container running, run `pnpm test`. All existing tests pass. With

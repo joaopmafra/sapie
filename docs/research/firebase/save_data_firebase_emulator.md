@@ -35,6 +35,15 @@ firebase emulators:start --import <export-directory-path>
 
 This will load the data from the specified directory into the corresponding emulators when they start.
 
+## Sapie hybrid local dev (Docker)
+
+Hybrid development uses [`compose.local-dev.yml`](../../../compose.local-dev.yml) with
+[`firebase.local-dev.json`](../../../firebase.local-dev.json). The compose **`command`** passes
+**`--import`** and **`--export-on-exit`** for the bind-mounted directory
+**[`./firebase/data-local-dev`](../../../firebase/data-local-dev)** (create it if needed; an empty
+directory skips import with a CLI warning). That is the Sapie-specific path matching the import/export
+behavior described above.
+
 ## Important Considerations
 
 ### Baseline Data

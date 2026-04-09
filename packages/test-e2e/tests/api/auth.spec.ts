@@ -2,7 +2,9 @@ import { test, expect, request } from '@playwright/test';
 import {
   API_ENDPOINTS,
   TEST_AUTH_SCENARIOS,
-  EXPECTED_AUTH_ERRORS
+  EXPECTED_AUTH_ERRORS,
+  expectUnauthorizedJsonBody,
+  getApiErrorFields,
 } from '../helpers/test-utils';
 import {
   createTestUserWithToken,
@@ -32,9 +34,7 @@ async function testUnauthorizedRequest(
   expect(response.status()).toBe(401);
 
   const responseBody = await response.json();
-  expect(responseBody).toHaveProperty('statusCode', expectedError.statusCode);
-  expect(responseBody).toHaveProperty('message', expectedError.message);
-  expect(responseBody).toHaveProperty('error', expectedError.error);
+  expectUnauthorizedJsonBody(responseBody as Record<string, unknown>, expectedError);
 
   await apiContext.dispose();
 }
@@ -88,11 +88,12 @@ test.describe('API Authentication', () => {
       expect(response.status()).toBe(401);
 
       const responseBody = await response.json();
-      expect(responseBody.statusCode).toBe(401);
+      const fields = getApiErrorFields(responseBody as Record<string, unknown>);
+      expect(fields.status).toBe(401);
       expect([
         EXPECTED_AUTH_ERRORS.NO_TOKEN.message,
-        EXPECTED_AUTH_ERRORS.INVALID_TOKEN.message
-      ]).toContain(responseBody.message);
+        EXPECTED_AUTH_ERRORS.INVALID_TOKEN.message,
+      ]).toContain(fields.message);
 
       await apiContext.dispose();
     }

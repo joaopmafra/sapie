@@ -12,15 +12,21 @@ firebase-debug.*.log*
 
 # Firebase cache
 .firebase/
-firebase/data/
-firebase/emulator-cache/
-
-# Firebase config
 
 # Uncomment this if you'd like others to create their own Firebase project.
 # For a team working on the same Firebase project(s), it is recommended to leave
 # it commented so all members can deploy to the same project(s) in .firebaserc.
 # .firebaserc
+
+# Emulator export dir for local-dev compose: keep folder, ignore export contents
+firebase/data-local-dev/*
+!firebase/data-local-dev/.gitkeep
+
+# Emulator install files when running on container
+firebase/emulator-cache/
+
+# api package node_modules when running on Firebase Emulators
+firebase/api-node_modules/
 
 # Runtime data
 pids

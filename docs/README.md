@@ -1,29 +1,22 @@
-# Documentation Hub
+# Documentation
 
-Welcome to the Sapie project documentation! Everything is organized by purpose and audience.
+Sapie documentation is grouped by audience:
 
-## 📁 Structure
+- **[dev/](dev/README.md)** — Principles, contributing, testing, doc style. **Start here for development.**
+- **[research/](research/)** — MVP details, technical spikes, ADR-style notes.
+- **[research/ai_workflow/](research/ai_workflow/)** — OpenSpec/OpenCode adoption, SDD tool comparison, roadmap→OpenCode
+  map, adoption log.
+- **[pm/](pm/README.md)** — Epics, features, stories, backlog folders.
+- **[plans/](plans/)** — Implementation plans.
+- **[adr/](adr/)** — Architecture Decision Records (accepted decisions).
+- **[other/](other/)** — Cross-cutting integration notes (e.g. Nest + Firebase).
 
-### 🛠 Development (`dev/`)
-Developer guides and standards:
-- **[Contributing Guidelines](dev/contributing_guidelines.md)** - How to contribute
-- **[Development Principles](dev/development_principles.md)** - Core principles
-- **[Documentation Guidelines](dev/documentation_guidelines.md)** - Writing standards
-- Other development guides...
+**Quick links**
 
-### 📋 Project Management (`pm/`)
-Project planning and management documentation. See the [PM README](pm/README.md) for details.
-
-### 🔬 Research (`research/`)
-Technical research and analysis. See individual files for specific topics.
-
-### 🔧 Other (`other/`)
-Technical integration guides and miscellaneous documentation.
-
-## 🎯 Quick Start
-
-**New Developers:** Start with [Contributing Guidelines](dev/contributing_guidelines.md)
-
-**Project Managers:** Check [Project Management](pm/) for planning and progress
-
-**Technical Research:** Browse [Research Documentation](research/) for decisions and analysis
+- Current product goal: [MVP objective](research/mvp_objective.md)
+- How to work on the repo: [Contributing guidelines](dev/contributing_guidelines.md)
+- AI-assisted workflow (research):
+    - [AI development acceleration plan](research/ai_workflow/ai_development_acceleration_plan.md)
+    - [SDD tools — OpenSpec vs alternatives](research/ai_workflow/sdd_tools.md)
+    - [Claude Code roadmap → OpenCode](research/ai_workflow/claude_code_roadmap_to_opencode.md)
+    - [AI workflow adoption log](research/ai_workflow/ai_workflow_adoption_log.md)

@@ -3,25 +3,38 @@
 This document outlines the core development principles used throughout the Sapie project to maintain code quality,
 consistency, and maintainability.
 
-TODO: add lean startup, MVP development, lean software development, agile and devops principles
+## Product and process context
+
+- **MVP first**: The goal is a **working study tool quickly** — see [mvp_objective.md](../research/mvp_objective.md).
+  Prefer simple designs that ship over perfect architectures that do not.
+- **Lean Startup**: Build–measure–learn in small iterations; validate with real use.
+- **Agile (values, not Scrum-by-default)**: Favor collaboration, working software, and responding to change; use the
+  PM artifacts under `docs/pm/` as lightweight planning, not a rigid process.
+- **DevOps habit**: Automate verify/build scripts and keep main shippable; detailed environment notes live in research
+  and package READMEs when needed.
 
 ## Core Principles
 
 We follow these fundamental development principles throughout the codebase:
+
+### KISS (Keep It Simple, Stupid)
+
+_Simplicity is the ultimate sophistication_ - Leonardo Da Vinci
+
+We follow the Simplicity principle from Extreme Programming (XP). See the [xp_simplicity_is_the_key.md](xp_simplicity_is_the_key.md) document for details.
+
+Guidelines:
+- ✅ **Prefer simple solutions** - Choose the most straightforward approach that meets requirements
+- ✅ **Avoid over-engineering** - Don't add complexity for hypothetical future needs
+- ✅ **Write readable code** - Code should be self-documenting and easy to understand
+- ✅ **Small functions/components** - Keep functions focused on a single responsibility
+- ❌ **Don't build complex abstractions** unless there's clear, immediate value
 
 ### Make it work, make it right, make it fast
 
 - ✅ **Make it work** - Get the basic functionality working first
 - ✅ **Make it right** - Clean up and improve after the feature works
 - ✅ **Make it fast** - Optimize for performance when there's a proven issue
-
-### KISS (Keep It Simple, Stupid)
-
-- ✅ **Prefer simple solutions** - Choose the most straightforward approach that meets requirements
-- ✅ **Avoid over-engineering** - Don't add complexity for hypothetical future needs
-- ✅ **Write readable code** - Code should be self-documenting and easy to understand
-- ✅ **Small functions/components** - Keep functions focused on a single responsibility
-- ❌ **Don't build complex abstractions** unless there's clear, immediate value
 
 ### DRY (Don't Repeat Yourself)
 
@@ -40,6 +53,9 @@ We follow these fundamental development principles throughout the codebase:
 
 ### Single Responsibility Principle
 
+Sometimes, to keep the design simple, we need to relax this principle. When this happens, we should apply the higher principle of high cohesion, but the simplicity principle is more important.
+
+Guidelines:
 - ✅ **One purpose per function** - Each function should do one thing well
 - ✅ **One concern per component** - React components should have a single responsibility
 - ✅ **Focused modules** - Each module should have a clear, single purpose
@@ -51,7 +67,7 @@ We follow these fundamental development principles throughout the codebase:
 - ✅ **Separate concerns** - Don't mix refactoring with feature work in the same commit
 - ✅ **Simplify then extend** - Make the foundation clear before building on it
 
-*See [detailed guide](../research/first_make_change_easy.md) for examples and when to apply this principle.*
+*See [detailed guide](first_make_the_change_easy.md) for examples and when to apply this principle.*
 
 ### Principle of least astonishment (POLA)
 
@@ -146,7 +162,7 @@ When reviewing code (or self-reviewing):
 
 For questions about applying these principles:
 
-1. **Check the [Contributing Guidelines](contributing_guidelines.md)** - See how principles integrate with the
-   development workflow
+1. **Check [Contributing guidelines](contributing_guidelines.md)** (and [AI agent guidelines](ai_agent_guidelines.md) for
+   assistants) — how principles tie to workflow and verification
 2. **Review existing code** - Look at how principles are applied in the current codebase
 3. **Ask the team** - When in doubt about how to apply a principle in a specific situation 

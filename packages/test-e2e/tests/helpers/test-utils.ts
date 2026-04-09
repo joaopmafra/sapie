@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import { expect, Page } from '@playwright/test';
 
 /**
  * Take a screenshot with a descriptive name
@@ -53,6 +53,48 @@ export const EXPECTED_AUTH_ERRORS = {
     error: 'Unauthorized',
   },
 } as const;
+
+type ExpectedAuthError =
+  (typeof EXPECTED_AUTH_ERRORS)[keyof typeof EXPECTED_AUTH_ERRORS];
+
+/**
+ * Normalize Nest problem-details (RFC 7807: `status` / `detail` / `title`) or legacy `{ statusCode, message, error }`.
+ */
+export function getApiErrorFields(body: Record<string, unknown>): {
+  status: number;
+  message: string;
+  title: string;
+} {
+  const status =
+    typeof body.status === 'number'
+      ? body.status
+      : typeof body.statusCode === 'number'
+        ? body.statusCode
+        : NaN;
+  const message =
+    typeof body.detail === 'string'
+      ? body.detail
+      : typeof body.message === 'string'
+        ? body.message
+        : '';
+  const title =
+    typeof body.title === 'string'
+      ? body.title
+      : typeof body.error === 'string'
+        ? body.error
+        : '';
+  return { status, message, title };
+}
+
+export function expectUnauthorizedJsonBody(
+  body: Record<string, unknown>,
+  expected: ExpectedAuthError,
+) {
+  const { status, message, title } = getApiErrorFields(body);
+  expect(status).toBe(expected.statusCode);
+  expect(message).toBe(expected.message);
+  expect(title).toBe(expected.error);
+}
 
 /**
  * Wait for Firebase Auth emulator to be ready

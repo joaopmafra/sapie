@@ -1,0 +1,50 @@
+# Full stack for Playwright E2E: Hosting + Functions + Auth + Firestore + UI.
+# Same layout as compose.emulator.yml; Firebase CLI uses alias `test-e2e` → project id `demo-test-e2e` (.firebaserc).
+# Build first: scripts/build-all.sh test-e2e (dist + test-e2e env). Do not run alongside compose.emulator.yml (same ports).
+# No Firestore import/export dir in v1.
+name: sapie-test-e2e
+
+services:
+  firebase-test-e2e:
+    build:
+      context: .
+      dockerfile: Dockerfile.firebase-emulators
+    container_name: sapie-firebase-test-e2e
+    working_dir: /workspace
+    command:
+      [
+        "sh",
+        "-c",
+        "set -e && cd /workspace/packages/api && pnpm install --prod --frozen-lockfile && cd /workspace && exec firebase emulators:start --project test-e2e --only auth,firestore,functions,hosting,ui",
+      ]
+    ports:
+      - "4000:4000"
+      - "4400:4400"
+      - "4500:4500"
+      - "5000:5000"
+      - "5001:5001"
+      - "8080:8080"
+      - "9099:9099"
+      - "9150:9150"
+    volumes:
+      - ./.firebaserc:/workspace/.firebaserc:ro
+      - ./firebase.emulator.json:/workspace/firebase.json:ro
+      - ./packages/web/dist:/workspace/packages/web/dist:ro
+      - ./packages/api/package.json:/workspace/packages/api/package.json:ro
+      - ./packages/api/pnpm-lock.yaml:/workspace/packages/api/pnpm-lock.yaml:ro
+      - ./firebase/api-node_modules:/workspace/packages/api/node_modules
+      - ./packages/api/dist:/workspace/packages/api/dist
+      - ./firebase/emulator-cache:/root/.cache/firebase/emulators
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-sf",
+          "http://127.0.0.1:5001/demo-test-e2e/us-central1/api/api/health",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 36
+      start_period: 120s
+    restart: unless-stopped

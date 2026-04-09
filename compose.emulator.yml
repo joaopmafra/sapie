@@ -1,0 +1,39 @@
+# Full stack: Hosting + Functions + Auth + Firestore + UI for project `emulator` → demo-emulator.
+# Mounts built dist dirs + Firebase config. Functions: packages/api/dist; node_modules from pnpm using
+# packages/api/pnpm-lock.yaml (read-only) + package.json into firebase/api-node_modules (Alpine/musl).
+# Requires network on first start or when the lockfile changes. Rebuild image after Dockerfile.firebase-emulators 
+# changes.
+name: sapie-full-emulator
+
+services:
+  firebase-full-emulator:
+    build:
+      context: .
+      dockerfile: Dockerfile.firebase-emulators
+    container_name: sapie-firebase-full-emulator
+    working_dir: /workspace
+    command:
+      [
+        "sh",
+        "-c",
+        "set -e && cd /workspace/packages/api && pnpm install --prod --frozen-lockfile && cd /workspace && exec firebase emulators:start --project emulator --only auth,firestore,functions,hosting,ui",
+      ]
+    ports:
+      - "4000:4000"
+      - "4400:4400"
+      - "4500:4500"
+      - "5000:5000"
+      - "5001:5001"
+      - "8080:8080"
+      - "9099:9099"
+      - "9150:9150"
+    volumes:
+      - ./.firebaserc:/workspace/.firebaserc:ro
+      - ./firebase.emulator.json:/workspace/firebase.json:ro
+      - ./packages/web/dist:/workspace/packages/web/dist:ro
+      - ./packages/api/package.json:/workspace/packages/api/package.json:ro
+      - ./packages/api/pnpm-lock.yaml:/workspace/packages/api/pnpm-lock.yaml:ro
+      - ./firebase/api-node_modules:/workspace/packages/api/node_modules
+      - ./packages/api/dist:/workspace/packages/api/dist
+      - ./firebase/emulator-cache:/root/.cache/firebase/emulators
+    restart: unless-stopped

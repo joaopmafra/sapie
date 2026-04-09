@@ -154,10 +154,14 @@ const signInOptions = [
 
 ### Development with Emulators
 
-Firebase Auth emulator is automatically configured for local development:
-- **Auth Emulator**: http://localhost:9099
-- **Emulator UI**: http://localhost:4000
-- No real Firebase project required for basic testing
+**Hybrid local** (`scripts/dev-local.sh` / `compose.local-dev.yml`): Firebase Auth emulator is wired via
+`VITE_FIREBASE_AUTH_EMULATOR_HOST` (see `.env.local-dev.example` — Auth **9100**, Emulator UI **4002**; the API uses
+Firestore on **8282**).
+
+**Full emulator / E2E** (`pnpm emulator`, `compose.test-e2e.yml`): Auth **9099**, Emulator UI **4000**, Hosting **5000**,
+Functions **5001**, Firestore **8080**.
+
+No real Firebase project is required for basic testing against emulators.
 
 ### Environment Variables
 
@@ -290,7 +294,7 @@ function App() {
 }
 ```
 
-For comprehensive documentation on route protection setup and usage, see the **[Route Protection Guide](../../docs/dev/route_protection_guide.md)**.
+For comprehensive documentation on route protection setup and usage, see the **[Route Protection Guide](../../docs/research/route_protection_guide.md)**.
 
 ## Development Setup
 
