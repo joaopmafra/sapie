@@ -37,7 +37,7 @@ packages/api/
 The API supports multiple development environments:
 
 ### 1. Full Emulator Environment (`pnpm run emulator`)
-- Everything runs inside Firebase emulators
+- Hosting + Functions + emulators in **Docker** ([`compose.emulator.yml`](../../compose.emulator.yml)); see root README
 - Complete isolation from production
 - Slower startup but maximum safety
 
@@ -161,31 +161,39 @@ curl -X GET https://sapie-b09be.web.app/api/health
 
 ### Unit Tests
 
+Unit tests use the **Firestore and Auth emulators** in Docker ([`compose.test-unit.yml`](../../compose.test-unit.yml)
+at the repo root). From the **repository root**:
+
 ```bash
-# Run all unit tests
-pnpm test
-
-# Run tests with coverage
-pnpm test:cov
-
-# Run tests in watch mode
-pnpm test:watch
+./scripts/emulator-test-unit-start.sh
+# or: docker compose -f compose.test-unit.yml up -d
 ```
+
+Then from `packages/api`:
+
+```bash
+pnpm test
+pnpm test:cov
+pnpm test:debug   # optional
+```
+
+Stop the stack when finished: [`scripts/emulator-test-unit-stop.sh`](../../scripts/emulator-test-unit-stop.sh) or
+`docker compose -f compose.test-unit.yml down`.
 
 ### End-to-End Tests
 
 ```bash
-# Run e2e tests
+# Reserved for future real E2E against a deployed environment (jest-e2e config)
 pnpm test:e2e
-
-# Run all tests (unit + e2e)
-pnpm test:all
 ```
+
+Browser E2E lives in [`packages/test-e2e`](../test-e2e/README.md) against Compose (`compose.test-e2e.yml`).
 
 ### Test Structure
 
-- **Unit Tests**: Located alongside source files (`.spec.ts`)
-- **E2E Tests**: Located in `test/` directory
+- **Unit Tests**: Co-located (`.spec.ts`); require test-unit Docker emulators (see above)
+- **`test/` directory**: Reserved for future Jest E2E config (`jest-e2e.json`) only
+- **Playwright E2E**: [`packages/test-e2e`](../test-e2e/README.md)
 - **Coverage**: Generated in `coverage/` directory
 
 ## Code Quality
@@ -348,7 +356,8 @@ firebase deploy --only functions
 
 - **Node.js**: 22.x (see `.nvmrc` in workspace root)
 - **Package Manager**: pnpm@10.12.1 (defined in `packageManager` field)
-- **Firebase CLI**: Required for deployment and emulators
+- **Docker + Compose**: Required for `pnpm run emulator` and API unit tests (test-unit stack)
+- **Firebase CLI**: Required for deployment; optional if you only use Compose-based emulators
 
 ## Useful commands
 

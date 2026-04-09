@@ -23,7 +23,8 @@ sapie/
 - **Authentication**: Firebase Auth with FirebaseUI for login/logout flows
 - **Deployment**: Firebase Hosting (web) + Firebase Functions (API)
 - **Development**: Firebase Emulator Suite for local development
-- **Package Management**: Each package managed independently with PNPM (see [Firebase and monorepo tooling](#firebase-and-monorepo-tooling))
+- **Package Management**: Each package managed independently with PNPM (
+  see [Firebase and monorepo tooling](#firebase-and-monorepo-tooling))
 - **Code Quality**: ESLint + Prettier integration across all packages
 - **CI/CD Pipeline**: NOT IMPLEMENTED YET
 
@@ -126,7 +127,7 @@ Sapie includes user authentication powered by **Firebase Auth** with **FirebaseU
 **Features**: Email/password authentication, Google Sign-In, email verification, password reset, and session
 persistence.
 
-For detailed authentication setup, configuration, and usage instructions, see the 
+For detailed authentication setup, configuration, and usage instructions, see the
 **[Web App Authentication Documentation](./packages/web/README.md#authentication)**.
 
 ## Development
@@ -139,11 +140,14 @@ Run the full emulator (Hosting + Functions + Auth + Firestore) via Docker:
 pnpm run emulator
 ```
 
-Advanced: from the repo root, after `scripts/build-all.sh emulator`, you can run **`firebase emulators:start --project emulator`** on the host if you prefer not to use Compose (you must have Firebase CLI and compatible `node_modules` for Functions).
+Advanced: from the repo root, after `scripts/build-all.sh emulator`, you can run *
+*`firebase emulators:start --project emulator`** on the host if you prefer not to use Compose (you must have Firebase
+CLI and compatible `node_modules` for Functions).
 
 ### E2E tests (Playwright + Compose)
 
-Playwright targets the same Hosting + Functions emulator model as the full stack above, but with the **`test-e2e`** Firebase alias (emulated project id **`demo-test-e2e`**). From the repo root:
+Playwright targets the same Hosting + Functions emulator model as the full stack above, but with the **`test-e2e`**
+Firebase alias (emulated project id **`demo-test-e2e`**). From the repo root:
 
 ```bash
 scripts/build-all.sh test-e2e
@@ -151,7 +155,8 @@ docker compose -f compose.test-e2e.yml up --build -d --wait
 cd packages/test-e2e && pnpm test
 ```
 
-Uses [`compose.test-e2e.yml`](compose.test-e2e.yml). **Do not** run this alongside `pnpm run emulator` — the published ports overlap. Full steps: **[packages/test-e2e/README.md](./packages/test-e2e/README.md)**.
+Uses [`compose.test-e2e.yml`](compose.test-e2e.yml). **Do not** run this alongside `pnpm run emulator` — the published
+ports overlap. Full steps: **[packages/test-e2e/README.md](./packages/test-e2e/README.md)**.
 
 ### Development Servers (Alternative)
 
@@ -182,7 +187,7 @@ pnpm run lint
 pnpm run format
 
 # Format and lint all packages in sequence
-pnpm run forlin
+pnpm run format-lint
 
 # Verify code quality across all packages (format check + lint)
 pnpm run verify
@@ -204,7 +209,8 @@ each package directory.
 
 ### Testing Philosophy
 
-For testing expectations (API vs web vs E2E), see **[Contributing guidelines](docs/dev/contributing_guidelines.md#testing-expectations)**.
+For testing expectations (API vs web vs E2E), see *
+*[Contributing guidelines](docs/dev/contributing_guidelines.md#testing-expectations)**.
 
 ## Code Quality
 
@@ -252,17 +258,21 @@ After deployment, your application will be available at [https://sapie-b09be.web
 
 ## Firebase Commands
 
+**Default local flows use Docker Compose** (see [Quick Start](#quick-start), E2E section above, and
+[`docs/plans/firebase_emulators_docker_plan.md`](docs/plans/firebase_emulators_docker_plan.md)). Use the Firebase CLI
+on the host mainly for **deploy** or **advanced** debugging.
+
 ```bash
-# Kill Firebase emulators
+# Optional: stop stuck host-started emulator processes (not needed when using Compose)
 pkill -f "firebase.*emulator"
 
-# Start Firebase with all emulators enabled
+# Host-only: start all emulators (requires Firebase CLI + local config)
 firebase emulators:start
 
-# Start Firebase with only some emulators enabled
+# Host-only: subset of emulators
 firebase emulators:start --only=auth,functions,firestore
 
-# Clear the current project
+# Clear the current Firebase CLI project selection
 firebase use --clear
 ```
 
@@ -272,4 +282,5 @@ firebase use --clear
 - **Package Manager**: pnpm (see `packageManager` in root and package `package.json` files)
 - **Docker + Compose**: Required for **`pnpm run emulator`**
 - **Firebase CLI**: Required for deployment; optional for local emulator if using Compose only
-- **Layout**: Independent installs per package — required for Firebase; see [Firebase and monorepo tooling](#firebase-and-monorepo-tooling)
+- **Layout**: Independent installs per package — required for Firebase;
+  see [Firebase and monorepo tooling](#firebase-and-monorepo-tooling)

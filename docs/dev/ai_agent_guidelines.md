@@ -6,7 +6,8 @@ Rules for automated assistants (Cursor, Copilot, etc.) working on Sapie. Human c
 
 ## Delivery style
 
-Prefer **small, end-to-end slices** ([iterative_development.md](iterative_development.md)): simplest thing that works, then
+Prefer **small, end-to-end slices** ([iterative_development.md](iterative_development.md)): simplest thing that works,
+then
 extend. Do not gold-plate architecture while the study tool is still incomplete.
 
 ## Story execution
@@ -30,14 +31,24 @@ If a script fails, fix or report before moving on.
 
 ## Firebase emulators (Docker Compose)
 
-Copy-paste-oriented map (see [`docs/plans/firebase_emulators_docker_plan.md`](../plans/firebase_emulators_docker_plan.md) for full detail):
+Copy-paste-oriented map (see [`docs/plans/firebase_emulators_docker_plan.md`](../plans/firebase_emulators_docker_plan.md)
+for full detail):
 
-| Goal | Compose file | Notes |
-|------|----------------|------|
-| Full stack, `emulator` → `demo-emulator` | [`compose.emulator.yml`](../../compose.emulator.yml) | `pnpm emulator` → [`scripts/build-run-on-emulator.sh`](../../scripts/build-run-on-emulator.sh) |
-| API unit tests | [`compose.test-unit.yml`](../../compose.test-unit.yml) | [`scripts/test-emulator-start.sh`](../../scripts/emulator-test-unit-start.sh) / `stop` / `remove` |
-| Playwright E2E | [`compose.test-e2e.yml`](../../compose.test-e2e.yml) | `scripts/build-all.sh test-e2e` then `docker compose -f compose.test-e2e.yml up --build -d --wait`; same ports as full emulator — one stack at a time |
-| Local hybrid dev | [`compose.local-dev.yml`](../../compose.local-dev.yml) | [`scripts/dev-local.sh`](../../scripts/dev-local.sh) |
+- **Full stack, `emulator` → `demo-emulator`**
+  - Compose: [`compose.emulator.yml`](../../compose.emulator.yml)
+  - Run: `pnpm emulator` → [`scripts/build-run-on-emulator.sh`](../../scripts/build-run-on-emulator.sh)
+- **API unit tests**
+  - Compose: [`compose.test-unit.yml`](../../compose.test-unit.yml)
+  - Helpers: 
+    - [`scripts/emulator-test-unit-start.sh`](../../scripts/emulator-test-unit-start.sh)
+    - [`scripts/emulator-test-unit-stop.sh`](../../scripts/emulator-test-unit-stop.sh)
+    - [`scripts/emulator-test-unit-remove.sh`](../../scripts/emulator-test-unit-remove.sh)
+- **Playwright E2E**
+  - Compose: [`compose.test-e2e.yml`](../../compose.test-e2e.yml)
+  - Run: `scripts/build-all.sh test-e2e` then `docker compose -f compose.test-e2e.yml up --build -d --wait`; same ports as full emulator — **one stack at a time**
+- **Local hybrid dev**
+  - Compose: [`compose.local-dev.yml`](../../compose.local-dev.yml)
+  - Run: [`scripts/dev-local.sh`](../../scripts/dev-local.sh) (Ctrl+C to stop)
 
 ## Honesty and verification
 

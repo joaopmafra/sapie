@@ -16,7 +16,8 @@ user management, and development setup.
 
 ## Firebase Admin SDK Configuration
 
-The Firebase Admin SDK is implemented as a NestJS module for proper dependency injection and follows modern NestJS architecture patterns.
+The Firebase Admin SDK is implemented as a NestJS module for proper dependency injection and follows modern NestJS
+architecture patterns.
 
 ### Architecture Overview
 
@@ -37,6 +38,10 @@ The Firebase Admin SDK is implemented as a NestJS module for proper dependency i
 #### Development with Firebase Emulator
 
 - Uses project ID configuration
+- **Starting emulators:** from the repo root use Compose — hybrid local:
+  [`scripts/dev-local.sh`](../../scripts/dev-local.sh) or `docker compose -f compose.local-dev.yml up -d`; full stack:
+  `pnpm emulator` ([`compose.emulator.yml`](../../compose.emulator.yml)). See
+  [`docs/plans/firebase_emulators_docker_plan.md`](../plans/firebase_emulators_docker_plan.md).
 - Hybrid local (`CURRENT_ENV=local-dev`, `compose.local-dev.yml`): Auth `localhost:9100`, Firestore `localhost:8282`
   (see `.env.local-dev.example`)
 - Full emulator / E2E: Auth `localhost:9099`, Firestore `localhost:8080`
@@ -59,16 +64,17 @@ The Firebase Admin SDK is implemented as a NestJS module for proper dependency i
 **Example Usage**:
 
 ```typescript
-import { Injectable } from '@nestjs/common';
-import { FirebaseAdminService } from '../firebase';
+import {Injectable} from '@nestjs/common';
+import {FirebaseAdminService} from '../firebase';
 
 @Injectable()
 export class ExampleService {
-  constructor(private readonly firebaseAdminService: FirebaseAdminService) {}
+    constructor(private readonly firebaseAdminService: FirebaseAdminService) {
+    }
 
-  async authenticateUser(token: string) {
-    return await this.firebaseAdminService.verifyIdToken(token);
-  }
+    async authenticateUser(token: string) {
+        return await this.firebaseAdminService.verifyIdToken(token);
+    }
 }
 ```
 

@@ -43,14 +43,14 @@ emulator — only a difference in the fidelity and implementation complexity of 
 
 ## Technology Stack
 
-| Concern | Technology |
-|---|---|
-| Test runner | Jest (configured in `packages/api/package.json`) |
-| HTTP test client | `supertest` (via `@nestjs/testing`) |
-| Test module wiring | `@nestjs/testing` — `Test.createTestingModule()` |
-| Firestore (test) | Firebase Emulator running in Docker with `tmpfs` |
-| Authentication (test) | Fake `AuthGuard` injected via `overrideGuard()` |
-| Data isolation | Firestore Emulator REST API (`DELETE /emulator/v1/...`) |
+| Concern               | Technology                                              |
+|-----------------------|---------------------------------------------------------|
+| Test runner           | Jest (configured in `packages/api/package.json`)        |
+| HTTP test client      | `supertest` (via `@nestjs/testing`)                     |
+| Test module wiring    | `@nestjs/testing` — `Test.createTestingModule()`        |
+| Firestore (test)      | Firebase Emulator running in Docker with `tmpfs`        |
+| Authentication (test) | Fake `AuthGuard` injected via `overrideGuard()`         |
+| Data isolation        | Firestore Emulator REST API (`DELETE /emulator/v1/...`) |
 
 ### Script Decisions
 
@@ -144,9 +144,8 @@ Root [`firebase.json`](../../firebase.json) remains the CLI default for deploy a
 The `tmpfs` mount is applied to the Firestore data directory inside the container. Data export
 on exit is disabled — test data is intentionally ephemeral.
 
-> **Docker image:** Use a custom `Dockerfile` rather than a pre-built third-party image for
-> reliability. Pre-built images may lag Firebase CLI releases. Pin the Firebase CLI version
-> in the `Dockerfile` for reproducibility.
+> **Docker image:** [`Dockerfile.firebase-emulators`](../../Dockerfile.firebase-emulators) pins
+> `firebase-tools`; avoid stale third-party images.
 
 ### Environment Variables
 
@@ -176,10 +175,9 @@ file overrides for those keys).
 the process environment. The same applies to helpers that run before any importing module has
 been loaded.
 
-When the test Docker stack from the implementation plan is in place, prefer the host ports and
-project id agreed there (for example `FIRESTORE_EMULATOR_HOST=localhost:8181` and
-`GCLOUD_PROJECT=sapie-test`); until then, `.env.test-unit` may use local defaults such as
-`localhost:8181` aligned with the test-unit compose stack (not hybrid local-dev Firestore on `8282`).
+`.env.test-unit` must align with the test-unit compose stack (for example
+`FIRESTORE_EMULATOR_HOST=localhost:8181` and the project id used by Jest — not hybrid local-dev
+Firestore on `8282`). See [`packages/api/.env.test-unit`](../../packages/api/.env.test-unit).
 
 ### Container Lifecycle
 
@@ -189,8 +187,9 @@ The emulator container is intended to be **long-lived** — started once and kep
 - **First run:** container starts (one-time cost of ~10–15 seconds).
 - **Subsequent runs:** container is already running; tests connect immediately.
 
-A helper script (`scripts/start-test-emulator.sh`) handles starting the container if not
-already running. A companion `scripts/stop-test-emulator.sh` is provided for teardown.
+[`scripts/emulator-test-unit-start.sh`](../../scripts/emulator-test-unit-start.sh) starts the stack if
+not already running; [`scripts/emulator-test-unit-stop.sh`](../../scripts/emulator-test-unit-stop.sh)
+and [`scripts/emulator-test-unit-remove.sh`](../../scripts/emulator-test-unit-remove.sh) handle teardown.
 
 Firestore data is **not** persisted between runs — the `tmpfs` filesystem is ephemeral by
 design, and data is cleared before each test (see
@@ -272,7 +271,7 @@ databases do. The clear API is the idiomatic isolation mechanism for Firestore e
 
 ```
 [One-time, before development session]
-  Developer runs: scripts/start-test-emulator.sh
+  Developer runs: scripts/emulator-test-unit-start.sh (from repo root)
   → Docker container starts (or is found already running)
   → Firestore emulator comes up on port 8181
   → Container remains running indefinitely
@@ -358,11 +357,13 @@ divergence risk as a fake that drifts from its real implementation.
 
 Previously open design choices are settled as follows:
 
-1. **Docker image for the test emulator.** Use a **custom `Dockerfile`** based on an official
-   Node image, install and **pin the Firebase CLI** version, and start emulators with the repo’s
-   `firebase.json`. Rationale and alternatives are in
-   `docs/research/run_firebase_emulator_container.md`. Compose file and scripts follow
-   [Unit Testing Implementation Plan](../plans/unit_testing_implementation_plan.md) once added to the repo.
+1. **Docker image for the test emulator.** Use **[`Dockerfile.firebase-emulators`](../../Dockerfile.firebase-emulators)
+   **
+   (generic image; compose bind-mounts **`firebase.test-unit.json`** as `firebase.json`). Rationale
+   and alternatives are in `docs/research/run_firebase_emulator_container.md`. Compose and scripts:
+   [`compose.test-unit.yml`](../../compose.test-unit.yml), [
+   `scripts/emulator-test-unit-start.sh`](../../scripts/emulator-test-unit-start.sh).
+   Historical steps: [Unit Testing Implementation Plan](../plans/unit_testing_implementation_plan.md).
 
 2. **Where Jest gets emulator host and project id.** Use **both** a small Jest bootstrap file and
    Nest’s env loading: `setupFiles` → `src/jest.setup.ts` sets `CURRENT_ENV=test-unit`;

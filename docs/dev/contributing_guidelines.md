@@ -19,7 +19,9 @@ Artifacts live under `docs/pm/`:
 - `4-in-progress/` — active work
 - `5-done/` — completed items
 
-**Lifecycle:** pick from `3-stories/1-ready/` → move to `4-in-progress/` → follow the story ([story template](story_template.md)) → run quality checks → move to `5-done/` when truly finished (humans move PM files; assistants ask the user).
+**Lifecycle:** pick from `3-stories/1-ready/` → move to `4-in-progress/` → follow the
+story ([story template](story_template.md)) → run quality checks → move to `5-done/` when truly finished (humans move PM
+files; assistants ask the user).
 
 **New PBIs** (naming, numbering, links): [Creating PBIs](../pm/README.md#creating-pbis).
 
@@ -56,11 +58,11 @@ Checks lint, format, types, and tests.
 
 We ship fast and still use **XP-style** tests where they pay off ([general.mdc](../../.cursor/rules/general.mdc)).
 
-| Area | Expectation |
-|------|-------------|
+| Area    | Expectation                                                                                                                                                                                             |
+|---------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **API** | Prefer **Classical TDD** for behavior changes — [unit_testing_strategy.md](unit_testing_strategy.md), [unit_testing_sapie.md](unit_testing_sapie.md). Focus on auth, authorization, and data integrity. |
-| **Web** | Story-driven; add tests when the story requires or for non-trivial logic (not thin library wrappers). |
-| **E2E** | **Not maintained** for the current MVP push unless a story explicitly says otherwise. |
+| **Web** | Story-driven; add tests when the story requires or for non-trivial logic (not thin library wrappers).                                                                                                   |
+| **E2E** | **Not maintained** for the current MVP push unless a story explicitly says otherwise.                                                                                                                   |
 
 Do not add tests whose only purpose is to mock third-party SDKs. If tests are deferred for speed, say so in the story.
 
@@ -69,13 +71,21 @@ Do not add tests whose only purpose is to mock third-party SDKs. If tests are de
 task asked for unit/integration tests.
 
 ```bash
+# API unit tests: Docker + test-unit emulators must be up (from repo root):
+#   ./scripts/emulator-test-unit-start.sh
+#   # or: docker compose -f compose.test-unit.yml up -d
 cd packages/api && pnpm test
+
 cd packages/web && pnpm test
+
 # E2E: start the Compose-backed emulators first (see packages/test-e2e/README.md), then:
 cd packages/test-e2e && pnpm test
 ```
 
-Details: package READMEs ([API testing](../../packages/api/README.md#testing), [web](../../packages/web/README.md#code-quality), [E2E](../../packages/test-e2e/README.md#running-tests)).
+Details: package
+READMEs ([API testing](../../packages/api/README.md#testing), [web](../../packages/web/README.md#code-quality), [E2E](../../packages/test-e2e/README.md#running-tests)).
+Compose map:
+[ai_agent_guidelines.md](ai_agent_guidelines.md#firebase-emulators-docker-compose).
 
 ### Git
 

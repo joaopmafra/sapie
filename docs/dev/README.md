@@ -2,7 +2,8 @@
 
 **Goal:** ship the [MVP](../research/mvp_objective.md) quickly. Shared context for tools (e.g. Cursor).
 
-**This file is the canonical ordered index** of `docs/dev/` for humans and assistants. When you add or reorder dev docs, update this list first; `.cursor/rules/general.mdc` points here so the two do not drift.
+**This file is the canonical ordered index** of `docs/dev/` for humans and assistants. When you add or reorder dev docs,
+update this list first; `.cursor/rules/general.mdc` points here so the two do not drift.
 
 Suggested reading order:
 
@@ -14,7 +15,12 @@ Suggested reading order:
 
 Assistants: [ai_agent_guidelines.md](ai_agent_guidelines.md)
 
+Firebase Emulator Suite for dev and tests is started via **Docker Compose** at the repo root
+(`compose.local-dev.yml`, `compose.test-unit.yml`, `compose.emulator.yml`, `compose.test-e2e.yml`); see
+[firebase_emulators_docker_plan.md](../plans/firebase_emulators_docker_plan.md).
+
 Supporting material:
+
 - [xp_simplicity_is_the_key.md](xp_simplicity_is_the_key.md)
 - [tdd_baby_steps.md](tdd_baby_steps.md)
 - [unit_testing_strategy.md](unit_testing_strategy.md)
