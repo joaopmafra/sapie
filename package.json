@@ -8,9 +8,8 @@
   "scripts": {
     "lint": "scripts/lint-all.sh",
     "format": "scripts/format-all.sh",
-    "forlin": "scripts/format-lint-all.sh",
+    "format-lint": "scripts/format-lint-all.sh",
     "verify": "scripts/verify-all.sh",
-    "build": "scripts/build-all.sh",
     "test": "scripts/verify-test-all.sh",
     "emulator": "scripts/build-run-on-emulator.sh",
     "dev": "scripts/dev-local.sh",
