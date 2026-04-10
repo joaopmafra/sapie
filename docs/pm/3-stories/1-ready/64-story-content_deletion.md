@@ -29,7 +29,7 @@ workspace clean.
 
 ## Dependencies
 
-- [ ] [Story 62](./62-story-tanstack_query_refactor.md) — TanStack Query must be in place so deletion
+- [ ] [Story 62](../../4-in-progress/62-story-tanstack_query_refactor.md) — TanStack Query must be in place so deletion
   invalidates only the affected parent's children query rather than re-fetching the whole tree.
 - [ ] [Story 55](../../2-to-refine/55-story-note_content_editor.md) — The note editor must exist before
   a delete action can be placed within it.

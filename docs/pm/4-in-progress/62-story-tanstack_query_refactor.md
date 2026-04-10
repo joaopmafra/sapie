@@ -25,11 +25,11 @@ Full implementation plan: `docs/research/client_state_management/phase_1_tanstac
 
 ## Epic Reference
 
-- [Epic 45: Content Management Foundation](../../1-epics/2-to-refine/45-epic-content_management_foundation.md)
+- [Epic 45: Content Management Foundation](../1-epics/2-to-refine/45-epic-content_management_foundation.md)
 
 ## Dependencies
 
-- [ ] [Story 53](../../5-done/53-story-create_notes.md) — Tasks 4–6 must be complete. The TanStack
+- [ ] [Story 53](../5-done/53-story-create_notes.md) — Tasks 4–6 must be complete. The TanStack
   Query refactor changes how `NoteEditorPage` loads data; the page shell must exist first.
 
 ## Acceptance Criteria
