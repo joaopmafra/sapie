@@ -207,9 +207,9 @@ function App() {
 
 `NoteEditorPage` needs to fetch a single content item by ID. This method does not currently exist in the
 frontend service, and **the backend endpoint does not exist either** — `GET /api/content/:id` is not yet
-implemented in `ContentController`. Adding this endpoint is the first backend task of
-[Story 55](../../pm/3-stories/2-to-refine/55-story-note_content_editor.md), which lists it as a prerequisite
-for the TanStack Query refactor. Confirm the endpoint exists before implementing this step.
+implemented in `ContentController`. Adding this endpoint is the first backend task of 55-story-note_content_editor.md, 
+which lists it as a prerequisite for the TanStack Query refactor. Confirm the endpoint exists before implementing this 
+step.
 
 **Important scope note:** `getContentById` returns **content metadata only** (name, type, parentId, etc.). It
 does not return the note body text. Note body content is stored in Cloud Storage and accessed via a separate
