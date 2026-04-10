@@ -5,7 +5,7 @@ interface ContentContextType {
   selectedNodeId: string | null;
   setSelectedNodeId: (id: string | null) => void;
   expandedNodeIds: string[];
-  setExpandedNodeIds: (ids: string[]) => void;
+  setExpandedNodeIds: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
