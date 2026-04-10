@@ -2,11 +2,11 @@
 
 ## Epic Reference
 
-- [Epic 45: Content Management Foundation](../../1-epics/2-to-refine/45-epic-content_management_foundation.md)
+- [Epic 45: Content Management Foundation](../1-epics/2-to-refine/45-epic-content_management_foundation.md)
 
 ## Feature Reference
 
-- [Feature 47: Note Editing & Management](../../2-features/1-ready/47-feature-note_editing_and_management.md)
+- [Feature 47: Note Editing & Management](../2-features/1-ready/47-feature-note_editing_and_management.md)
 
 ## User Story
 
@@ -20,7 +20,7 @@ focus on my study material without worrying about losing changes.
 - Rich-text note body below the title (visual editing; no raw-markdown mode for users).
 - Markdown features: headings, bold, italic, ordered/unordered lists, code blocks with syntax highlighting, links.
 - Auto-save after the user stops typing (**debounce: 2 seconds**).
-- Save status in the note editor header (bundled from [Story 54](../2-to-refine/54-story-save_status_display.md); no
+- Save status in the note editor header (bundled from [Story 54](../3-stories/2-to-refine/54-story-save_status_display.md); no
   separate story).
 - Note body stored in **Firebase Cloud Storage**; Firestore holds **metadata only** (`contentUrl`, `size`, `updatedAt`
   alongside existing fields).
@@ -38,8 +38,8 @@ focus on my study material without worrying about losing changes.
 
 | Dependency                                                                                                                   | Status  |
 |------------------------------------------------------------------------------------------------------------------------------|---------|
-| [Story 53](../../5-done/53-story-create_notes.md) — note editor shell, rename API                                            | Shipped |
-| [Story 62](../../5-done/62-story-tanstack_query_refactor.md) — TanStack Query, `useContentItem`, no tree thrash on mutations | Shipped |
+| [Story 53](../5-done/53-story-create_notes.md) — note editor shell, rename API                                            | Shipped |
+| [Story 62](../5-done/62-story-tanstack_query_refactor.md) — TanStack Query, `useContentItem`, no tree thrash on mutations | Shipped |
 
 **Already delivered (do not re-implement as part of this story)**
 
@@ -186,10 +186,10 @@ Save state machine: **`idle` | `pending` | `saving` | `saved` | `error`**.
 
 - **API:** unit/integration tests for new endpoints and storage behavior (required per project standards).
 - **E2E:** **not required** for this story during the MVP
-  push ([contributing guidelines](../../../dev/contributing_guidelines.md)); optional follow-up later.
+  push ([contributing guidelines](../../dev/contributing_guidelines.md)); optional follow-up later.
 
 ## References
 
 - TanStack Query plan and body-vs-metadata split: [
-  `docs/research/client_state_management/phase_1_tanstack_query.md`](../../../research/client_state_management/phase_1_tanstack_query.md)
-- MVP ordering: [`docs/research/mvp_objective.md`](../../../research/mvp_objective.md)
+  `docs/research/client_state_management/phase_1_tanstack_query.md`](../../research/client_state_management/phase_1_tanstack_query.md)
+- MVP ordering: [`docs/research/mvp_objective.md`](../../research/mvp_objective.md)
