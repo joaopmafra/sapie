@@ -20,7 +20,12 @@ import { useNavigate } from 'react-router-dom';
 
 import { useContent } from '../contexts/ContentContext';
 import { useAppSnackbar } from '../hooks/useAppSnackbar';
-import { type Content, ContentType } from '../lib/content';
+import {
+  type Content,
+  ContentType,
+  useContentItem,
+  useRootDirectory,
+} from '../lib/content';
 
 import ContentExplorer from './ContentExplorer';
 import CreateNoteModal from './CreateNoteModal';
@@ -55,11 +60,16 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   const [menuWidth, setMenuWidth] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const snackbar = useAppSnackbar();
-  const { selectedNodeId, nodeMap, triggerRefresh, addNoteToMap } =
-    useContent();
+  const { selectedNodeId } = useContent();
+  const { data: root } = useRootDirectory();
+  const { data: selectedContent } = useContentItem(selectedNodeId ?? undefined);
+
+  const currentNode =
+    selectedNodeId === null || selectedNodeId === undefined
+      ? root
+      : selectedContent;
 
   const menuOpen = Boolean(anchorEl);
-  const currentNode = nodeMap.get(selectedNodeId || 'root');
   const newContentParentId = getNewContentParentId();
 
   const handleNewButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -74,7 +84,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   const handleCreateNoteClick = () => {
     handleMenuClose();
     if (!currentNode) {
-      snackbar.showError('No node selected');
+      snackbar.showError('No folder selected');
       return;
     }
     setModalOpen(true);
@@ -86,18 +96,14 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
 
   const handleCreateSuccess = (newNote: Content) => {
     handleModalClose();
-    // Add the note to the nodeMap immediately for instant access
-    addNoteToMap(newNote);
-    // Still trigger refresh to update the tree structure and get any server-side changes
-    triggerRefresh();
     navigate(`/notes/${newNote.id}`);
   };
 
   function getNewContentParentId() {
     if (currentNode?.type === ContentType.DIRECTORY) return currentNode.id;
-    else if (currentNode?.type === ContentType.NOTE)
+    if (currentNode?.type === ContentType.NOTE)
       return currentNode.parentId ?? '';
-    else return '';
+    return '';
   }
 
   const drawerContent = (
@@ -163,7 +169,6 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   );
 
   if (isMobile) {
-    // Mobile: temporary drawer (overlay)
     return (
       <Drawer
         variant='temporary'
@@ -185,7 +190,6 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
     );
   }
 
-  // Desktop: persistent drawer
   return (
     <Drawer
       variant='persistent'

@@ -216,4 +216,38 @@ export class ContentController {
       throw error;
     }
   }
+
+  @Get(':id')
+  @Auth()
+  @ApiOperation({
+    summary: 'Get content item by ID',
+    description: 'Returns metadata for a single note or folder owned by the authenticated user.',
+  })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The ID of the content item.',
+    type: String,
+  })
+  @ApiOkResponse({
+    description: 'Content item found.',
+    type: ContentDto,
+  })
+  @ApiNotFoundResponse({
+    description:
+      'Content not found, or the authenticated user does not own it (same response to avoid leaking ids).',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Valid Firebase ID token required',
+    ...apiProblemDetailsSchema,
+  })
+  async getContentById(
+    @Request() request: AuthenticatedRequest,
+    @Param('id') id: string
+  ): Promise<Content> {
+    const { user } = request;
+    this.logger.debug(`Getting content ${id} for user: ${user.uid}`);
+    return this.contentService.findByIdAndOwnerId(id, user.uid);
+  }
 }

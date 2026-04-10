@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-docker compose -f compose.dev-local.yml logs -n 100 --follow
+docker compose -f compose.local-dev.yml logs -n 100 --follow

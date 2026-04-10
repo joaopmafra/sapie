@@ -6,56 +6,33 @@ import {
   CircularProgress,
   Paper,
 } from '@mui/material';
+import { isAxiosError } from 'axios';
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { ClientErrorAlert } from '../components/ClientErrorAlert';
 import { useAuth } from '../contexts/AuthContext';
-import { useContent } from '../contexts/ContentContext';
-import { contentService, ContentType } from '../lib/content';
+import { ContentType, useContentItem, useRenameContent } from '../lib/content';
 import { PROBLEM_DETAILS_POINTERS } from '../lib/problemDetailsPointers.ts';
 
 const NoteEditorPage = () => {
   const { noteId } = useParams<{ noteId: string }>();
   const { currentUser } = useAuth();
-  const { nodeMap, updateContentInMap } = useContent();
+  const { data: note, isLoading, isError, error } = useContentItem(noteId);
+  const renameContent = useRenameContent();
+
   const [noteName, setNoteName] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [renameError, setRenameError] = useState<unknown | null>(null);
-  const [isRenaming, setIsRenaming] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const renameInProgressRef = useRef(false);
 
-  // Get note data from the nodeMap
-  const note = noteId ? nodeMap.get(noteId) : undefined;
-
   useEffect(() => {
-    if (!noteId) {
-      setError('Note ID is required');
-      setLoading(false);
-      return;
-    }
-
-    // Check if note exists in nodeMap
     if (note) {
-      setLoading(false);
-      if (note.type !== ContentType.NOTE) {
-        setError('The specified content is not a note');
-        return;
-      }
-      setError(null);
       setNoteName(note.name);
-    } else {
-      // Note not found in nodeMap - this could happen if user navigates directly to URL
-      // without going through the app flow
-      setError('Note not found. Please navigate to the note from the sidebar.');
-      setLoading(false);
     }
-  }, [noteId, note]);
+  }, [note]);
 
-  // Focus the input when editing mode is activated
   useEffect(() => {
     if (isEditing && nameInputRef.current) {
       nameInputRef.current.focus();
@@ -96,23 +73,20 @@ const NoteEditorPage = () => {
     }
 
     renameInProgressRef.current = true;
-    setIsRenaming(true);
     setRenameError(null);
 
     try {
-      const updated = await contentService.renameContent(
-        currentUser,
-        noteId,
-        trimmed
-      );
-      updateContentInMap(updated);
-      setNoteName(updated.name);
+      await renameContent.mutateAsync({
+        id: noteId,
+        name: trimmed,
+        parentId: note.parentId,
+      });
+      setNoteName(trimmed);
       setIsEditing(false);
     } catch (err) {
       setRenameError(err);
     } finally {
       renameInProgressRef.current = false;
-      setIsRenaming(false);
     }
   };
 
@@ -134,7 +108,11 @@ const NoteEditorPage = () => {
     );
   };
 
-  if (loading) {
+  if (!noteId) {
+    return createError('Note ID is required');
+  }
+
+  if (isLoading) {
     return (
       <Box
         sx={{
@@ -149,20 +127,28 @@ const NoteEditorPage = () => {
     );
   }
 
-  if (error) {
-    return createError(error);
+  if (isError) {
+    if (isAxiosError(error) && error.response?.status === 404) {
+      return createError(
+        'Note not found. This note may have been deleted or the link may be invalid.'
+      );
+    }
+    const message =
+      error instanceof Error ? error.message : 'Failed to load this note.';
+    return createError(message);
   }
 
   if (!note) {
-    return createError(
-      'Note not found. Please navigate to the note from the sidebar.'
-    );
+    return createError('Note not found.');
+  }
+
+  if (note.type !== ContentType.NOTE) {
+    return createError('The specified content is not a note');
   }
 
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto' }}>
       <Paper elevation={1} sx={{ p: 3 }}>
-        {/* Note Header */}
         <Box sx={{ mb: 3 }}>
           {isEditing ? (
             <Box>
@@ -173,7 +159,7 @@ const NoteEditorPage = () => {
                 onChange={e => setNoteName(e.target.value)}
                 onKeyDown={handleNameKeyDown}
                 onBlur={() => void handleNameSave()}
-                disabled={isRenaming}
+                disabled={renameContent.isPending}
                 variant='outlined'
                 placeholder='Enter note name...'
                 error={Boolean(renameError)}
@@ -214,7 +200,6 @@ const NoteEditorPage = () => {
           )}
         </Box>
 
-        {/* Note Metadata */}
         <Box sx={{ mb: 3, color: 'text.secondary' }}>
           <Typography variant='body2'>
             Created: {note.createdAt.toLocaleDateString()}
@@ -224,7 +209,6 @@ const NoteEditorPage = () => {
           </Typography>
         </Box>
 
-        {/* Note Content Area - Placeholder for future content editing */}
         <Box
           sx={{
             minHeight: '400px',

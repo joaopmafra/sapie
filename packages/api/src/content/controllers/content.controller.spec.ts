@@ -120,6 +120,41 @@ describe('ContentController', () => {
       .expect(HttpStatus.UNPROCESSABLE_ENTITY);
   });
 
+  it(`GET ${fixture.API_CONTENT}/:id returns a note (happy path)`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Single', root.id);
+
+    const body = await fixture.callApiGetContentByIdExpectingOkAsContent(
+      fixture.TEST_USER_ID,
+      note.id
+    );
+
+    expect(body).toMatchObject({
+      id: note.id,
+      name: 'Single',
+      type: 'note',
+      ownerId: fixture.TEST_USER_ID,
+      parentId: root.id,
+    });
+  });
+
+  it(`GET ${fixture.API_CONTENT}/:id returns 404 when content does not exist`, async () => {
+    await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+
+    await fixture
+      .callApiGetContentById(fixture.TEST_USER_ID, 'non-existent-id')
+      .expect(HttpStatus.NOT_FOUND);
+  });
+
+  it(`GET ${fixture.API_CONTENT}/:id returns 404 when caller does not own the content`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Private', root.id);
+
+    await fixture
+      .callApiGetContentById(fixture.OTHER_USER_ID, note.id)
+      .expect(HttpStatus.NOT_FOUND);
+  });
+
   it(`GET ${fixture.API_CONTENT} lists only content for parent and owner`, async () => {
     const userOneRoot = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
     const userTwoRoot = await fixture.seedRootDirectory(fixture.OTHER_USER_ID);

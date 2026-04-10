@@ -29,8 +29,9 @@ workspace clean.
 
 ## Dependencies
 
-- [ ] [Story 62](./62-story-tanstack_query_refactor.md) — TanStack Query must be in place so deletion
-  invalidates only the affected parent's children query rather than re-fetching the whole tree.
+- [ ] [Story 62](../../5-done/62-story-tanstack_query_refactor.md) — TanStack Query must be in place so deletion
+  invalidates only the affected parent's children query rather than re-fetching the whole tree. (Story 62 did not ship
+  `useDeleteContent`; a **TODO** in `packages/web/src/lib/content/content-hooks.ts` marks where to add it.)
 - [ ] [Story 55](../../2-to-refine/55-story-note_content_editor.md) — The note editor must exist before
   a delete action can be placed within it.
 
@@ -60,6 +61,15 @@ workspace clean.
 - [ ] The `deletedBy` field must be set (matching the `VersionActor` shape from the versioning design)
   to support the future operation log.
 
+### TanStack Query (recommended cache updates on delete)
+
+When implementing the delete mutation (`useDeleteContent` in `content-hooks.ts`):
+
+- **`invalidateQueries({ queryKey: contentQueryKeys.children(parentId) })`** — refetch the parent folder’s children so the sidebar drops the deleted item (same pattern as create/rename in Story 62).
+- **`removeQueries({ queryKey: contentQueryKeys.item(id) })`** — remove the single-item cache entry for the deleted note or folder so stale metadata cannot flash on `/notes/:id` or after prefetch. This is the usual complement to invalidating the children list.
+
+For **folder** deletion with a deep subtree, invalidate **`children`** for the folder’s **parent** at minimum. If the UI ever shows inconsistent descendants, a broader fallback is **`invalidateQueries({ queryKey: contentQueryKeys.allChildren() })`**; prefer targeted keys when the tree state is clear enough to compute them.
+
 ## Tasks
 
 ### Backend
@@ -81,6 +91,12 @@ workspace clean.
 
 ### Frontend
 
+- [ ] **[FE] Add `useDeleteContent()` and `contentService.deleteContent()`**
+    - `useMutation` calling the new DELETE API; **`onSuccess`**: `invalidateQueries` for
+      `contentQueryKeys.children(parentId)` **and** `removeQueries` for
+      `contentQueryKeys.item(id)` (see **TanStack Query** subsection above).
+    - Regenerate the OpenAPI client after the backend route exists.
+
 - [ ] **[FE] Add delete action to note editor**
     - Add a "Delete note" button or menu item in the note editor header/toolbar.
     - On click, show a `ConfirmDeleteDialog` ("Are you sure you want to delete this note?").
@@ -93,7 +109,7 @@ workspace clean.
     - On click, show `ConfirmDeleteDialog`. For folders, include a count of items that will be deleted
       (use the folder's known children from the TanStack Query cache for an approximate count; note the
       dialog text should say "and all its contents").
-    - On confirm, call `useDeleteContent()` mutation. Invalidates `contentQueryKeys.children(parentId)`.
+    - On confirm, call `useDeleteContent()` mutation (invalidate parent **`children`**, remove **`item(id)`** from cache).
 
 - [ ] **[FE] `ConfirmDeleteDialog` component**
     - Reusable MUI Dialog with "Cancel" and "Delete" buttons.

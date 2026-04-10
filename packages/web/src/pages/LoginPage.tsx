@@ -1,37 +1,39 @@
 import { Container, Box, Typography, Paper } from '@mui/material';
-import { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 
 import FirebaseUIAuth from '../components/auth/FirebaseUIAuth';
 import { useAuth } from '../contexts/AuthContext';
 
+type LoginRedirectState = { from?: { pathname?: string } } | null | undefined;
+
+const DEFAULT_AFTER_LOGIN = '/';
+
+/**
+ * After sign-in (or visiting /login while already signed in), choose where to go.
+ * `state.from` comes from ProtectedRoute when the user was sent here from a protected URL;
+ * it can be stale (new account, emulator reset). `/notes/:id` in particular often 404s, so
+ * we send those users home instead.
+ *
+ * Trade-off: a *valid* note URL in `from` (e.g. user re-auths after token expiry) would also
+ * go home. If that becomes painful, narrow the rule (e.g. only ignore `from` when we can detect
+ * stale navigation, or tag `state` from ProtectedRoute with a timestamp / intent).
+ */
+function postLoginRedirectPath(
+  state: LoginRedirectState,
+  fallback: string
+): string {
+  const p = state?.from?.pathname;
+  if (!p || p === '/login') return fallback;
+  if (p.startsWith('/notes/')) return fallback;
+  return p;
+}
+
 const LoginPage = () => {
   const { currentUser, loading } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
-
-  // Get the intended destination from location state
-  const from = location.state?.from?.pathname || '/';
-
-  useEffect(() => {
-    // Redirect to intended destination if user is already authenticated
-    if (!loading && currentUser) {
-      navigate(from, { replace: true });
-    }
-  }, [currentUser, loading, navigate, from]);
-
-  const handleSignInSuccess = (_authResult: unknown, redirectUrl?: string) => {
-    // Navigate to the intended destination or provided redirect URL
-    const targetUrl = redirectUrl || from;
-    navigate(targetUrl, { replace: true });
-
-    // Return false to prevent FirebaseUI from handling the redirect
-    return false;
-  };
 
   const handleSignInFailure = async (error: unknown) => {
     console.error('Sign-in failed:', error);
-    // You can add custom error handling here, like showing a toast notification
   };
 
   if (loading) {
@@ -40,14 +42,25 @@ const LoginPage = () => {
         <Box
           sx={{
             display: 'flex',
-            justifyContent: 'center',
+            flexDirection: 'column',
             alignItems: 'center',
+            justifyContent: 'center',
             minHeight: '50vh',
           }}
         >
           <Typography variant='body1'>Loading...</Typography>
         </Box>
       </Container>
+    );
+  }
+
+  if (currentUser) {
+    return (
+      <Navigate
+        to={postLoginRedirectPath(location.state, DEFAULT_AFTER_LOGIN)}
+        replace
+        state={{}}
+      />
     );
   }
 
@@ -90,11 +103,7 @@ const LoginPage = () => {
             Sign in to your account or create a new one
           </Typography>
 
-          <FirebaseUIAuth
-            signInSuccessUrl='/'
-            onSignInSuccess={handleSignInSuccess}
-            onSignInFailure={handleSignInFailure}
-          />
+          <FirebaseUIAuth onSignInFailure={handleSignInFailure} />
         </Paper>
       </Box>
     </Container>

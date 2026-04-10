@@ -15,6 +15,20 @@ export class ContentService {
     return this.contentRepository.findByParentIdAndOwnerId(parentId, ownerId);
   }
 
+  /**
+   * Returns a single content item if it exists and is owned by the user.
+   * Same 404 semantics as rename: missing id or wrong owner yields NotFound (no id leakage).
+   */
+  async findByIdAndOwnerId(id: string, ownerId: string): Promise<Content> {
+    const existing = await this.contentRepository.findById(id);
+
+    if (!existing || existing.ownerId !== ownerId) {
+      throw new NotFoundException(`Content with ID ${id} not found`);
+    }
+
+    return existing;
+  }
+
   async create(name: string, parentId: string, ownerId: string): Promise<Content> {
     const parent = await this.contentRepository.findById(parentId);
 
