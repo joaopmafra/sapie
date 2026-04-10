@@ -13,6 +13,10 @@ const DEFAULT_AFTER_LOGIN = '/';
  * `state.from` comes from ProtectedRoute when the user was sent here from a protected URL;
  * it can be stale (new account, emulator reset). `/notes/:id` in particular often 404s, so
  * we send those users home instead.
+ *
+ * Trade-off: a *valid* note URL in `from` (e.g. user re-auths after token expiry) would also
+ * go home. If that becomes painful, narrow the rule (e.g. only ignore `from` when we can detect
+ * stale navigation, or tag `state` from ProtectedRoute with a timestamp / intent).
  */
 function postLoginRedirectPath(
   state: LoginRedirectState,
