@@ -73,6 +73,25 @@ export class ContentService {
     }
   }
 
+  async getContentById(currentUser: User, id: string): Promise<Content> {
+    try {
+      const config = await createAuthenticatedApiConfiguration(
+        this.basePath,
+        currentUser
+      );
+
+      const response = await this.contentApi.contentControllerGetContentById(
+        { id },
+        config.baseOptions
+      );
+
+      return this.mapContentDtoToContent(response.data);
+    } catch (error) {
+      console.error('Failed to get content by id:', error);
+      throw error;
+    }
+  }
+
   async getContentByParentId(
     currentUser: User,
     parentId: string

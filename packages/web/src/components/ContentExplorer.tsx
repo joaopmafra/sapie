@@ -5,12 +5,74 @@ import FolderIcon from '@mui/icons-material/Folder';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
 import { TreeItem, type TreeItemProps } from '@mui/x-tree-view/TreeItem';
-import React, { useEffect, useState } from 'react';
+import { useQueries, useQueryClient } from '@tanstack/react-query';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../contexts/AuthContext';
-import { useContent, type EnrichedTreeNode } from '../contexts/ContentContext';
-import { contentService, ContentType } from '../lib/content';
+import { useContent } from '../contexts/ContentContext';
+import {
+  contentQueryKeys,
+  contentService,
+  ContentType,
+  useRootDirectory,
+  type Content,
+} from '../lib/content';
+
+interface EnrichedTreeNode extends Omit<Content, 'type'> {
+  type: ContentType | 'dummy';
+  children?: EnrichedTreeNode[];
+}
+
+function dummyPlaceholder(parent: Content): EnrichedTreeNode {
+  return {
+    id: `dummy_${parent.id}`,
+    name: 'Loading...',
+    type: 'dummy',
+    parentId: parent.id,
+    ownerId: parent.ownerId,
+    createdAt: parent.createdAt,
+    updatedAt: parent.updatedAt,
+  };
+}
+
+function mapContentToEnriched(
+  c: Content,
+  expanded: Set<string>,
+  childrenByParentId: Map<string, Content[]>,
+  loadingParentIds: Set<string>
+): EnrichedTreeNode {
+  if (c.type !== ContentType.DIRECTORY) {
+    return { ...c, children: undefined };
+  }
+
+  if (!expanded.has(c.id)) {
+    const dummy = dummyPlaceholder(c);
+    return { ...c, children: [dummy] };
+  }
+
+  if (loadingParentIds.has(c.id) || !childrenByParentId.has(c.id)) {
+    return { ...c, children: [dummyPlaceholder(c)] };
+  }
+
+  const kids = childrenByParentId.get(c.id) ?? [];
+  const childNodes = kids.map(ch =>
+    mapContentToEnriched(ch, expanded, childrenByParentId, loadingParentIds)
+  );
+  return { ...c, children: childNodes };
+}
+
+function flattenNodeMap(
+  nodes: EnrichedTreeNode[]
+): Map<string, EnrichedTreeNode> {
+  const map = new Map<string, EnrichedTreeNode>();
+  const walk = (n: EnrichedTreeNode) => {
+    map.set(n.id, n);
+    n.children?.forEach(walk);
+  };
+  nodes.forEach(walk);
+  return map;
+}
 
 const CustomTreeItem = React.forwardRef(function CustomTreeItem(
   props: TreeItemProps & { nodeMap: Map<string, EnrichedTreeNode> },
@@ -20,9 +82,9 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
   const node = nodeMap.get(itemId);
 
   const icon =
-    node?.type === 'directory' ? (
+    node?.type === ContentType.DIRECTORY ? (
       <FolderIcon sx={{ marginRight: 1 }} />
-    ) : node?.type === 'note' ? (
+    ) : node?.type === ContentType.NOTE ? (
       <ArticleIcon sx={{ marginRight: 1 }} />
     ) : null;
 
@@ -51,145 +113,102 @@ const ContentExplorer: React.FC = () => {
   const {
     selectedNodeId,
     setSelectedNodeId,
-    refreshTrigger,
-    nodeMap,
-    setNodeMap,
+    expandedNodeIds,
+    setExpandedNodeIds,
   } = useContent();
   const navigate = useNavigate();
-  const [tree, setTree] = useState<EnrichedTreeNode[]>([]);
-  const [expanded, setExpanded] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const expandSeededRef = useRef(false);
+
+  const rootQuery = useRootDirectory();
+  const root = rootQuery.data;
+
+  const idsForChildQueries = useMemo(() => {
+    if (!root?.id) return [];
+    const unique = new Set<string>([root.id, ...expandedNodeIds]);
+    return Array.from(unique);
+  }, [root?.id, expandedNodeIds]);
+
+  const childQueries = useQueries({
+    queries: idsForChildQueries.map(parentId => ({
+      queryKey: contentQueryKeys.children(parentId),
+      queryFn: () =>
+        contentService.getContentByParentId(currentUser!, parentId),
+      enabled:
+        Boolean(currentUser) &&
+        Boolean(root?.id) &&
+        (parentId === root?.id || expandedNodeIds.includes(parentId)),
+    })),
+  });
 
   useEffect(() => {
-    let isMounted = true;
-    const fetchRoot = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        if (!currentUser) {
-          setError('User not authenticated');
-          setLoading(false);
-          return;
-        }
-        const rootDir = await contentService.getRootDirectory(currentUser);
-        const children = await contentService.getContentByParentId(
-          currentUser,
-          rootDir.id
-        );
-        const childNodes: EnrichedTreeNode[] = children.map(child => ({
-          ...child,
-          children:
-            child.type === 'directory'
-              ? [
-                  {
-                    id: `dummy_${child.id}`,
-                    name: 'Loading...',
-                    type: 'dummy',
-                    parentId: child.id,
-                    ownerId: child.ownerId,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                  },
-                ]
-              : undefined,
-        }));
-
-        if (isMounted) {
-          const rootNode: EnrichedTreeNode = {
-            ...rootDir,
-            children: childNodes,
-          };
-          setTree([rootNode]);
-          const newMap = new Map<string, EnrichedTreeNode>();
-          newMap.set('root', rootNode);
-          newMap.set(rootNode.id, rootNode);
-          childNodes.forEach(child => newMap.set(child.id, child));
-          setNodeMap(newMap);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-    if (!authLoading) {
-      fetchRoot();
+    if (root?.id && !expandSeededRef.current) {
+      expandSeededRef.current = true;
+      setExpandedNodeIds(prev => (prev.length === 0 ? [root.id] : prev));
     }
-    return () => {
-      isMounted = false;
-    };
-  }, [currentUser, authLoading, refreshTrigger, setNodeMap]);
+  }, [root?.id, setExpandedNodeIds]);
+
+  const { tree, nodeMap } = useMemo(() => {
+    if (!root) {
+      return {
+        tree: [] as EnrichedTreeNode[],
+        nodeMap: new Map<string, EnrichedTreeNode>(),
+      };
+    }
+
+    const expanded = new Set(expandedNodeIds);
+    const childrenByParentId = new Map<string, Content[]>();
+    const loadingParentIds = new Set<string>();
+
+    idsForChildQueries.forEach((id, i) => {
+      const q = childQueries[i];
+      if (q?.data) {
+        childrenByParentId.set(id, q.data);
+      }
+      if (q?.isPending && !q.data) {
+        loadingParentIds.add(id);
+      }
+    });
+
+    const rootNode = mapContentToEnriched(
+      root,
+      expanded,
+      childrenByParentId,
+      loadingParentIds
+    );
+    const builtTree = [rootNode];
+    return { tree: builtTree, nodeMap: flattenNodeMap(builtTree) };
+  }, [root, expandedNodeIds, idsForChildQueries, childQueries]);
+
+  const treeError = useMemo(() => {
+    if (rootQuery.error) return rootQuery.error;
+    const qe = childQueries.find(q => q.error);
+    return qe?.error ?? null;
+  }, [rootQuery.error, childQueries]);
+
+  const loading =
+    authLoading ||
+    rootQuery.isPending ||
+    (!!root &&
+      childQueries.some(
+        (q, i) => idsForChildQueries[i] === root.id && q.isPending && !q.data
+      ));
 
   const handleExpandedItemsChange = async (
     _event: React.SyntheticEvent | null,
     expandedIds: string[]
   ) => {
-    setExpanded(expandedIds);
+    const prev = expandedNodeIds;
+    const newlyExpanded = expandedIds.filter(id => !prev.includes(id));
+    setExpandedNodeIds(expandedIds);
 
     if (!currentUser) return;
 
-    const lastExpandedId = expandedIds.find(id => !expanded.includes(id));
-    if (!lastExpandedId) return;
-
-    const node = nodeMap.get(lastExpandedId);
-
-    if (
-      node &&
-      node.type === 'directory' &&
-      node.children?.[0]?.type === 'dummy'
-    ) {
-      try {
-        const children = await contentService.getContentByParentId(
-          currentUser,
-          node.id
-        );
-        const childNodes: EnrichedTreeNode[] = children.map(child => ({
-          ...child,
-          children:
-            child.type === 'directory'
-              ? [
-                  {
-                    id: `dummy_${child.id}`,
-                    name: 'Loading...',
-                    type: 'dummy',
-                    parentId: child.id,
-                    ownerId: child.ownerId,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                  },
-                ]
-              : undefined,
-        }));
-
-        setTree(prevTree => {
-          const newTree = JSON.parse(JSON.stringify(prevTree));
-          const updateChildren = (
-            nodes: EnrichedTreeNode[]
-          ): EnrichedTreeNode[] => {
-            return nodes.map(n => {
-              if (n.id === node.id) {
-                return { ...n, children: childNodes };
-              }
-              if (n.children) {
-                return { ...n, children: updateChildren(n.children) };
-              }
-              return n;
-            });
-          };
-          return updateChildren(newTree);
-        });
-
-        setNodeMap(prevMap => {
-          const newMap = new Map(prevMap);
-          childNodes.forEach(child => newMap.set(child.id, child));
-          return newMap;
-        });
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-      }
+    for (const id of newlyExpanded) {
+      await queryClient.prefetchQuery({
+        queryKey: contentQueryKeys.children(id),
+        queryFn: () => contentService.getContentByParentId(currentUser, id),
+      });
     }
   };
 
@@ -206,10 +225,12 @@ const ContentExplorer: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (treeError) {
     return (
       <Box>
-        <Alert severity='error'>{error}</Alert>
+        <Alert severity='error'>
+          {treeError instanceof Error ? treeError.message : String(treeError)}
+        </Alert>
       </Box>
     );
   }
@@ -233,9 +254,8 @@ const ContentExplorer: React.FC = () => {
         selectedItems={selectedNodeId}
         onSelectedItemsChange={(_event, ids) => {
           const nodeId = Array.isArray(ids) ? ids[0] : ids;
-          setSelectedNodeId(nodeId);
+          setSelectedNodeId(nodeId ?? null);
 
-          // Navigate to note editor if a note is selected
           if (nodeId) {
             const selectedNode = nodeMap.get(nodeId);
             if (selectedNode && selectedNode.type === ContentType.NOTE) {
@@ -243,7 +263,7 @@ const ContentExplorer: React.FC = () => {
             }
           }
         }}
-        expandedItems={expanded}
+        expandedItems={expandedNodeIds}
         onExpandedItemsChange={handleExpandedItemsChange}
         sx={{ flexGrow: 1 }}
       />

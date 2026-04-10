@@ -7,11 +7,17 @@ React-based frontend for the Sapie knowledge management application.
 - **Framework**: React 19 with TypeScript
 - **Build Tool**: Vite
 - **UI Library**: Material-UI (MUI)
-- **State Management**: React Hooks (useState, useEffect)
+- **State Management**: React Hooks for local UI state; **TanStack Query (React Query v5)** for server state (content tree, single items, mutations with targeted invalidation)
 - **HTTP Client**: Fetch API
 - **Deployment**: Firebase Hosting
 - **Package Management**: PNPM (defined in packageManager field)
 - **Code Quality**: ESLint + Prettier integration
+
+### TanStack Query (content API)
+
+- Shared defaults live in `src/lib/queryClient.ts` (`staleTime` 5 minutes, `refetchOnWindowFocus: false`, `retry: 2`, `gcTime` 10 minutes).
+- **Query keys:** `src/lib/content/query-keys.ts` exports `contentQueryKeys` (`root`, `allChildren`, `children`, `item`). Use this factory for every content query and `invalidateQueries` call so keys stay consistent.
+- **Hooks:** `src/lib/content/content-hooks.ts` — root directory, per-folder children, single item by id, create note, rename. In development, React Query Devtools is mounted from `App.tsx` when `import.meta.env.DEV`.
 
 ## Project Structure
 
@@ -47,7 +53,9 @@ packages/web/
 ## Features
 
 ### Authentication System
+
 The web app provides comprehensive authentication functionality:
+
 - **Firebase Auth Integration**: Secure authentication with Firebase
 - **FirebaseUI Components**: Pre-built, accessible authentication UI
 - **Multiple Sign-In Methods**: Email/password and Google authentication
@@ -55,12 +63,15 @@ The web app provides comprehensive authentication functionality:
 - **Protected Routes**: Authentication-aware navigation and routing
 
 ### API Health Status Display
+
 The web app demonstrates API connectivity by:
+
 - Fetching health status from the `/api/health` endpoint
 - Displaying the API response in real-time
 - Showing connection status and error handling
 
 ### Modern React Stack
+
 - **React 19**: Latest React features and performance improvements
 - **TypeScript**: Full type safety and developer experience
 - **Material-UI**: Modern, accessible component library
@@ -117,18 +128,21 @@ The `FirebaseUIAuth` component is highly customizable:
 ```
 
 **Available Props:**
+
 - `signInSuccessUrl`: Redirect URL after successful authentication
 - `signInOptions`: Array of authentication providers and their configuration
 - `onSignInSuccess`: Custom success callback
 - `onSignInFailure`: Custom error callback
 
 **Key Configuration Options:**
+
 - **signInFlow**: `'popup'` (default) or `'redirect'`
 - **signInOptions**: Configure providers and their settings
 - **tosUrl/privacyPolicyUrl**: Terms of service and privacy policy links
 - **callbacks**: Custom success/failure handlers
 
 **Provider Configuration Example:**
+
 ```typescript
 const signInOptions = [
   {
@@ -147,6 +161,7 @@ const signInOptions = [
 ```
 
 **Default Configuration:**
+
 - Email/Password authentication with display name required
 - Google Sign-In with profile and email scopes
 - Popup flow for better UX (vs redirect)
@@ -189,51 +204,54 @@ The web app implements comprehensive route protection to control access to pages
 The application provides several authentication guard components:
 
 #### ProtectedRoute
+
 Wraps components that require authentication. Redirects unauthenticated users to login.
 
 ```typescript
 import { ProtectedRoute } from '../components/auth';
 
-<Route 
-  path="/dashboard" 
+<Route
+  path="/dashboard"
   element={
     <ProtectedRoute>
       <DashboardPage />
     </ProtectedRoute>
-  } 
+  }
 />
 ```
 
 #### PublicRoute
+
 Wraps components that should only be accessible to unauthenticated users (e.g., login page).
 
 ```typescript
 import { PublicRoute } from '../components/auth';
 
-<Route 
-  path="/login" 
+<Route
+  path="/login"
   element={
     <PublicRoute>
       <LoginPage />
     </PublicRoute>
-  } 
+  }
 />
 ```
 
 #### AuthRedirect
+
 A utility component for handling automatic redirects based on authentication state.
 
 ```typescript
 import { AuthRedirect } from '../components/auth';
 
-<Route 
-  path="/auth-check" 
+<Route
+  path="/auth-check"
   element={
-    <AuthRedirect 
+    <AuthRedirect
       authenticatedRedirect="/dashboard"
       unauthenticatedRedirect="/login"
     />
-  } 
+  }
 />
 ```
 
@@ -268,23 +286,23 @@ function App() {
         <Router>
           <Routes>
             {/* Protected routes - require authentication */}
-            <Route 
-              path="/" 
+            <Route
+              path="/"
               element={
                 <ProtectedRoute>
                   <HomePage />
                 </ProtectedRoute>
-              } 
+              }
             />
-            
+
             {/* Public routes - redirect authenticated users away */}
-            <Route 
-              path="/login" 
+            <Route
+              path="/login"
               element={
                 <PublicRoute>
                   <LoginPage />
                 </PublicRoute>
-              } 
+              }
             />
           </Routes>
         </Router>
@@ -301,6 +319,7 @@ For comprehensive documentation on route protection setup and usage, see the **[
 ### Prerequisites
 
 Install dependencies for this package:
+
 ```bash
 cd packages/web
 pnpm install
@@ -332,6 +351,7 @@ pnpm format
 ## Development Server
 
 The development server runs on `http://localhost:5173` with:
+
 - **Hot Module Replacement (HMR)**: Instant updates during development
 - **API Proxy**: Automatically proxies `/api/*` requests to `http://localhost:3000`
 - **TypeScript**: Real-time type checking
@@ -341,6 +361,7 @@ The development server runs on `http://localhost:5173` with:
 The web app integrates with the Sapie API through:
 
 1. **Development Proxy** (via Vite):
+
    ```typescript
    // vite.config.ts
    server: {
@@ -361,20 +382,23 @@ The web app integrates with the Sapie API through:
      fetch('/api/health')
        .then(response => response.json())
        .then(data => setHealthStatus(JSON.stringify(data, null, 2)))
-       .catch(() => setHealthStatus('Error fetching health status'))
-   }, [])
+       .catch(() => setHealthStatus('Error fetching health status'));
+   }, []);
    ```
 
 ## Components
 
 ### App Component (`src/App.tsx`)
+
 The main application component featuring:
+
 - API health status display
 - Interactive counter demonstration
 - Material-UI components showcase
 - Responsive design with Container and Grid system
 
 ### Key Features:
+
 - **Health Status**: Real-time API connectivity display
 - **Counter**: Interactive state management example
 - **Responsive Layout**: Mobile-first design approach
@@ -383,18 +407,21 @@ The main application component featuring:
 ## Styling
 
 ### Material-UI Integration
+
 - **Theme**: Default Material-UI theme
 - **Components**: Card, Typography, Button, Container, Box
 - **Icons**: Material Icons integration
 - **Responsive**: Built-in responsive breakpoints
 
 ### Custom Styles
+
 - `App.css`: Component-specific styles
 - `index.css`: Global styles and CSS reset
 
 ## Code Quality
 
 ### Linting and Formatting
+
 The package uses ESLint with Prettier integration:
 
 ```bash
@@ -412,6 +439,7 @@ pnpm run format:check
 ```
 
 ### Configuration Files
+
 - **ESLint**: `eslint.config.js` with TypeScript and React rules
 - **Prettier**: `.prettierrc` with consistent formatting rules
 - **Prettier Ignore**: `.prettierignore` to exclude certain files
@@ -419,17 +447,20 @@ pnpm run format:check
 ## Build Process
 
 ### Production Build
+
 ```bash
 pnpm run build
 ```
 
 Creates optimized production build in `dist/`:
+
 - **Code Splitting**: Automatic chunk optimization
 - **Asset Optimization**: Image and CSS minification
 - **TypeScript Compilation**: Type checking and compilation
 - **Tree Shaking**: Unused code elimination
 
 ### Build Output
+
 - `dist/index.html`: Main HTML file
 - `dist/assets/`: Optimized JavaScript, CSS, and images
 - Compatible with Firebase Hosting
@@ -437,12 +468,15 @@ Creates optimized production build in `dist/`:
 ## Firebase Integration
 
 ### Development with Emulator
+
 When running via Firebase emulator (`firebase emulators:start`):
+
 - Web app served at `http://localhost:5000`
 - API calls proxied through Firebase rewrites
 - Full production-like environment locally
 
 ### Staging Deployment
+
 - Deployed to Firebase Hosting
 - API calls routed to Firebase Functions
 - Available at: https://sapie-b09be.web.app
@@ -465,11 +499,13 @@ The web app uses environment variables to configure the API base URL for differe
 ### Configuration Examples
 
 **Local Development** (`.env`):
+
 ```
 VITE_API_BASE_URL=http://localhost:3000
 ```
 
 **Firebase Emulator** (`.env.development`):
+
 ```
 VITE_API_BASE_URL=http://127.0.0.1:5000
 ```

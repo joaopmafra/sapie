@@ -11,10 +11,7 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 
-import { useAuth } from '../contexts/AuthContext';
-import { useContent } from '../contexts/ContentContext';
-import { contentService } from '../lib/content';
-import type { Content } from '../lib/content';
+import { useCreateNote, useContentItem, type Content } from '../lib/content';
 import { PROBLEM_DETAILS_POINTERS } from '../lib/problemDetailsPointers.ts';
 
 import { ClientErrorAlert } from './ClientErrorAlert';
@@ -32,14 +29,13 @@ const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
   onSuccess,
   parentId,
 }) => {
-  const { currentUser } = useAuth();
-  const { getParentPath } = useContent();
+  const createNote = useCreateNote();
+  const { data: parentFolder } = useContentItem(parentId || undefined);
   const [noteName, setNoteName] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown | null>(null);
 
   const handleSubmit = async () => {
-    if (!currentUser || !parentId) {
+    if (!parentId) {
       setError(
         'Cannot create note: parent folder not selected or user not authenticated.'
       );
@@ -50,37 +46,35 @@ const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
       return;
     }
 
-    setLoading(true);
     setError(null);
 
     try {
-      const newNote = await contentService.createNote(
-        currentUser,
-        noteName,
-        parentId
-      );
+      const newNote = await createNote.mutateAsync({
+        name: noteName.trim(),
+        parentId,
+      });
       setNoteName('');
       onSuccess(newNote);
     } catch (err) {
       setError(err);
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleCancel = () => {
-    if (loading) return;
+    if (createNote.isPending) return;
     setNoteName('');
     setError(null);
     onClose();
   };
+
+  const parentLabel = parentFolder?.name ?? '…';
 
   return (
     <Dialog open={open} onClose={handleCancel} fullWidth maxWidth='sm'>
       <DialogTitle>Create New Note</DialogTitle>
       <DialogContent>
         <DialogContentText sx={{ mb: 2 }}>
-          Creating note in: <strong>{getParentPath(parentId)}</strong>
+          Creating note in: <strong>{parentLabel}</strong>
         </DialogContentText>
         <TextField
           margin='dense'
@@ -91,8 +85,8 @@ const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
           variant='outlined'
           value={noteName}
           onChange={e => setNoteName(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-          disabled={loading}
+          onKeyDown={e => e.key === 'Enter' && void handleSubmit()}
+          disabled={createNote.isPending}
         />
         <ClientErrorAlert
           value={error}
@@ -101,14 +95,18 @@ const CreateNoteModal: React.FC<CreateNoteModalProps> = ({
         />
       </DialogContent>
       <DialogActions sx={{ p: '0 24px 12px' }}>
-        <Button onClick={handleCancel} disabled={loading}>
+        <Button onClick={handleCancel} disabled={createNote.isPending}>
           Cancel
         </Button>
         <Box sx={{ position: 'relative' }}>
-          <Button onClick={handleSubmit} variant='contained' disabled={loading}>
+          <Button
+            onClick={() => void handleSubmit()}
+            variant='contained'
+            disabled={createNote.isPending}
+          >
             Create
           </Button>
-          {loading && (
+          {createNote.isPending && (
             <CircularProgress
               size={24}
               sx={{

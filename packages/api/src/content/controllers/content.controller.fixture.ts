@@ -93,4 +93,19 @@ export class ContentControllerFixture extends AppFixture {
 
     return response.body as Content[];
   }
+
+  callApiGetContentById(testUserId: string, contentId: string): supertest.Test {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return supertest(this.getHttpServer())
+      .get(`${this.API_CONTENT}/${contentId}`)
+      .set(TEST_USER_ID_HEADER, testUserId);
+  }
+
+  async callApiGetContentByIdExpectingOkAsContent(
+    testUserId: string,
+    contentId: string
+  ): Promise<Content> {
+    const response = await this.callApiGetContentById(testUserId, contentId).expect(HttpStatus.OK);
+    return response.body as Content;
+  }
 }
