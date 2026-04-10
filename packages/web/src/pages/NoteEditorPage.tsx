@@ -6,6 +6,7 @@ import {
   CircularProgress,
   Paper,
 } from '@mui/material';
+import { isAxiosError } from 'axios';
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -127,6 +128,11 @@ const NoteEditorPage = () => {
   }
 
   if (isError) {
+    if (isAxiosError(error) && error.response?.status === 404) {
+      return createError(
+        'Note not found. This note may have been deleted or the link may be invalid.'
+      );
+    }
     const message =
       error instanceof Error ? error.message : 'Failed to load this note.';
     return createError(message);

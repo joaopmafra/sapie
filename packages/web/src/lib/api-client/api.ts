@@ -586,6 +586,44 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Returns metadata for a single note or folder owned by the authenticated user.
+         * @summary Get content item by ID
+         * @param {string} id The ID of the content item.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        contentControllerGetContentById: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('contentControllerGetContentById', 'id', id)
+            const localVarPath = `/api/content/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Returns the authenticated user\'s root directory (\"My Contents\"). If the directory doesn\'t exist, it will be automatically created. This is the entry point for all content management operations.
          * @summary Get or create user\'s root directory
          * @param {*} [options] Override http request option.
@@ -621,7 +659,7 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * Returns a list of content items for a given parent ID.
-         * @summary List children contents of parent
+         * @summary List a parent\'s children
          * @param {string} id The ID of the parent content.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -630,44 +668,6 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             // verify required parameter 'id' is not null or undefined
             assertParamExists('contentControllerListContents', 'id', id)
             const localVarPath = `/api/content/{id}/children`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication bearer required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Returns metadata for a single note or folder owned by the authenticated user.
-         * @summary Get content item by ID
-         * @param {string} id The ID of the content item.
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        contentControllerGetContentById: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('contentControllerGetContentById', 'id', id)
-            const localVarPath = `/api/content/{id}`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -763,6 +763,19 @@ export const ContentApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * Returns metadata for a single note or folder owned by the authenticated user.
+         * @summary Get content item by ID
+         * @param {string} id The ID of the content item.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async contentControllerGetContentById(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ContentDto>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerGetContentById(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerGetContentById']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Returns the authenticated user\'s root directory (\"My Contents\"). If the directory doesn\'t exist, it will be automatically created. This is the entry point for all content management operations.
          * @summary Get or create user\'s root directory
          * @param {*} [options] Override http request option.
@@ -776,7 +789,7 @@ export const ContentApiFp = function(configuration?: Configuration) {
         },
         /**
          * Returns a list of content items for a given parent ID.
-         * @summary List children contents of parent
+         * @summary List a parent\'s children
          * @param {string} id The ID of the parent content.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -785,19 +798,6 @@ export const ContentApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerListContents(id, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerListContents']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * Returns metadata for a single note or folder owned by the authenticated user.
-         * @summary Get content item by ID
-         * @param {string} id The ID of the content item.
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async contentControllerGetContentById(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ContentDto>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerGetContentById(id, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerGetContentById']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -835,6 +835,16 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.contentControllerCreateContent(requestParameters.createContentDto, options).then((request) => request(axios, basePath));
         },
         /**
+         * Returns metadata for a single note or folder owned by the authenticated user.
+         * @summary Get content item by ID
+         * @param {ContentApiContentControllerGetContentByIdRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        contentControllerGetContentById(requestParameters: ContentApiContentControllerGetContentByIdRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentDto> {
+            return localVarFp.contentControllerGetContentById(requestParameters.id, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Returns the authenticated user\'s root directory (\"My Contents\"). If the directory doesn\'t exist, it will be automatically created. This is the entry point for all content management operations.
          * @summary Get or create user\'s root directory
          * @param {*} [options] Override http request option.
@@ -845,23 +855,13 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * Returns a list of content items for a given parent ID.
-         * @summary List children contents of parent
+         * @summary List a parent\'s children
          * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         contentControllerListContents(requestParameters: ContentApiContentControllerListContentsRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ContentDto>> {
             return localVarFp.contentControllerListContents(requestParameters.id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Returns metadata for a single note or folder owned by the authenticated user.
-         * @summary Get content item by ID
-         * @param {ContentApiContentControllerGetContentByIdRequest} requestParameters Request parameters.
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        contentControllerGetContentById(requestParameters: ContentApiContentControllerGetContentByIdRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentDto> {
-            return localVarFp.contentControllerGetContentById(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
          * Updates the display name of a content. Names must be unique among siblings (same parent).
@@ -893,6 +893,16 @@ export interface ContentApiInterface {
     contentControllerCreateContent(requestParameters: ContentApiContentControllerCreateContentRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentDto>;
 
     /**
+     * Returns metadata for a single note or folder owned by the authenticated user.
+     * @summary Get content item by ID
+     * @param {ContentApiContentControllerGetContentByIdRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ContentApiInterface
+     */
+    contentControllerGetContentById(requestParameters: ContentApiContentControllerGetContentByIdRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentDto>;
+
+    /**
      * Returns the authenticated user\'s root directory (\"My Contents\"). If the directory doesn\'t exist, it will be automatically created. This is the entry point for all content management operations.
      * @summary Get or create user\'s root directory
      * @param {*} [options] Override http request option.
@@ -903,23 +913,13 @@ export interface ContentApiInterface {
 
     /**
      * Returns a list of content items for a given parent ID.
-     * @summary List children contents of parent
+     * @summary List a parent\'s children
      * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ContentApiInterface
      */
     contentControllerListContents(requestParameters: ContentApiContentControllerListContentsRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ContentDto>>;
-
-    /**
-     * Returns metadata for a single note or folder owned by the authenticated user.
-     * @summary Get content item by ID
-     * @param {ContentApiContentControllerGetContentByIdRequest} requestParameters Request parameters.
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof ContentApiInterface
-     */
-    contentControllerGetContentById(requestParameters: ContentApiContentControllerGetContentByIdRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentDto>;
 
     /**
      * Updates the display name of a content. Names must be unique among siblings (same parent).
@@ -948,20 +948,6 @@ export interface ContentApiContentControllerCreateContentRequest {
 }
 
 /**
- * Request parameters for contentControllerListContents operation in ContentApi.
- * @export
- * @interface ContentApiContentControllerListContentsRequest
- */
-export interface ContentApiContentControllerListContentsRequest {
-    /**
-     * The ID of the parent content.
-     * @type {string}
-     * @memberof ContentApiContentControllerListContents
-     */
-    readonly id: string
-}
-
-/**
  * Request parameters for contentControllerGetContentById operation in ContentApi.
  * @export
  * @interface ContentApiContentControllerGetContentByIdRequest
@@ -971,6 +957,20 @@ export interface ContentApiContentControllerGetContentByIdRequest {
      * The ID of the content item.
      * @type {string}
      * @memberof ContentApiContentControllerGetContentById
+     */
+    readonly id: string
+}
+
+/**
+ * Request parameters for contentControllerListContents operation in ContentApi.
+ * @export
+ * @interface ContentApiContentControllerListContentsRequest
+ */
+export interface ContentApiContentControllerListContentsRequest {
+    /**
+     * The ID of the parent content.
+     * @type {string}
+     * @memberof ContentApiContentControllerListContents
      */
     readonly id: string
 }
@@ -1016,6 +1016,18 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
     }
 
     /**
+     * Returns metadata for a single note or folder owned by the authenticated user.
+     * @summary Get content item by ID
+     * @param {ContentApiContentControllerGetContentByIdRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ContentApi
+     */
+    public contentControllerGetContentById(requestParameters: ContentApiContentControllerGetContentByIdRequest, options?: RawAxiosRequestConfig) {
+        return ContentApiFp(this.configuration).contentControllerGetContentById(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Returns the authenticated user\'s root directory (\"My Contents\"). If the directory doesn\'t exist, it will be automatically created. This is the entry point for all content management operations.
      * @summary Get or create user\'s root directory
      * @param {*} [options] Override http request option.
@@ -1028,7 +1040,7 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
 
     /**
      * Returns a list of content items for a given parent ID.
-     * @summary List children contents of parent
+     * @summary List a parent\'s children
      * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -1036,18 +1048,6 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
      */
     public contentControllerListContents(requestParameters: ContentApiContentControllerListContentsRequest, options?: RawAxiosRequestConfig) {
         return ContentApiFp(this.configuration).contentControllerListContents(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Returns metadata for a single note or folder owned by the authenticated user.
-     * @summary Get content item by ID
-     * @param {ContentApiContentControllerGetContentByIdRequest} requestParameters Request parameters.
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof ContentApi
-     */
-    public contentControllerGetContentById(requestParameters: ContentApiContentControllerGetContentByIdRequest, options?: RawAxiosRequestConfig) {
-        return ContentApiFp(this.configuration).contentControllerGetContentById(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

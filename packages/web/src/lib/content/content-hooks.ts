@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 import { contentService } from './content-service';
 import { contentQueryKeys } from './query-keys';
+import { contentItemQueryRetry } from './query-retry-utils';
 
 export function useRootDirectory() {
   const { currentUser } = useAuth();
@@ -23,12 +24,23 @@ export function useFolderChildren(parentId: string | undefined) {
   });
 }
 
+const disabledContentItemQueryKey = [
+  'content',
+  'item',
+  '__disabled__',
+] as const;
+
 export function useContentItem(id: string | undefined) {
   const { currentUser } = useAuth();
+  const safeId = id && !id.startsWith('dummy_') ? id : undefined;
   return useQuery({
-    queryKey: contentQueryKeys.item(id!),
-    queryFn: () => contentService.getContentById(currentUser!, id!),
-    enabled: Boolean(currentUser) && Boolean(id),
+    queryKey:
+      safeId != null
+        ? contentQueryKeys.item(safeId)
+        : disabledContentItemQueryKey,
+    queryFn: () => contentService.getContentById(currentUser!, safeId!),
+    enabled: Boolean(currentUser) && safeId != null,
+    retry: contentItemQueryRetry,
   });
 }
 

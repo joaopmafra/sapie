@@ -10,23 +10,25 @@ interface PublicRouteProps {
   redirectTo?: string;
 }
 
+/**
+ * Renders children only when the user is not signed in. Authenticated users are sent to
+ * `location.state.from` (set by ProtectedRoute) or `redirectTo`.
+ *
+ * For `/login`, handle redirect in `LoginPage` so sign-in-specific rules stay with that screen.
+ */
 const PublicRoute = ({ children, redirectTo = '/' }: PublicRouteProps) => {
   const { currentUser, loading } = useAuth();
   const location = useLocation();
 
-  // Show loading while checking authentication status
   if (loading) {
     return <LoadingComponent />;
   }
 
-  // If user is authenticated, redirect them away from public routes
   if (currentUser) {
-    // Check if there's a 'from' location in state (intended destination)
-    const from = location.state?.from?.pathname || redirectTo;
-    return <Navigate to={from} replace />;
+    const target = location.state?.from?.pathname || redirectTo;
+    return <Navigate to={target} replace state={{}} />;
   }
 
-  // User is not authenticated, render the children (public content)
   return <>{children}</>;
 };
 

@@ -8,11 +8,7 @@ import {
   Route,
 } from 'react-router-dom';
 
-import {
-  ProtectedRoute,
-  PublicRoute,
-  AuthErrorBoundary,
-} from './components/auth';
+import { ProtectedRoute, AuthErrorBoundary } from './components/auth';
 import { AuthProvider } from './contexts/AuthContext';
 import { queryClient } from './lib/queryClient';
 import HomePage from './pages/HomePage';
@@ -62,15 +58,8 @@ function App() {
                     }
                   />
 
-                  {/* Public routes - redirect authenticated users away */}
-                  <Route
-                    path='/login'
-                    element={
-                      <PublicRoute>
-                        <LoginPage />
-                      </PublicRoute>
-                    }
-                  />
+                  {/* Login handles post-auth redirect itself (see LoginPage). */}
+                  <Route path='/login' element={<LoginPage />} />
                 </Routes>
               </div>
             </Router>

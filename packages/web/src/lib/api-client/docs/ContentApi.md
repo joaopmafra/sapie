@@ -5,8 +5,9 @@ All URIs are relative to *http://localhost*
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|
 |[**contentControllerCreateContent**](#contentcontrollercreatecontent) | **POST** /api/content | Create a new note|
+|[**contentControllerGetContentById**](#contentcontrollergetcontentbyid) | **GET** /api/content/{id} | Get content item by ID|
 |[**contentControllerGetRootDirectory**](#contentcontrollergetrootdirectory) | **GET** /api/content/root | Get or create user\&#39;s root directory|
-|[**contentControllerListContents**](#contentcontrollerlistcontents) | **GET** /api/content/{id}/children | List children contents of parent|
+|[**contentControllerListContents**](#contentcontrollerlistcontents) | **GET** /api/content/{id}/children | List a parent\&#39;s children|
 |[**contentControllerRenameContent**](#contentcontrollerrenamecontent) | **PATCH** /api/content/{id} | Rename content|
 
 # **contentControllerCreateContent**
@@ -63,6 +64,59 @@ const { status, data } = await apiInstance.contentControllerCreateContent(
 |**403** | User is not the owner of the parent folder. |  -  |
 |**409** | A note with the same name already exists in the target location. |  -  |
 |**422** | Semantic validation failed (e.g. name length or disallowed characters). |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **contentControllerGetContentById**
+> ContentDto contentControllerGetContentById()
+
+Returns metadata for a single note or folder owned by the authenticated user.
+
+### Example
+
+```typescript
+import {
+    ContentApi,
+    Configuration
+} from 'api-client';
+
+const configuration = new Configuration();
+const apiInstance = new ContentApi(configuration);
+
+let id: string; //The ID of the content item. (default to undefined)
+
+const { status, data } = await apiInstance.contentControllerGetContentById(
+    id
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**string**] | The ID of the content item. | defaults to undefined|
+
+
+### Return type
+
+**ContentDto**
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Content item found. |  -  |
+|**401** | Unauthorized - Valid Firebase ID token required |  -  |
+|**404** | Content not found, or the authenticated user does not own it (same response to avoid leaking ids). |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

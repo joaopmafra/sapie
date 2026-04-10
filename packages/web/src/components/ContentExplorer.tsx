@@ -253,8 +253,13 @@ const ContentExplorer: React.FC = () => {
         }}
         selectedItems={selectedNodeId}
         onSelectedItemsChange={(_event, ids) => {
-          const nodeId = Array.isArray(ids) ? ids[0] : ids;
-          setSelectedNodeId(nodeId ?? null);
+          const rawId = Array.isArray(ids) ? ids[0] : ids;
+          const nodeId = rawId != null ? String(rawId) : null;
+          if (nodeId?.startsWith('dummy_')) {
+            setSelectedNodeId(null);
+            return;
+          }
+          setSelectedNodeId(nodeId);
 
           if (nodeId) {
             const selectedNode = nodeMap.get(nodeId);
