@@ -16,5 +16,5 @@ As a user, I want to see the save status of my notes so that I know when my chan
 
 > ⚠️ **Bundled into Story 55.** Save status display is inseparable from auto-save implementation.
 > All save status tasks are defined and will be implemented as part of
-> [Story 55: Note Content Editor](./55-story-note_content_editor.md).
+> [Story 55: Note Content Editor](../1-ready/55-story-note_content_editor.md).
 > This story requires no separate implementation.
