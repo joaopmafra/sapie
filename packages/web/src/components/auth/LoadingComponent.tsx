@@ -4,6 +4,7 @@ interface LoadingComponentProps {
   message?: string;
 }
 
+// TODO: replace by a generic loading component
 const LoadingComponent = ({
   message = 'Checking authentication...',
 }: LoadingComponentProps) => {

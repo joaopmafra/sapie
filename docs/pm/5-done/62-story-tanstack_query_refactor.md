@@ -29,7 +29,7 @@ Full implementation plan: `docs/research/client_state_management/phase_1_tanstac
 
 ## Dependencies
 
-- [ ] [Story 53](../5-done/53-story-create_notes.md) — Tasks 4–6 must be complete. The TanStack
+- [ ] [Story 53](53-story-create_notes.md) — Tasks 4–6 must be complete. The TanStack
   Query refactor changes how `NoteEditorPage` loads data; the page shell must exist first.
 
 ## Acceptance Criteria

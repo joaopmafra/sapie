@@ -220,39 +220,12 @@ import { ProtectedRoute } from '../components/auth';
 />
 ```
 
-#### PublicRoute
+#### Login route
 
-Wraps components that should only be accessible to unauthenticated users (e.g., login page).
-
-```typescript
-import { PublicRoute } from '../components/auth';
-
-<Route
-  path="/login"
-  element={
-    <PublicRoute>
-      <LoginPage />
-    </PublicRoute>
-  }
-/>
-```
-
-#### AuthRedirect
-
-A utility component for handling automatic redirects based on authentication state.
+Register `/login` with the page component only (no wrapper in the auth barrel). The page uses `useAuth` and React Router’s `<Navigate>` to send already-signed-in users away; that keeps login-specific rules in one place.
 
 ```typescript
-import { AuthRedirect } from '../components/auth';
-
-<Route
-  path="/auth-check"
-  element={
-    <AuthRedirect
-      authenticatedRedirect="/dashboard"
-      unauthenticatedRedirect="/login"
-    />
-  }
-/>
+<Route path="/login" element={<LoginPage />} />
 ```
 
 ### Route Protection Architecture
@@ -260,8 +233,6 @@ import { AuthRedirect } from '../components/auth';
 The route protection system includes:
 
 - **ProtectedRoute** (`src/components/auth/ProtectedRoute.tsx`) - Guards for authenticated-only routes
-- **PublicRoute** (`src/components/auth/PublicRoute.tsx`) - Guards for unauthenticated-only routes
-- **AuthRedirect** (`src/components/auth/AuthRedirect.tsx`) - Utility for conditional redirects
 - **LoadingComponent** (`src/components/auth/LoadingComponent.tsx`) - Loading states during auth checks
 - **AuthErrorBoundary** (`src/components/auth/AuthErrorBoundary.tsx`) - Error handling for auth failures
 
@@ -277,7 +248,7 @@ The route protection system includes:
 
 ```typescript
 // App.tsx
-import { ProtectedRoute, PublicRoute, AuthErrorBoundary } from './components/auth';
+import { ProtectedRoute, AuthErrorBoundary } from './components/auth';
 
 function App() {
   return (
@@ -295,14 +266,10 @@ function App() {
               }
             />
 
-            {/* Public routes - redirect authenticated users away */}
+            {/* Public routes - accessible without authentication */}
             <Route
               path="/login"
-              element={
-                <PublicRoute>
-                  <LoginPage />
-                </PublicRoute>
-              }
+              element={ <LoginPage /> }
             />
           </Routes>
         </Router>

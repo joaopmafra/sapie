@@ -32,11 +32,6 @@ const LoginPage = () => {
   const { currentUser, loading } = useAuth();
   const location = useLocation();
 
-  const handleSignInSuccess = () => {
-    // Let React re-render with currentUser set, then Navigate below runs.
-    return false;
-  };
-
   const handleSignInFailure = async (error: unknown) => {
     console.error('Sign-in failed:', error);
   };
@@ -108,11 +103,7 @@ const LoginPage = () => {
             Sign in to your account or create a new one
           </Typography>
 
-          <FirebaseUIAuth
-            signInSuccessUrl='/'
-            onSignInSuccess={handleSignInSuccess}
-            onSignInFailure={handleSignInFailure}
-          />
+          <FirebaseUIAuth onSignInFailure={handleSignInFailure} />
         </Paper>
       </Box>
     </Container>
