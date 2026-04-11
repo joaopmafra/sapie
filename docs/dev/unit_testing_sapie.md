@@ -94,20 +94,20 @@ tests that only cared about the external contract.
 - **Firestore** → Firebase Emulator (real SDK semantics against a local fake).
 - **Cloud Storage** → Firebase **Storage** emulator on **9199** in the test-unit Docker stack (same
   “sophisticated fake” idea as Firestore). Default `ContentControllerFixture` does **not** replace
-  `NoteBodyStorageService`. For rare edge cases that are hard to reproduce in the emulator, call
-  `withFakeNoteBodyStorage()` before `init()` to use `FakeNoteBodyStorageService` via
+  `ContentBodyStorageService`. For rare edge cases that are hard to reproduce in the emulator, call
+  `withFakeContentBodyStorage()` before `init()` to use `FakeContentBodyStorageService` via
   `overrideProvider()` — not mocks of `ContentRepository` or the service under test.
 
 **Test helpers and doubles** (shared `FakeAuthGuard`, `clearFirestoreData()`, `AppFixture`, optional
-`FakeNoteBodyStorageService`) live in `src/test-helpers/` (or next to the feature when colocated) and
+`FakeContentBodyStorageService`) live in `src/test-helpers/` (or next to the feature when colocated) and
 are excluded from production coverage reporting.
 
 ### Avoid mockist service specs for orchestration code
 
 Do **not** add co-located `content.service.spec.ts`-style tests that **mock** the service’s
-injected collaborators (`jest.fn()` on `ContentRepository`, `NoteBodyStorageService`, etc.) when
+injected collaborators (`jest.fn()` on `ContentRepository`, `ContentBodyStorageService`, etc.) when
 the same behaviors are already covered by **controller specs** that run the real `ContentService`
-with the **Storage emulator** (or the optional `FakeNoteBodyStorageService`) and the real Firestore
+with the **Storage emulator** (or the optional `FakeContentBodyStorageService`) and the real Firestore
 emulator.
 
 That pattern duplicates coverage, couples tests to **call sequences** instead of outcomes, and

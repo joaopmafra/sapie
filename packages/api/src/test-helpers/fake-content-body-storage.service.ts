@@ -1,29 +1,29 @@
 import { Injectable } from '@nestjs/common';
 
 /**
- * Optional test double for {@link NoteBodyStorageService}.
+ * Optional test double for {@link ContentBodyStorageService}.
  *
  * Default `ContentController` tests use the **Storage emulator** (classical fake). Call
- * `ContentControllerFixture.withFakeNoteBodyStorage()` before `init()` when you need fully
+ * `ContentControllerFixture.withFakeContentBodyStorage()` before `init()` when you need fully
  * deterministic uploads/signed URLs without emulator quirks (e.g. rare edge cases).
  */
 @Injectable()
-export class FakeNoteBodyStorageService {
-  lastUpload: { ownerId: string; contentId: string; markdown: string } | null = null;
+export class FakeContentBodyStorageService {
+  lastUpload: { ownerId: string; contentId: string; body: Buffer; mimeType: string } | null = null;
 
   objectPath(ownerId: string, contentId: string): string {
     return `${ownerId}/content/${contentId}`;
   }
 
-  uploadMarkdown(
+  uploadBody(
     ownerId: string,
     contentId: string,
-    markdown: string
+    body: Buffer,
+    mimeType: string
   ): Promise<{ bodyUri: string; size: number }> {
-    this.lastUpload = { ownerId, contentId, markdown };
-    const size = Buffer.byteLength(markdown, 'utf8');
+    this.lastUpload = { ownerId, contentId, body, mimeType };
     const bodyUri = `${ownerId}/content/${contentId}`;
-    return Promise.resolve({ bodyUri, size });
+    return Promise.resolve({ bodyUri, size: body.length });
   }
 
   getSignedReadUrl(storedReference: string): Promise<{ signedUrl: string; expiresAt: Date }> {

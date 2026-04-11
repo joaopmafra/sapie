@@ -10,6 +10,9 @@ Accepted
 
 ## Context
 
+**Vocabulary:** Firestore holds **content** (metadata); Storage holds the **content body** (blob). See
+[Content naming](../dev/content_naming.md).
+
 Story 55 (note content editor) requires storing **markdown bytes** outside Firestore, loading them via **short-lived
 read URLs**, and **auto-saving** from the client. We also needed consistency with **Classical TDD** (real collaborators +
 emulator fakes), **no production data** yet (staging only), and **portable** metadata so a future move to another object
@@ -61,11 +64,11 @@ and clients can still `fetch(signedUrl)`. Production continues to use real **V4 
 - Otherwise derive **`${GCLOUD_PROJECT}.appspot.com`** so `storage.bucket()` is never called without a name in
   emulator and dev.
 
-### 6. Classical tests for note body: emulator first, fake optional
+### 6. Classical tests for content body: emulator first, fake optional
 
-- Default **`ContentControllerFixture`** uses the real **`NoteBodyStorageService`** against the **Storage emulator**
+- Default **`ContentControllerFixture`** uses the real **`ContentBodyStorageService`** against the **Storage emulator**
   (same philosophy as Firestore: emulator as a high-fidelity fake).
-- **`ContentControllerFixture.withFakeNoteBodyStorage()`** before **`init()`** swaps in **`FakeNoteBodyStorageService`**
+- **`ContentControllerFixture.withFakeContentBodyStorage()`** before **`init()`** swaps in **`FakeContentBodyStorageService`**
   for rare cases that are painful to reproduce in the emulator (escape hatch, not the default).
 - We **avoid** parallel **mockist** `content.service.spec.ts`-style tests that stub `ContentRepository` when controller
   tests already cover behavior; see [Unit Testing — Sapie Implementation](../dev/unit_testing_sapie.md).

@@ -9,13 +9,13 @@ import { IsContentNameSafeForFileName } from '../validation/content-name.validat
 
 export class ContentDto implements Content {
   @ApiProperty({
-    description: 'Unique identifier for the content item',
+    description: 'Unique identifier for the content (metadata)',
     example: 'clq0e8k1j0000c8v9a1b2c3d4',
   })
   id: string;
 
   @ApiProperty({
-    description: 'Display name of the content item',
+    description: 'Display name of the content',
     example: 'My Document',
   })
   name: string;
@@ -42,7 +42,7 @@ export class ContentDto implements Content {
 
   @ApiProperty({
     description:
-      'Object path of the note body in the default storage bucket (`ownerId/content/contentId`), ' +
+      'Object path of the content body in the default storage bucket (`ownerId/content/contentId`), ' +
       'without a `gs://` or `https://` prefix — portable across providers. Null until the first body save.',
     example: 'firebase-user-id/content/clq0e8k1j0000c8v9a1b2c3d4',
     required: false,
@@ -51,12 +51,23 @@ export class ContentDto implements Content {
   bodyUri?: string | null;
 
   @ApiProperty({
-    description: 'Size of the content in bytes (only for files)',
+    description:
+      'Byte size of the content body after the last `PUT …/body`; null for directories or before the first body save.',
     example: 1024,
     required: false,
     nullable: true,
   })
   size?: number | null;
+
+  @ApiProperty({
+    description:
+      'IANA media type of the content body from the last `PUT …/body` (e.g. `text/plain`, `image/png`). ' +
+      'Null until the first body save.',
+    example: 'text/plain',
+    required: false,
+    nullable: true,
+  })
+  bodyMimeType?: string | null;
 
   @ApiProperty({
     description: 'Timestamp when the content was created',
@@ -97,7 +108,7 @@ export class CreateContentDto {
 
 export class ContentBodySignedUrlDto {
   @ApiProperty({
-    description: 'Short-lived HTTPS URL to download the markdown object from Cloud Storage',
+    description: 'Short-lived HTTPS URL to download the content body object from Cloud Storage',
     example: 'https://storage.googleapis.com/...',
   })
   signedUrl: string;

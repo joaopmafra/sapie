@@ -32,6 +32,12 @@ export class ContentService {
   }
 
   private mapContentDtoToContent(dto: ContentDto): Content {
+    const dtoRecord = dto as unknown as Record<string, unknown>;
+    const bodyMimeType =
+      'bodyMimeType' in dtoRecord
+        ? ((dtoRecord.bodyMimeType as string | null | undefined) ?? null)
+        : null;
+
     return {
       id: dto.id,
       name: dto.name,
@@ -40,6 +46,7 @@ export class ContentService {
       parentId: dto.parentId as string | null,
       bodyUri: dto.bodyUri as string | null | undefined,
       size: dto.size as number | undefined,
+      bodyMimeType,
       createdAt: new Date(dto.createdAt),
       updatedAt: new Date(dto.updatedAt),
     };

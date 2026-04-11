@@ -261,7 +261,7 @@ describe('ContentController', () => {
     expect(response.body).toHaveProperty('parentId', null);
   });
 
-  it(`GET ${fixture.API_CONTENT}/:id/body returns 404 when note has no body yet`, async () => {
+  it(`GET ${fixture.API_CONTENT}/:id/body returns 404 when content has no body yet`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
     const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Empty', root.id);
 
@@ -270,7 +270,7 @@ describe('ContentController', () => {
       .expect(HttpStatus.NOT_FOUND);
   });
 
-  it(`GET ${fixture.API_CONTENT}/:id/body returns 403 when caller does not own the note`, async () => {
+  it(`GET ${fixture.API_CONTENT}/:id/body returns 403 when caller does not own the content`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
     const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Private', root.id);
 
@@ -295,7 +295,7 @@ describe('ContentController', () => {
       .expect(HttpStatus.BAD_REQUEST);
   });
 
-  it(`PUT ${fixture.API_CONTENT}/:id/body saves markdown and updates metadata`, async () => {
+  it(`PUT ${fixture.API_CONTENT}/:id/body saves text body and updates metadata`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
     const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Doc', root.id);
 
@@ -307,6 +307,7 @@ describe('ContentController', () => {
       id: note.id,
       type: 'note',
       ownerId: fixture.TEST_USER_ID,
+      bodyMimeType: 'text/plain',
     });
     expect(putResponse.body).toHaveProperty(
       'bodyUri',
@@ -320,6 +321,7 @@ describe('ContentController', () => {
     );
     expect(meta.bodyUri).toBe(`${fixture.TEST_USER_ID}/content/${note.id}`);
     expect(meta.size).toBe(Buffer.byteLength('# Hello', 'utf8'));
+    expect(meta.bodyMimeType).toBe('text/plain');
 
     const signed = await fixture
       .callApiGetContentBodySignedUrl(fixture.TEST_USER_ID, note.id)
@@ -333,9 +335,48 @@ describe('ContentController', () => {
     const bodyRes = await fetch(signedBody.signedUrl);
     expect(bodyRes.ok).toBe(true);
     expect(await bodyRes.text()).toBe('# Hello');
+    expect(bodyRes.headers.get('content-type')).toMatch(/text\/plain/);
   });
 
-  it(`PUT ${fixture.API_CONTENT}/:id/body returns 403 when caller does not own the note`, async () => {
+  it(`PUT ${fixture.API_CONTENT}/:id/body accepts non-text Content-Type and preserves bytes`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Binary', root.id);
+    const payload = Buffer.from([0, 1, 2, 255]);
+
+    const putResponse = await fixture
+      .callApiPutContentBody(fixture.TEST_USER_ID, note.id, payload, 'application/octet-stream')
+      .expect(HttpStatus.OK);
+
+    expect(putResponse.body).toMatchObject({
+      id: note.id,
+      bodyMimeType: 'application/octet-stream',
+      size: payload.length,
+    });
+
+    const signed = await fixture
+      .callApiGetContentBodySignedUrl(fixture.TEST_USER_ID, note.id)
+      .expect(HttpStatus.OK);
+    const signedBody = signed.body as { signedUrl: string };
+    const bodyRes = await fetch(signedBody.signedUrl);
+    expect(bodyRes.ok).toBe(true);
+    expect(Buffer.from(await bodyRes.arrayBuffer())).toEqual(payload);
+  });
+
+  it(`PUT ${fixture.API_CONTENT}/:id/body returns 415 for multipart Content-Type`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'M', root.id);
+
+    await fixture
+      .callApiPutContentBody(
+        fixture.TEST_USER_ID,
+        note.id,
+        '--x',
+        'multipart/form-data; boundary=x'
+      )
+      .expect(HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+  });
+
+  it(`PUT ${fixture.API_CONTENT}/:id/body returns 403 when caller does not own the content`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
     const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Mine', root.id);
 

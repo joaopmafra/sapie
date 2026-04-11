@@ -257,10 +257,12 @@ For detailed setup instructions, see [FIREBASE_ADMIN_SETUP.md](./FIREBASE_ADMIN_
 For comprehensive authentication documentation,
 see [NestJS Firebase Integration Guide](../../docs/other/nestjs_firebase_integration.md).
 
-#### Cloud Storage (note bodies)
+#### Cloud Storage (content bodies)
 
-Note markdown for `PUT /api/content/:id/body` is stored at `{ownerId}/content/{contentId}` in your Firebase project’s
-default bucket (or the bucket set explicitly below). The Admin SDK talks to the **Storage emulator** when
+Naming: [Content naming](../../docs/dev/content_naming.md) (**content** = Firestore metadata, **content body** =
+Storage blob). Bytes for `PUT /api/content/:id/body` (any raw `Content-Type`, e.g. markdown, images) are stored at
+`{ownerId}/content/{contentId}` in your Firebase project’s default bucket (or the bucket set explicitly below). The
+Admin SDK talks to the **Storage emulator** when
 `FIREBASE_STORAGE_EMULATOR_HOST` is set (Firebase default port is **9199**).
 
 - **`FIREBASE_STORAGE_EMULATOR_HOST`**: e.g. `localhost:9199` — use with the Firebase Storage emulator for local/hybrid
@@ -270,8 +272,8 @@ default bucket (or the bucket set explicitly below). The Admin SDK talks to the 
 
 For **`pnpm test`** (`CURRENT_ENV=test-unit`), the Docker **test-unit** stack includes the Storage emulator on host port
 **9199** (see `compose.test-unit.yml` and `.env.test-unit`). `ContentController` tests exercise real
-`NoteBodyStorageService` against it. For rare cases where the emulator is awkward, use
-`ContentControllerFixture.withFakeNoteBodyStorage()` before `init()` (see `fake-note-body-storage.service.ts`).
+`ContentBodyStorageService` against it. For rare cases where the emulator is awkward, use
+`ContentControllerFixture.withFakeContentBodyStorage()` before `init()` (see `fake-content-body-storage.service.ts`).
 
 #### Usage
 

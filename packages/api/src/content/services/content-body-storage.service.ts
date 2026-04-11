@@ -6,8 +6,8 @@ const SIGNED_URL_TTL_MS = 10 * 60 * 1000;
 const CLIENT_CACHE_TTL_S = 60 * 60;
 
 @Injectable()
-export class NoteBodyStorageService {
-  private readonly logger = new Logger(NoteBodyStorageService.name);
+export class ContentBodyStorageService {
+  private readonly logger = new Logger(ContentBodyStorageService.name);
 
   constructor(private readonly firebaseAdminService: FirebaseAdminService) {}
 
@@ -53,27 +53,28 @@ export class NoteBodyStorageService {
   }
 
   /**
-   * Uploads markdown and returns the provider-agnostic object path and byte length (for Firestore `bodyUri`).
+   * Uploads raw bytes for a content body and returns the object path and byte length (for Firestore `bodyUri` / `size`).
+   * `mimeType` is stored as the object `contentType` in Cloud Storage.
    */
-  async uploadMarkdown(
+  async uploadBody(
     ownerId: string,
     contentId: string,
-    markdown: string
+    body: Buffer,
+    mimeType: string
   ): Promise<{ bodyUri: string; size: number }> {
-    const buffer = Buffer.from(markdown, 'utf8');
     const bucket = this.defaultBucket();
     const path = this.objectPath(ownerId, contentId);
     const file = bucket.file(path);
 
-    await file.save(buffer, {
+    await file.save(body, {
       metadata: {
-        contentType: 'text/markdown',
+        contentType: mimeType,
         cacheControl: `private, max-age=${CLIENT_CACHE_TTL_S}`,
       },
     });
 
-    this.logger.debug(`Uploaded note body for content ${contentId} (${buffer.length} bytes)`);
-    return { bodyUri: path, size: buffer.length };
+    this.logger.debug(`Uploaded content body for ${contentId} (${body.length} bytes, ${mimeType})`);
+    return { bodyUri: path, size: body.length };
   }
 
   /**

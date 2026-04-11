@@ -4,16 +4,22 @@ import {
   ForbiddenException,
   NotFoundException,
   BadRequestException,
+  UnsupportedMediaTypeException,
 } from '@nestjs/common';
 import { Content, ContentType } from '../entities/content.entity';
 import { ContentRepository } from '../repositories/content-repository.service';
-import { NoteBodyStorageService } from './note-body-storage.service';
+import {
+  isMediaTypeTooLong,
+  isMultipartMediaType,
+  normalizeBodyMimeType,
+} from '../utils/body-mime-type';
+import { ContentBodyStorageService } from './content-body-storage.service';
 
 @Injectable()
 export class ContentService {
   constructor(
     private readonly contentRepository: ContentRepository,
-    private readonly noteBodyStorage: NoteBodyStorageService
+    private readonly contentBodyStorage: ContentBodyStorageService
   ) {}
 
   async findByParentIdAndOwnerId(parentId: string, ownerId: string): Promise<Content[]> {
@@ -21,7 +27,7 @@ export class ContentService {
   }
 
   /**
-   * Returns a single content item if it exists and is owned by the user.
+   * Returns a single content (metadata) if it exists and is owned by the user.
    * Same 404 semantics as rename: missing id or wrong owner yields NotFound (no id leakage).
    */
   async findByIdAndOwnerId(id: string, ownerId: string): Promise<Content> {
@@ -93,10 +99,10 @@ export class ContentService {
   }
 
   /**
-   * Returns a signed read URL for the note body. Wrong owner yields 403; missing item 404;
+   * Returns a signed read URL for the stored content body. Wrong owner yields 403; missing item 404;
    * directory or empty body yields 4xx as specified for the HTTP API.
    */
-  async getNoteBodySignedUrl(
+  async getContentBodySignedUrl(
     id: string,
     ownerId: string
   ): Promise<{ signedUrl: string; expiresAt: string }> {
@@ -111,22 +117,29 @@ export class ContentService {
     }
 
     if (existing.type === ContentType.DIRECTORY) {
-      throw new BadRequestException('Note body storage is not applicable for directories');
+      throw new BadRequestException('Body storage is not applicable for directories');
     }
 
     if (existing.bodyUri == null || existing.bodyUri === '') {
-      throw new NotFoundException('Note has no stored body yet');
+      throw new NotFoundException('Content has no stored body yet');
     }
 
-    const { signedUrl, expiresAt } = await this.noteBodyStorage.getSignedReadUrl(existing.bodyUri);
+    const { signedUrl, expiresAt } = await this.contentBodyStorage.getSignedReadUrl(
+      existing.bodyUri
+    );
 
     return { signedUrl, expiresAt: expiresAt.toISOString() };
   }
 
   /**
-   * Uploads markdown for a note and updates Firestore metadata.
+   * Uploads raw bytes for a content body and updates Firestore metadata (`bodyUri`, `size`, `bodyMimeType`).
    */
-  async putNoteBody(id: string, ownerId: string, markdown: string): Promise<Content> {
+  async putContentBody(
+    id: string,
+    ownerId: string,
+    body: Buffer,
+    contentTypeHeader: string | undefined
+  ): Promise<Content> {
     const existing = await this.contentRepository.findById(id);
 
     if (!existing) {
@@ -138,12 +151,22 @@ export class ContentService {
     }
 
     if (existing.type === ContentType.DIRECTORY) {
-      throw new BadRequestException('Note body storage is not applicable for directories');
+      throw new BadRequestException('Body storage is not applicable for directories');
     }
 
-    const { bodyUri, size } = await this.noteBodyStorage.uploadMarkdown(ownerId, id, markdown);
+    const mimeType = normalizeBodyMimeType(contentTypeHeader);
+    if (isMultipartMediaType(mimeType)) {
+      throw new UnsupportedMediaTypeException(
+        'Multipart is not supported on this endpoint; send a raw body with a concrete Content-Type (e.g. image/png).'
+      );
+    }
+    if (isMediaTypeTooLong(mimeType)) {
+      throw new BadRequestException('Content-Type media type is too long');
+    }
+
+    const { bodyUri, size } = await this.contentBodyStorage.uploadBody(ownerId, id, body, mimeType);
     const now = new Date();
-    await this.contentRepository.updateNoteBodyMetadata(id, bodyUri, size, now);
+    await this.contentRepository.updateContentBodyMetadata(id, bodyUri, size, now, mimeType);
 
     const updated = await this.contentRepository.findById(id);
     if (!updated) {

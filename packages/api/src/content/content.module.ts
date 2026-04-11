@@ -5,7 +5,7 @@ import { ContentController } from './controllers/content.controller';
 import { ContentRepository } from './repositories/content-repository.service';
 import { RootDirectoryService } from './services/root-directory.service';
 import { ContentService } from './services/content.service';
-import { NoteBodyStorageService } from './services/note-body-storage.service';
+import { ContentBodyStorageService } from './services/content-body-storage.service';
 
 /**
  * Content Module
@@ -21,14 +21,21 @@ import { NoteBodyStorageService } from './services/note-body-storage.service';
 @Module({
   imports: [],
   controllers: [ContentController],
-  providers: [RootDirectoryService, ContentRepository, ContentService, NoteBodyStorageService],
-  exports: [RootDirectoryService, ContentRepository, ContentService, NoteBodyStorageService],
+  providers: [RootDirectoryService, ContentRepository, ContentService, ContentBodyStorageService],
+  exports: [RootDirectoryService, ContentRepository, ContentService, ContentBodyStorageService],
 })
 export class ContentModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(bodyParser.text({ type: 'text/plain', limit: '10mb' })).forRoutes({
-      path: 'api/content/:id/body',
-      method: RequestMethod.PUT,
-    });
+    consumer
+      .apply(
+        bodyParser.raw({
+          type: () => true,
+          limit: '50mb',
+        })
+      )
+      .forRoutes({
+        path: 'api/content/:id/body',
+        method: RequestMethod.PUT,
+      });
   }
 }

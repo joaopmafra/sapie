@@ -1,4 +1,16 @@
-import { Controller, Get, Request, Logger, Post, Body, Patch, Param, Put } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Request,
+  Logger,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Put,
+  Headers,
+  BadRequestException,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -48,15 +60,17 @@ export class ContentController {
   @Post()
   @Auth()
   @ApiOperation({
-    summary: 'Create a new note',
-    description: 'Creates a new note with a given name and parent ID.',
+    summary: 'Create content (note)',
+    description:
+      'Creates leaf content under the given parent. MVP only creates items of type `note`; ' +
+      'other kinds may reuse or extend this contract later.',
   })
   @ApiCreatedResponse({
-    description: 'Note created successfully.',
+    description: 'Content (metadata) created successfully.',
     type: ContentDto,
   })
   @ApiConflictResponse({
-    description: 'A note with the same name already exists in the target location.',
+    description: 'Content with the same name already exists in the target location.',
     ...apiProblemDetailsSchema,
   })
   @ApiForbiddenResponse({
@@ -82,7 +96,7 @@ export class ContentController {
     const { user } = request;
     const { name, parentId } = createContentDto;
     this.logger.debug(
-      `Creating note for user: ${user.uid} with name: ${name} and parentId: ${parentId}`
+      `Creating content for user: ${user.uid} with name: ${name} and parentId: ${parentId}`
     );
     return this.contentService.create(name, parentId, user.uid);
   }
@@ -92,7 +106,7 @@ export class ContentController {
   @ApiOperation({
     summary: 'Rename content',
     description:
-      'Updates the display name of a content. Names must be unique among siblings (same parent).',
+      'Updates the display name of the content. Names must be unique among siblings (same parent).',
   })
   @ApiParam({
     name: 'id',
@@ -110,7 +124,7 @@ export class ContentController {
     ...apiProblemDetailsSchema,
   })
   @ApiConflictResponse({
-    description: 'Another item with the same name already exists in this location.',
+    description: 'Other content in this location already uses that name.',
     ...apiProblemDetailsSchema,
   })
   @ApiBadRequestResponse({
@@ -127,8 +141,8 @@ export class ContentController {
   })
   /**
    * TODO: Currently this endpoint implements only content renaming. In the future it's likely that we will need to
-   *  add support for other fields and content files (the content entity contains only metadata) as well. About the
-   *  content files handling, maybe we should create a new controller for that.
+   *  add support for other fields on the metadata record. Content body uploads stay on `PUT …/body`; if new binary
+   *  flows appear, consider whether they belong here or on a dedicated surface.
    */
   async renameContent(
     @Request() request: AuthenticatedRequest,
@@ -144,7 +158,8 @@ export class ContentController {
   @Auth()
   @ApiOperation({
     summary: "List a parent's children",
-    description: 'Returns a list of content items for a given parent ID.',
+    description:
+      'Returns child content (metadata only) for the given parent ID. Does not load content bodies.',
   })
   @ApiParam({
     name: 'id',
@@ -153,7 +168,7 @@ export class ContentController {
     type: String,
   })
   @ApiOkResponse({
-    description: 'Content retrieved successfully.',
+    description: 'Child content (metadata) returned successfully.',
     type: [ContentDto],
   })
   @ApiUnauthorizedResponse({
@@ -176,15 +191,16 @@ export class ContentController {
   @Get(':id/body')
   @Auth()
   @ApiOperation({
-    summary: 'Get signed URL to read note body',
+    summary: 'Get signed URL to read content body',
     description:
-      'Returns a short-lived signed URL for downloading markdown from Cloud Storage (valid 10 minutes). ' +
-      '404 when the note has no body yet (client may treat as empty). Metadata-only GET /:id never returns body bytes.',
+      'Returns a short-lived signed URL for downloading the content body from Cloud Storage (valid 10 minutes). ' +
+      '404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes.',
   })
   @ApiParam({
     name: 'id',
     required: true,
-    description: 'The Firestore content document ID (note).',
+    description:
+      'The ID of the content whose content body is read (leaf types such as a note in MVP).',
     type: String,
   })
   @ApiOkResponse({
@@ -192,7 +208,8 @@ export class ContentController {
     type: ContentBodySignedUrlDto,
   })
   @ApiNotFoundResponse({
-    description: 'Content not found, no body yet, or wrong type (see operation description).',
+    description:
+      'Content not found, no content body yet, or wrong type (see operation description).',
     ...apiProblemDetailsSchema,
   })
   @ApiForbiddenResponse({
@@ -213,29 +230,32 @@ export class ContentController {
   ): Promise<ContentBodySignedUrlDto> {
     const { user } = request;
     this.logger.debug(`Getting body signed URL for content ${id}, user ${user.uid}`);
-    return this.contentService.getNoteBodySignedUrl(id, user.uid);
+    return this.contentService.getContentBodySignedUrl(id, user.uid);
   }
 
   @Put(':id/body')
   @Auth()
-  @ApiConsumes('text/plain')
+  @ApiConsumes('application/octet-stream', 'text/plain', 'text/markdown', 'image/png', 'image/jpeg')
   @ApiBody({
-    description: 'Raw markdown document',
-    schema: { type: 'string', example: '# Title\n\nHello.' },
+    description:
+      'Raw bytes of the content body. The `Content-Type` header sets the stored media type (e.g. markdown as `text/plain` or `text/markdown`, images as `image/*`). ' +
+      'Omitting `Content-Type` defaults to `application/octet-stream`. `multipart/*` is rejected (415) until explicitly supported.',
+    schema: { type: 'string', format: 'binary' },
   })
   @ApiOperation({
-    summary: 'Upload or replace note body',
+    summary: 'Upload or replace content body',
     description:
-      'Request body is raw markdown (`Content-Type: text/plain`). Updates Cloud Storage and Firestore metadata.',
+      'Single endpoint for any raw body type the client declares via `Content-Type`. Updates Cloud Storage object metadata and Firestore (`bodyUri`, `size`, `bodyMimeType`).',
   })
   @ApiParam({
     name: 'id',
     required: true,
-    description: 'The Firestore content document ID (note).',
+    description:
+      'The ID of the content whose content body is replaced (leaf types such as a note in MVP).',
     type: String,
   })
   @ApiOkResponse({
-    description: 'Updated content metadata (no inline body).',
+    description: 'Updated content metadata (no inline content body).',
     type: ContentDto,
   })
   @ApiNotFoundResponse({
@@ -250,20 +270,37 @@ export class ContentController {
     description: 'Body storage is not applicable (e.g. directory) or malformed request.',
     ...apiProblemDetailsSchema,
   })
+  @ApiResponse({
+    status: 415,
+    description: 'Unsupported media type (e.g. multipart body on this route).',
+    ...apiProblemDetailsSchema,
+  })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Valid Firebase ID token required',
     ...apiProblemDetailsSchema,
   })
   async putContentBody(
     @Request() request: AuthenticatedRequest & { body: unknown },
-    @Param('id') id: string
+    @Param('id') id: string,
+    @Headers('content-type') contentType?: string
   ): Promise<Content> {
     const { user } = request;
-    const markdown = typeof request.body === 'string' ? request.body : '';
-    this.logger.debug(
-      `Putting body for content ${id}, user ${user.uid} (${markdown.length} chars)`
-    );
-    return this.contentService.putNoteBody(id, user.uid, markdown);
+    const buffer = this.readRawPutBody(request.body);
+    this.logger.debug(`Putting body for content ${id}, user ${user.uid} (${buffer.length} bytes)`);
+    return this.contentService.putContentBody(id, user.uid, buffer, contentType);
+  }
+
+  private readRawPutBody(body: unknown): Buffer {
+    if (Buffer.isBuffer(body)) {
+      return body;
+    }
+    if (typeof body === 'string') {
+      return Buffer.from(body, 'utf8');
+    }
+    if (body === undefined || body === null) {
+      return Buffer.alloc(0);
+    }
+    throw new BadRequestException('Request body must be raw bytes for this endpoint');
   }
 
   /**
@@ -320,17 +357,18 @@ export class ContentController {
   @Get(':id')
   @Auth()
   @ApiOperation({
-    summary: 'Get content item by ID',
-    description: 'Returns metadata for a single note or folder owned by the authenticated user.',
+    summary: 'Get content by ID',
+    description:
+      'Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL.',
   })
   @ApiParam({
     name: 'id',
     required: true,
-    description: 'The ID of the content item.',
+    description: 'The ID of the content.',
     type: String,
   })
   @ApiOkResponse({
-    description: 'Content item found.',
+    description: 'Content (metadata) found.',
     type: ContentDto,
   })
   @ApiNotFoundResponse({

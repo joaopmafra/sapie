@@ -3,9 +3,9 @@ import * as supertest from 'supertest';
 
 import { AppFixture } from '../../test-helpers/app.fixture';
 import { TEST_USER_ID_HEADER } from '../../test-helpers/fake-auth.guard';
-import { FakeNoteBodyStorageService } from '../../test-helpers/fake-note-body-storage.service';
+import { FakeContentBodyStorageService } from '../../test-helpers/fake-content-body-storage.service';
 import { Content } from '../entities/content.entity';
-import { NoteBodyStorageService } from '../services/note-body-storage.service';
+import { ContentBodyStorageService } from '../services/content-body-storage.service';
 
 export class ContentControllerFixture extends AppFixture {
   readonly API_CONTENT = '/api/content';
@@ -15,23 +15,23 @@ export class ContentControllerFixture extends AppFixture {
   readonly TEST_USER_ID = 'content-test-user';
   readonly OTHER_USER_ID = 'content-test-user-2';
 
-  private useFakeNoteBodyStorage = false;
+  private useFakeContentBodyStorage = false;
 
   /**
-   * Opt in to `FakeNoteBodyStorageService` before `init()` when a test needs deterministic
+   * Opt in to `FakeContentBodyStorageService` before `init()` when a test needs deterministic
    * storage behavior without the Storage emulator (rare edge cases).
    */
-  withFakeNoteBodyStorage(): this {
-    this.useFakeNoteBodyStorage = true;
+  withFakeContentBodyStorage(): this {
+    this.useFakeContentBodyStorage = true;
     return this;
   }
 
   async init(): Promise<void> {
     this.createTestingModuleBuilder().withFakeAuth();
-    if (this.useFakeNoteBodyStorage) {
+    if (this.useFakeContentBodyStorage) {
       this.testingModuleBuilder = this.testingModuleBuilder
-        .overrideProvider(NoteBodyStorageService)
-        .useClass(FakeNoteBodyStorageService);
+        .overrideProvider(ContentBodyStorageService)
+        .useClass(FakeContentBodyStorageService);
     }
     await this.buildAndInit();
   }
@@ -136,12 +136,17 @@ export class ContentControllerFixture extends AppFixture {
       .set(TEST_USER_ID_HEADER, testUserId);
   }
 
-  callApiPutContentBody(testUserId: string, contentId: string, markdown: string): supertest.Test {
+  callApiPutContentBody(
+    testUserId: string,
+    contentId: string,
+    body: string | Buffer,
+    contentType = 'text/plain; charset=utf-8'
+  ): supertest.Test {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return supertest(this.getHttpServer())
       .put(`${this.API_CONTENT}/${contentId}/body`)
       .set(TEST_USER_ID_HEADER, testUserId)
-      .set('Content-Type', 'text/plain')
-      .send(markdown);
+      .set('Content-Type', contentType)
+      .send(body);
   }
 }
