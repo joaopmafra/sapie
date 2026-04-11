@@ -37,17 +37,20 @@ packages/api/
 The API supports multiple development environments:
 
 ### 1. Full Emulator Environment (`pnpm run emulator`)
+
 - Hosting + Functions + emulators in **Docker** ([`compose.emulator.yml`](../../compose.emulator.yml)); see root README
 - Complete isolation from production
 - Slower startup but maximum safety
 
 ### 2. Hybrid Local Development (`pnpm run dev:local`)
+
 - **NEW**: API runs locally with hot reloading
 - Firebase services run in emulators (Auth, Firestore)
 - Fast development with emulated Firebase services
 - Best of both worlds: speed + safety
 
 ### 3. Local Development (`pnpm run dev`)
+
 - API runs locally
 - Uses local environment configuration
 
@@ -69,19 +72,21 @@ The API supports multiple development environments:
    ```
 
 3. **Access services**:
-   - API: http://localhost:3000
-   - API Swagger: http://localhost:3000/api/docs
-   - Firebase Auth Emulator (hybrid local): http://localhost:9100
-   - Firestore Emulator (hybrid local): http://localhost:8282
+    - API: http://localhost:3000
+    - API Swagger: http://localhost:3000/api/docs
+    - Firebase Auth Emulator (hybrid local): http://localhost:9100
+    - Firestore Emulator (hybrid local): http://localhost:8282
 
 ## Environment Configuration
 
 The API uses environment files in this order:
+
 1. `.env.${CURRENT_ENV}` (environment-specific)
 
 ### Local Development Variables
 
 See `.env.local-dev.example` for all required variables:
+
 - `CURRENT_ENV=local-dev`
 - `NODE_ENV=development`
 - `FUNCTIONS_EMULATOR=true`
@@ -252,6 +257,22 @@ For detailed setup instructions, see [FIREBASE_ADMIN_SETUP.md](./FIREBASE_ADMIN_
 For comprehensive authentication documentation,
 see [NestJS Firebase Integration Guide](../../docs/other/nestjs_firebase_integration.md).
 
+#### Cloud Storage (note bodies)
+
+Note markdown for `PUT /api/content/:id/body` is stored at `{ownerId}/content/{contentId}` in your Firebase project’s
+default bucket (or the bucket set explicitly below). The Admin SDK talks to the **Storage emulator** when
+`FIREBASE_STORAGE_EMULATOR_HOST` is set (Firebase default port is **9199**).
+
+- **`FIREBASE_STORAGE_EMULATOR_HOST`**: e.g. `localhost:9199` — use with the Firebase Storage emulator for local/hybrid
+  dev
+- **`FIREBASE_STORAGE_BUCKET`**: Optional bucket name if the default Firebase bucket for `GCLOUD_PROJECT` is not the one
+  you use
+
+For **`pnpm test`** (`CURRENT_ENV=test-unit`), the Docker **test-unit** stack includes the Storage emulator on host port
+**9199** (see `compose.test-unit.yml` and `.env.test-unit`). `ContentController` tests exercise real
+`NoteBodyStorageService` against it. For rare cases where the emulator is awkward, use
+`ContentControllerFixture.withFakeNoteBodyStorage()` before `init()` (see `fake-note-body-storage.service.ts`).
+
 #### Usage
 
 ```typescript
@@ -362,6 +383,7 @@ firebase deploy --only functions
 ## Useful commands
 
 ### Generate Auth Token in Firebase Emulator
+
 Hybrid local (`compose.local-dev.yml`) uses Auth on **9100**. Full emulator / E2E use **9099**.
 
 ```shell

@@ -180,12 +180,12 @@ For package-specific testing instructions:
 
 Run these commands to test the API:
 
-```bash
+\```bash
 cd packages/api
 pnpm test
 pnpm test:watch
 pnpm test:e2e
-```
+\```
 
 The API uses Jest with these configuration options:
 

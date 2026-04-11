@@ -1,4 +1,4 @@
-import { Controller, Get, Request, Logger, Post, Body, Patch, Param } from '@nestjs/common';
+import { Controller, Get, Request, Logger, Post, Body, Patch, Param, Put } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -13,6 +13,8 @@ import {
   ApiBadRequestResponse,
   ApiUnprocessableEntityResponse,
   ApiParam,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
 import { apiProblemDetailsSchema } from '../../common/dto/problem-details.dto';
 import { Auth } from '../../auth';
@@ -20,7 +22,12 @@ import { AuthenticatedRequest } from '../../auth';
 import { RootDirectoryService } from '../services/root-directory.service';
 import { Content } from '../entities/content.entity';
 import { ContentService } from '../services/content.service';
-import { ContentDto, CreateContentDto, UpdateContentNameDto } from '../dto/content.dto';
+import {
+  ContentDto,
+  ContentBodySignedUrlDto,
+  CreateContentDto,
+  UpdateContentNameDto,
+} from '../dto/content.dto';
 
 /**
  * Content Controller
@@ -164,6 +171,99 @@ export class ContentController {
     // await new Promise(resolve => setTimeout(resolve, 1000));
 
     return this.contentService.findByParentIdAndOwnerId(id, request.user.uid);
+  }
+
+  @Get(':id/body')
+  @Auth()
+  @ApiOperation({
+    summary: 'Get signed URL to read note body',
+    description:
+      'Returns a short-lived signed URL for downloading markdown from Cloud Storage (valid 10 minutes). ' +
+      '404 when the note has no body yet (client may treat as empty). Metadata-only GET /:id never returns body bytes.',
+  })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The Firestore content document ID (note).',
+    type: String,
+  })
+  @ApiOkResponse({
+    description: 'Signed URL and expiry.',
+    type: ContentBodySignedUrlDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'Content not found, no body yet, or wrong type (see operation description).',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiForbiddenResponse({
+    description: 'Authenticated user does not own this content.',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiBadRequestResponse({
+    description: 'Body storage is not applicable (e.g. directory).',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Valid Firebase ID token required',
+    ...apiProblemDetailsSchema,
+  })
+  async getContentBodySignedUrl(
+    @Request() request: AuthenticatedRequest,
+    @Param('id') id: string
+  ): Promise<ContentBodySignedUrlDto> {
+    const { user } = request;
+    this.logger.debug(`Getting body signed URL for content ${id}, user ${user.uid}`);
+    return this.contentService.getNoteBodySignedUrl(id, user.uid);
+  }
+
+  @Put(':id/body')
+  @Auth()
+  @ApiConsumes('text/plain')
+  @ApiBody({
+    description: 'Raw markdown document',
+    schema: { type: 'string', example: '# Title\n\nHello.' },
+  })
+  @ApiOperation({
+    summary: 'Upload or replace note body',
+    description:
+      'Request body is raw markdown (`Content-Type: text/plain`). Updates Cloud Storage and Firestore metadata.',
+  })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The Firestore content document ID (note).',
+    type: String,
+  })
+  @ApiOkResponse({
+    description: 'Updated content metadata (no inline body).',
+    type: ContentDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'Content not found.',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiForbiddenResponse({
+    description: 'Authenticated user does not own this content.',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiBadRequestResponse({
+    description: 'Body storage is not applicable (e.g. directory) or malformed request.',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Valid Firebase ID token required',
+    ...apiProblemDetailsSchema,
+  })
+  async putContentBody(
+    @Request() request: AuthenticatedRequest & { body: unknown },
+    @Param('id') id: string
+  ): Promise<Content> {
+    const { user } = request;
+    const markdown = typeof request.body === 'string' ? request.body : '';
+    this.logger.debug(
+      `Putting body for content ${id}, user ${user.uid} (${markdown.length} chars)`
+    );
+    return this.contentService.putNoteBody(id, user.uid, markdown);
   }
 
   /**

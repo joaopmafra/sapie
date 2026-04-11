@@ -41,12 +41,14 @@ export class ContentDto implements Content {
   ownerId: string;
 
   @ApiProperty({
-    description: 'URL to the actual content file (only for files)',
-    example: 'https://storage.googleapis.com/...',
+    description:
+      'Object path of the note body in the default storage bucket (`ownerId/content/contentId`), ' +
+      'without a `gs://` or `https://` prefix — portable across providers. Null until the first body save.',
+    example: 'firebase-user-id/content/clq0e8k1j0000c8v9a1b2c3d4',
     required: false,
     nullable: true,
   })
-  contentUrl?: string | null;
+  bodyUri?: string | null;
 
   @ApiProperty({
     description: 'Size of the content in bytes (only for files)',
@@ -91,6 +93,22 @@ export class CreateContentDto {
   })
   @IsString()
   parentId: string;
+}
+
+export class ContentBodySignedUrlDto {
+  @ApiProperty({
+    description: 'Short-lived HTTPS URL to download the markdown object from Cloud Storage',
+    example: 'https://storage.googleapis.com/...',
+  })
+  signedUrl: string;
+
+  @ApiProperty({
+    description: 'ISO-8601 instant when signedUrl expires',
+    example: '2026-04-10T15:00:00.000Z',
+    type: 'string',
+    format: 'date-time',
+  })
+  expiresAt: string;
 }
 
 export class UpdateContentNameDto {

@@ -1,8 +1,9 @@
-import { ContentRepository } from '../repositories/content-repository.service';
-import { ContentControllerFixture } from './content.controller.fixture';
 import { HttpStatus } from '@nestjs/common';
+
+import type { ProblemDetailsBody } from '../../common/dto/problem-details.dto';
+import { ContentRepository } from '../repositories/content-repository.service';
 import { CONTENT_NAME_MAX_LENGTH } from '../validation/content-name.validation';
-import type { ProblemDetailsBody } from '../../common/filters/problem-details.exception-filter';
+import { ContentControllerFixture } from './content.controller.fixture';
 
 describe('ContentController', () => {
   const fixture = new ContentControllerFixture();
@@ -258,5 +259,104 @@ describe('ContentController', () => {
     expect(response.body).toHaveProperty('name', 'Renamed Root');
     expect(response.body).toHaveProperty('type', 'directory');
     expect(response.body).toHaveProperty('parentId', null);
+  });
+
+  it(`GET ${fixture.API_CONTENT}/:id/body returns 404 when note has no body yet`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Empty', root.id);
+
+    await fixture
+      .callApiGetContentBodySignedUrl(fixture.TEST_USER_ID, note.id)
+      .expect(HttpStatus.NOT_FOUND);
+  });
+
+  it(`GET ${fixture.API_CONTENT}/:id/body returns 403 when caller does not own the note`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Private', root.id);
+
+    await fixture
+      .callApiGetContentBodySignedUrl(fixture.OTHER_USER_ID, note.id)
+      .expect(HttpStatus.FORBIDDEN);
+  });
+
+  it(`GET ${fixture.API_CONTENT}/:id/body returns 404 when content does not exist`, async () => {
+    await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+
+    await fixture
+      .callApiGetContentBodySignedUrl(fixture.TEST_USER_ID, 'non-existent-id')
+      .expect(HttpStatus.NOT_FOUND);
+  });
+
+  it(`GET ${fixture.API_CONTENT}/:id/body returns 400 for a directory`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+
+    await fixture
+      .callApiGetContentBodySignedUrl(fixture.TEST_USER_ID, root.id)
+      .expect(HttpStatus.BAD_REQUEST);
+  });
+
+  it(`PUT ${fixture.API_CONTENT}/:id/body saves markdown and updates metadata`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Doc', root.id);
+
+    const putResponse = await fixture
+      .callApiPutContentBody(fixture.TEST_USER_ID, note.id, '# Hello')
+      .expect(HttpStatus.OK);
+
+    expect(putResponse.body).toMatchObject({
+      id: note.id,
+      type: 'note',
+      ownerId: fixture.TEST_USER_ID,
+    });
+    expect(putResponse.body).toHaveProperty(
+      'bodyUri',
+      `${fixture.TEST_USER_ID}/content/${note.id}`
+    );
+    expect(putResponse.body).toHaveProperty('size', Buffer.byteLength('# Hello', 'utf8'));
+
+    const meta = await fixture.callApiGetContentByIdExpectingOkAsContent(
+      fixture.TEST_USER_ID,
+      note.id
+    );
+    expect(meta.bodyUri).toBe(`${fixture.TEST_USER_ID}/content/${note.id}`);
+    expect(meta.size).toBe(Buffer.byteLength('# Hello', 'utf8'));
+
+    const signed = await fixture
+      .callApiGetContentBodySignedUrl(fixture.TEST_USER_ID, note.id)
+      .expect(HttpStatus.OK);
+
+    const signedBody = signed.body as { signedUrl: string; expiresAt: string };
+    expect(signedBody.signedUrl).toMatch(/^https?:\/\//);
+    expect(signedBody.expiresAt).toBeTruthy();
+    expect(() => new Date(signedBody.expiresAt)).not.toThrow();
+
+    const bodyRes = await fetch(signedBody.signedUrl);
+    expect(bodyRes.ok).toBe(true);
+    expect(await bodyRes.text()).toBe('# Hello');
+  });
+
+  it(`PUT ${fixture.API_CONTENT}/:id/body returns 403 when caller does not own the note`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Mine', root.id);
+
+    await fixture
+      .callApiPutContentBody(fixture.OTHER_USER_ID, note.id, 'x')
+      .expect(HttpStatus.FORBIDDEN);
+  });
+
+  it(`PUT ${fixture.API_CONTENT}/:id/body returns 404 when content does not exist`, async () => {
+    await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+
+    await fixture
+      .callApiPutContentBody(fixture.TEST_USER_ID, 'non-existent-id', 'x')
+      .expect(HttpStatus.NOT_FOUND);
+  });
+
+  it(`PUT ${fixture.API_CONTENT}/:id/body returns 400 for a directory`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+
+    await fixture
+      .callApiPutContentBody(fixture.TEST_USER_ID, root.id, 'x')
+      .expect(HttpStatus.BAD_REQUEST);
   });
 });

@@ -95,6 +95,13 @@ export class FirebaseAdminService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
+   * Get Firebase Storage (GCS). Respects `FIREBASE_STORAGE_EMULATOR_HOST` when set.
+   */
+  getStorage(): admin.storage.Storage {
+    return admin.storage(this.getFirebaseAdmin());
+  }
+
+  /**
    * Verify Firebase ID token
    *
    * @param idToken - The Firebase ID token to verify

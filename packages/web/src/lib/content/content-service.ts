@@ -38,7 +38,7 @@ export class ContentService {
       ownerId: dto.ownerId,
       type: dto.type as ContentType,
       parentId: dto.parentId as string | null,
-      contentUrl: dto.contentUrl as string | undefined,
+      bodyUri: dto.bodyUri as string | null | undefined,
       size: dto.size as number | undefined,
       createdAt: new Date(dto.createdAt),
       updatedAt: new Date(dto.updatedAt),

@@ -3,13 +3,18 @@ import {
   ConflictException,
   ForbiddenException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
-import { Content } from '../entities/content.entity';
+import { Content, ContentType } from '../entities/content.entity';
 import { ContentRepository } from '../repositories/content-repository.service';
+import { NoteBodyStorageService } from './note-body-storage.service';
 
 @Injectable()
 export class ContentService {
-  constructor(private readonly contentRepository: ContentRepository) {}
+  constructor(
+    private readonly contentRepository: ContentRepository,
+    private readonly noteBodyStorage: NoteBodyStorageService
+  ) {}
 
   async findByParentIdAndOwnerId(parentId: string, ownerId: string): Promise<Content[]> {
     return this.contentRepository.findByParentIdAndOwnerId(parentId, ownerId);
@@ -83,6 +88,66 @@ export class ContentService {
     const updated = await this.contentRepository.findById(id);
     if (!updated) {
       throw new Error(`Content with ID ${id} disappeared after update`);
+    }
+    return updated;
+  }
+
+  /**
+   * Returns a signed read URL for the note body. Wrong owner yields 403; missing item 404;
+   * directory or empty body yields 4xx as specified for the HTTP API.
+   */
+  async getNoteBodySignedUrl(
+    id: string,
+    ownerId: string
+  ): Promise<{ signedUrl: string; expiresAt: string }> {
+    const existing = await this.contentRepository.findById(id);
+
+    if (!existing) {
+      throw new NotFoundException(`Content with ID ${id} not found`);
+    }
+
+    if (existing.ownerId !== ownerId) {
+      throw new ForbiddenException('User does not own this content');
+    }
+
+    if (existing.type === ContentType.DIRECTORY) {
+      throw new BadRequestException('Note body storage is not applicable for directories');
+    }
+
+    if (existing.bodyUri == null || existing.bodyUri === '') {
+      throw new NotFoundException('Note has no stored body yet');
+    }
+
+    const { signedUrl, expiresAt } = await this.noteBodyStorage.getSignedReadUrl(existing.bodyUri);
+
+    return { signedUrl, expiresAt: expiresAt.toISOString() };
+  }
+
+  /**
+   * Uploads markdown for a note and updates Firestore metadata.
+   */
+  async putNoteBody(id: string, ownerId: string, markdown: string): Promise<Content> {
+    const existing = await this.contentRepository.findById(id);
+
+    if (!existing) {
+      throw new NotFoundException(`Content with ID ${id} not found`);
+    }
+
+    if (existing.ownerId !== ownerId) {
+      throw new ForbiddenException('User does not own this content');
+    }
+
+    if (existing.type === ContentType.DIRECTORY) {
+      throw new BadRequestException('Note body storage is not applicable for directories');
+    }
+
+    const { bodyUri, size } = await this.noteBodyStorage.uploadMarkdown(ownerId, id, markdown);
+    const now = new Date();
+    await this.contentRepository.updateNoteBodyMetadata(id, bodyUri, size, now);
+
+    const updated = await this.contentRepository.findById(id);
+    if (!updated) {
+      throw new Error(`Content with ID ${id} disappeared after body update`);
     }
     return updated;
   }

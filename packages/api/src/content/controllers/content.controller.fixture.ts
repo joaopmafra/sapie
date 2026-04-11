@@ -1,8 +1,11 @@
-import { AppFixture } from '../../test-helpers/app.fixture';
-import * as supertest from 'supertest';
-import { TEST_USER_ID_HEADER } from '../../test-helpers/fake-auth.guard';
-import { Content } from '../entities/content.entity';
 import { HttpStatus } from '@nestjs/common';
+import * as supertest from 'supertest';
+
+import { AppFixture } from '../../test-helpers/app.fixture';
+import { TEST_USER_ID_HEADER } from '../../test-helpers/fake-auth.guard';
+import { FakeNoteBodyStorageService } from '../../test-helpers/fake-note-body-storage.service';
+import { Content } from '../entities/content.entity';
+import { NoteBodyStorageService } from '../services/note-body-storage.service';
 
 export class ContentControllerFixture extends AppFixture {
   readonly API_CONTENT = '/api/content';
@@ -12,8 +15,25 @@ export class ContentControllerFixture extends AppFixture {
   readonly TEST_USER_ID = 'content-test-user';
   readonly OTHER_USER_ID = 'content-test-user-2';
 
+  private useFakeNoteBodyStorage = false;
+
+  /**
+   * Opt in to `FakeNoteBodyStorageService` before `init()` when a test needs deterministic
+   * storage behavior without the Storage emulator (rare edge cases).
+   */
+  withFakeNoteBodyStorage(): this {
+    this.useFakeNoteBodyStorage = true;
+    return this;
+  }
+
   async init(): Promise<void> {
-    await this.createTestingModuleBuilder().withFakeAuth().buildAndInit();
+    this.createTestingModuleBuilder().withFakeAuth();
+    if (this.useFakeNoteBodyStorage) {
+      this.testingModuleBuilder = this.testingModuleBuilder
+        .overrideProvider(NoteBodyStorageService)
+        .useClass(FakeNoteBodyStorageService);
+    }
+    await this.buildAndInit();
   }
 
   async callGetApiContentRootExpectingOk(userId: string): Promise<supertest.Response> {
@@ -107,5 +127,21 @@ export class ContentControllerFixture extends AppFixture {
   ): Promise<Content> {
     const response = await this.callApiGetContentById(testUserId, contentId).expect(HttpStatus.OK);
     return response.body as Content;
+  }
+
+  callApiGetContentBodySignedUrl(testUserId: string, contentId: string): supertest.Test {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return supertest(this.getHttpServer())
+      .get(`${this.API_CONTENT}/${contentId}/body`)
+      .set(TEST_USER_ID_HEADER, testUserId);
+  }
+
+  callApiPutContentBody(testUserId: string, contentId: string, markdown: string): supertest.Test {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return supertest(this.getHttpServer())
+      .put(`${this.API_CONTENT}/${contentId}/body`)
+      .set(TEST_USER_ID_HEADER, testUserId)
+      .set('Content-Type', 'text/plain')
+      .send(markdown);
   }
 }

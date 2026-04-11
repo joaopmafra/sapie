@@ -134,11 +134,11 @@ export interface ContentDto {
      */
     'ownerId': string;
     /**
-     * URL to the actual content file (only for files)
-     * @type {object}
+     * Object path of the note body in the default storage bucket (provider-agnostic).
+     * @type {string}
      * @memberof ContentDto
      */
-    'contentUrl'?: object | null;
+    'bodyUri'?: string | null;
     /**
      * Size of the content in bytes (only for files)
      * @type {object}

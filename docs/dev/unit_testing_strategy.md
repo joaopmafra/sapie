@@ -208,6 +208,19 @@ The Classical school is not dogmatic. There are cases where mocks (or spies) are
 The key principle: prefer fakes for _collaborators that maintain state_; consider mocks or spies
 for _collaborators that trigger side effects_.
 
+### Layered apps (e.g. NestJS): do not mock internal providers “for coverage”
+
+In a typical API stack (controller → service → repository), **classical tests should not mock
+the repository or service** just to unit-test the layer in the middle. If the behavior is
+exposed through HTTP, drive the **same** behavior through the controller using **supertest**,
+keep the **real** service and repository wired, and replace only **outer** boundaries (auth,
+database emulator, storage fake, etc.). Mocking `ContentRepository` in `ContentService` specs
+while also testing `ContentController` duplicates effort and produces **mockist** tests that
+break on refactoring and prove little about integrated behavior.
+
+Reserve mocks/spies for true side-effect edges or adapter-level tests, as above. Project-specific
+wording and examples: [Unit Testing — Sapie Implementation](unit_testing_sapie.md).
+
 ---
 
 ## The Fake Divergence Problem

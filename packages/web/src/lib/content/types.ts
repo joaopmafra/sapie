@@ -31,8 +31,8 @@ export interface Content {
   /** ID of the user who owns this content */
   ownerId: string;
 
-  /** URL to the actual content file (only for files, not directories) */
-  contentUrl?: string;
+  /** Object path of the note body in the default bucket (see API `bodyUri`); null until first save. */
+  bodyUri?: string | null;
 
   /** Size of the content in bytes (only for files, not directories) */
   size?: number;
@@ -69,8 +69,8 @@ export interface CreateContentRequest {
   /** ID of the parent directory, null for root directory */
   parentId: string | null;
 
-  /** URL to the actual content file (only for files, not directories) */
-  contentUrl?: string;
+  /** Optional; see `Content.bodyUri` when the backend exposes it on create payloads. */
+  bodyUri?: string | null;
 
   /** Size of the content in bytes (only for files, not directories) */
   size?: number;
@@ -89,8 +89,8 @@ export interface UpdateContentRequest {
   /** ID of the parent directory */
   parentId?: string | null;
 
-  /** URL to the actual content file (only for files, not directories) */
-  contentUrl?: string;
+  /** Optional; see `Content.bodyUri`. */
+  bodyUri?: string | null;
 
   /** Size of the content in bytes (only for files, not directories) */
   size?: number;

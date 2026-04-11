@@ -84,7 +84,7 @@ export class ContentRepository {
       type: ContentType.NOTE,
       parentId: params.parentId,
       ownerId: params.ownerId,
-      contentUrl: null,
+      bodyUri: null,
       size: null,
       createdAt: params.createdAt,
       updatedAt: params.updatedAt,
@@ -105,14 +105,32 @@ export class ContentRepository {
     });
   }
 
+  async updateNoteBodyMetadata(
+    id: string,
+    bodyUri: string,
+    size: number,
+    updatedAt: Date
+  ): Promise<void> {
+    await this.firestore.collection(this.contentCollection).doc(id).update({
+      bodyUri,
+      size,
+      updatedAt,
+    });
+  }
+
   private convertDocumentToContent(id: string, data: ContentDocument): Content {
+    const bodyUri =
+      data.bodyUri !== undefined && data.bodyUri !== null && data.bodyUri !== ''
+        ? data.bodyUri
+        : null;
+
     return {
       id,
       name: data.name,
       type: data.type as ContentType,
       parentId: data.parentId,
       ownerId: data.ownerId,
-      contentUrl: data.contentUrl,
+      bodyUri,
       size: data.size,
       createdAt: data.createdAt.toDate(),
       updatedAt: data.updatedAt.toDate(),

@@ -32,8 +32,11 @@ export interface Content {
   /** ID of the user who owns this content */
   ownerId: string;
 
-  /** URL to the actual content file (only for files, not directories) */
-  contentUrl?: string | null;
+  /**
+   * Object path for the note body in the configured default bucket (`ownerId/content/contentId`),
+   * provider-agnostic (no `gs://` prefix). Null until the first body save.
+   */
+  bodyUri?: string | null;
 
   /** Size of the content in bytes (only for files, not directories) */
   size?: number | null;
@@ -65,8 +68,8 @@ export interface ContentDocument {
   /** ID of the user who owns this content */
   ownerId: string;
 
-  /** URL to the actual content file (only for files, not directories) */
-  contentUrl?: string;
+  /** Object path for note body (see {@link Content.bodyUri}). */
+  bodyUri?: string;
 
   /** Size of the content in bytes (only for files, not directories) */
   size?: number;
@@ -93,8 +96,8 @@ export interface CreateContentRequest {
   /** ID of the parent directory, null for root directory */
   parentId: string | null;
 
-  /** URL to the actual content file (only for files, not directories) */
-  contentUrl?: string;
+  /** Object path for note body (see {@link Content.bodyUri}). */
+  bodyUri?: string;
 
   /** Size of the content in bytes (only for files, not directories) */
   size?: number;
@@ -112,8 +115,8 @@ export interface UpdateContentRequest {
   /** ID of the parent directory */
   parentId?: string | null;
 
-  /** URL to the actual content file (only for files, not directories) */
-  contentUrl?: string;
+  /** Object path for note body (see {@link Content.bodyUri}). */
+  bodyUri?: string;
 
   /** Size of the content in bytes (only for files, not directories) */
   size?: number;
