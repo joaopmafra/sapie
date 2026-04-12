@@ -35,10 +35,10 @@ import { RootDirectoryService } from '../services/root-directory.service';
 import { Content } from '../entities/content.entity';
 import { ContentService } from '../services/content.service';
 import {
-  ContentDto,
-  ContentBodySignedUrlDto,
-  CreateContentDto,
-  UpdateContentNameDto,
+  ContentBodyUrlResponse,
+  ContentResponse,
+  CreateContentRequest,
+  UpdateContentRequest,
 } from '../dto/content.dto';
 
 /**
@@ -67,7 +67,7 @@ export class ContentController {
   })
   @ApiCreatedResponse({
     description: 'Content (metadata) created successfully.',
-    type: ContentDto,
+    type: ContentResponse,
   })
   @ApiConflictResponse({
     description: 'Content with the same name already exists in the target location.',
@@ -91,10 +91,10 @@ export class ContentController {
   })
   async createContent(
     @Request() request: AuthenticatedRequest,
-    @Body() createContentDto: CreateContentDto
+    @Body() createContentRequest: CreateContentRequest
   ): Promise<Content> {
     const { user } = request;
-    const { name, parentId } = createContentDto;
+    const { name, parentId } = createContentRequest;
     this.logger.debug(
       `Creating content for user: ${user.uid} with name: ${name} and parentId: ${parentId}`
     );
@@ -104,9 +104,13 @@ export class ContentController {
   @Patch(':id')
   @Auth()
   @ApiOperation({
-    summary: 'Rename content',
+    summary: 'Patch content metadata',
     description:
-      'Updates the display name of the content. Names must be unique among siblings (same parent).',
+      'Partially updates content metadata. Today this supports renaming (`name`). ' +
+      'Moving an item to another folder (`parentId`) will use the same route; that behavior is **not implemented yet** ' +
+      'and returns `400 Bad Request` if `parentId` is sent. ' +
+      'Content body bytes and storage-derived fields (`bodyUri`, `size`, `bodyMimeType`) are changed only via `PUT …/body`. ' +
+      'When renaming, names must stay unique among siblings under the same parent.',
   })
   @ApiParam({
     name: 'id',
@@ -115,8 +119,8 @@ export class ContentController {
     type: String,
   })
   @ApiOkResponse({
-    description: 'Content renamed successfully.',
-    type: ContentDto,
+    description: 'Content metadata updated successfully.',
+    type: ContentResponse,
   })
   @ApiNotFoundResponse({
     description:
@@ -128,7 +132,9 @@ export class ContentController {
     ...apiProblemDetailsSchema,
   })
   @ApiBadRequestResponse({
-    description: 'Malformed request body or parameters.',
+    description:
+      'Malformed request body or parameters, empty patch body, reserved fields not yet supported (e.g. `parentId`), ' +
+      'or rename requested without a `name` field.',
     ...apiProblemDetailsSchema,
   })
   @ApiUnprocessableEntityResponse({
@@ -139,19 +145,27 @@ export class ContentController {
     description: 'Unauthorized - Valid Firebase ID token required',
     ...apiProblemDetailsSchema,
   })
-  /**
-   * TODO: Currently this endpoint implements only content renaming. In the future it's likely that we will need to
-   *  add support for other fields on the metadata record. Content body uploads stay on `PUT …/body`; if new binary
-   *  flows appear, consider whether they belong here or on a dedicated surface.
-   */
-  async renameContent(
+  async patchContent(
     @Request() request: AuthenticatedRequest,
     @Param('id') id: string,
-    @Body() updateContentNameDto: UpdateContentNameDto
+    @Body() body: UpdateContentRequest
   ): Promise<Content> {
     const { user } = request;
-    this.logger.debug(`Renaming content ${id} for user: ${user.uid}`);
-    return this.contentService.renameContent(id, updateContentNameDto.name, user.uid);
+
+    if (body.parentId !== undefined) {
+      throw new BadRequestException(
+        'Moving content to another folder is not implemented yet; omit `parentId` from the request body.'
+      );
+    }
+
+    if (body.name === undefined || body.name === null) {
+      throw new BadRequestException(
+        'Request body must include `name` until additional patch fields (such as `parentId`) are supported.'
+      );
+    }
+
+    this.logger.debug(`Patching content ${id} for user: ${user.uid}`);
+    return this.contentService.patchContent(id, body.name, user.uid);
   }
 
   @Get(':id/children')
@@ -169,7 +183,7 @@ export class ContentController {
   })
   @ApiOkResponse({
     description: 'Child content (metadata) returned successfully.',
-    type: [ContentDto],
+    type: [ContentResponse],
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Valid Firebase ID token required',
@@ -205,7 +219,7 @@ export class ContentController {
   })
   @ApiOkResponse({
     description: 'Signed URL and expiry.',
-    type: ContentBodySignedUrlDto,
+    type: ContentBodyUrlResponse,
   })
   @ApiNotFoundResponse({
     description:
@@ -227,7 +241,7 @@ export class ContentController {
   async getContentBodySignedUrl(
     @Request() request: AuthenticatedRequest,
     @Param('id') id: string
-  ): Promise<ContentBodySignedUrlDto> {
+  ): Promise<ContentBodyUrlResponse> {
     const { user } = request;
     this.logger.debug(`Getting body signed URL for content ${id}, user ${user.uid}`);
     return this.contentService.getContentBodySignedUrl(id, user.uid);
@@ -256,7 +270,7 @@ export class ContentController {
   })
   @ApiOkResponse({
     description: 'Updated content metadata (no inline content body).',
-    type: ContentDto,
+    type: ContentResponse,
   })
   @ApiNotFoundResponse({
     description: 'Content not found.',
@@ -324,7 +338,7 @@ export class ContentController {
   @ApiResponse({
     status: 200,
     description: 'Root directory retrieved or created successfully',
-    type: ContentDto,
+    type: ContentResponse,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Valid Firebase ID token required',
@@ -369,7 +383,7 @@ export class ContentController {
   })
   @ApiOkResponse({
     description: 'Content (metadata) found.',
-    type: ContentDto,
+    type: ContentResponse,
   })
   @ApiNotFoundResponse({
     description:

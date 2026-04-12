@@ -9,9 +9,15 @@ export {
   Content,
   ContentDocument,
   ContentType,
+  ContentCreationInput,
+} from './entities/content.entity';
+
+export {
+  ContentBodyUrlResponse,
+  ContentResponse,
   CreateContentRequest,
   UpdateContentRequest,
-} from './entities/content.entity';
+} from './dto/content.dto';
 
 // Services
 export { RootDirectoryService } from './services/root-directory.service';

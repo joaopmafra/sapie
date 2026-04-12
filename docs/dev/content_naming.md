@@ -14,7 +14,7 @@ stress that it is not the body).
 
 **Do not** call the Storage object “the content” alone; say **content body** (or **body**) when the distinction matters.
 
-TypeScript types keep the name `Content` / `ContentDto`; that is the metadata shape. OpenAPI summaries and descriptions
+TypeScript types keep the name `Content` (domain) and `ContentResponse` (HTTP metadata shape). OpenAPI summaries and descriptions
 should follow the table above.
 
 See also: [ADR 0002 — note body storage and API](../adr/0002-note-body-storage-and-api.md) (Storage layout and signed

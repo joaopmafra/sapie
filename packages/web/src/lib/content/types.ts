@@ -57,12 +57,11 @@ export interface TreeNode extends Content {
 }
 
 /**
- * Create Content Request Interface
+ * Domain shape for persisted new content (metadata), including `type` and optional body fields.
  *
- * Represents the data required to create new content (metadata).
- * This interface matches the backend CreateContentRequest interface.
+ * For the HTTP **command** to create a note (`POST /api/content`), import `CreateContentRequest` from `api-client`.
  */
-export interface CreateContentRequest {
+export interface ContentCreationInput {
   /** Display name of the content */
   name: string;
 
@@ -89,12 +88,6 @@ export interface UpdateContentRequest {
   /** Display name of the content */
   name?: string;
 
-  /** ID of the parent directory */
+  /** Target parent folder id after a move (not implemented on the API yet). */
   parentId?: string | null;
-
-  /** Optional; see `Content.bodyUri`. */
-  bodyUri?: string | null;
-
-  /** Size of the content in bytes (only for files, not directories) */
-  size?: number;
 }

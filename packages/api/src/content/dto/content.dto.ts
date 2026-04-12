@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString, Length } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString, Length, ValidateIf } from 'class-validator';
 import { Content, ContentType } from '../entities/content.entity';
 import {
   CONTENT_NAME_MAX_LENGTH,
@@ -7,7 +7,8 @@ import {
 } from '../validation/content-name.validation';
 import { IsContentNameSafeForFileName } from '../validation/content-name.validator';
 
-export class ContentDto implements Content {
+/** HTTP response body: content (metadata) returned by the API. */
+export class ContentResponse implements Content {
   @ApiProperty({
     description: 'Unique identifier for the content (metadata)',
     example: 'clq0e8k1j0000c8v9a1b2c3d4',
@@ -84,7 +85,8 @@ export class ContentDto implements Content {
   updatedAt: Date;
 }
 
-export class CreateContentDto {
+/** HTTP command body: create note (metadata) via `POST /api/content`. */
+export class CreateContentRequest {
   @ApiProperty({
     description:
       `Display name (${CONTENT_NAME_MIN_LENGTH}–${CONTENT_NAME_MAX_LENGTH} chars). ` +
@@ -106,7 +108,8 @@ export class CreateContentDto {
   parentId: string;
 }
 
-export class ContentBodySignedUrlDto {
+/** HTTP response body: signed read URL for a content body. */
+export class ContentBodyUrlResponse {
   @ApiProperty({
     description: 'Short-lived HTTPS URL to download the content body object from Cloud Storage',
     example: 'https://storage.googleapis.com/...',
@@ -122,17 +125,35 @@ export class ContentBodySignedUrlDto {
   expiresAt: string;
 }
 
-export class UpdateContentNameDto {
-  @ApiProperty({
+/**
+ * PATCH payload for `/api/content/:id`.
+ *
+ * Body storage fields (`bodyUri`, `size`, `bodyMimeType`) are updated only via `PUT …/body`, not here.
+ */
+export class UpdateContentRequest {
+  @ApiPropertyOptional({
     description:
       `New display name (${CONTENT_NAME_MIN_LENGTH}–${CONTENT_NAME_MAX_LENGTH} chars). ` +
-      'Spaces allowed. Cannot contain \\ / : * ? " < > | or control characters.',
+      'Spaces allowed. Cannot contain \\ / : * ? " < > | or control characters. ' +
+      'Omit the property when only changing other fields (e.g. future `parentId` moves); do not send `null`.',
     example: 'Renamed Item',
     minLength: CONTENT_NAME_MIN_LENGTH,
     maxLength: CONTENT_NAME_MAX_LENGTH,
   })
+  @ValidateIf((_, v) => v !== undefined)
   @IsString()
   @Length(CONTENT_NAME_MIN_LENGTH, CONTENT_NAME_MAX_LENGTH)
   @IsContentNameSafeForFileName()
-  name: string;
+  name?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Target parent folder id after a move/reparent. **Not implemented yet** — the API returns `400 Bad Request` ' +
+      'if this property is present (including `null`).',
+    example: 'clq0e8k1j0000c8v9a1b2c3d4',
+    nullable: true,
+  })
+  @IsOptional()
+  @IsString()
+  parentId?: string | null;
 }

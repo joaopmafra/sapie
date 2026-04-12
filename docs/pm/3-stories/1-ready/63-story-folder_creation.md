@@ -49,7 +49,7 @@ As a user, I want to create folders in my content tree so that I can organise my
 ### Backend
 
 - [ ] **[BE] Update `POST /api/content` to support `type` parameter**
-    - Add optional `type` field to `CreateContentDto` (values: `note` | `directory`; default: `note`).
+    - Add optional `type` field to `CreateContentRequest` (values: `note` | `directory`; default: `note`).
     - Update `ContentService.create()` to accept and use the `type` parameter.
     - Add validation: if `type === 'directory'`, the parent must also be a directory. Return 400 otherwise.
     - Duplicate name check already exists — no changes needed.

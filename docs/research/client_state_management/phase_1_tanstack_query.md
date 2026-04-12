@@ -231,7 +231,7 @@ async getContentById(currentUser: User, id: string): Promise<Content> {
     { id },
     config.baseOptions
   );
-  return this.mapContentDtoToContent(response.data);
+  return this.mapContentResponseToContent(response.data);
 }
 ```
 

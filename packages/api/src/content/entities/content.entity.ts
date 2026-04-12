@@ -91,11 +91,11 @@ export interface ContentDocument {
 }
 
 /**
- * Create Content Request Interface
+ * Fields used when persisting new content (metadata), e.g. from the repository layer.
  *
- * Represents the data required to create new content (metadata).
+ * For the HTTP **command** shape (`POST /api/content`), use {@link CreateContentRequest} in `content.dto.ts`.
  */
-export interface CreateContentRequest {
+export interface ContentCreationInput {
   /** Display name of the content */
   name: string;
 
@@ -104,25 +104,6 @@ export interface CreateContentRequest {
 
   /** ID of the parent directory, null for root directory */
   parentId: string | null;
-
-  /** Object path for content body (see {@link Content.bodyUri}). */
-  bodyUri?: string;
-
-  /** Size of the content in bytes (only for files, not directories) */
-  size?: number;
-}
-
-/**
- * Update Content Request Interface
- *
- * Represents the data that can be updated for existing content (metadata).
- */
-export interface UpdateContentRequest {
-  /** Display name of the content */
-  name?: string;
-
-  /** ID of the parent directory */
-  parentId?: string | null;
 
   /** Object path for content body (see {@link Content.bodyUri}). */
   bodyUri?: string;

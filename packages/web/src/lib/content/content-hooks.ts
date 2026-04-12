@@ -71,7 +71,7 @@ export function useRenameContent() {
       id: string;
       name: string;
       parentId: string | null;
-    }) => contentService.renameContent(currentUser!, id, name),
+    }) => contentService.patchContent(currentUser!, id, { name }),
     onSuccess: (_updated, { id, parentId }) => {
       void queryClient.invalidateQueries({
         queryKey: contentQueryKeys.item(id),

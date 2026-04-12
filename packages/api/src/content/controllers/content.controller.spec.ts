@@ -180,12 +180,30 @@ describe('ContentController', () => {
     ]);
   });
 
+  it(`PATCH ${fixture.API_CONTENT}/:id returns 400 for an empty JSON body`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Ok', root.id);
+
+    await fixture
+      .callApiPatchContent(fixture.TEST_USER_ID, note.id, {})
+      .expect(HttpStatus.BAD_REQUEST);
+  });
+
+  it(`PATCH ${fixture.API_CONTENT}/:id returns 400 when parentId is sent (not implemented yet)`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Ok', root.id);
+
+    await fixture
+      .callApiPatchContent(fixture.TEST_USER_ID, note.id, { parentId: root.id })
+      .expect(HttpStatus.BAD_REQUEST);
+  });
+
   it(`PATCH ${fixture.API_CONTENT}/:id returns 422 for invalid new name`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
     const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Ok', root.id);
 
     await fixture
-      .callApiPatchContentName(fixture.TEST_USER_ID, note.id, { name: 'bad:name' })
+      .callApiPatchContent(fixture.TEST_USER_ID, note.id, { name: 'bad:name' })
       .expect(HttpStatus.UNPROCESSABLE_ENTITY);
   });
 
@@ -193,11 +211,9 @@ describe('ContentController', () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
     const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Original', root.id);
 
-    const response = await fixture.callApiPatchContentNameExpectingOk(
-      fixture.TEST_USER_ID,
-      note.id,
-      { name: 'Renamed' }
-    );
+    const response = await fixture.callApiPatchContentExpectingOk(fixture.TEST_USER_ID, note.id, {
+      name: 'Renamed',
+    });
 
     expect(response.body).toHaveProperty('id', note.id);
     expect(response.body).toHaveProperty('name', 'Renamed');
@@ -211,7 +227,7 @@ describe('ContentController', () => {
     const second = await fixture.seedNote(fixture.TEST_USER_ID, 'Second', root.id);
 
     await fixture
-      .callApiPatchContentName(fixture.TEST_USER_ID, second.id, { name: 'First' })
+      .callApiPatchContent(fixture.TEST_USER_ID, second.id, { name: 'First' })
       .expect(HttpStatus.CONFLICT);
   });
 
@@ -219,11 +235,9 @@ describe('ContentController', () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
     const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Same', root.id);
 
-    const response = await fixture.callApiPatchContentNameExpectingOk(
-      fixture.TEST_USER_ID,
-      note.id,
-      { name: 'Same' }
-    );
+    const response = await fixture.callApiPatchContentExpectingOk(fixture.TEST_USER_ID, note.id, {
+      name: 'Same',
+    });
 
     expect(response.body).toHaveProperty('name', 'Same');
     expect(response.body).toHaveProperty('id', note.id);
@@ -233,7 +247,7 @@ describe('ContentController', () => {
     await fixture.seedRootDirectory(fixture.TEST_USER_ID);
 
     await fixture
-      .callApiPatchContentName(fixture.TEST_USER_ID, 'non-existent-id', { name: 'Nope' })
+      .callApiPatchContent(fixture.TEST_USER_ID, 'non-existent-id', { name: 'Nope' })
       .expect(HttpStatus.NOT_FOUND);
   });
 
@@ -242,18 +256,16 @@ describe('ContentController', () => {
     const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Private', root.id);
 
     await fixture
-      .callApiPatchContentName(fixture.OTHER_USER_ID, note.id, { name: 'Hijack' })
+      .callApiPatchContent(fixture.OTHER_USER_ID, note.id, { name: 'Hijack' })
       .expect(HttpStatus.NOT_FOUND);
   });
 
   it(`PATCH ${fixture.API_CONTENT}/:id renames the root directory`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
 
-    const response = await fixture.callApiPatchContentNameExpectingOk(
-      fixture.TEST_USER_ID,
-      root.id,
-      { name: 'Renamed Root' }
-    );
+    const response = await fixture.callApiPatchContentExpectingOk(fixture.TEST_USER_ID, root.id, {
+      name: 'Renamed Root',
+    });
 
     expect(response.body).toHaveProperty('id', root.id);
     expect(response.body).toHaveProperty('name', 'Renamed Root');

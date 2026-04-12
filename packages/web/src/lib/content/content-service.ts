@@ -2,13 +2,12 @@ import type { User } from 'firebase/auth';
 
 import {
   ContentApi,
-  type ContentDto,
-  type CreateContentDto,
-  type UpdateContentNameDto,
+  type ContentResponse,
+  type CreateContentRequest,
 } from '../api-client';
 import { createAuthenticatedApiConfiguration } from '../auth-utils';
 
-import type { Content } from './types';
+import type { Content, UpdateContentRequest } from './types';
 import { ContentType } from './types';
 
 /**
@@ -31,7 +30,7 @@ export class ContentService {
     this.contentApi = new ContentApi(undefined, this.basePath);
   }
 
-  private mapContentDtoToContent(dto: ContentDto): Content {
+  private mapContentResponseToContent(dto: ContentResponse): Content {
     const dtoRecord = dto as unknown as Record<string, unknown>;
     const bodyMimeType =
       'bodyMimeType' in dtoRecord
@@ -73,7 +72,7 @@ export class ContentService {
         config.baseOptions
       );
 
-      return this.mapContentDtoToContent(response.data);
+      return this.mapContentResponseToContent(response.data);
     } catch (error) {
       console.error('Failed to get root directory:', error);
       throw error;
@@ -92,7 +91,7 @@ export class ContentService {
         config.baseOptions
       );
 
-      return this.mapContentDtoToContent(response.data);
+      return this.mapContentResponseToContent(response.data);
     } catch (error) {
       console.error('Failed to get content by id:', error);
       throw error;
@@ -114,7 +113,7 @@ export class ContentService {
         config.baseOptions
       );
 
-      return response.data.map(item => this.mapContentDtoToContent(item));
+      return response.data.map(item => this.mapContentResponseToContent(item));
     } catch (error) {
       console.error('Failed to get content:', error);
       throw error;
@@ -132,27 +131,27 @@ export class ContentService {
         currentUser
       );
 
-      const createContentDto: CreateContentDto = {
+      const createContentRequest: CreateContentRequest = {
         name,
         parentId,
       };
 
       const response = await this.contentApi.contentControllerCreateContent(
-        { createContentDto },
+        { createContentRequest },
         config.baseOptions
       );
 
-      return this.mapContentDtoToContent(response.data);
+      return this.mapContentResponseToContent(response.data);
     } catch (error) {
       console.error('Failed to create note:', error);
       throw error;
     }
   }
 
-  async renameContent(
+  async patchContent(
     currentUser: User,
     id: string,
-    name: string
+    body: UpdateContentRequest
   ): Promise<Content> {
     try {
       const config = await createAuthenticatedApiConfiguration(
@@ -160,16 +159,14 @@ export class ContentService {
         currentUser
       );
 
-      const updateContentNameDto: UpdateContentNameDto = { name };
-
-      const response = await this.contentApi.contentControllerRenameContent(
-        { id, updateContentNameDto },
+      const response = await this.contentApi.contentControllerPatchContent(
+        { id, updateContentRequest: body },
         config.baseOptions
       );
 
-      return this.mapContentDtoToContent(response.data);
+      return this.mapContentResponseToContent(response.data);
     } catch (error) {
-      console.error('Failed to rename content:', error);
+      console.error('Failed to patch content:', error);
       throw error;
     }
   }

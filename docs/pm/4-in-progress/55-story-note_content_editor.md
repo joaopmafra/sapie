@@ -149,7 +149,7 @@ Save state machine: **`idle` | `pending` | `saving` | `saved` | `error`**.
 - [ ] **Auto-save mutation** — `useMutation` (or equivalent) calling `PUT /api/content/:id/body`; debounce in the
   component or a small hook; integrate with save-state machine above.
 - [ ] **OpenAPI / generated client** — regenerate after new endpoints; ensure `bodyUri` is documented as **string |
-  null** (align any generated `ContentDto` typings with the API).
+  null** (align any generated `ContentResponse` typings with the API).
 
 ### Caching and consistency
 

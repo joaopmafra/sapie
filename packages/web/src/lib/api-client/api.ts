@@ -100,88 +100,113 @@ export interface AuthenticatedUser {
 /**
  * 
  * @export
- * @interface ContentDto
+ * @interface ContentBodyUrlResponse
  */
-export interface ContentDto {
+export interface ContentBodyUrlResponse {
     /**
-     * Unique identifier for the content item
+     * Short-lived HTTPS URL to download the content body object from Cloud Storage
      * @type {string}
-     * @memberof ContentDto
+     * @memberof ContentBodyUrlResponse
+     */
+    'signedUrl': string;
+    /**
+     * ISO-8601 instant when signedUrl expires
+     * @type {string}
+     * @memberof ContentBodyUrlResponse
+     */
+    'expiresAt': string;
+}
+/**
+ * 
+ * @export
+ * @interface ContentResponse
+ */
+export interface ContentResponse {
+    /**
+     * Unique identifier for the content (metadata)
+     * @type {string}
+     * @memberof ContentResponse
      */
     'id': string;
     /**
-     * Display name of the content item
+     * Display name of the content
      * @type {string}
-     * @memberof ContentDto
+     * @memberof ContentResponse
      */
     'name': string;
     /**
      * Type of content
      * @type {string}
-     * @memberof ContentDto
+     * @memberof ContentResponse
      */
-    'type': ContentDtoTypeEnum;
+    'type': ContentResponseTypeEnum;
     /**
      * ID of the parent directory, null for root directory
      * @type {object}
-     * @memberof ContentDto
+     * @memberof ContentResponse
      */
     'parentId': object | null;
     /**
      * ID of the user who owns this content
      * @type {string}
-     * @memberof ContentDto
+     * @memberof ContentResponse
      */
     'ownerId': string;
     /**
-     * Object path of the note body in the default storage bucket (provider-agnostic).
-     * @type {string}
-     * @memberof ContentDto
-     */
-    'bodyUri'?: string | null;
-    /**
-     * Size of the content in bytes (only for files)
+     * Object path of the content body in the default storage bucket (`ownerId/content/contentId`), without a `gs://` or `https://` prefix — portable across providers. Null until the first body save.
      * @type {object}
-     * @memberof ContentDto
+     * @memberof ContentResponse
+     */
+    'bodyUri'?: object | null;
+    /**
+     * Byte size of the content body after the last `PUT …/body`; null for directories or before the first body save.
+     * @type {object}
+     * @memberof ContentResponse
      */
     'size'?: object | null;
     /**
+     * IANA media type of the content body from the last `PUT …/body` (e.g. `text/plain`, `image/png`). Null until the first body save.
+     * @type {object}
+     * @memberof ContentResponse
+     */
+    'bodyMimeType'?: object | null;
+    /**
      * Timestamp when the content was created
      * @type {string}
-     * @memberof ContentDto
+     * @memberof ContentResponse
      */
     'createdAt': string;
     /**
      * Timestamp when the content was last updated
      * @type {string}
-     * @memberof ContentDto
+     * @memberof ContentResponse
      */
     'updatedAt': string;
 }
 
-export const ContentDtoTypeEnum = {
+export const ContentResponseTypeEnum = {
     Directory: 'directory',
     Note: 'note'
 } as const;
 
-export type ContentDtoTypeEnum = typeof ContentDtoTypeEnum[keyof typeof ContentDtoTypeEnum];
+export type ContentResponseTypeEnum = typeof ContentResponseTypeEnum[keyof typeof ContentResponseTypeEnum];
 
 /**
  * 
  * @export
- * @interface CreateContentDto
+ * @interface CreateContentRequest
  */
-export interface CreateContentDto {
+export interface CreateContentRequest {
     /**
      * Display name (1–200 chars). Spaces allowed. Cannot contain \\ / : * ? \" < > | or control characters.
      * @type {string}
-     * @memberof CreateContentDto
+     * @memberof CreateContentRequest
      */
     'name': string;
     /**
      * ID of the parent directory
      * @type {string}
-     * @memberof CreateContentDto
+     * @memberof CreateContentRequest
      */
     'parentId': string;
 }
@@ -288,15 +313,21 @@ export interface ProviderDataDto {
 /**
  * 
  * @export
- * @interface UpdateContentNameDto
+ * @interface UpdateContentRequest
  */
-export interface UpdateContentNameDto {
+export interface UpdateContentRequest {
     /**
-     * New display name (1–200 chars). Spaces allowed. Cannot contain \\ / : * ? \" < > | or control characters.
+     * New display name (1–200 chars). Spaces allowed. Cannot contain \\ / : * ? \" < > | or control characters. Omit the property when only changing other fields (e.g. future `parentId` moves); do not send `null`.
      * @type {string}
-     * @memberof UpdateContentNameDto
+     * @memberof UpdateContentRequest
      */
-    'name': string;
+    'name'?: string;
+    /**
+     * Target parent folder id after a move/reparent. **Not implemented yet** — the API returns `400 Bad Request` if this property is present (including `null`).
+     * @type {object}
+     * @memberof UpdateContentRequest
+     */
+    'parentId'?: object | null;
 }
 
 /**
@@ -546,15 +577,15 @@ export class AuthenticationApi extends BaseAPI implements AuthenticationApiInter
 export const ContentApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
         /**
-         * Creates a new note with a given name and parent ID.
-         * @summary Create a new note
-         * @param {CreateContentDto} createContentDto 
+         * Creates leaf content under the given parent. MVP only creates items of type `note`; other kinds may reuse or extend this contract later.
+         * @summary Create content (note)
+         * @param {CreateContentRequest} createContentRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        contentControllerCreateContent: async (createContentDto: CreateContentDto, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'createContentDto' is not null or undefined
-            assertParamExists('contentControllerCreateContent', 'createContentDto', createContentDto)
+        contentControllerCreateContent: async (createContentRequest: CreateContentRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'createContentRequest' is not null or undefined
+            assertParamExists('contentControllerCreateContent', 'createContentRequest', createContentRequest)
             const localVarPath = `/api/content`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -578,7 +609,7 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(createContentDto, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(createContentRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -586,9 +617,47 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Returns metadata for a single note or folder owned by the authenticated user.
-         * @summary Get content item by ID
-         * @param {string} id The ID of the content item.
+         * Returns a short-lived signed URL for downloading the content body from Cloud Storage (valid 10 minutes). 404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes.
+         * @summary Get signed URL to read content body
+         * @param {string} id The ID of the content whose content body is read (leaf types such as a note in MVP).
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        contentControllerGetContentBodySignedUrl: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('contentControllerGetContentBodySignedUrl', 'id', id)
+            const localVarPath = `/api/content/{id}/body`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL.
+         * @summary Get content by ID
+         * @param {string} id The ID of the content.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -658,7 +727,7 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Returns a list of content items for a given parent ID.
+         * Returns child content (metadata only) for the given parent ID. Does not load content bodies.
          * @summary List a parent\'s children
          * @param {string} id The ID of the parent content.
          * @param {*} [options] Override http request option.
@@ -696,18 +765,18 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Updates the display name of a content. Names must be unique among siblings (same parent).
-         * @summary Rename content
+         * Partially updates content metadata. Today this supports renaming (`name`). Moving an item to another folder (`parentId`) will use the same route; that behavior is **not implemented yet** and returns `400 Bad Request` if `parentId` is sent. Content body bytes and storage-derived fields (`bodyUri`, `size`, `bodyMimeType`) are changed only via `PUT …/body`. When renaming, names must stay unique among siblings under the same parent.
+         * @summary Patch content metadata
          * @param {string} id The ID of the content.
-         * @param {UpdateContentNameDto} updateContentNameDto 
+         * @param {UpdateContentRequest} updateContentRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        contentControllerRenameContent: async (id: string, updateContentNameDto: UpdateContentNameDto, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        contentControllerPatchContent: async (id: string, updateContentRequest: UpdateContentRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
-            assertParamExists('contentControllerRenameContent', 'id', id)
-            // verify required parameter 'updateContentNameDto' is not null or undefined
-            assertParamExists('contentControllerRenameContent', 'updateContentNameDto', updateContentNameDto)
+            assertParamExists('contentControllerPatchContent', 'id', id)
+            // verify required parameter 'updateContentRequest' is not null or undefined
+            assertParamExists('contentControllerPatchContent', 'updateContentRequest', updateContentRequest)
             const localVarPath = `/api/content/{id}`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -732,7 +801,57 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(updateContentNameDto, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(updateContentRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Single endpoint for any raw body type the client declares via `Content-Type`. Updates Cloud Storage object metadata and Firestore (`bodyUri`, `size`, `bodyMimeType`).
+         * @summary Upload or replace content body
+         * @param {string} id The ID of the content whose content body is replaced (leaf types such as a note in MVP).
+         * @param {string} contentType 
+         * @param {File} body Raw bytes of the content body. The &#x60;Content-Type&#x60; header sets the stored media type (e.g. markdown as &#x60;text/plain&#x60; or &#x60;text/markdown&#x60;, images as &#x60;image/_*&#x60;). Omitting &#x60;Content-Type&#x60; defaults to &#x60;application/octet-stream&#x60;. &#x60;multipart/_*&#x60; is rejected (415) until explicitly supported.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        contentControllerPutContentBody: async (id: string, contentType: string, body: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('contentControllerPutContentBody', 'id', id)
+            // verify required parameter 'contentType' is not null or undefined
+            assertParamExists('contentControllerPutContentBody', 'contentType', contentType)
+            // verify required parameter 'body' is not null or undefined
+            assertParamExists('contentControllerPutContentBody', 'body', body)
+            const localVarPath = `/api/content/{id}/body`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/octet-stream';
+
+            if (contentType != null) {
+                localVarHeaderParameter['content-type'] = String(contentType);
+            }
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -750,26 +869,39 @@ export const ContentApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = ContentApiAxiosParamCreator(configuration)
     return {
         /**
-         * Creates a new note with a given name and parent ID.
-         * @summary Create a new note
-         * @param {CreateContentDto} createContentDto 
+         * Creates leaf content under the given parent. MVP only creates items of type `note`; other kinds may reuse or extend this contract later.
+         * @summary Create content (note)
+         * @param {CreateContentRequest} createContentRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async contentControllerCreateContent(createContentDto: CreateContentDto, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ContentDto>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerCreateContent(createContentDto, options);
+        async contentControllerCreateContent(createContentRequest: CreateContentRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ContentResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerCreateContent(createContentRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerCreateContent']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Returns metadata for a single note or folder owned by the authenticated user.
-         * @summary Get content item by ID
-         * @param {string} id The ID of the content item.
+         * Returns a short-lived signed URL for downloading the content body from Cloud Storage (valid 10 minutes). 404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes.
+         * @summary Get signed URL to read content body
+         * @param {string} id The ID of the content whose content body is read (leaf types such as a note in MVP).
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async contentControllerGetContentById(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ContentDto>> {
+        async contentControllerGetContentBodySignedUrl(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ContentBodyUrlResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerGetContentBodySignedUrl(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerGetContentBodySignedUrl']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL.
+         * @summary Get content by ID
+         * @param {string} id The ID of the content.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async contentControllerGetContentById(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ContentResponse>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerGetContentById(id, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerGetContentById']?.[localVarOperationServerIndex]?.url;
@@ -781,37 +913,52 @@ export const ContentApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async contentControllerGetRootDirectory(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ContentDto>> {
+        async contentControllerGetRootDirectory(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ContentResponse>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerGetRootDirectory(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerGetRootDirectory']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Returns a list of content items for a given parent ID.
+         * Returns child content (metadata only) for the given parent ID. Does not load content bodies.
          * @summary List a parent\'s children
          * @param {string} id The ID of the parent content.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async contentControllerListContents(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ContentDto>>> {
+        async contentControllerListContents(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ContentResponse>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerListContents(id, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerListContents']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Updates the display name of a content. Names must be unique among siblings (same parent).
-         * @summary Rename content
+         * Partially updates content metadata. Today this supports renaming (`name`). Moving an item to another folder (`parentId`) will use the same route; that behavior is **not implemented yet** and returns `400 Bad Request` if `parentId` is sent. Content body bytes and storage-derived fields (`bodyUri`, `size`, `bodyMimeType`) are changed only via `PUT …/body`. When renaming, names must stay unique among siblings under the same parent.
+         * @summary Patch content metadata
          * @param {string} id The ID of the content.
-         * @param {UpdateContentNameDto} updateContentNameDto 
+         * @param {UpdateContentRequest} updateContentRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async contentControllerRenameContent(id: string, updateContentNameDto: UpdateContentNameDto, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ContentDto>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerRenameContent(id, updateContentNameDto, options);
+        async contentControllerPatchContent(id: string, updateContentRequest: UpdateContentRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ContentResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerPatchContent(id, updateContentRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerRenameContent']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerPatchContent']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Single endpoint for any raw body type the client declares via `Content-Type`. Updates Cloud Storage object metadata and Firestore (`bodyUri`, `size`, `bodyMimeType`).
+         * @summary Upload or replace content body
+         * @param {string} id The ID of the content whose content body is replaced (leaf types such as a note in MVP).
+         * @param {string} contentType 
+         * @param {File} body Raw bytes of the content body. The &#x60;Content-Type&#x60; header sets the stored media type (e.g. markdown as &#x60;text/plain&#x60; or &#x60;text/markdown&#x60;, images as &#x60;image/_*&#x60;). Omitting &#x60;Content-Type&#x60; defaults to &#x60;application/octet-stream&#x60;. &#x60;multipart/_*&#x60; is rejected (415) until explicitly supported.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async contentControllerPutContentBody(id: string, contentType: string, body: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ContentResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerPutContentBody(id, contentType, body, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerPutContentBody']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
     }
@@ -825,23 +972,33 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
     const localVarFp = ContentApiFp(configuration)
     return {
         /**
-         * Creates a new note with a given name and parent ID.
-         * @summary Create a new note
+         * Creates leaf content under the given parent. MVP only creates items of type `note`; other kinds may reuse or extend this contract later.
+         * @summary Create content (note)
          * @param {ContentApiContentControllerCreateContentRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        contentControllerCreateContent(requestParameters: ContentApiContentControllerCreateContentRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentDto> {
-            return localVarFp.contentControllerCreateContent(requestParameters.createContentDto, options).then((request) => request(axios, basePath));
+        contentControllerCreateContent(requestParameters: ContentApiContentControllerCreateContentRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentResponse> {
+            return localVarFp.contentControllerCreateContent(requestParameters.createContentRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         * Returns metadata for a single note or folder owned by the authenticated user.
-         * @summary Get content item by ID
+         * Returns a short-lived signed URL for downloading the content body from Cloud Storage (valid 10 minutes). 404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes.
+         * @summary Get signed URL to read content body
+         * @param {ContentApiContentControllerGetContentBodySignedUrlRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        contentControllerGetContentBodySignedUrl(requestParameters: ContentApiContentControllerGetContentBodySignedUrlRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentBodyUrlResponse> {
+            return localVarFp.contentControllerGetContentBodySignedUrl(requestParameters.id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL.
+         * @summary Get content by ID
          * @param {ContentApiContentControllerGetContentByIdRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        contentControllerGetContentById(requestParameters: ContentApiContentControllerGetContentByIdRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentDto> {
+        contentControllerGetContentById(requestParameters: ContentApiContentControllerGetContentByIdRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentResponse> {
             return localVarFp.contentControllerGetContentById(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
@@ -850,28 +1007,38 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        contentControllerGetRootDirectory(options?: RawAxiosRequestConfig): AxiosPromise<ContentDto> {
+        contentControllerGetRootDirectory(options?: RawAxiosRequestConfig): AxiosPromise<ContentResponse> {
             return localVarFp.contentControllerGetRootDirectory(options).then((request) => request(axios, basePath));
         },
         /**
-         * Returns a list of content items for a given parent ID.
+         * Returns child content (metadata only) for the given parent ID. Does not load content bodies.
          * @summary List a parent\'s children
          * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        contentControllerListContents(requestParameters: ContentApiContentControllerListContentsRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ContentDto>> {
+        contentControllerListContents(requestParameters: ContentApiContentControllerListContentsRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ContentResponse>> {
             return localVarFp.contentControllerListContents(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
-         * Updates the display name of a content. Names must be unique among siblings (same parent).
-         * @summary Rename content
-         * @param {ContentApiContentControllerRenameContentRequest} requestParameters Request parameters.
+         * Partially updates content metadata. Today this supports renaming (`name`). Moving an item to another folder (`parentId`) will use the same route; that behavior is **not implemented yet** and returns `400 Bad Request` if `parentId` is sent. Content body bytes and storage-derived fields (`bodyUri`, `size`, `bodyMimeType`) are changed only via `PUT …/body`. When renaming, names must stay unique among siblings under the same parent.
+         * @summary Patch content metadata
+         * @param {ContentApiContentControllerPatchContentRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        contentControllerRenameContent(requestParameters: ContentApiContentControllerRenameContentRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentDto> {
-            return localVarFp.contentControllerRenameContent(requestParameters.id, requestParameters.updateContentNameDto, options).then((request) => request(axios, basePath));
+        contentControllerPatchContent(requestParameters: ContentApiContentControllerPatchContentRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentResponse> {
+            return localVarFp.contentControllerPatchContent(requestParameters.id, requestParameters.updateContentRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Single endpoint for any raw body type the client declares via `Content-Type`. Updates Cloud Storage object metadata and Firestore (`bodyUri`, `size`, `bodyMimeType`).
+         * @summary Upload or replace content body
+         * @param {ContentApiContentControllerPutContentBodyRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        contentControllerPutContentBody(requestParameters: ContentApiContentControllerPutContentBodyRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentResponse> {
+            return localVarFp.contentControllerPutContentBody(requestParameters.id, requestParameters.contentType, requestParameters.body, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -883,24 +1050,34 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
  */
 export interface ContentApiInterface {
     /**
-     * Creates a new note with a given name and parent ID.
-     * @summary Create a new note
+     * Creates leaf content under the given parent. MVP only creates items of type `note`; other kinds may reuse or extend this contract later.
+     * @summary Create content (note)
      * @param {ContentApiContentControllerCreateContentRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ContentApiInterface
      */
-    contentControllerCreateContent(requestParameters: ContentApiContentControllerCreateContentRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentDto>;
+    contentControllerCreateContent(requestParameters: ContentApiContentControllerCreateContentRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentResponse>;
 
     /**
-     * Returns metadata for a single note or folder owned by the authenticated user.
-     * @summary Get content item by ID
+     * Returns a short-lived signed URL for downloading the content body from Cloud Storage (valid 10 minutes). 404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes.
+     * @summary Get signed URL to read content body
+     * @param {ContentApiContentControllerGetContentBodySignedUrlRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ContentApiInterface
+     */
+    contentControllerGetContentBodySignedUrl(requestParameters: ContentApiContentControllerGetContentBodySignedUrlRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentBodyUrlResponse>;
+
+    /**
+     * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL.
+     * @summary Get content by ID
      * @param {ContentApiContentControllerGetContentByIdRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ContentApiInterface
      */
-    contentControllerGetContentById(requestParameters: ContentApiContentControllerGetContentByIdRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentDto>;
+    contentControllerGetContentById(requestParameters: ContentApiContentControllerGetContentByIdRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentResponse>;
 
     /**
      * Returns the authenticated user\'s root directory (\"My Contents\"). If the directory doesn\'t exist, it will be automatically created. This is the entry point for all content management operations.
@@ -909,27 +1086,37 @@ export interface ContentApiInterface {
      * @throws {RequiredError}
      * @memberof ContentApiInterface
      */
-    contentControllerGetRootDirectory(options?: RawAxiosRequestConfig): AxiosPromise<ContentDto>;
+    contentControllerGetRootDirectory(options?: RawAxiosRequestConfig): AxiosPromise<ContentResponse>;
 
     /**
-     * Returns a list of content items for a given parent ID.
+     * Returns child content (metadata only) for the given parent ID. Does not load content bodies.
      * @summary List a parent\'s children
      * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ContentApiInterface
      */
-    contentControllerListContents(requestParameters: ContentApiContentControllerListContentsRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ContentDto>>;
+    contentControllerListContents(requestParameters: ContentApiContentControllerListContentsRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ContentResponse>>;
 
     /**
-     * Updates the display name of a content. Names must be unique among siblings (same parent).
-     * @summary Rename content
-     * @param {ContentApiContentControllerRenameContentRequest} requestParameters Request parameters.
+     * Partially updates content metadata. Today this supports renaming (`name`). Moving an item to another folder (`parentId`) will use the same route; that behavior is **not implemented yet** and returns `400 Bad Request` if `parentId` is sent. Content body bytes and storage-derived fields (`bodyUri`, `size`, `bodyMimeType`) are changed only via `PUT …/body`. When renaming, names must stay unique among siblings under the same parent.
+     * @summary Patch content metadata
+     * @param {ContentApiContentControllerPatchContentRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ContentApiInterface
      */
-    contentControllerRenameContent(requestParameters: ContentApiContentControllerRenameContentRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentDto>;
+    contentControllerPatchContent(requestParameters: ContentApiContentControllerPatchContentRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentResponse>;
+
+    /**
+     * Single endpoint for any raw body type the client declares via `Content-Type`. Updates Cloud Storage object metadata and Firestore (`bodyUri`, `size`, `bodyMimeType`).
+     * @summary Upload or replace content body
+     * @param {ContentApiContentControllerPutContentBodyRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ContentApiInterface
+     */
+    contentControllerPutContentBody(requestParameters: ContentApiContentControllerPutContentBodyRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentResponse>;
 
 }
 
@@ -941,10 +1128,24 @@ export interface ContentApiInterface {
 export interface ContentApiContentControllerCreateContentRequest {
     /**
      * 
-     * @type {CreateContentDto}
+     * @type {CreateContentRequest}
      * @memberof ContentApiContentControllerCreateContent
      */
-    readonly createContentDto: CreateContentDto
+    readonly createContentRequest: CreateContentRequest
+}
+
+/**
+ * Request parameters for contentControllerGetContentBodySignedUrl operation in ContentApi.
+ * @export
+ * @interface ContentApiContentControllerGetContentBodySignedUrlRequest
+ */
+export interface ContentApiContentControllerGetContentBodySignedUrlRequest {
+    /**
+     * The ID of the content whose content body is read (leaf types such as a note in MVP).
+     * @type {string}
+     * @memberof ContentApiContentControllerGetContentBodySignedUrl
+     */
+    readonly id: string
 }
 
 /**
@@ -954,7 +1155,7 @@ export interface ContentApiContentControllerCreateContentRequest {
  */
 export interface ContentApiContentControllerGetContentByIdRequest {
     /**
-     * The ID of the content item.
+     * The ID of the content.
      * @type {string}
      * @memberof ContentApiContentControllerGetContentById
      */
@@ -976,24 +1177,52 @@ export interface ContentApiContentControllerListContentsRequest {
 }
 
 /**
- * Request parameters for contentControllerRenameContent operation in ContentApi.
+ * Request parameters for contentControllerPatchContent operation in ContentApi.
  * @export
- * @interface ContentApiContentControllerRenameContentRequest
+ * @interface ContentApiContentControllerPatchContentRequest
  */
-export interface ContentApiContentControllerRenameContentRequest {
+export interface ContentApiContentControllerPatchContentRequest {
     /**
      * The ID of the content.
      * @type {string}
-     * @memberof ContentApiContentControllerRenameContent
+     * @memberof ContentApiContentControllerPatchContent
      */
     readonly id: string
 
     /**
      * 
-     * @type {UpdateContentNameDto}
-     * @memberof ContentApiContentControllerRenameContent
+     * @type {UpdateContentRequest}
+     * @memberof ContentApiContentControllerPatchContent
      */
-    readonly updateContentNameDto: UpdateContentNameDto
+    readonly updateContentRequest: UpdateContentRequest
+}
+
+/**
+ * Request parameters for contentControllerPutContentBody operation in ContentApi.
+ * @export
+ * @interface ContentApiContentControllerPutContentBodyRequest
+ */
+export interface ContentApiContentControllerPutContentBodyRequest {
+    /**
+     * The ID of the content whose content body is replaced (leaf types such as a note in MVP).
+     * @type {string}
+     * @memberof ContentApiContentControllerPutContentBody
+     */
+    readonly id: string
+
+    /**
+     * 
+     * @type {string}
+     * @memberof ContentApiContentControllerPutContentBody
+     */
+    readonly contentType: string
+
+    /**
+     * Raw bytes of the content body. The &#x60;Content-Type&#x60; header sets the stored media type (e.g. markdown as &#x60;text/plain&#x60; or &#x60;text/markdown&#x60;, images as &#x60;image/_*&#x60;). Omitting &#x60;Content-Type&#x60; defaults to &#x60;application/octet-stream&#x60;. &#x60;multipart/_*&#x60; is rejected (415) until explicitly supported.
+     * @type {File}
+     * @memberof ContentApiContentControllerPutContentBody
+     */
+    readonly body: File
 }
 
 /**
@@ -1004,20 +1233,32 @@ export interface ContentApiContentControllerRenameContentRequest {
  */
 export class ContentApi extends BaseAPI implements ContentApiInterface {
     /**
-     * Creates a new note with a given name and parent ID.
-     * @summary Create a new note
+     * Creates leaf content under the given parent. MVP only creates items of type `note`; other kinds may reuse or extend this contract later.
+     * @summary Create content (note)
      * @param {ContentApiContentControllerCreateContentRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ContentApi
      */
     public contentControllerCreateContent(requestParameters: ContentApiContentControllerCreateContentRequest, options?: RawAxiosRequestConfig) {
-        return ContentApiFp(this.configuration).contentControllerCreateContent(requestParameters.createContentDto, options).then((request) => request(this.axios, this.basePath));
+        return ContentApiFp(this.configuration).contentControllerCreateContent(requestParameters.createContentRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
-     * Returns metadata for a single note or folder owned by the authenticated user.
-     * @summary Get content item by ID
+     * Returns a short-lived signed URL for downloading the content body from Cloud Storage (valid 10 minutes). 404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes.
+     * @summary Get signed URL to read content body
+     * @param {ContentApiContentControllerGetContentBodySignedUrlRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ContentApi
+     */
+    public contentControllerGetContentBodySignedUrl(requestParameters: ContentApiContentControllerGetContentBodySignedUrlRequest, options?: RawAxiosRequestConfig) {
+        return ContentApiFp(this.configuration).contentControllerGetContentBodySignedUrl(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL.
+     * @summary Get content by ID
      * @param {ContentApiContentControllerGetContentByIdRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -1039,7 +1280,7 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
     }
 
     /**
-     * Returns a list of content items for a given parent ID.
+     * Returns child content (metadata only) for the given parent ID. Does not load content bodies.
      * @summary List a parent\'s children
      * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -1051,15 +1292,27 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
     }
 
     /**
-     * Updates the display name of a content. Names must be unique among siblings (same parent).
-     * @summary Rename content
-     * @param {ContentApiContentControllerRenameContentRequest} requestParameters Request parameters.
+     * Partially updates content metadata. Today this supports renaming (`name`). Moving an item to another folder (`parentId`) will use the same route; that behavior is **not implemented yet** and returns `400 Bad Request` if `parentId` is sent. Content body bytes and storage-derived fields (`bodyUri`, `size`, `bodyMimeType`) are changed only via `PUT …/body`. When renaming, names must stay unique among siblings under the same parent.
+     * @summary Patch content metadata
+     * @param {ContentApiContentControllerPatchContentRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ContentApi
      */
-    public contentControllerRenameContent(requestParameters: ContentApiContentControllerRenameContentRequest, options?: RawAxiosRequestConfig) {
-        return ContentApiFp(this.configuration).contentControllerRenameContent(requestParameters.id, requestParameters.updateContentNameDto, options).then((request) => request(this.axios, this.basePath));
+    public contentControllerPatchContent(requestParameters: ContentApiContentControllerPatchContentRequest, options?: RawAxiosRequestConfig) {
+        return ContentApiFp(this.configuration).contentControllerPatchContent(requestParameters.id, requestParameters.updateContentRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Single endpoint for any raw body type the client declares via `Content-Type`. Updates Cloud Storage object metadata and Firestore (`bodyUri`, `size`, `bodyMimeType`).
+     * @summary Upload or replace content body
+     * @param {ContentApiContentControllerPutContentBodyRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ContentApi
+     */
+    public contentControllerPutContentBody(requestParameters: ContentApiContentControllerPutContentBodyRequest, options?: RawAxiosRequestConfig) {
+        return ContentApiFp(this.configuration).contentControllerPutContentBody(requestParameters.id, requestParameters.contentType, requestParameters.body, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

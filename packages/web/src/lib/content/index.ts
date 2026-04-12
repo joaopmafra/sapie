@@ -7,9 +7,11 @@
 // Types and interfaces
 export type {
   Content,
-  CreateContentRequest,
+  ContentCreationInput,
   UpdateContentRequest,
 } from './types';
+
+export type { CreateContentRequest } from '../api-client';
 
 export { ContentType } from './types';
 

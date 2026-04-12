@@ -69,7 +69,7 @@ export class ContentService {
   /**
    * TODO: Currently we are allowing root directories renaming. Maybe this operation should not be allowed?
    */
-  async renameContent(id: string, name: string, ownerId: string): Promise<Content> {
+  async patchContent(id: string, name: string, ownerId: string): Promise<Content> {
     const existing = await this.contentRepository.findById(id);
 
     if (!existing || existing.ownerId !== ownerId) {
