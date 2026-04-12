@@ -36,6 +36,9 @@ describe('ContentController', () => {
     expect(response.body).toHaveProperty('ownerId', fixture.TEST_USER_ID);
     expect(response.body).toHaveProperty('type', 'directory');
     expect(response.body).toHaveProperty('parentId', null);
+    expect(response.body).not.toHaveProperty('bodyUri');
+    expect(response.body).not.toHaveProperty('size');
+    expect(response.body).not.toHaveProperty('bodyMimeType');
   });
 
   it(`GET ${fixture.API_CONTENT_ROOT} is idempotent`, async () => {

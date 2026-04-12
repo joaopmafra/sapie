@@ -32,12 +32,12 @@ import { apiProblemDetailsSchema } from '../../common/dto/problem-details.dto';
 import { Auth } from '../../auth';
 import { AuthenticatedRequest } from '../../auth';
 import { RootDirectoryService } from '../services/root-directory.service';
-import { Content } from '../entities/content.entity';
 import { ContentService } from '../services/content.service';
 import {
   ContentBodyUrlResponse,
   ContentResponse,
   CreateContentRequest,
+  toContentResponse,
   UpdateContentRequest,
 } from '../dto/content.dto';
 
@@ -92,13 +92,14 @@ export class ContentController {
   async createContent(
     @Request() request: AuthenticatedRequest,
     @Body() createContentRequest: CreateContentRequest
-  ): Promise<Content> {
+  ): Promise<ContentResponse> {
     const { user } = request;
     const { name, parentId } = createContentRequest;
     this.logger.debug(
       `Creating content for user: ${user.uid} with name: ${name} and parentId: ${parentId}`
     );
-    return this.contentService.create(name, parentId, user.uid);
+    const created = await this.contentService.create(name, parentId, user.uid);
+    return toContentResponse(created);
   }
 
   @Patch(':id')
@@ -149,7 +150,7 @@ export class ContentController {
     @Request() request: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() body: UpdateContentRequest
-  ): Promise<Content> {
+  ): Promise<ContentResponse> {
     const { user } = request;
 
     if (body.parentId !== undefined) {
@@ -165,7 +166,8 @@ export class ContentController {
     }
 
     this.logger.debug(`Patching content ${id} for user: ${user.uid}`);
-    return this.contentService.patchContent(id, body.name, user.uid);
+    const updated = await this.contentService.patchContent(id, body.name, user.uid);
+    return toContentResponse(updated);
   }
 
   @Get(':id/children')
@@ -173,7 +175,8 @@ export class ContentController {
   @ApiOperation({
     summary: "List a parent's children",
     description:
-      'Returns child content (metadata only) for the given parent ID. Does not load content bodies.',
+      'Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. ' +
+      'Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).',
   })
   @ApiParam({
     name: 'id',
@@ -192,14 +195,15 @@ export class ContentController {
   async listContents(
     @Request() request: AuthenticatedRequest,
     @Param('id') id: string
-  ): Promise<Content[]> {
+  ): Promise<ContentResponse[]> {
     const { user } = request;
     this.logger.debug(`Getting content for user: ${user.uid} with parent content ID: ${id}`);
 
     // uncomment to test the loading indicator
     // await new Promise(resolve => setTimeout(resolve, 1000));
 
-    return this.contentService.findByParentIdAndOwnerId(id, request.user.uid);
+    const children = await this.contentService.findByParentIdAndOwnerId(id, request.user.uid);
+    return children.map(toContentResponse);
   }
 
   @Get(':id/body')
@@ -208,7 +212,7 @@ export class ContentController {
     summary: 'Get signed URL to read content body',
     description:
       'Returns a short-lived signed URL for downloading the content body from Cloud Storage (valid 10 minutes). ' +
-      '404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes.',
+      '404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes. ',
   })
   @ApiParam({
     name: 'id',
@@ -238,6 +242,8 @@ export class ContentController {
     description: 'Unauthorized - Valid Firebase ID token required',
     ...apiProblemDetailsSchema,
   })
+  // TODO: Revisit inlining a signed read URL into `GET /:id` or `GET /:id/children` if we need fewer client round
+  //  trips (trade-offs: signing volume, payload size, URL expiry vs metadata cache).
   async getContentBodySignedUrl(
     @Request() request: AuthenticatedRequest,
     @Param('id') id: string
@@ -297,11 +303,12 @@ export class ContentController {
     @Request() request: AuthenticatedRequest & { body: unknown },
     @Param('id') id: string,
     @Headers('content-type') contentType?: string
-  ): Promise<Content> {
+  ): Promise<ContentResponse> {
     const { user } = request;
     const buffer = this.readRawPutBody(request.body);
     this.logger.debug(`Putting body for content ${id}, user ${user.uid} (${buffer.length} bytes)`);
-    return this.contentService.putContentBody(id, user.uid, buffer, contentType);
+    const updated = await this.contentService.putContentBody(id, user.uid, buffer, contentType);
+    return toContentResponse(updated);
   }
 
   private readRawPutBody(body: unknown): Buffer {
@@ -324,7 +331,7 @@ export class ContentController {
    * and returns it. If the directory doesn't exist, it will be created.
    *
    * @param request - HTTP request with authenticated user context
-   * @returns Promise<Content> - The user's root directory
+   * @returns Promise<ContentResponse> - The user's root directory
    */
   @Get('/root')
   @Auth()
@@ -348,7 +355,7 @@ export class ContentController {
     description: 'Internal server error - Failed to ensure root directory',
     ...apiProblemDetailsSchema,
   })
-  async getRootDirectory(@Request() request: AuthenticatedRequest): Promise<Content> {
+  async getRootDirectory(@Request() request: AuthenticatedRequest): Promise<ContentResponse> {
     const userId = request.user.uid;
 
     try {
@@ -361,7 +368,7 @@ export class ContentController {
       this.logger.debug(
         `Successfully retrieved root directory for user: ${userId}, directory ID: ${rootDirectory.id}`
       );
-      return rootDirectory;
+      return toContentResponse(rootDirectory);
     } catch (error) {
       this.logger.error(`Failed to get root directory for user: ${userId}`, error);
       throw error;
@@ -373,7 +380,8 @@ export class ContentController {
   @ApiOperation({
     summary: 'Get content by ID',
     description:
-      'Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL.',
+      'Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL. ' +
+      'Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).',
   })
   @ApiParam({
     name: 'id',
@@ -397,9 +405,10 @@ export class ContentController {
   async getContentById(
     @Request() request: AuthenticatedRequest,
     @Param('id') id: string
-  ): Promise<Content> {
+  ): Promise<ContentResponse> {
     const { user } = request;
     this.logger.debug(`Getting content ${id} for user: ${user.uid}`);
-    return this.contentService.findByIdAndOwnerId(id, user.uid);
+    const item = await this.contentService.findByIdAndOwnerId(id, user.uid);
+    return toContentResponse(item);
   }
 }

@@ -7,8 +7,11 @@ import {
 } from '../validation/content-name.validation';
 import { IsContentNameSafeForFileName } from '../validation/content-name.validator';
 
-/** HTTP response body: content (metadata) returned by the API. */
-export class ContentResponse implements Content {
+/**
+ * HTTP response body: content (metadata) returned by the API.
+ * Intentionally not `implements Content` so the wire shape can diverge from the domain entity.
+ */
+export class ContentResponse {
   @ApiProperty({
     description: 'Unique identifier for the content (metadata)',
     example: 'clq0e8k1j0000c8v9a1b2c3d4',
@@ -29,6 +32,7 @@ export class ContentResponse implements Content {
   type: ContentType;
 
   @ApiProperty({
+    type: String,
     description: 'ID of the parent directory, null for root directory',
     example: 'clq0e8k1j0000c8v9a1b2c3d4',
     nullable: true,
@@ -41,31 +45,28 @@ export class ContentResponse implements Content {
   })
   ownerId: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
-      'Object path of the content body in the default storage bucket (`ownerId/content/contentId`), ' +
-      'without a `gs://` or `https://` prefix — portable across providers. Null until the first body save.',
+      '**Notes only.** Object path of the content body in the default storage bucket (`ownerId/content/contentId`), ' +
+      'without a `gs://` or `https://` prefix — portable across providers. Omitted for directories. Null until the first body save.',
     example: 'firebase-user-id/content/clq0e8k1j0000c8v9a1b2c3d4',
-    required: false,
     nullable: true,
   })
   bodyUri?: string | null;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
-      'Byte size of the content body after the last `PUT …/body`; null for directories or before the first body save.',
+      '**Notes only.** Byte size of the content body after the last `PUT …/body`. Omitted for directories. Null before the first body save.',
     example: 1024,
-    required: false,
     nullable: true,
   })
   size?: number | null;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
-      'IANA media type of the content body from the last `PUT …/body` (e.g. `text/plain`, `image/png`). ' +
-      'Null until the first body save.',
+      '**Notes only.** IANA media type of the content body from the last `PUT …/body` (e.g. `text/plain`, `image/png`). ' +
+      'Omitted for directories. Null until the first body save.',
     example: 'text/plain',
-    required: false,
     nullable: true,
   })
   bodyMimeType?: string | null;
@@ -83,6 +84,27 @@ export class ContentResponse implements Content {
     format: 'date-time',
   })
   updatedAt: Date;
+}
+
+/**
+ * Map persisted content to the HTTP metadata shape.
+ * Directories omit `bodyUri`, `size`, and `bodyMimeType` (not serialized).
+ */
+export function toContentResponse(content: Content): ContentResponse {
+  const response = new ContentResponse();
+  response.id = content.id;
+  response.name = content.name;
+  response.type = content.type;
+  response.parentId = content.parentId;
+  response.ownerId = content.ownerId;
+  response.createdAt = content.createdAt;
+  response.updatedAt = content.updatedAt;
+  if (content.type === ContentType.NOTE) {
+    response.bodyUri = content.bodyUri ?? null;
+    response.size = content.size ?? null;
+    response.bodyMimeType = content.bodyMimeType ?? null;
+  }
+  return response;
 }
 
 /** HTTP command body: create note (metadata) via `POST /api/content`. */
@@ -132,6 +154,7 @@ export class ContentBodyUrlResponse {
  */
 export class UpdateContentRequest {
   @ApiPropertyOptional({
+    type: String,
     description:
       `New display name (${CONTENT_NAME_MIN_LENGTH}–${CONTENT_NAME_MAX_LENGTH} chars). ` +
       'Spaces allowed. Cannot contain \\ / : * ? " < > | or control characters. ' +
@@ -147,6 +170,7 @@ export class UpdateContentRequest {
   name?: string;
 
   @ApiPropertyOptional({
+    type: String,
     description:
       'Target parent folder id after a move/reparent. **Not implemented yet** — the API returns `400 Bad Request` ' +
       'if this property is present (including `null`).',

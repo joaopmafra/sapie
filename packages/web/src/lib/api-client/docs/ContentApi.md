@@ -72,7 +72,7 @@ const { status, data } = await apiInstance.contentControllerCreateContent(
 # **contentControllerGetContentBodySignedUrl**
 > ContentBodyUrlResponse contentControllerGetContentBodySignedUrl()
 
-Returns a short-lived signed URL for downloading the content body from Cloud Storage (valid 10 minutes). 404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes.
+Returns a short-lived signed URL for downloading the content body from Cloud Storage (valid 10 minutes). 404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes. 
 
 ### Example
 
@@ -127,7 +127,7 @@ const { status, data } = await apiInstance.contentControllerGetContentBodySigned
 # **contentControllerGetContentById**
 > ContentResponse contentControllerGetContentById()
 
-Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL.
+Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
 
 ### Example
 
@@ -226,7 +226,7 @@ This endpoint does not have any parameters.
 # **contentControllerListContents**
 > Array<ContentResponse> contentControllerListContents()
 
-Returns child content (metadata only) for the given parent ID. Does not load content bodies.
+Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
 
 ### Example
 

@@ -142,10 +142,10 @@ export interface ContentResponse {
     'type': ContentResponseTypeEnum;
     /**
      * ID of the parent directory, null for root directory
-     * @type {object}
+     * @type {string}
      * @memberof ContentResponse
      */
-    'parentId': object | null;
+    'parentId': string | null;
     /**
      * ID of the user who owns this content
      * @type {string}
@@ -153,19 +153,19 @@ export interface ContentResponse {
      */
     'ownerId': string;
     /**
-     * Object path of the content body in the default storage bucket (`ownerId/content/contentId`), without a `gs://` or `https://` prefix — portable across providers. Null until the first body save.
+     * **Notes only.** Object path of the content body in the default storage bucket (`ownerId/content/contentId`), without a `gs://` or `https://` prefix — portable across providers. Omitted for directories. Null until the first body save.
      * @type {object}
      * @memberof ContentResponse
      */
     'bodyUri'?: object | null;
     /**
-     * Byte size of the content body after the last `PUT …/body`; null for directories or before the first body save.
+     * **Notes only.** Byte size of the content body after the last `PUT …/body`. Omitted for directories. Null before the first body save.
      * @type {object}
      * @memberof ContentResponse
      */
     'size'?: object | null;
     /**
-     * IANA media type of the content body from the last `PUT …/body` (e.g. `text/plain`, `image/png`). Null until the first body save.
+     * **Notes only.** IANA media type of the content body from the last `PUT …/body` (e.g. `text/plain`, `image/png`). Omitted for directories. Null until the first body save.
      * @type {object}
      * @memberof ContentResponse
      */
@@ -324,10 +324,10 @@ export interface UpdateContentRequest {
     'name'?: string;
     /**
      * Target parent folder id after a move/reparent. **Not implemented yet** — the API returns `400 Bad Request` if this property is present (including `null`).
-     * @type {object}
+     * @type {string}
      * @memberof UpdateContentRequest
      */
-    'parentId'?: object | null;
+    'parentId'?: string | null;
 }
 
 /**
@@ -617,7 +617,7 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Returns a short-lived signed URL for downloading the content body from Cloud Storage (valid 10 minutes). 404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes.
+         * Returns a short-lived signed URL for downloading the content body from Cloud Storage (valid 10 minutes). 404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes. 
          * @summary Get signed URL to read content body
          * @param {string} id The ID of the content whose content body is read (leaf types such as a note in MVP).
          * @param {*} [options] Override http request option.
@@ -655,7 +655,7 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL.
+         * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
          * @summary Get content by ID
          * @param {string} id The ID of the content.
          * @param {*} [options] Override http request option.
@@ -727,7 +727,7 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Returns child content (metadata only) for the given parent ID. Does not load content bodies.
+         * Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
          * @summary List a parent\'s children
          * @param {string} id The ID of the parent content.
          * @param {*} [options] Override http request option.
@@ -882,7 +882,7 @@ export const ContentApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Returns a short-lived signed URL for downloading the content body from Cloud Storage (valid 10 minutes). 404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes.
+         * Returns a short-lived signed URL for downloading the content body from Cloud Storage (valid 10 minutes). 404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes. 
          * @summary Get signed URL to read content body
          * @param {string} id The ID of the content whose content body is read (leaf types such as a note in MVP).
          * @param {*} [options] Override http request option.
@@ -895,7 +895,7 @@ export const ContentApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL.
+         * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
          * @summary Get content by ID
          * @param {string} id The ID of the content.
          * @param {*} [options] Override http request option.
@@ -920,7 +920,7 @@ export const ContentApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Returns child content (metadata only) for the given parent ID. Does not load content bodies.
+         * Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
          * @summary List a parent\'s children
          * @param {string} id The ID of the parent content.
          * @param {*} [options] Override http request option.
@@ -982,7 +982,7 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.contentControllerCreateContent(requestParameters.createContentRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         * Returns a short-lived signed URL for downloading the content body from Cloud Storage (valid 10 minutes). 404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes.
+         * Returns a short-lived signed URL for downloading the content body from Cloud Storage (valid 10 minutes). 404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes. 
          * @summary Get signed URL to read content body
          * @param {ContentApiContentControllerGetContentBodySignedUrlRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -992,7 +992,7 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.contentControllerGetContentBodySignedUrl(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
-         * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL.
+         * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
          * @summary Get content by ID
          * @param {ContentApiContentControllerGetContentByIdRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -1011,7 +1011,7 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.contentControllerGetRootDirectory(options).then((request) => request(axios, basePath));
         },
         /**
-         * Returns child content (metadata only) for the given parent ID. Does not load content bodies.
+         * Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
          * @summary List a parent\'s children
          * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -1060,7 +1060,7 @@ export interface ContentApiInterface {
     contentControllerCreateContent(requestParameters: ContentApiContentControllerCreateContentRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentResponse>;
 
     /**
-     * Returns a short-lived signed URL for downloading the content body from Cloud Storage (valid 10 minutes). 404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes.
+     * Returns a short-lived signed URL for downloading the content body from Cloud Storage (valid 10 minutes). 404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes. 
      * @summary Get signed URL to read content body
      * @param {ContentApiContentControllerGetContentBodySignedUrlRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -1070,7 +1070,7 @@ export interface ContentApiInterface {
     contentControllerGetContentBodySignedUrl(requestParameters: ContentApiContentControllerGetContentBodySignedUrlRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentBodyUrlResponse>;
 
     /**
-     * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL.
+     * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
      * @summary Get content by ID
      * @param {ContentApiContentControllerGetContentByIdRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -1089,7 +1089,7 @@ export interface ContentApiInterface {
     contentControllerGetRootDirectory(options?: RawAxiosRequestConfig): AxiosPromise<ContentResponse>;
 
     /**
-     * Returns child content (metadata only) for the given parent ID. Does not load content bodies.
+     * Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
      * @summary List a parent\'s children
      * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -1245,7 +1245,7 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
     }
 
     /**
-     * Returns a short-lived signed URL for downloading the content body from Cloud Storage (valid 10 minutes). 404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes.
+     * Returns a short-lived signed URL for downloading the content body from Cloud Storage (valid 10 minutes). 404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes. 
      * @summary Get signed URL to read content body
      * @param {ContentApiContentControllerGetContentBodySignedUrlRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -1257,7 +1257,7 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
     }
 
     /**
-     * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL.
+     * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
      * @summary Get content by ID
      * @param {ContentApiContentControllerGetContentByIdRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -1280,7 +1280,7 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
     }
 
     /**
-     * Returns child content (metadata only) for the given parent ID. Does not load content bodies.
+     * Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
      * @summary List a parent\'s children
      * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.

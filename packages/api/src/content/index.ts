@@ -16,6 +16,7 @@ export {
   ContentBodyUrlResponse,
   ContentResponse,
   CreateContentRequest,
+  toContentResponse,
   UpdateContentRequest,
 } from './dto/content.dto';
 

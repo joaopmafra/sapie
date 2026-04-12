@@ -11,7 +11,7 @@ printf "OK\n\n"
 
 echo "Linting packages/web..."
 cd packages/web
-pnpm run lint:fix
+pnpm run lint
 cd ../..
 printf "OK\n\n"
 
