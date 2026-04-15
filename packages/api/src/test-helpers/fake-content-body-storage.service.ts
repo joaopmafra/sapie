@@ -5,8 +5,10 @@ import { Injectable } from '@nestjs/common';
  *
  * Default `ContentController` tests use the **Storage emulator** (classical fake). Call
  * `ContentControllerFixture.withFakeContentBodyStorage()` before `init()` when you need fully
- * deterministic uploads/signed URLs without emulator quirks (e.g. rare edge cases).
+ * deterministic uploads without emulator quirks (e.g. rare edge cases). Read URLs still use the
+ * `CONTENT_BODY_READ_SERVICE` binding (fake read URL issuer or Firebase implementation).
  */
+// TODO: review
 @Injectable()
 export class FakeContentBodyStorageService {
   lastUpload: { ownerId: string; contentId: string; body: Buffer; mimeType: string } | null = null;
@@ -24,15 +26,5 @@ export class FakeContentBodyStorageService {
     this.lastUpload = { ownerId, contentId, body, mimeType };
     const bodyUri = `${ownerId}/content/${contentId}`;
     return Promise.resolve({ bodyUri, size: body.length });
-  }
-
-  getSignedReadUrl(storedReference: string): Promise<{ signedUrl: string; expiresAt: Date }> {
-    const pathMatch = storedReference.match(/\/content\/([^/]+)$/);
-    const id = pathMatch?.[1] ?? 'unknown';
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-    return Promise.resolve({
-      signedUrl: `https://fake-signed.example/${id}`,
-      expiresAt,
-    });
   }
 }

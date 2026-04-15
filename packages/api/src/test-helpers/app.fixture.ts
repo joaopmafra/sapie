@@ -7,6 +7,7 @@ import { MillisecondLogger } from '../logger/millisecond.logger';
 import { LoggerService } from '@nestjs/common/services/logger.service';
 import { clearFirestoreData } from './firestore.helper';
 import { applyHttpAppConfiguration } from '../common/http/apply-http-app-configuration';
+import { Server } from 'node:http';
 
 export class AppFixture {
   protected testingModuleBuilder: TestingModuleBuilder;
@@ -40,6 +41,19 @@ export class AppFixture {
     });
     applyHttpAppConfiguration(this.app);
     await this.app.init();
+    await this.listen();
+  }
+
+  /**
+   * Starts the server and sets the API_EXTERNAL_BASE_URL environment variable.
+   */
+  async listen() {
+    await this.app.listen(0, '127.0.0.1');
+    const server = this.app.getHttpServer() as Server;
+    const addressInfo = server.address();
+    if (!addressInfo || typeof addressInfo !== 'object')
+      throw new Error('Could not get address info');
+    process.env.API_EXTERNAL_BASE_URL = `http://${addressInfo.address}:${addressInfo.port}`;
   }
 
   async clearDatabase() {
@@ -51,6 +65,7 @@ export class AppFixture {
   }
 
   getHttpServer() {
+    // TODO: replace by "return this.app.getHttpServer() as Server;"
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return this.app.getHttpServer();
   }

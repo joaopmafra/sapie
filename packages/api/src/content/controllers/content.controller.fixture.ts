@@ -3,9 +3,7 @@ import * as supertest from 'supertest';
 
 import { AppFixture } from '../../test-helpers/app.fixture';
 import { TEST_USER_ID_HEADER } from '../../test-helpers/fake-auth.guard';
-import { FakeContentBodyStorageService } from '../../test-helpers/fake-content-body-storage.service';
 import { Content } from '../entities/content.entity';
-import { ContentBodyStorageService } from '../services/content-body-storage.service';
 
 export class ContentControllerFixture extends AppFixture {
   readonly API_CONTENT = '/api/content';
@@ -15,24 +13,8 @@ export class ContentControllerFixture extends AppFixture {
   readonly TEST_USER_ID = 'content-test-user';
   readonly OTHER_USER_ID = 'content-test-user-2';
 
-  private useFakeContentBodyStorage = false;
-
-  /**
-   * Opt in to `FakeContentBodyStorageService` before `init()` when a test needs deterministic
-   * storage behavior without the Storage emulator (rare edge cases).
-   */
-  withFakeContentBodyStorage(): this {
-    this.useFakeContentBodyStorage = true;
-    return this;
-  }
-
   async init(): Promise<void> {
     this.createTestingModuleBuilder().withFakeAuth();
-    if (this.useFakeContentBodyStorage) {
-      this.testingModuleBuilder = this.testingModuleBuilder
-        .overrideProvider(ContentBodyStorageService)
-        .useClass(FakeContentBodyStorageService);
-    }
     await this.buildAndInit();
   }
 

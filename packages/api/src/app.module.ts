@@ -13,7 +13,7 @@ import * as process from 'node:process';
     // https://stackoverflow.com/questions/63285055/nestjs-how-to-use-env-variables-in-main-app-module-file-for-database-connecti/63285574#63285574
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [`.env.${process.env.CURRENT_ENV}`],
+      ignoreEnvFile: true,
     }),
     FirebaseAdminModule,
     HealthModule,

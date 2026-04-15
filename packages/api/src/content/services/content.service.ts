@@ -1,4 +1,5 @@
 import {
+  Inject,
   Injectable,
   ConflictException,
   ForbiddenException,
@@ -13,13 +14,19 @@ import {
   isMultipartMediaType,
   normalizeBodyMimeType,
 } from '../utils/body-mime-type';
+import {
+  CONTENT_BODY_READ_SERVICE,
+  type ContentBodyReadService,
+} from './content-body-read.service';
 import { ContentBodyStorageService } from './content-body-storage.service';
 
 @Injectable()
 export class ContentService {
   constructor(
     private readonly contentRepository: ContentRepository,
-    private readonly contentBodyStorage: ContentBodyStorageService
+    private readonly contentBodyStorage: ContentBodyStorageService,
+    @Inject(CONTENT_BODY_READ_SERVICE)
+    private readonly contentBodyReadService: ContentBodyReadService
   ) {}
 
   async findByParentIdAndOwnerId(parentId: string, ownerId: string): Promise<Content[]> {
@@ -124,7 +131,7 @@ export class ContentService {
       throw new NotFoundException('Content has no stored body yet');
     }
 
-    const { signedUrl, expiresAt } = await this.contentBodyStorage.getSignedReadUrl(
+    const { signedUrl, expiresAt } = await this.contentBodyReadService.getSignedReadUrl(
       existing.bodyUri
     );
 
