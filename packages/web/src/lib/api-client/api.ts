@@ -153,12 +153,6 @@ export interface ContentResponse {
      */
     'ownerId': string;
     /**
-     * **Notes only.** Object path of the content body in the default storage bucket (`ownerId/content/contentId`), without a `gs://` or `https://` prefix — portable across providers. Omitted for directories. Null until the first body save.
-     * @type {object}
-     * @memberof ContentResponse
-     */
-    'bodyUri'?: object | null;
-    /**
      * **Notes only.** Byte size of the content body after the last `PUT …/body`. Omitted for directories. Null before the first body save.
      * @type {object}
      * @memberof ContentResponse
@@ -1313,6 +1307,119 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
      */
     public contentControllerPutContentBody(requestParameters: ContentApiContentControllerPutContentBodyRequest, options?: RawAxiosRequestConfig) {
         return ContentApiFp(this.configuration).contentControllerPutContentBody(requestParameters.id, requestParameters.contentType, requestParameters.body, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * FakeStorageReadApi - axios parameter creator
+ * @export
+ */
+export const FakeStorageReadApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        fakeStorageReadControllerRead: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/fake-storage/read`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * FakeStorageReadApi - functional programming interface
+ * @export
+ */
+export const FakeStorageReadApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = FakeStorageReadApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async fakeStorageReadControllerRead(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.fakeStorageReadControllerRead(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['FakeStorageReadApi.fakeStorageReadControllerRead']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * FakeStorageReadApi - factory interface
+ * @export
+ */
+export const FakeStorageReadApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = FakeStorageReadApiFp(configuration)
+    return {
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        fakeStorageReadControllerRead(options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.fakeStorageReadControllerRead(options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * FakeStorageReadApi - interface
+ * @export
+ * @interface FakeStorageReadApi
+ */
+export interface FakeStorageReadApiInterface {
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FakeStorageReadApiInterface
+     */
+    fakeStorageReadControllerRead(options?: RawAxiosRequestConfig): AxiosPromise<void>;
+
+}
+
+/**
+ * FakeStorageReadApi - object-oriented interface
+ * @export
+ * @class FakeStorageReadApi
+ * @extends {BaseAPI}
+ */
+export class FakeStorageReadApi extends BaseAPI implements FakeStorageReadApiInterface {
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FakeStorageReadApi
+     */
+    public fakeStorageReadControllerRead(options?: RawAxiosRequestConfig) {
+        return FakeStorageReadApiFp(this.configuration).fakeStorageReadControllerRead(options).then((request) => request(this.axios, this.basePath));
     }
 }
 

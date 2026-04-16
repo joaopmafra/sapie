@@ -14,6 +14,7 @@ docs/ContentApi.md
 docs/ContentBodyUrlResponse.md
 docs/ContentResponse.md
 docs/CreateContentRequest.md
+docs/FakeStorageReadApi.md
 docs/HealthApi.md
 docs/HealthControllerGetHealth200Response.md
 docs/ProblemDetailsDto.md
