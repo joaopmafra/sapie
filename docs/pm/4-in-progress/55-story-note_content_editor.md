@@ -115,18 +115,20 @@ Save state machine: **`idle` | `pending` | `saving` | `saved` | `error`**.
 
 ### Backend
 
-- [ ] **Cloud Storage** integrated in the API (Firebase Admin Storage or dedicated wrapper). Local/dev uses the *
+- [x] **Cloud Storage** integrated in the API (Firebase Admin Storage or dedicated wrapper). Local/dev uses the *
   *Storage emulator** when configured (`FIREBASE_STORAGE_EMULATOR_HOST`).
-- [ ] **`PUT /api/content/:id/body`**
-    - Request: `Content-Type: text/plain` (raw markdown string).
+- [x] **`PUT /api/content/:id/body`**
+    - Request: raw body; **`Content-Type`** sets stored media type (e.g. `text/plain` / `text/markdown` for markdown;
+      story originally said `text/plain` only — **shipped** with broader allowed types per `ContentController` /
+      `normalizeBodyMimeType`; `multipart/*` → **415**).
     - Validates content exists, user owns it, and item is a **note** (or at least not a directory); **400** if body
       storage is not applicable (e.g. directory).
-    - Upload/replace object at `/{ownerId}/content/{contentId}` with `text/markdown` and
+    - Upload/replace object at `/{ownerId}/content/{contentId}` with **declared** `Content-Type` and
       `Cache-Control: private, max-age=3600`.
     - Update Firestore: `bodyUri` (provider-agnostic object path in the default bucket, e.g. `ownerId/content/noteId`), `size`, `updatedAt`.
     - Response: updated **metadata** DTO only (no inline body).
     - **403** if not owner; **404** if content missing.
-- [ ] **`GET /api/content/:id/body`**
+- [x] **`GET /api/content/:id/body`**
     - Returns **`{ signedUrl: string, expiresAt: string }`** (ISO-8601).
     - **404** if the note has no stored body yet (server: `bodyUri` unset) — client treats as empty document (same
       signal as **`size` null** on metadata).
