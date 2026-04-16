@@ -23,7 +23,10 @@ focus on my study material without worrying about losing changes.
 - Save status in the note editor header (bundled from [Story 54](../3-stories/2-to-refine/54-story-save_status_display.md); no
   separate story).
 - Note body stored in **Firebase Cloud Storage**; Firestore holds **metadata only** (`bodyUri`, `size`, `updatedAt`
-  alongside existing fields).
+  alongside existing fields). **`bodyUri` is internal** (object path in the bucket); the **public `GET /api/content/:id`
+  metadata DTO does not expose it** so clients are not tied to storage layout. The client infers “body already saved”
+  from **`size`** (and related fields): **`size` is null (or omitted) until the first successful `PUT …/body`**, then
+  reflects byte length after each save.
 - Load body via **signed URL**: API returns a short-lived URL; the **browser fetches markdown directly from Cloud
   Storage** (not via repeated Cloud Function proxying for the bytes).
 - **Direct navigation** to `/notes/:id` loads metadata (existing TanStack Query hook) **and** body content end-to-end.
@@ -46,7 +49,8 @@ focus on my study material without worrying about losing changes.
 - `GET /api/content/:id` — single content item **metadata only** (404 / 403 as appropriate). Required for
   `useContentItem` and shipped with Story 62.
 - Backend `ContentService` / repository already model `bodyUri`, `size`, `updatedAt` on content entities (initially
-  `null` for new notes).
+  `null` for new notes). Only **`size` / `updatedAt` / `bodyMimeType`** (as applicable) appear on the **HTTP metadata**
+  response; **`bodyUri` stays server-side**.
 
 ## Details
 
@@ -54,8 +58,10 @@ focus on my study material without worrying about losing changes.
 
 - Library: **`@mdxeditor/editor`**, configured for visual editing with plugins for the markdown features listed above.
   Do **not** expose a raw markdown editing mode to users.
-- New or never-saved notes: `bodyUri` is **null** in Firestore. The UI shows an **empty editor** with a sensible
-  placeholder. The first successful save creates the Storage object and sets `bodyUri`, `size`, and `updatedAt`.
+- New or never-saved notes: **`size` is null** (no body in Storage yet; Firestore still has `bodyUri` null server-side
+  until the first save). The UI shows an **empty editor** with a sensible placeholder. The first successful save creates
+  the Storage object and sets **`bodyUri` (persisted only server-side)**, **`size`**, and **`updatedAt`** on the
+  entity; the metadata response exposes **`size`** / **`updatedAt`** / **`bodyMimeType`** as today.
 
 ### Save status (single, consistent behavior)
 
@@ -93,15 +99,16 @@ Save state machine: **`idle` | `pending` | `saving` | `saved` | `error`**.
 ## Acceptance Criteria
 
 - [ ] Opening a note shows its body in the rich-text editor (loaded via signed URL → fetch markdown).
-- [ ] Opening a note with no body yet (`bodyUri` null) shows an empty editor with a placeholder; no error surfaced
-  for “missing body.”
+- [ ] Opening a note with **no body yet** (metadata has **`size` null** and/or **`GET …/body` returns 404**) shows an
+  empty editor with a placeholder; no error surfaced for “missing body.”
 - [ ] Editor supports headings, bold, italic, ordered/unordered lists, code blocks with syntax highlighting, and links.
 - [ ] Edits auto-save **2 seconds** after the last change (debounce resets on each keystroke/edit).
 - [ ] Save status matches the table above (`idle` / `pending` / `saving` / `saved` / `error`).
 - [ ] Failed save shows error + Retry; retry issues `PUT` with current content.
 - [ ] Direct navigation to `/notes/:id` (refresh or bookmark) loads title/metadata and body correctly.
-- [ ] After save, Firestore reflects updated `bodyUri`, `size`, and `updatedAt`; object exists at the defined path
-  with correct headers.
+- [ ] After save, Firestore reflects updated **`bodyUri`** (server-only), **`size`**, and **`updatedAt`**; the API
+  metadata response reflects **`size`** / **`updatedAt`** (and **`bodyMimeType`** as applicable); object exists at the
+  defined path with correct headers.
 - [ ] On unmount/navigation away, pending changes are flushed as specified (no silent drop of dirty state).
 
 ## Technical Requirements
@@ -121,7 +128,8 @@ Save state machine: **`idle` | `pending` | `saving` | `saved` | `error`**.
     - **403** if not owner; **404** if content missing.
 - [ ] **`GET /api/content/:id/body`**
     - Returns **`{ signedUrl: string, expiresAt: string }`** (ISO-8601).
-    - **404** if the note has no stored body yet (`bodyUri` null) — client treats as empty document.
+    - **404** if the note has no stored body yet (server: `bodyUri` unset) — client treats as empty document (same
+      signal as **`size` null** on metadata).
     - **403** if not owner.
     - Signed URL lifetime **10 minutes**.
 
@@ -137,19 +145,23 @@ Save state machine: **`idle` | `pending` | `saving` | `saved` | `error`**.
     2. `useContentBody(noteId)` — `GET /api/content/:id/body`; **404 → treat as empty body**, not `isError` for the
        page.
     3. `useNoteBody(...)` — `fetch` markdown from `signedUrl` with `useQuery`; **`enabled: Boolean(signedUrl)`** when
-       body exists; for empty notes skip this fetch.
+       proceeding to download bytes; for notes with **no body yet** (`size` null / `GET …/body` → 404), **skip** this
+       fetch and show empty editor.
 - [ ] **`staleTime`** for the markdown query: **5 minutes** (strictly less than signed URL **10 minutes** expiry). If
   the URL expires while stale, refetch signed URL (and then markdown) — implementers may rely on invalidation after
   save + conservative `staleTime` to avoid broken URLs.
 - [ ] **After successful `PUT /body`**
-    - Invalidate or update TanStack Query cache so **metadata** (`contentQueryKeys.item(id)`) reflects `size` /
-      `updatedAt` / `bodyUri` as needed.
+    - Invalidate or update TanStack Query cache so **metadata** (`contentQueryKeys.item(id)`) reflects **`size`** and
+      **`updatedAt`** (and **`bodyMimeType`** if returned) as returned by the API — **not** `bodyUri` (not on wire).
     - Invalidate **signed-URL** and **markdown** queries for that `noteId` (or update markdown cache from the saved
       string) so the editor does not show stale data after save.
 - [ ] **Auto-save mutation** — `useMutation` (or equivalent) calling `PUT /api/content/:id/body`; debounce in the
   component or a small hook; integrate with save-state machine above.
-- [ ] **OpenAPI / generated client** — regenerate after new endpoints; ensure `bodyUri` is documented as **string |
-  null** (align any generated `ContentResponse` typings with the API).
+- [ ] **OpenAPI / generated client** — regenerate after new endpoints; document that **`bodyUri` is not part of the
+  public content metadata response**; **`size`** (nullable for notes) is the client signal for “body exists in
+  Storage.” Align generated `ContentResponse` (or equivalent) typings with the API.
+- [ ] **After login and logout**
+    - Invalidate TanStack Query cache to make sure the user sees data that belongs to himself and is up to date.
 
 ### Caching and consistency
 
@@ -179,7 +191,7 @@ Save state machine: **`idle` | `pending` | `saving` | `saved` | `error`**.
 ### Documentation
 
 - [ ] **[DOCS] OpenAPI / API docs** — document `PUT /:id/body` and `GET /:id/body` (and clarify `GET /:id` remains
-  metadata-only; already present from Story 62).
+  metadata-only, **without** `bodyUri` on the wire; **already present from Story 62** with the tightened shape above).
 - [ ] **[DOCS] `packages/api/README.md`** — Storage emulator and local setup.
 
 ## Testing

@@ -47,15 +47,6 @@ export class ContentResponse {
 
   @ApiPropertyOptional({
     description:
-      '**Notes only.** Object path of the content body in the default storage bucket (`ownerId/content/contentId`), ' +
-      'without a `gs://` or `https://` prefix — portable across providers. Omitted for directories. Null until the first body save.',
-    example: 'firebase-user-id/content/clq0e8k1j0000c8v9a1b2c3d4',
-    nullable: true,
-  })
-  bodyUri?: string | null;
-
-  @ApiPropertyOptional({
-    description:
       '**Notes only.** Byte size of the content body after the last `PUT …/body`. Omitted for directories. Null before the first body save.',
     example: 1024,
     nullable: true,
@@ -88,7 +79,7 @@ export class ContentResponse {
 
 /**
  * Map persisted content to the HTTP metadata shape.
- * Directories omit `bodyUri`, `size`, and `bodyMimeType` (not serialized).
+ * Directories omit `size`, and `bodyMimeType` (not serialized).
  */
 export function toContentResponse(content: Content): ContentResponse {
   const response = new ContentResponse();
@@ -99,8 +90,7 @@ export function toContentResponse(content: Content): ContentResponse {
   response.ownerId = content.ownerId;
   response.createdAt = content.createdAt;
   response.updatedAt = content.updatedAt;
-  if (content.type === ContentType.NOTE) {
-    response.bodyUri = content.bodyUri ?? null;
+  if (content.type !== ContentType.DIRECTORY) {
     response.size = content.size ?? null;
     response.bodyMimeType = content.bodyMimeType ?? null;
   }

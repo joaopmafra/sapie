@@ -324,17 +324,12 @@ describe('ContentController', () => {
       ownerId: fixture.TEST_USER_ID,
       bodyMimeType: 'text/plain',
     });
-    expect(putResponse.body).toHaveProperty(
-      'bodyUri',
-      `${fixture.TEST_USER_ID}/content/${note.id}`
-    );
     expect(putResponse.body).toHaveProperty('size', Buffer.byteLength('# Hello', 'utf8'));
 
     const meta = await fixture.callApiGetContentByIdExpectingOkAsContent(
       fixture.TEST_USER_ID,
       note.id
     );
-    expect(meta.bodyUri).toBe(`${fixture.TEST_USER_ID}/content/${note.id}`);
     expect(meta.size).toBe(Buffer.byteLength('# Hello', 'utf8'));
     expect(meta.bodyMimeType).toBe('text/plain');
 
