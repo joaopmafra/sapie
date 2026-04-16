@@ -174,10 +174,10 @@ Save state machine: **`idle` | `pending` | `saving` | `saved` | `error`**.
 
 ### Backend
 
-- [ ] **[BE] Cloud Storage** — wire Admin SDK + emulator support; document env vars in `packages/api/README.md`.
-- [ ] **[BE] `PUT /api/content/:id/body`** — upload, Firestore update, status codes as above.
-- [ ] **[BE] `GET /api/content/:id/body`** — signed URL + `expiresAt`.
-- [ ] **[BE] Tests** — classical TDD for new behavior (authz, 404/400 paths, Firestore + storage integration or faked
+- [x] **[BE] Cloud Storage** — wire Admin SDK + emulator support; document env vars in `packages/api/README.md`.
+- [x] **[BE] `PUT /api/content/:id/body`** — upload, Firestore update, status codes as above.
+- [x] **[BE] `GET /api/content/:id/body`** — signed URL + `expiresAt`.
+- [x] **[BE] Tests** — classical TDD for new behavior (authz, 404/400 paths, Firestore + storage integration or faked
   storage per project norms).
 
 ### Frontend
