@@ -36,6 +36,8 @@ focus on my study material without worrying about losing changes.
 - Math / LaTeX in the editor.
 - `beforeunload` / “unsaved changes” browser dialog (optional later).
 - E2E tests for this story (**deferred for MVP**; see [Testing](#testing)).
+- **Concurrent editing** across multiple browser windows or devices (detect stale version, reload vs overwrite):
+  [Story 65: Note Body Concurrency and Conflict Resolution](../3-stories/2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md).
 
 ## Dependencies (satisfied)
 
@@ -96,6 +98,102 @@ Save state machine: **`idle` | `pending` | `saving` | `saved` | `error`**.
 - API must **never** return the note body bytes inline on generic content metadata endpoints — only via `GET .../body` (
   signed URL) and the subsequent browser fetch to Storage.
 
+## Implementation approach (phased)
+
+Work is delivered in **small vertical slices** (each phase should be demonstrable end-to-end where possible), following
+[iterative development](../../dev/iterative_development.md), [TDD baby steps](../../dev/tdd_baby_steps.md), and
+[simplicity (XP)](../../dev/xp_simplicity_is_the_key.md). Frontend **technical requirements and tasks are merged below**
+by phase—there is no separate “requirements vs tasks” list for the web app.
+
+**Caching:** default app `QueryClient` options from [Story 62](../5-done/62-story-tanstack_query_refactor.md) remain in
+force (`staleTime`, `refetchOnWindowFocus`, etc.). Body-specific `staleTime` overrides apply only to body / signed-URL /
+markdown queries as called out in Phase 0.
+
+**Frontend unit tests (classical TDD):** Add or extend **React unit tests in the same phase** as the behavior they
+protect—**red–green–refactor** with each slice, not a single test pass at the end of the story. Follow
+[Unit Testing (React) — Sapie](../../dev/unit_testing_react_sapie.md) (default **page- or route-level**, **HTTP fakes** at
+the boundary). Use **UI drivers / component objects** to reduce brittle selectors when it helps—see the **draft**
+[React test component objects](../../dev/draft_unit_testing_react_component_objects.md).
+
+### Phase 0 — Load path, query layer, simple surface, dev-only seed
+
+- [ ] **Query keys** — extend `packages/web/src/lib/content/query-keys.ts` (factory pattern, consistent with Story 62):
+  `bodySignedUrl(id)`; `noteMarkdown(id)` with **`signedUrl` in the key *or*** a short comment documenting note-only key
+  plus invalidation rules so cache stays correct when URLs rotate or content updates.
+- [ ] **Content service + hooks** — API methods for `getContentBody`, `putContentBody`, and markdown `fetch`; colocate
+  or split files as needed, **one import surface** for callers (e.g. `content-hooks.ts`).
+- [ ] **Three-step loading on `NoteEditorPage`**
+    1. `useContentItem(noteId)` — metadata (existing).
+    2. `useContentBody(noteId)` — `GET /api/content/:id/body`; **404 → treat as empty body**, not `isError` for the page.
+    3. `useNoteBody(...)` — `fetch` markdown from `signedUrl` with `useQuery`; **`enabled: Boolean(signedUrl)`**; when
+       there is no body yet, **skip** the bytes fetch and show an empty editor with placeholder.
+- [ ] **Simple editor** — plain `<textarea>` (or equivalent) for layout and wiring **before** `@mdxeditor/editor`.
+- [ ] **`staleTime`** for the markdown query: **5 minutes** (strictly less than signed URL **10 minutes**). Refetch
+  signed URL + markdown when stale/expired as needed; rely on **invalidation after save** where applicable.
+- [ ] **Dev-only “Seed body” control** — a control **visible only in development** (e.g. gated by `import.meta.env.DEV`)
+  that calls `PUT /api/content/:id/body` with deterministic sample markdown (e.g. formatted timestamp) so engineers can
+  validate the load/display path **without** seeding automatically on note creation. **Remove or retire** once Phases
+  1–3 provide real save and reload, or keep dev-gated if it remains useful.
+- [ ] **OpenAPI / generated client** — regenerate as needed; document that **`bodyUri` is not** on the public metadata
+  response; **`size`** (nullable for notes) signals “body exists in Storage.” Align generated typings with the API.
+- [ ] **React tests** — cover load path, empty body (`404` / no markdown fetch), and any seed/dev control behavior
+  exercised in this phase (per [Frontend unit tests](#implementation-approach-phased) above).
+
+### Phase 1 — Explicit save
+
+- [ ] **`PUT` mutation** — `useMutation` (or equivalent) calling `PUT /api/content/:id/body`; **Save** always visible
+  while this is the primary persistence path; show **success or error** on save; **clear** the message when the user makes
+  new edits.
+- [ ] **After successful `PUT /body`** — update or invalidate **`contentQueryKeys.item(id)`** for **`size`**,
+  **`updatedAt`**, **`bodyMimeType`** (not `bodyUri`); invalidate or update **signed-URL** and **markdown** queries (or
+  set markdown cache from the saved string) so the editor does not show stale data.
+- [ ] **React tests** — explicit save, success/error feedback, cache updates after `PUT` (per [Frontend unit tests](#implementation-approach-phased)).
+
+### Phase 2 — Correctness and dirty state
+
+- [ ] **Regression checks** — user can **continue editing after save** and **load a note after save** (bookmark/refresh /
+  direct navigation); metadata and body stay consistent with the server.
+- [ ] **Save enabled only when dirty** (optional refinement once explicit save is stable).
+- [ ] **React tests** — continue editing after save, reload / direct navigation, dirty-only save if implemented (per
+  [Frontend unit tests](#implementation-approach-phased)).
+
+### Phase 3 — Auto-save, unmount flush, save status UI
+
+- [ ] **Debounced auto-save** — **2 seconds** after the last change; integrate with the save-state machine below.
+- [ ] **Unmount / navigation** — cancel debounce; if there are **unsaved local changes**, issue **one immediate save**
+  with the same payload as the debounced save.
+- [ ] **Header save status** — state machine **`idle` | `pending` | `saving` | `saved` | `error`** per the table in
+  [Save status](#save-status-single-consistent-behavior); **Retry** on error (immediate `PUT` of current editor content).
+- [ ] **React tests** — debounce, unmount flush, save-state machine, error + retry; add **fast unit tests** for pure
+  helpers where non-trivial (e.g. debounce / save-state logic); not required for thin wrappers (per [
+  Frontend unit tests](#implementation-approach-phased)).
+
+### Phase 4 — In-flight saves (single editor)
+
+- [ ] **Serialize or queue** debounced/automatic saves when a `PUT` is already in flight so edits made while saving are
+  not lost and the server is not left in an ambiguous state. (This is **not** multi-tab conflict handling; that is
+  [Story 65](../3-stories/2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md).)
+- [ ] **React tests** — overlapping edits while a save is in flight; no dropped updates (per [Frontend unit tests](#implementation-approach-phased)).
+
+### Phase 5 — Auth boundaries
+
+- [ ] **After login and logout** — invalidate TanStack Query cache so the user sees data for the current session only and
+  metadata/bodies are up to date.
+- [ ] **React tests** — cache invalidation on auth transitions does not show another user’s data (per [Frontend unit tests](#implementation-approach-phased)).
+
+### Phase 6 — Rich editor
+
+- [ ] **`@mdxeditor/editor`** — install; theme and layout consistent with the note shell; plugins for headings, bold,
+  italic, ordered/unordered lists, code blocks with syntax highlighting, and links; **no** raw-markdown mode for users.
+  Replace the Phase 0 textarea while **reusing** hooks, keys, mutation, and save behavior.
+- [ ] **React tests** — adjust or extend coverage for MDXEditor integration; **reuse** existing drivers/hooks tests where
+  behavior is unchanged (per [Frontend unit tests](#implementation-approach-phased)).
+
+### Deferred (separate story)
+
+Follow [Story 65: Note Body Concurrency and Conflict Resolution](../3-stories/2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md)
+for optimistic locking on `PUT`, conflict responses, and reload vs overwrite UX across surfaces.
+
 ## Acceptance Criteria
 
 - [ ] Opening a note shows its body in the rich-text editor (loaded via signed URL → fetch markdown).
@@ -135,42 +233,9 @@ Save state machine: **`idle` | `pending` | `saving` | `saved` | `error`**.
     - **403** if not owner.
     - Signed URL lifetime **10 minutes**.
 
-### Frontend
-
-- [ ] **Query keys** — extend `packages/web/src/lib/content/query-keys.ts` (factory pattern, consistent with Story 62),
-  e.g.:
-    - `bodySignedUrl(id)` for the signed-URL fetch query.
-    - `noteMarkdown(id)` (and include `signedUrl` in the key **or** document why the key is note-only plus invalidation
-      rules) so cache stays correct when URLs rotate or content updates.
-- [ ] **Three-step loading on `NoteEditorPage`**
-    1. `useContentItem(noteId)` — metadata (existing).
-    2. `useContentBody(noteId)` — `GET /api/content/:id/body`; **404 → treat as empty body**, not `isError` for the
-       page.
-    3. `useNoteBody(...)` — `fetch` markdown from `signedUrl` with `useQuery`; **`enabled: Boolean(signedUrl)`** when
-       proceeding to download bytes; for notes with **no body yet** (`size` null / `GET …/body` → 404), **skip** this
-       fetch and show empty editor.
-- [ ] **`staleTime`** for the markdown query: **5 minutes** (strictly less than signed URL **10 minutes** expiry). If
-  the URL expires while stale, refetch signed URL (and then markdown) — implementers may rely on invalidation after
-  save + conservative `staleTime` to avoid broken URLs.
-- [ ] **After successful `PUT /body`**
-    - Invalidate or update TanStack Query cache so **metadata** (`contentQueryKeys.item(id)`) reflects **`size`** and
-      **`updatedAt`** (and **`bodyMimeType`** if returned) as returned by the API — **not** `bodyUri` (not on wire).
-    - Invalidate **signed-URL** and **markdown** queries for that `noteId` (or update markdown cache from the saved
-      string) so the editor does not show stale data after save.
-- [ ] **Auto-save mutation** — `useMutation` (or equivalent) calling `PUT /api/content/:id/body`; debounce in the
-  component or a small hook; integrate with save-state machine above.
-- [ ] **OpenAPI / generated client** — regenerate after new endpoints; document that **`bodyUri` is not part of the
-  public content metadata response**; **`size`** (nullable for notes) is the client signal for “body exists in
-  Storage.” Align generated `ContentResponse` (or equivalent) typings with the API.
-- [ ] **After login and logout**
-    - Invalidate TanStack Query cache to make sure the user sees data that belongs to himself and is up to date.
-
-### Caching and consistency
-
-- Default app `QueryClient` options from Story 62 remain in force (`staleTime`, `refetchOnWindowFocus`, etc.).
-  Body-specific `staleTime` overrides apply only to body/signed-url/markdown queries as specified.
-
 ## Tasks
+
+Frontend implementation is broken down by **phase** under [Implementation approach](#implementation-approach-phased).
 
 ### Backend
 
@@ -179,16 +244,6 @@ Save state machine: **`idle` | `pending` | `saving` | `saved` | `error`**.
 - [x] **[BE] `GET /api/content/:id/body`** — signed URL + `expiresAt`.
 - [x] **[BE] Tests** — classical TDD for new behavior (authz, 404/400 paths, Firestore + storage integration or faked
   storage per project norms).
-
-### Frontend
-
-- [ ] **[FE] `@mdxeditor/editor`** — install, theme/layout consistent with note shell.
-- [ ] **[FE] Content service + hooks** — API methods for `getContentBody`, `putContentBody`, and markdown fetch; hooks
-  in `content-hooks.ts` (or colocated files if the file grows too large — prefer one import surface for callers).
-- [ ] **[FE] `NoteEditorPage`** — compose metadata + body queries, loading/error boundaries consistent with existing
-  page, placeholder for empty body.
-- [ ] **[FE] Debounced auto-save + flush on unmount** + header save status UI.
-- [ ] **[FE] Tests** — only where non-trivial (e.g. debounce/save state helper); not required for thin wrappers.
 
 ### Documentation
 
@@ -199,6 +254,8 @@ Save state machine: **`idle` | `pending` | `saving` | `saved` | `error`**.
 ## Testing
 
 - **API:** unit/integration tests for new endpoints and storage behavior (required per project standards).
+- **Web / React:** **classical** unit tests **with each frontend phase** (see [Implementation approach](#implementation-approach-phased) and
+  [Unit Testing (React) — Sapie](../../dev/unit_testing_react_sapie.md)); optional [UI drivers (draft)](../../dev/draft_unit_testing_react_component_objects.md).
 - **E2E:** **not required** for this story during the MVP
   push ([contributing guidelines](../../dev/contributing_guidelines.md)); optional follow-up later.
 
