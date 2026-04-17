@@ -1,6 +1,7 @@
 # Iterative development
 
-Sapie targets an **MVP as soon as practical** ([mvp_objective.md](../research/mvp_objective.md)). This page explains how to
+Sapie targets an **MVP as soon as practical** ([mvp_objective.md](../research/mvp_objective.md)). This page explains how
+to
 slice work so each increment is **usable end-to-end**, not a pile of half-finished layers.
 
 ## Gall's law
@@ -9,7 +10,7 @@ slice work so each increment is **usable end-to-end**, not a pile of half-finish
 > designed from scratch never works and cannot be made to work. You have to start over, beginning with a working simple
 > system.
 
-— [John Gall](https://en.wikipedia.org/wiki/John_Gall_(author)) ([Portuguese](https://pt.wikipedia.org/wiki/John_Gall))
+— [John Gall](https://en.wikipedia.org/wiki/John_Gall_(author))
 
 **In short:** a working complex system grows from a **working simple** system. A “big design up front” complex system
 does not work and cannot be patched into working; you restart from something small that actually runs.
@@ -22,11 +23,21 @@ user** and learn from—even if it is not the final “car.”
 
 ![Wrong: parts of a car vs right: skateboard to car — incremental delivery that stays usable](making-sense-of-mvp.jpg)
 
-- [Making sense of MVP — and why I prefer Earliest Testable/Usable/Lovable](https://blog.crisp.se/2016/01/25/henrikkniberg/making-sense-of-mvp) — Henrik Kniberg, Crisp (2016). The post links to **translations** (e.g. French, Spanish, Japanese) on the same page.
+- [Making sense of MVP — and why I prefer Earliest Testable/Usable/Lovable](https://blog.crisp.se/2016/01/25/henrikkniberg/making-sense-of-mvp) —
+  Henrik Kniberg, Crisp (2016). The post links to **translations** (e.g. French, Spanish, Japanese) on the same page.
+
+## Working on complex tasks
+
+The iterative approach also applies to complex single tasks. When working on complex tasks, the best way to implement is
+by creating small improvements that build upon the previous one, even if the final goal is not fully realized yet and/or
+if the improvement represents a simplified version of the original task. Implement the simplest thing that works, then
+extend. Each improvement should have automated tests so we can ensure we're not breaking previous features while working
+towards the final implementation.
 
 ## Core idea for this repo
 
-Each iteration should deliver a **complete, functional** slice that users (or you) can benefit from — even if it is simpler
+Each iteration should deliver a **complete, functional** slice that users (or you) can benefit from — even if it is
+simpler
 than the final vision.
 
 **Think scooter → bicycle → motorcycle → car, not chassis → wheels → engine → car.**
@@ -40,13 +51,15 @@ Each step is a whole solution to the core problem; capabilities grow over time.
 
 ### Full-stack by default
 
-Avoid shipping an API without UI or UI without persistence unless the story explicitly calls for it. Prefer **one story**
+Avoid shipping an API without UI or UI without persistence unless the story explicitly calls for it. Prefer **one story
+**
 that delivers UI + validation + persistence for the main path.
 
 **Default**: Single story for full-stack work — complete workflow from interaction to stored data.
 
 **Split backend vs frontend only when** there is a real reason: shared backend across clients, very uneven complexity,
-parallel work by different people, or a clear dependency chain (foundation → feature). Prefer a parent feature with child
+parallel work by different people, or a clear dependency chain (foundation → feature). Prefer a parent feature with
+child
 stories over orphan “backend-only” / “frontend-only” stories that don’t integrate.
 
 ### Example directions (not prescriptions)
@@ -61,5 +74,7 @@ know how today’s slice leads to tomorrow’s, and record how the piece fits th
 
 ## See also
 
+- [Story 55 iterative note editor (example)](iterative_development_example_note_editor.md) — phased frontend plan for the
+  note content editor; illustrates vertical slices after a one-shot attempt failed
 - [Contributing guidelines](contributing_guidelines.md) — workflow and quality checks
 - [Development principles](development_principles.md) — KISS, YAGNI, POLA

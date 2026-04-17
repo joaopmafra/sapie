@@ -19,7 +19,7 @@ when strictly necessary, but usually they are replaceable with lists with bullet
 
 ## Documentation Guidelines
 
-When writing documentation, look at the [documentation guidelines](../../docs/dev/documentation_guidelines.md) to 
+When writing documentation, look at the [documentation guidelines](../../docs/dev/documentation_guidelines.md) to
 understand the project's documentation guidelines.
 
 ## Developer documentation
@@ -31,8 +31,9 @@ up or adding a new dev doc (keep it in sync there, not here).
 
 - [contributing guidelines](../../docs/dev/contributing_guidelines.md)
 - [AI agent guidelines](../../docs/dev/ai_agent_guidelines.md)
+- [Simplicity is the key](../../docs/dev/xp_simplicity_is_the_key.md)
 - [iterative development](../../docs/dev/iterative_development.md)
-- [Simple is the Key](../../docs/dev/xp_simplicity_is_the_key.md)
+- [TDD Baby Steps](../../docs/dev/tdd_baby_steps.md)
 - [documentation guidelines](../../docs/dev/documentation_guidelines.md)
 
 **Broader doc map** (research, PM, AI workflow): [docs/README.md](../../docs/README.md)
@@ -47,6 +48,8 @@ order: [mvp_objective.md](../../docs/research/mvp_objective.md).
 We follow **true Agile** (values from the Manifesto, not Scrum-by-default), **Extreme Programming**, **Lean**, and *
 *iterative** delivery. The anchor habit is simplicity (XP rule of thumb —
 see [xp_simplicity_is_the_key.md](../../docs/dev/xp_simplicity_is_the_key.md)).
+
+
 
 We strive to write tests: **Classical TDD** on the backend
 first ([unit_testing_strategy.md](../../docs/dev/unit_testing_strategy.md), [unit_testing_sapie.md](../../docs/dev/unit_testing_sapie.md)).
