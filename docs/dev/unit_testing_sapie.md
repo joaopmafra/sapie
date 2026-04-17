@@ -5,6 +5,9 @@ This document describes how the unit testing principles from
 (`packages/api/`). It covers technology choices, infrastructure setup, test lifecycle, and the
 rationale for each design decision.
 
+For **React** (`packages/web/`)—page-first tests, HTTP fakes, and when to test sub-components or
+pure modules—see [Unit Testing (React) — Sapie](unit_testing_react_sapie.md).
+
 ---
 
 ## Table of Contents
