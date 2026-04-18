@@ -1,10 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { QueryClient } from '@tanstack/react-query';
+import type { User } from 'firebase/auth';
 
 import { useAuth } from '../../contexts/AuthContext';
 
 import { contentService } from './content-service';
 import { contentQueryKeys } from './query-keys';
 import { contentItemQueryRetry } from './query-retry-utils';
+import type { Content } from './types';
 
 /** Markdown bytes query: strictly under signed URL TTL (10m); refetch/invalidate when URL rotates. */
 const NOTE_MARKDOWN_STALE_MS = 5 * 60 * 1000;
@@ -83,37 +86,69 @@ export function useNoteBody(
   });
 }
 
-/** Dev-only: seed sample markdown via `PUT …/body` and refresh body queries. */
-export function useDevSeedNoteBody(noteId: string | undefined) {
+/** Updates item metadata, refreshes signed-URL, and seeds markdown cache with the saved string (avoids stale editor). */
+async function syncCachesAfterPutNoteBody(
+  queryClient: QueryClient,
+  currentUser: User,
+  id: string,
+  savedBodyText: string,
+  updated: Content
+): Promise<void> {
+  queryClient.setQueryData(contentQueryKeys.item(id), updated);
+  await queryClient.invalidateQueries({
+    queryKey: contentQueryKeys.bodySignedUrl(id),
+  });
+  const bodyRef = await queryClient.fetchQuery({
+    queryKey: contentQueryKeys.bodySignedUrl(id),
+    queryFn: () => contentService.getContentBody(currentUser, id),
+    staleTime: 5 * 60 * 1000,
+  });
+  queryClient.removeQueries({ queryKey: ['content', 'note-markdown', id] });
+  if (bodyRef?.signedUrl) {
+    queryClient.setQueryData(
+      contentQueryKeys.noteMarkdown(id, bodyRef.signedUrl),
+      savedBodyText
+    );
+  }
+}
+
+/**
+ * Explicit save: `PUT /api/content/:id/body` for the current editor string (`text/markdown`).
+ * Phase 1 primary persistence; Phase 3 adds debounced auto-save.
+ */
+export function useSaveNoteBody() {
   const { currentUser } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => {
-      if (!currentUser || !noteId) {
-        throw new Error('Not authenticated or missing note id');
+    mutationFn: async ({
+      id,
+      bodyText,
+    }: {
+      id: string;
+      bodyText: string;
+    }): Promise<Content> => {
+      if (!currentUser) {
+        throw new Error('Not authenticated');
       }
-      const body = `# Dev seed\n\n_Generated at ${new Date().toISOString()}_\n\nHello from **Story 55** Phase 0.\n`;
       return contentService.putContentBody(
         currentUser,
-        noteId,
-        body,
+        id,
+        bodyText,
         'text/markdown'
       );
     },
-    onSuccess: () => {
-      if (!noteId) {
+    onSuccess: async (content, { id, bodyText }) => {
+      if (!currentUser) {
         return;
       }
-      void queryClient.invalidateQueries({
-        queryKey: contentQueryKeys.item(noteId),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: contentQueryKeys.bodySignedUrl(noteId),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ['content', 'note-markdown', noteId],
-      });
+      await syncCachesAfterPutNoteBody(
+        queryClient,
+        currentUser,
+        id,
+        bodyText,
+        content
+      );
     },
   });
 }

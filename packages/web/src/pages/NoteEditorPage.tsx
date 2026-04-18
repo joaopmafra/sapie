@@ -17,12 +17,11 @@ import {
   ContentType,
   useContentBody,
   useContentItem,
-  useDevSeedNoteBody,
   useNoteBody,
   useRenameContent,
+  useSaveNoteBody,
 } from '../lib/content';
 import { PROBLEM_DETAILS_POINTERS } from '../lib/problemDetailsPointers.ts';
-import { isViteDev } from '../lib/runtimeEnv';
 
 const NoteEditorPage = () => {
   const { noteId } = useParams<{ noteId: string }>();
@@ -31,13 +30,17 @@ const NoteEditorPage = () => {
   const bodySignedUrlQuery = useContentBody(noteId);
   const signedUrl = bodySignedUrlQuery.data?.signedUrl ?? null;
   const noteBodyQuery = useNoteBody(noteId, signedUrl);
-  const devSeedNoteBody = useDevSeedNoteBody(noteId);
+  const saveNoteBody = useSaveNoteBody();
   const renameContent = useRenameContent();
 
   const [noteName, setNoteName] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [renameError, setRenameError] = useState<unknown | null>(null);
   const [draftBody, setDraftBody] = useState('');
+  const [saveUi, setSaveUi] = useState<{
+    kind: 'success' | 'error';
+    message: string;
+  } | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const renameInProgressRef = useRef(false);
 
@@ -196,6 +199,30 @@ const NoteEditorPage = () => {
   const bodyLoadErrorDetail =
     bodySignedUrlQuery.error ?? (signedUrl ? noteBodyQuery.error : null);
 
+  const handleDraftChange = (value: string) => {
+    setDraftBody(value);
+    if (saveUi) {
+      setSaveUi(null);
+    }
+  };
+
+  const handleSaveBody = async () => {
+    if (!noteId) {
+      return;
+    }
+    setSaveUi(null);
+    try {
+      await saveNoteBody.mutateAsync({ id: noteId, bodyText: draftBody });
+      setSaveUi({ kind: 'success', message: 'Saved.' });
+    } catch (err: unknown) {
+      const text =
+        err instanceof Error
+          ? err.message
+          : 'Save failed. Check your connection and try again.';
+      setSaveUi({ kind: 'error', message: text });
+    }
+  };
+
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto' }}>
       <Paper elevation={1} sx={{ p: 3 }}>
@@ -260,29 +287,6 @@ const NoteEditorPage = () => {
         </Box>
 
         <Box sx={{ mb: 2 }}>
-          {isViteDev() ? (
-            <Box sx={{ mb: 2 }}>
-              <Button
-                type='button'
-                variant='outlined'
-                size='small'
-                disabled={devSeedNoteBody.isPending || !currentUser}
-                onClick={() => void devSeedNoteBody.mutate()}
-              >
-                Seed body (dev)
-              </Button>
-              {devSeedNoteBody.isError ? (
-                <Typography
-                  variant='caption'
-                  color='error'
-                  sx={{ display: 'block', mt: 1 }}
-                >
-                  Seed failed — check API / Storage emulator.
-                </Typography>
-              ) : null}
-            </Box>
-          ) : null}
-
           {bodyLoadError ? (
             <Alert severity='error' sx={{ mb: 2 }}>
               {bodyLoadErrorDetail instanceof Error
@@ -303,17 +307,49 @@ const NoteEditorPage = () => {
               <CircularProgress size={32} />
             </Box>
           ) : (
-            <TextField
-              multiline
-              fullWidth
-              minRows={16}
-              value={draftBody}
-              onChange={e => setDraftBody(e.target.value)}
-              placeholder='Start writing your note…'
-              inputProps={{
-                'aria-label': 'Note body',
-              }}
-            />
+            <>
+              {saveUi ? (
+                <Alert
+                  role='status'
+                  aria-live='polite'
+                  severity={saveUi.kind === 'success' ? 'success' : 'error'}
+                  sx={{ mb: 2 }}
+                >
+                  {saveUi.message}
+                </Alert>
+              ) : null}
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  alignItems: 'center',
+                  gap: 1,
+                  mb: 1,
+                }}
+              >
+                <Button
+                  type='button'
+                  variant='contained'
+                  onClick={() => void handleSaveBody()}
+                  disabled={
+                    !currentUser || saveNoteBody.isPending || bodyLoadPending
+                  }
+                >
+                  {saveNoteBody.isPending ? 'Saving…' : 'Save'}
+                </Button>
+              </Box>
+              <TextField
+                multiline
+                fullWidth
+                minRows={16}
+                value={draftBody}
+                onChange={e => handleDraftChange(e.target.value)}
+                placeholder='Start writing your note…'
+                inputProps={{
+                  'aria-label': 'Note body',
+                }}
+              />
+            </>
           )}
         </Box>
       </Paper>

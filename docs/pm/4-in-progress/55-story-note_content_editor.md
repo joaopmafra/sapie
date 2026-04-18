@@ -130,24 +130,21 @@ the boundary). Use **UI drivers / component objects** to reduce brittle selector
 - [x] **Simple editor** — plain `<textarea>` (or equivalent) for layout and wiring **before** `@mdxeditor/editor`.
 - [x] **`staleTime`** for the markdown query: **5 minutes** (strictly less than signed URL **10 minutes**). Refetch
   signed URL + markdown when stale/expired as needed; rely on **invalidation after save** where applicable.
-- [x] **Dev-only “Seed body” control** — a control **visible only in development** (e.g. gated by `import.meta.env.DEV`)
-  that calls `PUT /api/content/:id/body` with deterministic sample markdown (e.g. formatted timestamp) so engineers can
-  validate the load/display path **without** seeding automatically on note creation. **Remove or retire** once Phases
-  1–3 provide real save and reload, or keep dev-gated if it remains useful.
+- [x] **Dev-only “Seed body” control** — **retired** (explicit **Save** in Phase 1 replaced it). Historically: dev-gated
+  `PUT` with sample markdown to validate load/display before real persistence.
 - [x] **OpenAPI / generated client** — regenerate as needed; document that **`bodyUri` is not** on the public metadata
   response; **`size`** (nullable for notes) signals “body exists in Storage.” Align generated typings with the API.
-- [x] **React tests** — cover load path, empty body (`404` / no markdown fetch), and any seed/dev control behavior
-  exercised in this phase (per [Frontend unit tests](#implementation-approach-phased) above).
+- [x] **React tests** — cover load path, empty body (`404` / no markdown fetch) (per [Frontend unit tests](#implementation-approach-phased) above).
 
 ### Phase 1 — Explicit save
 
-- [ ] **`PUT` mutation** — `useMutation` (or equivalent) calling `PUT /api/content/:id/body`; **Save** always visible
+- [x] **`PUT` mutation** — `useMutation` (or equivalent) calling `PUT /api/content/:id/body`; **Save** always visible
   while this is the primary persistence path; show **success or error** on save; **clear** the message when the user makes
   new edits.
-- [ ] **After successful `PUT /body`** — update or invalidate **`contentQueryKeys.item(id)`** for **`size`**,
+- [x] **After successful `PUT /body`** — update or invalidate **`contentQueryKeys.item(id)`** for **`size`**,
   **`updatedAt`**, **`bodyMimeType`** (not `bodyUri`); invalidate or update **signed-URL** and **markdown** queries (or
   set markdown cache from the saved string) so the editor does not show stale data.
-- [ ] **React tests** — explicit save, success/error feedback, cache updates after `PUT` (per [Frontend unit tests](#implementation-approach-phased)).
+- [x] **React tests** — explicit save, success/error feedback, cache updates after `PUT` (per [Frontend unit tests](#implementation-approach-phased)).
 
 ### Phase 2 — Correctness and dirty state
 

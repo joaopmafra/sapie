@@ -26,7 +26,7 @@ export {
   useContentBody,
   useContentItem,
   useCreateNote,
-  useDevSeedNoteBody,
   useNoteBody,
   useRenameContent,
+  useSaveNoteBody,
 } from './content-hooks';
