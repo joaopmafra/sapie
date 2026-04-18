@@ -22,9 +22,10 @@ import {
   createApiConfiguration,
 } from '../lib/api-client';
 import type { AuthenticatedUser } from '../lib/api-client';
+import { getApiBaseUrl } from '../lib/apiBaseUrl.ts';
 import { createAuthenticatedApiConfiguration } from '../lib/auth-utils';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = getApiBaseUrl();
 
 /**
  * Status Component
@@ -124,7 +125,7 @@ const Status = () => {
               NODE_ENV: {import.meta.env.NODE_ENV ?? 'null'}
             </Typography>
             <Typography variant='body1'>
-              VITE_API_BASE_URL: {import.meta.env.VITE_API_BASE_URL ?? 'null'}
+              API_BASE_URL: {API_BASE_URL}
             </Typography>
             <Typography variant='body1'>
               BASE_URL: {import.meta.env.BASE_URL}

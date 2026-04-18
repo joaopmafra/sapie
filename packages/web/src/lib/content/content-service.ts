@@ -8,7 +8,8 @@ import {
   type ContentResponse,
   type CreateContentRequest,
 } from '../api-client';
-import { createAuthenticatedApiConfiguration } from '../auth-utils';
+import { getApiBaseUrl } from '../apiBaseUrl.ts';
+import { getApiAuthRequestOptions } from '../auth-utils';
 
 import type { Content, UpdateContentRequest } from './types';
 import { ContentType } from './types';
@@ -23,18 +24,14 @@ import { ContentType } from './types';
  * the user's Firebase ID token in API requests.
  */
 export class ContentService {
-  private readonly basePath: string;
   private readonly contentApi: ContentApi;
 
-  constructor(basePath?: string) {
-    this.basePath = basePath || '';
+  constructor() {
+    const basePath = getApiBaseUrl();
     // Per-request auth still comes from `createAuthenticatedApiConfiguration` → `baseOptions.headers`.
     // A real `Configuration` is required so `serializeDataIfNeeded` uses `isJsonMime` for the request
     // `Content-Type` instead of JSON-stringifying every non-string (which breaks `File` on `PUT …/body`).
-    this.contentApi = new ContentApi(
-      new Configuration({ basePath: this.basePath }),
-      this.basePath
-    );
+    this.contentApi = new ContentApi(new Configuration({ basePath }), basePath);
   }
 
   private mapContentResponseToContent(dto: ContentResponse): Content {
@@ -69,14 +66,10 @@ export class ContentService {
    */
   async getRootDirectory(currentUser: User): Promise<Content> {
     try {
-      const config = await createAuthenticatedApiConfiguration(
-        this.basePath,
-        currentUser
-      );
+      const options = await getApiAuthRequestOptions(currentUser);
 
-      const response = await this.contentApi.contentControllerGetRootDirectory(
-        config.baseOptions
-      );
+      const response =
+        await this.contentApi.contentControllerGetRootDirectory(options);
 
       return this.mapContentResponseToContent(response.data);
     } catch (error) {
@@ -87,14 +80,11 @@ export class ContentService {
 
   async getContentById(currentUser: User, id: string): Promise<Content> {
     try {
-      const config = await createAuthenticatedApiConfiguration(
-        this.basePath,
-        currentUser
-      );
+      const options = await getApiAuthRequestOptions(currentUser);
 
       const response = await this.contentApi.contentControllerGetContentById(
         { id },
-        config.baseOptions
+        options
       );
 
       return this.mapContentResponseToContent(response.data);
@@ -109,14 +99,11 @@ export class ContentService {
     parentId: string
   ): Promise<Content[]> {
     try {
-      const config = await createAuthenticatedApiConfiguration(
-        this.basePath,
-        currentUser
-      );
+      const options = await getApiAuthRequestOptions(currentUser);
 
       const response = await this.contentApi.contentControllerListContents(
         { id: parentId },
-        config.baseOptions
+        options
       );
 
       return response.data.map(item => this.mapContentResponseToContent(item));
@@ -132,10 +119,7 @@ export class ContentService {
     parentId: string
   ): Promise<Content> {
     try {
-      const config = await createAuthenticatedApiConfiguration(
-        this.basePath,
-        currentUser
-      );
+      const options = await getApiAuthRequestOptions(currentUser);
 
       const createContentRequest: CreateContentRequest = {
         name,
@@ -144,7 +128,7 @@ export class ContentService {
 
       const response = await this.contentApi.contentControllerCreateContent(
         { createContentRequest },
-        config.baseOptions
+        options
       );
 
       return this.mapContentResponseToContent(response.data);
@@ -162,15 +146,12 @@ export class ContentService {
     id: string
   ): Promise<ContentBodyUrlResponse | null> {
     try {
-      const config = await createAuthenticatedApiConfiguration(
-        this.basePath,
-        currentUser
-      );
+      const options = await getApiAuthRequestOptions(currentUser);
 
       const response =
         await this.contentApi.contentControllerGetContentBodySignedUrl(
           { id },
-          config.baseOptions
+          options
         );
 
       return response.data;
@@ -206,16 +187,13 @@ export class ContentService {
     contentType: string
   ): Promise<Content> {
     try {
-      const config = await createAuthenticatedApiConfiguration(
-        this.basePath,
-        currentUser
-      );
+      const options = await getApiAuthRequestOptions(currentUser);
 
       const file = new File([bodyText], 'note-body', { type: contentType });
 
       const response = await this.contentApi.contentControllerPutContentBody(
         { id, contentType, body: file },
-        config.baseOptions
+        options
       );
 
       return this.mapContentResponseToContent(response.data);
@@ -231,14 +209,11 @@ export class ContentService {
     body: UpdateContentRequest
   ): Promise<Content> {
     try {
-      const config = await createAuthenticatedApiConfiguration(
-        this.basePath,
-        currentUser
-      );
+      const options = await getApiAuthRequestOptions(currentUser);
 
       const response = await this.contentApi.contentControllerPatchContent(
         { id, updateContentRequest: body },
-        config.baseOptions
+        options
       );
 
       return this.mapContentResponseToContent(response.data);
@@ -272,10 +247,4 @@ export class ContentService {
   }
 }
 
-/**
- * Default Content Service Instance
- *
- * Pre-configured content service instance that can be imported and used directly.
- * Uses the default base path configuration.
- */
 export const contentService = new ContentService();
