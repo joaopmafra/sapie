@@ -2,6 +2,7 @@ import { isAxiosError } from 'axios';
 import type { User } from 'firebase/auth';
 
 import {
+  Configuration,
   ContentApi,
   type ContentBodyUrlResponse,
   type ContentResponse,
@@ -27,9 +28,13 @@ export class ContentService {
 
   constructor(basePath?: string) {
     this.basePath = basePath || '';
-    // The first argument to ContentApi is a Configuration object, which we can leave undefined
-    // because we will pass authentication headers on each request.
-    this.contentApi = new ContentApi(undefined, this.basePath);
+    // Per-request auth still comes from `createAuthenticatedApiConfiguration` → `baseOptions.headers`.
+    // A real `Configuration` is required so `serializeDataIfNeeded` uses `isJsonMime` for the request
+    // `Content-Type` instead of JSON-stringifying every non-string (which breaks `File` on `PUT …/body`).
+    this.contentApi = new ContentApi(
+      new Configuration({ basePath: this.basePath }),
+      this.basePath
+    );
   }
 
   private mapContentResponseToContent(dto: ContentResponse): Content {
@@ -206,11 +211,10 @@ export class ContentService {
         currentUser
       );
 
-      // Generated client uses `serializeDataIfNeeded`: without a `Configuration` on `ContentApi`,
-      // non-string bodies are passed through `JSON.stringify`. A `File` becomes "{}" on the wire.
-      // Sending the raw string matches curl `--data-binary` and skips that serialization.
+      const file = new File([bodyText], 'note-body', { type: contentType });
+
       const response = await this.contentApi.contentControllerPutContentBody(
-        { id, contentType, body: bodyText as unknown as File },
+        { id, contentType, body: file },
         config.baseOptions
       );
 
