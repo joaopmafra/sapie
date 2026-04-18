@@ -19,7 +19,7 @@ focus on my study material without worrying about losing changes.
 
 - Rich-text note body below the title (visual editing; no raw-markdown mode for users).
 - Markdown features: headings, bold, italic, ordered/unordered lists, code blocks with syntax highlighting, links.
-- Auto-save after the user stops typing (**debounce: 2 seconds**).
+- Auto-save after the user stops typing (**debounce: 5 seconds**).
 - Save status in the note editor header (bundled from [Story 54](../3-stories/2-to-refine/54-story-save_status_display.md); no
   separate story).
 - Note body stored in **Firebase Cloud Storage**; Firestore holds **metadata only** (`bodyUri`, `size`, `updatedAt`
@@ -86,7 +86,7 @@ Save state machine: **`idle` | `pending` | `saving` | `saved` | `error`**.
 ### Unmount / navigation
 
 - When the user leaves the note route or the editor unmounts, **cancel the debounce timer and, if there are unsaved
-  local changes, perform one immediate save** (same payload as debounced save) so up to ~2 seconds of typing is not
+  local changes, perform one immediate save** (same payload as debounced save) so up to ~5 seconds of typing is not
   silently discarded. No `beforeunload` requirement for this story.
 
 ### Storage and security
@@ -156,12 +156,12 @@ the boundary). Use **UI drivers / component objects** to reduce brittle selector
 
 ### Phase 3 — Auto-save, unmount flush, save status UI
 
-- [ ] **Debounced auto-save** — **2 seconds** after the last change; integrate with the save-state machine below.
-- [ ] **Unmount / navigation** — cancel debounce; if there are **unsaved local changes**, issue **one immediate save**
+- [x] **Debounced auto-save** — **5 seconds** after the last change; integrate with the save-state machine below.
+- [x] **Unmount / navigation** — cancel debounce; if there are **unsaved local changes**, issue **one immediate save**
       with the same payload as the debounced save.
-- [ ] **Header save status** — state machine **`idle` | `pending` | `saving` | `saved` | `error`** per the table in
+- [x] **Header save status** — state machine **`idle` | `pending` | `saving` | `saved` | `error`** per the table in
       [Save status](#save-status-single-consistent-behavior); **Retry** on error (immediate `PUT` of current editor content).
-- [ ] **React tests** — debounce, unmount flush, save-state machine, error + retry; add **fast unit tests** for pure
+- [x] **React tests** — debounce, unmount flush, save-state machine, error + retry; add **fast unit tests** for pure
       helpers where non-trivial (e.g. debounce / save-state logic); not required for thin wrappers (per
       [Frontend unit tests](#implementation-approach-phased)).
 
@@ -197,7 +197,7 @@ for optimistic locking on `PUT`, conflict responses, and reload vs overwrite UX 
 - [ ] Opening a note with **no body yet** (metadata has **`size` null** and/or **`GET …/body` returns 404**) shows an
       empty editor with a placeholder; no error surfaced for “missing body.”
 - [ ] Editor supports headings, bold, italic, ordered/unordered lists, code blocks with syntax highlighting, and links.
-- [ ] Edits auto-save **2 seconds** after the last change (debounce resets on each keystroke/edit).
+- [ ] Edits auto-save **5 seconds** after the last change (debounce resets on each keystroke/edit).
 - [ ] Save status matches the table above (`idle` / `pending` / `saving` / `saved` / `error`).
 - [ ] Failed save shows error + Retry; retry issues `PUT` with current content.
 - [ ] Direct navigation to `/notes/:id` (refresh or bookmark) loads title/metadata and body correctly.

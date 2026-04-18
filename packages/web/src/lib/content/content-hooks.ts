@@ -113,8 +113,8 @@ async function syncCachesAfterPutNoteBody(
 }
 
 /**
- * Explicit save: `PUT /api/content/:id/body` for the current editor string (`text/markdown`).
- * Phase 1 primary persistence; Phase 3 adds debounced auto-save.
+ * `PUT /api/content/:id/body` for the current editor string (`text/markdown`).
+ * Used by the note editor for debounced auto-save, unmount flush, and Retry (Story 55 Phase 3).
  */
 export function useSaveNoteBody() {
   const { currentUser } = useAuth();

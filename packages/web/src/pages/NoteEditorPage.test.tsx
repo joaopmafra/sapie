@@ -3,7 +3,13 @@ jest.mock('../lib/firebase/config', () => ({
 }));
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import type { User } from 'firebase/auth';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
@@ -11,6 +17,7 @@ import { AuthContext } from '../contexts/AuthContext';
 import type { Content } from '../lib/content';
 import { ContentType, contentService, contentQueryKeys } from '../lib/content';
 
+import { NOTE_BODY_AUTOSAVE_DEBOUNCE_MS } from './note-editor-save-status';
 import NoteEditorPage from './NoteEditorPage';
 
 jest.mock('../lib/content/content-service', () => ({
@@ -48,6 +55,28 @@ const baseNote: Content = {
   updatedAt: new Date('2024-01-02'),
 };
 
+/**
+ * After `jest.advanceTimersByTime`, the debounced `runSave` starts an async `mutateAsync`.
+ * Drain microtasks inside the same `act` as the timer advance so `setSavePhase('saved')`
+ * is not scheduled outside `act`.
+ */
+async function advanceAutosaveDebounce() {
+  await act(async () => {
+    jest.advanceTimersByTime(NOTE_BODY_AUTOSAVE_DEBOUNCE_MS);
+    for (let i = 0; i < 60; i += 1) {
+      await Promise.resolve();
+    }
+  });
+}
+
+async function flushOpenMutationMicrotasks() {
+  await act(async () => {
+    for (let i = 0; i < 60; i += 1) {
+      await Promise.resolve();
+    }
+  });
+}
+
 function renderNoteEditor(initialPath = '/notes/note-1') {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -80,6 +109,11 @@ function renderNoteEditor(initialPath = '/notes/note-1') {
 describe('NoteEditorPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useRealTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('loads note metadata and markdown from signed URL', async () => {
@@ -124,7 +158,8 @@ describe('NoteEditorPage', () => {
     expect(mockedContentService.fetchNoteMarkdown).not.toHaveBeenCalled();
   });
 
-  it('Save issues PUT with editor text and shows success', async () => {
+  it('auto-saves with debounce after edits', async () => {
+    jest.useFakeTimers();
     mockedContentService.getContentById.mockResolvedValue(baseNote);
     mockedContentService.getContentBody.mockResolvedValue({
       signedUrl: 'https://storage.example/blob',
@@ -141,7 +176,20 @@ describe('NoteEditorPage', () => {
 
     const body = await screen.findByRole('textbox', { name: 'Note body' });
     fireEvent.change(body, { target: { value: '# Edited' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(screen.getByText('Saving…')).toBeInTheDocument();
+
+    await act(async () => {
+      jest.advanceTimersByTime(NOTE_BODY_AUTOSAVE_DEBOUNCE_MS - 1);
+    });
+    expect(mockedContentService.putContentBody).not.toHaveBeenCalled();
+
+    await act(async () => {
+      jest.advanceTimersByTime(1);
+      for (let i = 0; i < 60; i += 1) {
+        await Promise.resolve();
+      }
+    });
 
     await waitFor(() => {
       expect(mockedContentService.putContentBody).toHaveBeenCalledWith(
@@ -152,10 +200,11 @@ describe('NoteEditorPage', () => {
       );
     });
 
-    expect(await screen.findByText('Saved.')).toBeInTheDocument();
+    expect(await screen.findByText('Saved')).toBeInTheDocument();
   });
 
-  it('clears save feedback when the user edits again', async () => {
+  it('clears Saved header when the user edits again', async () => {
+    jest.useFakeTimers();
     mockedContentService.getContentById.mockResolvedValue(baseNote);
     mockedContentService.getContentBody.mockResolvedValue({
       signedUrl: 'https://storage.example/blob',
@@ -171,39 +220,93 @@ describe('NoteEditorPage', () => {
 
     const body = await screen.findByRole('textbox', { name: 'Note body' });
     fireEvent.change(body, { target: { value: 'x' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-    expect(await screen.findByText('Saved.')).toBeInTheDocument();
+    await advanceAutosaveDebounce();
+
+    expect(await screen.findByText('Saved')).toBeInTheDocument();
 
     fireEvent.change(body, { target: { value: 'x2' } });
 
-    await waitFor(() => {
-      expect(screen.queryByText('Saved.')).not.toBeInTheDocument();
-    });
+    expect(screen.queryByText('Saved')).not.toBeInTheDocument();
+    expect(screen.getByText('Saving…')).toBeInTheDocument();
   });
 
-  it('shows an error when PUT fails', async () => {
+  it('flushes pending edits on unmount without waiting for debounce', async () => {
+    jest.useFakeTimers();
     mockedContentService.getContentById.mockResolvedValue(baseNote);
     mockedContentService.getContentBody.mockResolvedValue({
       signedUrl: 'https://storage.example/blob',
       expiresAt: new Date().toISOString(),
     });
     mockedContentService.fetchNoteMarkdown.mockResolvedValue('# Hello');
-    mockedContentService.putContentBody.mockRejectedValue(
+    mockedContentService.putContentBody.mockResolvedValue({
+      ...baseNote,
+      size: 20,
+    });
+
+    const { unmount } = renderNoteEditor();
+
+    const body = await screen.findByRole('textbox', { name: 'Note body' });
+    fireEvent.change(body, { target: { value: '# Flushed' } });
+
+    unmount();
+
+    await waitFor(() => {
+      expect(mockedContentService.putContentBody).toHaveBeenCalledWith(
+        mockUser,
+        'note-1',
+        '# Flushed',
+        'text/markdown'
+      );
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(NOTE_BODY_AUTOSAVE_DEBOUNCE_MS);
+    });
+    expect(mockedContentService.putContentBody).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows error header and Retry when PUT fails', async () => {
+    jest.useFakeTimers();
+    mockedContentService.getContentById.mockResolvedValue(baseNote);
+    mockedContentService.getContentBody.mockResolvedValue({
+      signedUrl: 'https://storage.example/blob',
+      expiresAt: new Date().toISOString(),
+    });
+    mockedContentService.fetchNoteMarkdown.mockResolvedValue('# Hello');
+    mockedContentService.putContentBody.mockRejectedValueOnce(
       new Error('Network down')
     );
 
     renderNoteEditor();
 
-    await screen.findByRole('textbox', { name: 'Note body' });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    const body = await screen.findByRole('textbox', { name: 'Note body' });
+    fireEvent.change(body, { target: { value: 'oops' } });
 
-    expect(
-      await screen.findByText('Network down', { exact: false })
-    ).toBeInTheDocument();
+    await advanceAutosaveDebounce();
+
+    expect(await screen.findByText('Error saving')).toBeInTheDocument();
+
+    mockedContentService.putContentBody.mockResolvedValue({
+      ...baseNote,
+      size: 4,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await flushOpenMutationMicrotasks();
+
+    await waitFor(() => {
+      expect(mockedContentService.putContentBody).toHaveBeenLastCalledWith(
+        mockUser,
+        'note-1',
+        'oops',
+        'text/markdown'
+      );
+    });
   });
 
   it('updates the content item query cache after a successful save', async () => {
+    jest.useFakeTimers();
     const updated: Content = {
       ...baseNote,
       size: 99,
@@ -229,7 +332,11 @@ describe('NoteEditorPage', () => {
     const { queryClient } = renderNoteEditor();
     await screen.findByRole('textbox', { name: 'Note body' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Note body' }), {
+      target: { value: '# Changed' },
+    });
+
+    await advanceAutosaveDebounce();
 
     await waitFor(() => {
       const cached = queryClient.getQueryData<Content>(
