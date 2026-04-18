@@ -31,9 +31,6 @@ export interface Content {
   /** ID of the user who owns this content */
   ownerId: string;
 
-  /** Object path of the note body in the default bucket (see API `bodyUri`); null until first save. */
-  bodyUri?: string | null;
-
   /** Size of the content in bytes (only for files, not directories) */
   size?: number;
 

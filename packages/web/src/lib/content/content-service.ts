@@ -1,7 +1,9 @@
+import { isAxiosError } from 'axios';
 import type { User } from 'firebase/auth';
 
 import {
   ContentApi,
+  type ContentBodyUrlResponse,
   type ContentResponse,
   type CreateContentRequest,
 } from '../api-client';
@@ -43,7 +45,6 @@ export class ContentService {
       ownerId: dto.ownerId,
       type: dto.type as ContentType,
       parentId: dto.parentId as string | null,
-      bodyUri: dto.bodyUri as string | null | undefined,
       size: dto.size as number | undefined,
       bodyMimeType,
       createdAt: new Date(dto.createdAt),
@@ -144,6 +145,78 @@ export class ContentService {
       return this.mapContentResponseToContent(response.data);
     } catch (error) {
       console.error('Failed to create note:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * `GET /api/content/:id/body` — signed read URL. Returns `null` when the note has no body yet (HTTP 404).
+   */
+  async getContentBody(
+    currentUser: User,
+    id: string
+  ): Promise<ContentBodyUrlResponse | null> {
+    try {
+      const config = await createAuthenticatedApiConfiguration(
+        this.basePath,
+        currentUser
+      );
+
+      const response =
+        await this.contentApi.contentControllerGetContentBodySignedUrl(
+          { id },
+          config.baseOptions
+        );
+
+      return response.data;
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 404) {
+        return null;
+      }
+      console.error('Failed to get content body signed URL:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Fetches markdown (or other) bytes using a signed Storage URL (no Firebase bearer; auth is in the URL).
+   */
+  async fetchNoteMarkdown(signedUrl: string): Promise<string> {
+    const response = await fetch(signedUrl);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to download note body: HTTP ${response.status} ${response.statusText}`
+      );
+    }
+    return response.text();
+  }
+
+  /**
+   * `PUT /api/content/:id/body` — raw body; `contentType` is stored with the object (e.g. `text/markdown`).
+   */
+  async putContentBody(
+    currentUser: User,
+    id: string,
+    bodyText: string,
+    contentType: string
+  ): Promise<Content> {
+    try {
+      const config = await createAuthenticatedApiConfiguration(
+        this.basePath,
+        currentUser
+      );
+
+      // Generated client uses `serializeDataIfNeeded`: without a `Configuration` on `ContentApi`,
+      // non-string bodies are passed through `JSON.stringify`. A `File` becomes "{}" on the wire.
+      // Sending the raw string matches curl `--data-binary` and skips that serialization.
+      const response = await this.contentApi.contentControllerPutContentBody(
+        { id, contentType, body: bodyText as unknown as File },
+        config.baseOptions
+      );
+
+      return this.mapContentResponseToContent(response.data);
+    } catch (error) {
+      console.error('Failed to put content body:', error);
       throw error;
     }
   }

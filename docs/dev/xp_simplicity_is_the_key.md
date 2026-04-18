@@ -3,9 +3,9 @@
 Excerpt from [Extreme Programming](http://www.extremeprogramming.org/rules/simple.html) (rules
 page: [XP Rules](http://www.extremeprogramming.org/rules.html)).
 
-A simple design always takes less time to finish than a complex one. So always do the simplest thing that could possibly
-work next. If you find something that is complex replace it with something simple. It's always faster and cheaper to
-replace complex code now, before you waste a lot more time on it.
+A simple design always takes less time to finish than a complex one. So always **do the simplest thing that could 
+possibly work next**. If you find something that is complex replace it with something simple. It's always faster and 
+cheaper to replace complex code now, before you waste a lot more time on it.
 
 Many people try to measure simplicity. Simple defies measurement because it is a very subjective quality. One person's
 simple is another person's complex. Adding an advanced technology can simplify one application and make a complete mess

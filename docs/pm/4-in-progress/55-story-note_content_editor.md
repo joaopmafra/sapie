@@ -117,26 +117,26 @@ the boundary). Use **UI drivers / component objects** to reduce brittle selector
 
 ### Phase 0 — Load path, query layer, simple surface, dev-only seed
 
-- [ ] **Query keys** — extend `packages/web/src/lib/content/query-keys.ts` (factory pattern, consistent with Story 62):
+- [x] **Query keys** — extend `packages/web/src/lib/content/query-keys.ts` (factory pattern, consistent with Story 62):
   `bodySignedUrl(id)`; `noteMarkdown(id)` with **`signedUrl` in the key *or*** a short comment documenting note-only key
   plus invalidation rules so cache stays correct when URLs rotate or content updates.
-- [ ] **Content service + hooks** — API methods for `getContentBody`, `putContentBody`, and markdown `fetch`; colocate
+- [x] **Content service + hooks** — API methods for `getContentBody`, `putContentBody`, and markdown `fetch`; colocate
   or split files as needed, **one import surface** for callers (e.g. `content-hooks.ts`).
-- [ ] **Three-step loading on `NoteEditorPage`**
+- [x] **Three-step loading on `NoteEditorPage`**
     1. `useContentItem(noteId)` — metadata (existing).
     2. `useContentBody(noteId)` — `GET /api/content/:id/body`; **404 → treat as empty body**, not `isError` for the page.
     3. `useNoteBody(...)` — `fetch` markdown from `signedUrl` with `useQuery`; **`enabled: Boolean(signedUrl)`**; when
        there is no body yet, **skip** the bytes fetch and show an empty editor with placeholder.
-- [ ] **Simple editor** — plain `<textarea>` (or equivalent) for layout and wiring **before** `@mdxeditor/editor`.
-- [ ] **`staleTime`** for the markdown query: **5 minutes** (strictly less than signed URL **10 minutes**). Refetch
+- [x] **Simple editor** — plain `<textarea>` (or equivalent) for layout and wiring **before** `@mdxeditor/editor`.
+- [x] **`staleTime`** for the markdown query: **5 minutes** (strictly less than signed URL **10 minutes**). Refetch
   signed URL + markdown when stale/expired as needed; rely on **invalidation after save** where applicable.
-- [ ] **Dev-only “Seed body” control** — a control **visible only in development** (e.g. gated by `import.meta.env.DEV`)
+- [x] **Dev-only “Seed body” control** — a control **visible only in development** (e.g. gated by `import.meta.env.DEV`)
   that calls `PUT /api/content/:id/body` with deterministic sample markdown (e.g. formatted timestamp) so engineers can
   validate the load/display path **without** seeding automatically on note creation. **Remove or retire** once Phases
   1–3 provide real save and reload, or keep dev-gated if it remains useful.
-- [ ] **OpenAPI / generated client** — regenerate as needed; document that **`bodyUri` is not** on the public metadata
+- [x] **OpenAPI / generated client** — regenerate as needed; document that **`bodyUri` is not** on the public metadata
   response; **`size`** (nullable for notes) signals “body exists in Storage.” Align generated typings with the API.
-- [ ] **React tests** — cover load path, empty body (`404` / no markdown fetch), and any seed/dev control behavior
+- [x] **React tests** — cover load path, empty body (`404` / no markdown fetch), and any seed/dev control behavior
   exercised in this phase (per [Frontend unit tests](#implementation-approach-phased) above).
 
 ### Phase 1 — Explicit save

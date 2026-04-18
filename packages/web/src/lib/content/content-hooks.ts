@@ -6,6 +6,22 @@ import { contentService } from './content-service';
 import { contentQueryKeys } from './query-keys';
 import { contentItemQueryRetry } from './query-retry-utils';
 
+/** Markdown bytes query: strictly under signed URL TTL (10m); refetch/invalidate when URL rotates. */
+const NOTE_MARKDOWN_STALE_MS = 5 * 60 * 1000;
+
+const disabledContentBodySignedUrlQueryKey = [
+  'content',
+  'body-signed-url',
+  '__disabled__',
+] as const;
+
+const disabledNoteBodyMarkdownQueryKey = [
+  'content',
+  'note-markdown',
+  '__disabled__',
+  '__none__',
+] as const;
+
 export function useRootDirectory() {
   const { currentUser } = useAuth();
   return useQuery({
@@ -29,6 +45,78 @@ const disabledContentItemQueryKey = [
   'item',
   '__disabled__',
 ] as const;
+
+export function useContentBody(id: string | undefined) {
+  const { currentUser } = useAuth();
+  const safeId = id && !id.startsWith('dummy_') ? id : undefined;
+  return useQuery({
+    queryKey:
+      safeId != null
+        ? contentQueryKeys.bodySignedUrl(safeId)
+        : disabledContentBodySignedUrlQueryKey,
+    queryFn: () => contentService.getContentBody(currentUser!, safeId!),
+    enabled: Boolean(currentUser) && safeId != null,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/**
+ * Loads markdown from a signed Storage URL. Skips the network when `signedUrl` is missing (no body yet).
+ */
+export function useNoteBody(
+  noteId: string | undefined,
+  signedUrl: string | null | undefined
+) {
+  const { currentUser } = useAuth();
+  const safeId = noteId && !noteId.startsWith('dummy_') ? noteId : undefined;
+  const url =
+    typeof signedUrl === 'string' && signedUrl.length > 0 ? signedUrl : null;
+
+  return useQuery({
+    queryKey:
+      safeId != null && url != null
+        ? contentQueryKeys.noteMarkdown(safeId, url)
+        : disabledNoteBodyMarkdownQueryKey,
+    queryFn: () => contentService.fetchNoteMarkdown(url!),
+    enabled: Boolean(currentUser) && safeId != null && url != null,
+    staleTime: NOTE_MARKDOWN_STALE_MS,
+  });
+}
+
+/** Dev-only: seed sample markdown via `PUT …/body` and refresh body queries. */
+export function useDevSeedNoteBody(noteId: string | undefined) {
+  const { currentUser } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!currentUser || !noteId) {
+        throw new Error('Not authenticated or missing note id');
+      }
+      const body = `# Dev seed\n\n_Generated at ${new Date().toISOString()}_\n\nHello from **Story 55** Phase 0.\n`;
+      return contentService.putContentBody(
+        currentUser,
+        noteId,
+        body,
+        'text/markdown'
+      );
+    },
+    onSuccess: () => {
+      if (!noteId) {
+        return;
+      }
+      void queryClient.invalidateQueries({
+        queryKey: contentQueryKeys.item(noteId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: contentQueryKeys.bodySignedUrl(noteId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ['content', 'note-markdown', noteId],
+      });
+    },
+  });
+}
 
 export function useContentItem(id: string | undefined) {
   const { currentUser } = useAuth();

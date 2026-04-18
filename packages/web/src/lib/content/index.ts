@@ -23,7 +23,10 @@ export { contentQueryKeys } from './query-keys';
 export {
   useRootDirectory,
   useFolderChildren,
+  useContentBody,
   useContentItem,
   useCreateNote,
+  useDevSeedNoteBody,
+  useNoteBody,
   useRenameContent,
 } from './content-hooks';

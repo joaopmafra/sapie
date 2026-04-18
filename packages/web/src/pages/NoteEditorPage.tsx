@@ -5,27 +5,67 @@ import {
   Alert,
   CircularProgress,
   Paper,
+  Button,
 } from '@mui/material';
 import { isAxiosError } from 'axios';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { ClientErrorAlert } from '../components/ClientErrorAlert';
 import { useAuth } from '../contexts/AuthContext';
-import { ContentType, useContentItem, useRenameContent } from '../lib/content';
+import {
+  ContentType,
+  useContentBody,
+  useContentItem,
+  useDevSeedNoteBody,
+  useNoteBody,
+  useRenameContent,
+} from '../lib/content';
 import { PROBLEM_DETAILS_POINTERS } from '../lib/problemDetailsPointers.ts';
+import { isViteDev } from '../lib/runtimeEnv';
 
 const NoteEditorPage = () => {
   const { noteId } = useParams<{ noteId: string }>();
   const { currentUser } = useAuth();
   const { data: note, isLoading, isError, error } = useContentItem(noteId);
+  const bodySignedUrlQuery = useContentBody(noteId);
+  const signedUrl = bodySignedUrlQuery.data?.signedUrl ?? null;
+  const noteBodyQuery = useNoteBody(noteId, signedUrl);
+  const devSeedNoteBody = useDevSeedNoteBody(noteId);
   const renameContent = useRenameContent();
 
   const [noteName, setNoteName] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [renameError, setRenameError] = useState<unknown | null>(null);
+  const [draftBody, setDraftBody] = useState('');
   const nameInputRef = useRef<HTMLInputElement>(null);
   const renameInProgressRef = useRef(false);
+
+  const resolvedServerBody = useMemo(() => {
+    if (!noteId || !bodySignedUrlQuery.isSuccess) {
+      return undefined;
+    }
+    if (bodySignedUrlQuery.data === null) {
+      return '';
+    }
+    if (!noteBodyQuery.isSuccess) {
+      return undefined;
+    }
+    return noteBodyQuery.data ?? '';
+  }, [
+    noteId,
+    bodySignedUrlQuery.isSuccess,
+    bodySignedUrlQuery.data,
+    noteBodyQuery.isSuccess,
+    noteBodyQuery.data,
+  ]);
+
+  useEffect(() => {
+    if (resolvedServerBody === undefined) {
+      return;
+    }
+    setDraftBody(resolvedServerBody);
+  }, [resolvedServerBody, noteId]);
 
   useEffect(() => {
     if (note) {
@@ -146,6 +186,16 @@ const NoteEditorPage = () => {
     return createError('The specified content is not a note');
   }
 
+  const bodyLoadPending =
+    bodySignedUrlQuery.isPending ||
+    (Boolean(signedUrl) && noteBodyQuery.isPending);
+
+  const bodyLoadError =
+    bodySignedUrlQuery.isError || (Boolean(signedUrl) && noteBodyQuery.isError);
+
+  const bodyLoadErrorDetail =
+    bodySignedUrlQuery.error ?? (signedUrl ? noteBodyQuery.error : null);
+
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto' }}>
       <Paper elevation={1} sx={{ p: 3 }}>
@@ -209,22 +259,62 @@ const NoteEditorPage = () => {
           </Typography>
         </Box>
 
-        <Box
-          sx={{
-            minHeight: '400px',
-            border: '1px dashed',
-            borderColor: 'divider',
-            borderRadius: 1,
-            p: 2,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'text.secondary',
-          }}
-        >
-          <Typography variant='body1'>
-            Note content editing will be implemented in future tasks.
-          </Typography>
+        <Box sx={{ mb: 2 }}>
+          {isViteDev() ? (
+            <Box sx={{ mb: 2 }}>
+              <Button
+                type='button'
+                variant='outlined'
+                size='small'
+                disabled={devSeedNoteBody.isPending || !currentUser}
+                onClick={() => void devSeedNoteBody.mutate()}
+              >
+                Seed body (dev)
+              </Button>
+              {devSeedNoteBody.isError ? (
+                <Typography
+                  variant='caption'
+                  color='error'
+                  sx={{ display: 'block', mt: 1 }}
+                >
+                  Seed failed — check API / Storage emulator.
+                </Typography>
+              ) : null}
+            </Box>
+          ) : null}
+
+          {bodyLoadError ? (
+            <Alert severity='error' sx={{ mb: 2 }}>
+              {bodyLoadErrorDetail instanceof Error
+                ? bodyLoadErrorDetail.message
+                : 'Failed to load note body.'}
+            </Alert>
+          ) : null}
+
+          {bodyLoadPending ? (
+            <Box
+              sx={{
+                minHeight: '240px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <CircularProgress size={32} />
+            </Box>
+          ) : (
+            <TextField
+              multiline
+              fullWidth
+              minRows={16}
+              value={draftBody}
+              onChange={e => setDraftBody(e.target.value)}
+              placeholder='Start writing your note…'
+              inputProps={{
+                'aria-label': 'Note body',
+              }}
+            />
+          )}
         </Box>
       </Paper>
     </Box>
