@@ -41,8 +41,8 @@ focus on my study material without worrying about losing changes.
 
 ## Dependencies (satisfied)
 
-| Dependency                                                                                                                   | Status  |
-|------------------------------------------------------------------------------------------------------------------------------|---------|
+| Dependency                                                                                                                | Status  |
+| ------------------------------------------------------------------------------------------------------------------------- | ------- |
 | [Story 53](../5-done/53-story-create_notes.md) — note editor shell, rename API                                            | Shipped |
 | [Story 62](../5-done/62-story-tanstack_query_refactor.md) — TanStack Query, `useContentItem`, no tree thrash on mutations | Shipped |
 
@@ -70,7 +70,7 @@ focus on my study material without worrying about losing changes.
 Save state machine: **`idle` | `pending` | `saving` | `saved` | `error`**.
 
 | State     | When                                                                                | Header UI                                                                 |
-|-----------|-------------------------------------------------------------------------------------|---------------------------------------------------------------------------|
+| --------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | `idle`    | No local changes since last successful save (initial load or after “Saved” timeout) | **No indicator**                                                          |
 | `pending` | User has edited; debounce timer running (not yet fired)                             | **“Saving…”** (user should see that work will be persisted)               |
 | `saving`  | Debounced save in flight (`PUT /body`)                                              | **“Saving…”**                                                             |
@@ -118,73 +118,73 @@ the boundary). Use **UI drivers / component objects** to reduce brittle selector
 ### Phase 0 — Load path, query layer, simple surface, dev-only seed
 
 - [x] **Query keys** — extend `packages/web/src/lib/content/query-keys.ts` (factory pattern, consistent with Story 62):
-  `bodySignedUrl(id)`; `noteMarkdown(id)` with **`signedUrl` in the key *or*** a short comment documenting note-only key
-  plus invalidation rules so cache stays correct when URLs rotate or content updates.
+  `bodySignedUrl(id)`; `noteMarkdown(id)` with **`signedUrl`** in the key **or** a short comment documenting note-only 
+  key plus invalidation rules so cache stays correct when URLs rotate or content updates.
 - [x] **Content service + hooks** — API methods for `getContentBody`, `putContentBody`, and markdown `fetch`; colocate
-  or split files as needed, **one import surface** for callers (e.g. `content-hooks.ts`).
+      or split files as needed, **one import surface** for callers (e.g. `content-hooks.ts`).
 - [x] **Three-step loading on `NoteEditorPage`**
-    1. `useContentItem(noteId)` — metadata (existing).
-    2. `useContentBody(noteId)` — `GET /api/content/:id/body`; **404 → treat as empty body**, not `isError` for the page.
-    3. `useNoteBody(...)` — `fetch` markdown from `signedUrl` with `useQuery`; **`enabled: Boolean(signedUrl)`**; when
-       there is no body yet, **skip** the bytes fetch and show an empty editor with placeholder.
+  1. `useContentItem(noteId)` — metadata (existing).
+  2. `useContentBody(noteId)` — `GET /api/content/:id/body`; **404 → treat as empty body**, not `isError` for the page.
+  3. `useNoteBody(...)` — `fetch` markdown from `signedUrl` with `useQuery`; **`enabled: Boolean(signedUrl)`**; when
+     there is no body yet, **skip** the bytes fetch and show an empty editor with placeholder.
 - [x] **Simple editor** — plain `<textarea>` (or equivalent) for layout and wiring **before** `@mdxeditor/editor`.
 - [x] **`staleTime`** for the markdown query: **5 minutes** (strictly less than signed URL **10 minutes**). Refetch
-  signed URL + markdown when stale/expired as needed; rely on **invalidation after save** where applicable.
+      signed URL + markdown when stale/expired as needed; rely on **invalidation after save** where applicable.
 - [x] **Dev-only “Seed body” control** — **retired** (explicit **Save** in Phase 1 replaced it). Historically: dev-gated
-  `PUT` with sample markdown to validate load/display before real persistence.
+      `PUT` with sample markdown to validate load/display before real persistence.
 - [x] **OpenAPI / generated client** — regenerate as needed; document that **`bodyUri` is not** on the public metadata
-  response; **`size`** (nullable for notes) signals “body exists in Storage.” Align generated typings with the API.
+      response; **`size`** (nullable for notes) signals “body exists in Storage.” Align generated typings with the API.
 - [x] **React tests** — cover load path, empty body (`404` / no markdown fetch) (per [Frontend unit tests](#implementation-approach-phased) above).
 
 ### Phase 1 — Explicit save
 
 - [x] **`PUT` mutation** — `useMutation` (or equivalent) calling `PUT /api/content/:id/body`; **Save** always visible
-  while this is the primary persistence path; show **success or error** on save; **clear** the message when the user makes
-  new edits.
+      while this is the primary persistence path; show **success or error** on save; **clear** the message when the user makes
+      new edits.
 - [x] **After successful `PUT /body`** — update or invalidate **`contentQueryKeys.item(id)`** for **`size`**,
-  **`updatedAt`**, **`bodyMimeType`** (not `bodyUri`); invalidate or update **signed-URL** and **markdown** queries (or
-  set markdown cache from the saved string) so the editor does not show stale data.
+      **`updatedAt`**, **`bodyMimeType`** (not `bodyUri`); invalidate or update **signed-URL** and **markdown** queries (or
+      set markdown cache from the saved string) so the editor does not show stale data.
 - [x] **React tests** — explicit save, success/error feedback, cache updates after `PUT` (per [Frontend unit tests](#implementation-approach-phased)).
 
 ### Phase 2 — Correctness and dirty state
 
-- [ ] **Regression checks** — user can **continue editing after save** and **load a note after save** (bookmark/refresh /
-  direct navigation); metadata and body stay consistent with the server.
-- [ ] **Save enabled only when dirty** (optional refinement once explicit save is stable).
-- [ ] **React tests** — continue editing after save, reload / direct navigation, dirty-only save if implemented (per
-  [Frontend unit tests](#implementation-approach-phased)).
+- [x] **Regression checks** — user can **continue editing after save** and **load a note after save** (bookmark/refresh /
+      direct navigation); metadata and body stay consistent with the server.
+- [x] **Save enabled only when dirty** (optional refinement once explicit save is stable).
+- [x] **React tests** — continue editing after save, reload / direct navigation, dirty-only save if implemented (per
+      [Frontend unit tests](#implementation-approach-phased)).
 
 ### Phase 3 — Auto-save, unmount flush, save status UI
 
 - [ ] **Debounced auto-save** — **2 seconds** after the last change; integrate with the save-state machine below.
 - [ ] **Unmount / navigation** — cancel debounce; if there are **unsaved local changes**, issue **one immediate save**
-  with the same payload as the debounced save.
+      with the same payload as the debounced save.
 - [ ] **Header save status** — state machine **`idle` | `pending` | `saving` | `saved` | `error`** per the table in
-  [Save status](#save-status-single-consistent-behavior); **Retry** on error (immediate `PUT` of current editor content).
+      [Save status](#save-status-single-consistent-behavior); **Retry** on error (immediate `PUT` of current editor content).
 - [ ] **React tests** — debounce, unmount flush, save-state machine, error + retry; add **fast unit tests** for pure
-  helpers where non-trivial (e.g. debounce / save-state logic); not required for thin wrappers (per [
-  Frontend unit tests](#implementation-approach-phased)).
+      helpers where non-trivial (e.g. debounce / save-state logic); not required for thin wrappers (per
+      [Frontend unit tests](#implementation-approach-phased)).
 
 ### Phase 4 — In-flight saves (single editor)
 
 - [ ] **Serialize or queue** debounced/automatic saves when a `PUT` is already in flight so edits made while saving are
-  not lost and the server is not left in an ambiguous state. (This is **not** multi-tab conflict handling; that is
-  [Story 65](../3-stories/2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md).)
+      not lost and the server is not left in an ambiguous state. (This is **not** multi-tab conflict handling; that is
+      [Story 65](../3-stories/2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md).)
 - [ ] **React tests** — overlapping edits while a save is in flight; no dropped updates (per [Frontend unit tests](#implementation-approach-phased)).
 
 ### Phase 5 — Auth boundaries
 
 - [ ] **After login and logout** — invalidate TanStack Query cache so the user sees data for the current session only and
-  metadata/bodies are up to date.
+      metadata/bodies are up to date.
 - [ ] **React tests** — cache invalidation on auth transitions does not show another user’s data (per [Frontend unit tests](#implementation-approach-phased)).
 
 ### Phase 6 — Rich editor
 
 - [ ] **`@mdxeditor/editor`** — install; theme and layout consistent with the note shell; plugins for headings, bold,
-  italic, ordered/unordered lists, code blocks with syntax highlighting, and links; **no** raw-markdown mode for users.
-  Replace the Phase 0 textarea while **reusing** hooks, keys, mutation, and save behavior.
+      italic, ordered/unordered lists, code blocks with syntax highlighting, and links; **no** raw-markdown mode for users.
+      Replace the Phase 0 textarea while **reusing** hooks, keys, mutation, and save behavior.
 - [ ] **React tests** — adjust or extend coverage for MDXEditor integration; **reuse** existing drivers/hooks tests where
-  behavior is unchanged (per [Frontend unit tests](#implementation-approach-phased)).
+      behavior is unchanged (per [Frontend unit tests](#implementation-approach-phased)).
 
 ### Deferred (separate story)
 
@@ -195,40 +195,40 @@ for optimistic locking on `PUT`, conflict responses, and reload vs overwrite UX 
 
 - [ ] Opening a note shows its body in the rich-text editor (loaded via signed URL → fetch markdown).
 - [ ] Opening a note with **no body yet** (metadata has **`size` null** and/or **`GET …/body` returns 404**) shows an
-  empty editor with a placeholder; no error surfaced for “missing body.”
+      empty editor with a placeholder; no error surfaced for “missing body.”
 - [ ] Editor supports headings, bold, italic, ordered/unordered lists, code blocks with syntax highlighting, and links.
 - [ ] Edits auto-save **2 seconds** after the last change (debounce resets on each keystroke/edit).
 - [ ] Save status matches the table above (`idle` / `pending` / `saving` / `saved` / `error`).
 - [ ] Failed save shows error + Retry; retry issues `PUT` with current content.
 - [ ] Direct navigation to `/notes/:id` (refresh or bookmark) loads title/metadata and body correctly.
 - [ ] After save, Firestore reflects updated **`bodyUri`** (server-only), **`size`**, and **`updatedAt`**; the API
-  metadata response reflects **`size`** / **`updatedAt`** (and **`bodyMimeType`** as applicable); object exists at the
-  defined path with correct headers.
+      metadata response reflects **`size`** / **`updatedAt`** (and **`bodyMimeType`** as applicable); object exists at the
+      defined path with correct headers.
 - [ ] On unmount/navigation away, pending changes are flushed as specified (no silent drop of dirty state).
 
 ## Technical Requirements
 
 ### Backend
 
-- [x] **Cloud Storage** integrated in the API (Firebase Admin Storage or dedicated wrapper). Local/dev uses the *
-  *Storage emulator** when configured (`FIREBASE_STORAGE_EMULATOR_HOST`).
+- [x] **Cloud Storage** integrated in the API (Firebase Admin Storage or dedicated wrapper). Local/dev uses the \*
+      \*Storage emulator\*\* when configured (`FIREBASE_STORAGE_EMULATOR_HOST`).
 - [x] **`PUT /api/content/:id/body`**
-    - Request: raw body; **`Content-Type`** sets stored media type (e.g. `text/plain` / `text/markdown` for markdown;
-      story originally said `text/plain` only — **shipped** with broader allowed types per `ContentController` /
-      `normalizeBodyMimeType`; `multipart/*` → **415**).
-    - Validates content exists, user owns it, and item is a **note** (or at least not a directory); **400** if body
-      storage is not applicable (e.g. directory).
-    - Upload/replace object at `/{ownerId}/content/{contentId}` with **declared** `Content-Type` and
-      `Cache-Control: private, max-age=3600`.
-    - Update Firestore: `bodyUri` (provider-agnostic object path in the default bucket, e.g. `ownerId/content/noteId`), `size`, `updatedAt`.
-    - Response: updated **metadata** DTO only (no inline body).
-    - **403** if not owner; **404** if content missing.
+  - Request: raw body; **`Content-Type`** sets stored media type (e.g. `text/plain` / `text/markdown` for markdown;
+    story originally said `text/plain` only — **shipped** with broader allowed types per `ContentController` /
+    `normalizeBodyMimeType`; `multipart/*` → **415**).
+  - Validates content exists, user owns it, and item is a **note** (or at least not a directory); **400** if body
+    storage is not applicable (e.g. directory).
+  - Upload/replace object at `/{ownerId}/content/{contentId}` with **declared** `Content-Type` and
+    `Cache-Control: private, max-age=3600`.
+  - Update Firestore: `bodyUri` (provider-agnostic object path in the default bucket, e.g. `ownerId/content/noteId`), `size`, `updatedAt`.
+  - Response: updated **metadata** DTO only (no inline body).
+  - **403** if not owner; **404** if content missing.
 - [x] **`GET /api/content/:id/body`**
-    - Returns **`{ signedUrl: string, expiresAt: string }`** (ISO-8601).
-    - **404** if the note has no stored body yet (server: `bodyUri` unset) — client treats as empty document (same
-      signal as **`size` null** on metadata).
-    - **403** if not owner.
-    - Signed URL lifetime **10 minutes**.
+  - Returns **`{ signedUrl: string, expiresAt: string }`** (ISO-8601).
+  - **404** if the note has no stored body yet (server: `bodyUri` unset) — client treats as empty document (same
+    signal as **`size` null** on metadata).
+  - **403** if not owner.
+  - Signed URL lifetime **10 minutes**.
 
 ## Tasks
 
@@ -240,12 +240,12 @@ Frontend implementation is broken down by **phase** under [Implementation approa
 - [x] **[BE] `PUT /api/content/:id/body`** — upload, Firestore update, status codes as above.
 - [x] **[BE] `GET /api/content/:id/body`** — signed URL + `expiresAt`.
 - [x] **[BE] Tests** — classical TDD for new behavior (authz, 404/400 paths, Firestore + storage integration or faked
-  storage per project norms).
+      storage per project norms).
 
 ### Documentation
 
 - [ ] **[DOCS] OpenAPI / API docs** — document `PUT /:id/body` and `GET /:id/body` (and clarify `GET /:id` remains
-  metadata-only, **without** `bodyUri` on the wire; **already present from Story 62** with the tightened shape above).
+      metadata-only, **without** `bodyUri` on the wire; **already present from Story 62** with the tightened shape above).
 - [ ] **[DOCS] `packages/api/README.md`** — Storage emulator and local setup.
 
 ## Testing
