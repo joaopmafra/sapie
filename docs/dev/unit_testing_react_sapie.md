@@ -110,5 +110,5 @@ scopes).
 - [DRAFT: React test component objects (UI drivers)](unit_testing_react_component_objects_draft.md)
   — encapsulating selectors and interactions; experimental; pairs with fixtures
 - [Iterative development example: note editor](iterative_development_example_note_editor.md) —
-  phased delivery for [Story 55](../pm/4-in-progress/55-story-note_content_editor.md), including
+  phased delivery for [Story 55](../pm/5-done/55-story-note_content_editor.md), including
   where frontend tests concentrate (e.g. debounce / save-state helpers)

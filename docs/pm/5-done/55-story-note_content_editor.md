@@ -53,8 +53,8 @@ focus on my study material without worrying about losing changes.
 
 | Dependency                                                                                                                | Status  |
 | ------------------------------------------------------------------------------------------------------------------------- | ------- |
-| [Story 53](../5-done/53-story-create_notes.md) — note editor shell, rename API                                            | Shipped |
-| [Story 62](../5-done/62-story-tanstack_query_refactor.md) — TanStack Query, `useContentItem`, no tree thrash on mutations | Shipped |
+| [Story 53](53-story-create_notes.md) — note editor shell, rename API                                            | Shipped |
+| [Story 62](62-story-tanstack_query_refactor.md) — TanStack Query, `useContentItem`, no tree thrash on mutations | Shipped |
 
 **Ordering (follow-on stories)**
 
@@ -124,7 +124,7 @@ Work is delivered in **small vertical slices** (each phase should be demonstrabl
 [simplicity (XP)](../../dev/xp_simplicity_is_the_key.md). Frontend **technical requirements and tasks are merged below**
 by phase—there is no separate “requirements vs tasks” list for the web app.
 
-**Caching:** default app `QueryClient` options from [Story 62](../5-done/62-story-tanstack_query_refactor.md) remain in
+**Caching:** default app `QueryClient` options from [Story 62](62-story-tanstack_query_refactor.md) remain in
 force (`staleTime`, `refetchOnWindowFocus`, etc.). Body-specific `staleTime` overrides apply to body / signed-URL /
 markdown queries as called out in Phase 0. **Metadata vs body cache policy** (e.g. `staleTime: 0` for item queries,
 conditional invalidation when `body.updatedAt` advances) is **Story 66** — do not block Story 55 on it unless trivial.

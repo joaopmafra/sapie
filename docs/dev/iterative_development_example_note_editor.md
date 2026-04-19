@@ -1,7 +1,7 @@
 # Iterative development example: note editor
 
 This document describes **how we slice the frontend** for
-[Story 55: Note Content Editor](../pm/4-in-progress/55-story-note_content_editor.md) as a **concrete example** of
+[Story 55: Note Content Editor](../pm/5-done/55-story-note_content_editor.md) as a **concrete example** of
 [iterative development](iterative_development.md) in Sapie. It ties the story’s phased
 checklist to the same principles referenced there, plus [TDD baby steps](tdd_baby_steps.md) and
 [simplicity (XP)](xp_simplicity_is_the_key.md).

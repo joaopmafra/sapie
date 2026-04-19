@@ -26,7 +26,7 @@ explicitly required later.
 
 ## Dependencies
 
-- [Story 55](../../4-in-progress/55-story-note_content_editor.md) — Phases 0–5 (note editor with autosave, load/save path)
+- [Story 55](../../5-done/55-story-note_content_editor.md) — Phases 0–5 (note editor with autosave, load/save path)
   should be complete or in progress so hooks and mutations exist to extend.
 - **Preferred order:** ship after Story 55 core editor behavior is stable; **before**
   [Story 67: Rich note content editor (MDXEditor)](./67-story-rich_note_content_editor_mdx.md) so DTO and cache policy do not

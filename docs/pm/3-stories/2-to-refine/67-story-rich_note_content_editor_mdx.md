@@ -2,7 +2,7 @@
 
 ## Description
 
-Replace the **plain multiline editor (textarea)** shipped for [Story 55](../../4-in-progress/55-story-note_content_editor.md)
+Replace the **plain multiline editor (textarea)** shipped for [Story 55](../../5-done/55-story-note_content_editor.md)
 MVP with a **rich markdown editor** using **`@mdxeditor/editor`**: visual editing with the markdown features listed below;
 **no raw-markdown mode** for end users. Reuse existing hooks, query keys, autosave, save status, unmount flush, and
 `PUT /api/content/:id/body` behavior.
@@ -17,7 +17,7 @@ MVP with a **rich markdown editor** using **`@mdxeditor/editor`**: visual editin
 
 ## Dependencies
 
-- [Story 55](../../4-in-progress/55-story-note_content_editor.md) — Phases **0–5** complete (load path, save, autosave,
+- [Story 55](../../5-done/55-story-note_content_editor.md) — Phases **0–5** complete (load path, save, autosave,
   in-flight save behavior, auth/cache boundaries as defined there).
 - [Story 66](../1-ready/66-story-content_body_subdocument_and_client_cache.md) — **strongly preferred** complete first so
   the content DTO and TanStack cache policy are stable before MDXEditor integration.

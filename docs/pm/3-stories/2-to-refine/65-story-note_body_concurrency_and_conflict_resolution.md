@@ -18,7 +18,7 @@ overwrite it intentionally instead of silently losing work.
 
 | Dependency | Status |
 |------------|--------|
-| [Story 55: Note Content Editor](../../4-in-progress/55-story-note_content_editor.md) — persisted body, `PUT` / `GET` body, editor | Prerequisite |
+| [Story 55: Note Content Editor](../../5-done/55-story-note_content_editor.md) — persisted body, `PUT` / `GET` body, editor | Prerequisite |
 
 ## Scope
 
@@ -58,5 +58,5 @@ overwrite it intentionally instead of silently losing work.
 
 ## References
 
-- [Story 55: Note Content Editor](../../4-in-progress/55-story-note_content_editor.md)
+- [Story 55: Note Content Editor](../../5-done/55-story-note_content_editor.md)
 - [Iterative development](../../../dev/iterative_development.md)
