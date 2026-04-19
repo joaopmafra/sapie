@@ -78,8 +78,8 @@ locally and avoids the IAM `signBlob` call.
 Trade-offs: key files must be stored and rotated carefully; default **workload identity** on Cloud Functions / Cloud Run
 (with the IAM binding above) is usually the safer default.
 
-Local / optional env var used by this repo: `FIREBASE_SERVICE_ACCOUNT_KEY_PATH` — see
-[firebase-admin-setup.md](./firebase-admin-setup.md).
+For local development against real GCP, use **ADC** (see [firebase-admin-setup.md](./firebase-admin-setup.md)). A
+JSON-key path was considered in code but is **not** wired in `FirebaseAdminService` today.
 
 ---
 

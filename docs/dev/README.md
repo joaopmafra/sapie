@@ -23,6 +23,8 @@ decisions: [ADR 0002](../adr/0002-note-body-storage-and-api.md) (see [content na
 
 Supporting material:
 
+- [Firebase — new hosted environment (project)](firebase_environment_setup.md) — create Auth, Firestore, Storage; CLI
+  alias; deploy; IAM + bucket CORS checklist
 - [Content naming — metadata vs content body](content_naming.md) — Firestore **content** vs Storage **content body**
 - [xp_simplicity_is_the_key.md](xp_simplicity_is_the_key.md)
 - [tdd_baby_steps.md](tdd_baby_steps.md)
