@@ -6,6 +6,7 @@ import {
   NotFoundException,
   BadRequestException,
   UnsupportedMediaTypeException,
+  Logger,
 } from '@nestjs/common';
 import { Content, ContentType } from '../entities/content.entity';
 import { ContentRepository } from '../repositories/content-repository.service';
@@ -22,6 +23,8 @@ import { ContentBodyStorageService } from './content-body-storage.service';
 
 @Injectable()
 export class ContentService {
+  private readonly logger = new Logger(ContentService.name);
+
   constructor(
     private readonly contentRepository: ContentRepository,
     private readonly contentBodyStorage: ContentBodyStorageService,
@@ -114,6 +117,7 @@ export class ContentService {
     ownerId: string
   ): Promise<{ signedUrl: string; expiresAt: string }> {
     const existing = await this.contentRepository.findById(id);
+    this.logger.debug(`getContentBodySignedUrl; existing: ${JSON.stringify(existing)}`);
 
     if (!existing) {
       throw new NotFoundException(`Content with ID ${id} not found`);
@@ -127,7 +131,7 @@ export class ContentService {
       throw new BadRequestException('Body storage is not applicable for directories');
     }
 
-    if (existing.bodyUri == null || existing.bodyUri === '') {
+    if (!existing.size || !existing.bodyUri) {
       throw new NotFoundException('Content has no stored body yet');
     }
 

@@ -41,7 +41,7 @@ We did **not** implement migration from legacy `contentUrl` documents: nothing h
 ### 3. Read path: signed URL contract, separate from metadata `GET`
 
 - **`GET /api/content/:id`** remains **metadata only** (no inline body bytes).
-- **`GET /api/content/:id/body`** returns **`{ signedUrl, expiresAt }`** (ISO-8601). The browser **fetches** markdown
+- **`GET /api/content/:id/body/signed-url`** returns **`{ signedUrl, expiresAt }`** (ISO-8601). The browser **fetches** markdown
   from `signedUrl` (not proxied through the API for every byte).
 - **Signed URL lifetime:** **10 minutes** (security vs refresh cost). Client caching guidance lives in Story 55 /
   TanStack plan (e.g. markdown `staleTime` strictly shorter than URL lifetime).
@@ -75,7 +75,7 @@ and clients can still `fetch(signedUrl)`. Production continues to use real **V4 
 
 ## Consequences
 
-- **Client** must implement the two-step load (`GET` metadata → `GET` …/body → `fetch` markdown) and debounced
+- **Client** must implement the two-step load (`GET` metadata → `GET` …/body/signed-url → `fetch` markdown) and debounced
   **`PUT` …/body** as in Story 55.
 - **Staging** environments that ever stored **`contentUrl`** only are not migrated by code; operators may clear or
   resave if needed before production.

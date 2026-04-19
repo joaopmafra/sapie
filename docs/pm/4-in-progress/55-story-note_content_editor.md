@@ -95,7 +95,7 @@ Save state machine: **`idle` | `pending` | `saving` | `saved` | `error`**.
   item (the note).
 - Object metadata: `Content-Type: text/markdown`, `Cache-Control: private, max-age=3600`.
 - Signed read URLs: **10 minutes** expiry; response includes `signedUrl` and `expiresAt` (**ISO-8601** string).
-- API must **never** return the note body bytes inline on generic content metadata endpoints — only via `GET .../body` (
+- API must **never** return the note body bytes inline on generic content metadata endpoints — only via `GET .../body/signed-url` (
   signed URL) and the subsequent browser fetch to Storage.
 
 ## Implementation approach (phased)
@@ -124,7 +124,7 @@ the boundary). Use **UI drivers / component objects** to reduce brittle selector
       or split files as needed, **one import surface** for callers (e.g. `content-hooks.ts`).
 - [x] **Three-step loading on `NoteEditorPage`**
   1. `useContentItem(noteId)` — metadata (existing).
-  2. `useContentBody(noteId)` — `GET /api/content/:id/body`; **404 → treat as empty body**, not `isError` for the page.
+  2. `useContentBody(noteId)` — `GET /api/content/:id/body/signed-url`; **404 → treat as empty body**, not `isError` for the page.
   3. `useNoteBody(...)` — `fetch` markdown from `signedUrl` with `useQuery`; **`enabled: Boolean(signedUrl)`**; when
      there is no body yet, **skip** the bytes fetch and show an empty editor with placeholder.
 - [x] **Simple editor** — plain `<textarea>` (or equivalent) for layout and wiring **before** `@mdxeditor/editor`.
@@ -194,7 +194,7 @@ for optimistic locking on `PUT`, conflict responses, and reload vs overwrite UX 
 ## Acceptance Criteria
 
 - [ ] Opening a note shows its body in the rich-text editor (loaded via signed URL → fetch markdown).
-- [ ] Opening a note with **no body yet** (metadata has **`size` null** and/or **`GET …/body` returns 404**) shows an
+- [ ] Opening a note with **no body yet** (metadata has **`size` null** and/or **`GET …/body/signed-url` returns 404**) shows an
       empty editor with a placeholder; no error surfaced for “missing body.”
 - [ ] Editor supports headings, bold, italic, ordered/unordered lists, code blocks with syntax highlighting, and links.
 - [ ] Edits auto-save **5 seconds** after the last change (debounce resets on each keystroke/edit).
@@ -223,7 +223,7 @@ for optimistic locking on `PUT`, conflict responses, and reload vs overwrite UX 
   - Update Firestore: `bodyUri` (provider-agnostic object path in the default bucket, e.g. `ownerId/content/noteId`), `size`, `updatedAt`.
   - Response: updated **metadata** DTO only (no inline body).
   - **403** if not owner; **404** if content missing.
-- [x] **`GET /api/content/:id/body`**
+- [x] **`GET /api/content/:id/body/signed-url`**
   - Returns **`{ signedUrl: string, expiresAt: string }`** (ISO-8601).
   - **404** if the note has no stored body yet (server: `bodyUri` unset) — client treats as empty document (same
     signal as **`size` null** on metadata).
@@ -238,13 +238,13 @@ Frontend implementation is broken down by **phase** under [Implementation approa
 
 - [x] **[BE] Cloud Storage** — wire Admin SDK + emulator support; document env vars in `packages/api/README.md`.
 - [x] **[BE] `PUT /api/content/:id/body`** — upload, Firestore update, status codes as above.
-- [x] **[BE] `GET /api/content/:id/body`** — signed URL + `expiresAt`.
+- [x] **[BE] `GET /api/content/:id/body/signed-url`** — signed URL + `expiresAt`.
 - [x] **[BE] Tests** — classical TDD for new behavior (authz, 404/400 paths, Firestore + storage integration or faked
       storage per project norms).
 
 ### Documentation
 
-- [ ] **[DOCS] OpenAPI / API docs** — document `PUT /:id/body` and `GET /:id/body` (and clarify `GET /:id` remains
+- [ ] **[DOCS] OpenAPI / API docs** — document `PUT /:id/body` and `GET /:id/body/signed-url` (and clarify `GET /:id` remains
       metadata-only, **without** `bodyUri` on the wire; **already present from Story 62** with the tightened shape above).
 - [ ] **[DOCS] `packages/api/README.md`** — Storage emulator and local setup.
 

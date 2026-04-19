@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { FirebaseAdminService } from '../../firebase';
+import { resolveFirebaseStorageBucketName } from '../../firebase/resolve-storage-bucket-name';
 
 const CLIENT_CACHE_TTL_S = 60 * 60;
 
@@ -17,20 +18,8 @@ export class ContentBodyStorageService {
     return `${ownerId}/content/${contentId}`;
   }
 
-  private resolvedBucketName(): string {
-    const explicit = process.env.FIREBASE_STORAGE_BUCKET?.trim();
-    const projectId = process.env.GCLOUD_PROJECT?.trim();
-    const bucketName = explicit || (projectId ? `${projectId}.appspot.com` : '');
-    if (!bucketName) {
-      throw new Error(
-        'Set FIREBASE_STORAGE_BUCKET or GCLOUD_PROJECT so the Storage bucket name can be resolved.'
-      );
-    }
-    return bucketName;
-  }
-
   private defaultBucket() {
-    return this.firebaseAdminService.getStorage().bucket(this.resolvedBucketName());
+    return this.firebaseAdminService.getStorage().bucket(resolveFirebaseStorageBucketName());
   }
 
   /**

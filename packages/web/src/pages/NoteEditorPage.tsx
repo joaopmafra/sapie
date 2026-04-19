@@ -21,6 +21,7 @@ import { ClientErrorAlert } from '../components/ClientErrorAlert';
 import { useAuth } from '../contexts/AuthContext';
 import {
   ContentType,
+  useBodySignedUrlFetchSuppressedAfterSave,
   useContentBody,
   useContentItem,
   useNoteBody,
@@ -38,9 +39,23 @@ import {
 
 const NoteEditorPage = () => {
   const { noteId } = useParams<{ noteId: string }>();
+  const [editorSessionId] = useState(
+    () => `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+  );
   const { currentUser } = useAuth();
   const { data: note, isLoading, isError, error } = useContentItem(noteId);
-  const bodySignedUrlQuery = useContentBody(noteId);
+  const suppressBodySignedUrlFetchAfterSave =
+    useBodySignedUrlFetchSuppressedAfterSave(noteId, editorSessionId);
+  const suppressSignedUrlFetch = Boolean(
+    suppressBodySignedUrlFetchAfterSave.data
+  );
+  const fetchBodySignedUrl = Boolean(note && note.size != null);
+  /** When false, signed-URL query is off — do not use its `isPending` (disabled + unfetched stays pending). */
+  const waitForBodySignedUrlQuery =
+    fetchBodySignedUrl && !suppressSignedUrlFetch;
+  const bodySignedUrlQuery = useContentBody(noteId, {
+    enabled: waitForBodySignedUrlQuery,
+  });
   const signedUrl = bodySignedUrlQuery.data?.signedUrl ?? null;
   const noteBodyQuery = useNoteBody(noteId, signedUrl);
   const saveNoteBody = useSaveNoteBody();
@@ -57,6 +72,8 @@ const NoteEditorPage = () => {
   const draftBodyRef = useRef(draftBody);
   draftBodyRef.current = draftBody;
   const baselineBodyRef = useRef('');
+  const editorSessionIdRef = useRef(editorSessionId);
+  editorSessionIdRef.current = editorSessionId;
   const saveMutateAsyncRef = useRef(saveNoteBody.mutateAsync);
   saveMutateAsyncRef.current = saveNoteBody.mutateAsync;
 
@@ -106,7 +123,11 @@ const NoteEditorPage = () => {
     setSavePhase('saving');
     try {
       const sent = draft;
-      await saveMutateAsyncRef.current({ id, bodyText: sent });
+      await saveMutateAsyncRef.current({
+        id,
+        bodyText: sent,
+        editorSessionId: editorSessionIdRef.current,
+      });
       const nowDraft = draftBodyRef.current;
       baselineBodyRef.current = sent;
 
@@ -130,7 +151,13 @@ const NoteEditorPage = () => {
   runSaveRef.current = runSave;
 
   const resolvedServerBody = useMemo(() => {
-    if (!noteId || !bodySignedUrlQuery.isSuccess) {
+    if (!noteId || !note) {
+      return undefined;
+    }
+    if (!fetchBodySignedUrl) {
+      return '';
+    }
+    if (!bodySignedUrlQuery.isSuccess) {
       return undefined;
     }
     if (bodySignedUrlQuery.data === null) {
@@ -142,6 +169,8 @@ const NoteEditorPage = () => {
     return noteBodyQuery.data ?? '';
   }, [
     noteId,
+    note,
+    fetchBodySignedUrl,
     bodySignedUrlQuery.isSuccess,
     bodySignedUrlQuery.data,
     noteBodyQuery.isSuccess,
@@ -182,6 +211,7 @@ const NoteEditorPage = () => {
         void saveMutateAsyncRef.current({
           id: idForSession,
           bodyText: draftBodyRef.current,
+          editorSessionId: editorSessionIdRef.current,
         });
       }
     };
@@ -307,14 +337,16 @@ const NoteEditorPage = () => {
   }
 
   const bodyLoadPending =
-    bodySignedUrlQuery.isPending ||
+    (waitForBodySignedUrlQuery && bodySignedUrlQuery.isPending) ||
     (Boolean(signedUrl) && noteBodyQuery.isPending);
 
   const bodyLoadError =
-    bodySignedUrlQuery.isError || (Boolean(signedUrl) && noteBodyQuery.isError);
+    (waitForBodySignedUrlQuery && bodySignedUrlQuery.isError) ||
+    (Boolean(signedUrl) && noteBodyQuery.isError);
 
   const bodyLoadErrorDetail =
-    bodySignedUrlQuery.error ?? (signedUrl ? noteBodyQuery.error : null);
+    (waitForBodySignedUrlQuery ? bodySignedUrlQuery.error : null) ??
+    (signedUrl ? noteBodyQuery.error : null);
 
   const handleDraftChange = (value: string) => {
     setDraftBody(value);

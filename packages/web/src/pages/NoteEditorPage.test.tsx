@@ -155,7 +155,40 @@ describe('NoteEditorPage', () => {
 
     const body = await screen.findByRole('textbox', { name: 'Note body' });
     expect(body).toHaveValue('');
+    expect(mockedContentService.getContentBody).not.toHaveBeenCalled();
     expect(mockedContentService.fetchNoteMarkdown).not.toHaveBeenCalled();
+  });
+
+  it('does not request a signed URL after the first body save on an empty note', async () => {
+    jest.useFakeTimers();
+    const emptyNote: Content = {
+      ...baseNote,
+      size: undefined,
+    };
+    const afterFirstSave: Content = {
+      ...emptyNote,
+      size: 8,
+      bodyMimeType: 'text/markdown',
+      updatedAt: new Date('2025-06-02'),
+    };
+    mockedContentService.getContentById.mockResolvedValue(emptyNote);
+    mockedContentService.putContentBody.mockResolvedValue(afterFirstSave);
+
+    renderNoteEditor();
+
+    const body = await screen.findByRole('textbox', { name: 'Note body' });
+    expect(body).toHaveValue('');
+
+    fireEvent.change(body, { target: { value: 'first bytes' } });
+    await advanceAutosaveDebounce();
+
+    await waitFor(() => {
+      expect(mockedContentService.putContentBody).toHaveBeenCalled();
+    });
+    expect(mockedContentService.getContentBody).not.toHaveBeenCalled();
+    const bodyAfterSave = screen.getByRole('textbox', { name: 'Note body' });
+    expect(bodyAfterSave).toBeVisible();
+    expect(bodyAfterSave).not.toBeDisabled();
   });
 
   it('auto-saves with debounce after edits', async () => {
@@ -314,17 +347,9 @@ describe('NoteEditorPage', () => {
       updatedAt: new Date('2025-12-15'),
     };
     mockedContentService.getContentById.mockResolvedValue(baseNote);
-    mockedContentService.getContentBody.mockImplementation(async () => {
-      if (mockedContentService.putContentBody.mock.calls.length > 0) {
-        return {
-          signedUrl: 'https://storage.example/after-save',
-          expiresAt: new Date().toISOString(),
-        };
-      }
-      return {
-        signedUrl: 'https://storage.example/blob',
-        expiresAt: new Date().toISOString(),
-      };
+    mockedContentService.getContentBody.mockResolvedValue({
+      signedUrl: 'https://storage.example/blob',
+      expiresAt: new Date().toISOString(),
     });
     mockedContentService.fetchNoteMarkdown.mockResolvedValue('# Hello');
     mockedContentService.putContentBody.mockResolvedValue(updated);
@@ -348,10 +373,12 @@ describe('NoteEditorPage', () => {
     });
 
     await waitFor(() => {
-      const url = queryClient.getQueryData<{ signedUrl: string } | null>(
-        contentQueryKeys.bodySignedUrl('note-1')
-      );
-      expect(url?.signedUrl).toBe('https://storage.example/after-save');
+      expect(mockedContentService.putContentBody).toHaveBeenCalled();
     });
+    const url = queryClient.getQueryData<{ signedUrl: string } | null>(
+      contentQueryKeys.bodySignedUrl('note-1')
+    );
+    expect(url?.signedUrl).toBe('https://storage.example/blob');
+    expect(mockedContentService.getContentBody.mock.calls.length).toBe(1);
   });
 });

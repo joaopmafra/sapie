@@ -54,7 +54,7 @@ persistence.
 Prefer **one fake HTTP layer** over mocking `useQuery` / `useMutation` per test:
 
 - **MSW (Mock Service Worker)** or an equivalent pattern: intercept `fetch` / XHR and return
-  deterministic responses for `GET /api/content/:id`, `GET …/body`, `PUT …/body`, etc.
+  deterministic responses for `GET /api/content/:id`, `GET …/body/signed-url`, `PUT …/body`, etc.
 - Optional: shared **handlers** per scenario (happy path, 404 body, save error) so tests read as
   **Given / When / Then** on API contracts.
 

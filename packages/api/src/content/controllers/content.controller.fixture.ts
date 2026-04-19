@@ -114,7 +114,7 @@ export class ContentControllerFixture extends AppFixture {
   callApiGetContentBodySignedUrl(testUserId: string, contentId: string): supertest.Test {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return supertest(this.getHttpServer())
-      .get(`${this.API_CONTENT}/${contentId}/body`)
+      .get(`${this.API_CONTENT}/${contentId}/body/signed-url`)
       .set(TEST_USER_ID_HEADER, testUserId);
   }
 

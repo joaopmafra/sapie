@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 
 import { FirebaseAdminService } from '../firebase';
+import { resolveFirebaseStorageBucketName } from '../firebase/resolve-storage-bucket-name';
 
 export const FAKE_STORAGE_READ_CONTROLLER_BASE_PATH = '/api/fake-storage';
 
@@ -25,18 +26,6 @@ export class FakeStorageReadController {
   private readonly logger = new Logger(FakeStorageReadController.name);
 
   constructor(private readonly firebaseAdminService: FirebaseAdminService) {}
-
-  private resolvedBucketName(): string {
-    const explicit = process.env.FIREBASE_STORAGE_BUCKET?.trim();
-    const projectId = process.env.GCLOUD_PROJECT?.trim();
-    const bucketName = explicit || (projectId ? `${projectId}.appspot.com` : '');
-    if (!bucketName) {
-      throw new Error(
-        'Set FIREBASE_STORAGE_BUCKET or GCLOUD_PROJECT so the Storage bucket name can be resolved.'
-      );
-    }
-    return bucketName;
-  }
 
   @Get('read')
   async read(
@@ -69,7 +58,9 @@ export class FakeStorageReadController {
       throw new BadRequestException('Malformed X-Goog-Signature');
     }
 
-    const bucket = this.firebaseAdminService.getStorage().bucket(this.resolvedBucketName());
+    const bucket = this.firebaseAdminService
+      .getStorage()
+      .bucket(resolveFirebaseStorageBucketName());
     const file = bucket.file(objectPath);
     const [exists] = await file.exists();
     if (!exists) {

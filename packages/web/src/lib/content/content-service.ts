@@ -139,14 +139,20 @@ export class ContentService {
   }
 
   /**
-   * `GET /api/content/:id/body` — signed read URL. Returns `null` when the note has no body yet (HTTP 404).
+   * `GET /api/content/:id/body/signed-url` — signed read URL. Returns `null` when the note has no body yet (HTTP 404).
    */
   async getContentBody(
     currentUser: User,
     id: string
   ): Promise<ContentBodyUrlResponse | null> {
     try {
-      const options = await getApiAuthRequestOptions(currentUser);
+      const baseOptions = await getApiAuthRequestOptions(currentUser);
+      const headers = {
+        ...((baseOptions.headers as Record<string, string> | undefined) ?? {}),
+        'Cache-Control': 'no-cache',
+        Pragma: 'no-cache',
+      };
+      const options = { ...baseOptions, headers };
 
       const response =
         await this.contentApi.contentControllerGetContentBodySignedUrl(

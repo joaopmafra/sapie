@@ -20,9 +20,11 @@ export { ContentService, contentService } from './content-service';
 
 export { contentQueryKeys } from './query-keys';
 
+export type { UseContentBodyOptions } from './content-hooks';
 export {
   useRootDirectory,
   useFolderChildren,
+  useBodySignedUrlFetchSuppressedAfterSave,
   useContentBody,
   useContentItem,
   useCreateNote,

@@ -9,6 +9,7 @@ import {
   Param,
   Put,
   Headers,
+  Header,
   BadRequestException,
 } from '@nestjs/common';
 import {
@@ -206,7 +207,7 @@ export class ContentController {
     return children.map(toContentResponse);
   }
 
-  @Get(':id/body')
+  @Get(':id/body/signed-url')
   @Auth()
   @ApiOperation({
     summary: 'Get signed URL to read content body',
@@ -244,6 +245,8 @@ export class ContentController {
   })
   // TODO: Revisit inlining a signed read URL into `GET /:id` or `GET /:id/children` if we need fewer client round
   //  trips (trade-offs: signing volume, payload size, URL expiry vs metadata cache).
+  @Header('Cache-Control', 'no-store, no-cache, must-revalidate')
+  @Header('Pragma', 'no-cache')
   async getContentBodySignedUrl(
     @Request() request: AuthenticatedRequest,
     @Param('id') id: string
@@ -380,7 +383,7 @@ export class ContentController {
   @ApiOperation({
     summary: 'Get content by ID',
     description:
-      'Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL. ' +
+      'Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body/signed-url` for a signed read URL. ' +
       'Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).',
   })
   @ApiParam({

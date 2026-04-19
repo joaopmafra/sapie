@@ -41,10 +41,21 @@ making authenticated requests.
 
 ### Production Deployment
 
-**✅ No service account setup required**
+**✅ Default credentials**
 
-Firebase Functions automatically provide the necessary default credentials. The `FirebaseAdminService` initializes
-automatically:
+Firebase Functions / Cloud Run automatically provide **Application Default Credentials** for the Admin SDK. The
+`FirebaseAdminService` initializes automatically:
+
+**Cloud Storage signed URLs:** If you use `GET /api/content/:id/body/signed-url` (signed URLs for note bodies), the runtime must be
+allowed to call **IAM `signBlob`** for signing. Without it you may see
+`Permission 'iam.serviceAccounts.signBlob' denied`. Fix: enable **IAM Service Account Credentials API** and grant the
+**Service Account Token Creator** role to your function’s runtime service account (often a **self-grant** on that same
+account). See [README — Signed read URLs and IAM](./README.md#signed-read-urls-and-iam) for step-by-step instructions.
+
+**Storage CORS:** The web app fetches note bodies from **signed GCS URLs** in the browser. You must attach a [CORS
+config](https://cloud.google.com/storage/docs/cross-origin) to the default Storage bucket so `https://YOUR_PROJECT.web.app`
+(and localhost for dev) receive `Access-Control-Allow-Origin`. See [README — Browser CORS](./README.md#browser-cors-fetch-from-web-app) and
+`packages/api/config/storage-cors.example.json`.
 
 ```typescript
 // Automatic initialization via NestJS module lifecycle

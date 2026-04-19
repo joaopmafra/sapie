@@ -267,8 +267,64 @@ Admin SDK talks to the **Storage emulator** when
 
 - **`FIREBASE_STORAGE_EMULATOR_HOST`**: e.g. `localhost:9199` — use with the Firebase Storage emulator for local/hybrid
   dev
-- **`FIREBASE_STORAGE_BUCKET`**: Optional bucket name if the default Firebase bucket for `GCLOUD_PROJECT` is not the one
-  you use
+- **`FIREBASE_STORAGE_BUCKET`**: Optional explicit bucket name (overrides everything below). Use if your default bucket is
+  not the one inferred from the environment.
+- **Bucket resolution (production)**: On Firebase Cloud Functions / emulator, `FIREBASE_CONFIG` is set automatically and
+  includes `storageBucket`. The API uses that value so it matches your project’s real default bucket (legacy
+  `*.appspot.com` or newer `*.firebasestorage.app` since ~Oct 2024). If `FIREBASE_CONFIG` is absent, it falls back to
+  `{GCLOUD_PROJECT}.appspot.com` (suitable for some local/test setups only).
+
+##### Signed read URLs and IAM
+
+The `GET /api/content/:id/body/signed-url` handler uses `FirebaseContentBodyReadService` and `@google-cloud/storage`
+`getSignedUrl()`. Responses use **`Cache-Control: no-store`** (including **404** problem details) so browsers do not
+reuse a stale “no body” response after the first successful `PUT …/body`. On **Cloud Run / Firebase Functions Gen 2**,
+the runtime has **no local private key**, so the library signs via Google’s **IAM `signBlob`** API. If that call is
+denied, you will see errors like: `Permission 'iam.serviceAccounts.signBlob' denied`.
+
+1. Enable the **IAM Service Account Credentials API** for the project (Google Cloud Console → APIs & Services →
+   Library → “IAM Service Account Credentials API”).
+2. Grant **Service Account Token Creator** (`roles/iam.serviceAccountTokenCreator`) so the **identity that runs your
+   API** can sign as the **service account used for signing** (often the same account).
+   - In **Google Cloud Console → IAM & Admin → Service accounts**, open the service account attached to your Cloud Run
+     service / Firebase function (e.g. default compute: `{PROJECT_NUMBER}-compute@developer.gserviceaccount.com`, or
+     the custom runtime account if you set one).
+   - Open the **Permissions** tab → **Grant access**.
+   - **New principals**: paste the **same** service account email (self-grant).
+   - **Role**: *Service Account Token Creator*.
+   - Save. Redeploy if the error persists (propagation can take a short time).
+
+If your function runs as account **A** but signing uses account **B** (rare), grant **A** the Token Creator role **on
+B** instead (principal `A`, role on resource `B`).
+
+**Firebase Storage Security Rules** (e.g. `allow read, write: if false`) apply to **client SDK** access. **V4 signed
+URLs** issued by the Admin SDK are authorized by GCS using the signature; they are **not** gated by those rules, so
+deny-all rules alone do not block signed URLs once IAM signing works.
+
+##### Browser CORS (fetch from web app)
+
+The SPA does not call `GET …/body/signed-url` until item metadata shows a stored body (**`size`** set); new notes therefore avoid a
+404 on that route. The SPA also sends **`Cache-Control: no-cache`** on that request as a safeguard.
+
+The SPA loads note bytes with `fetch(signedUrl)` toward `https://storage.googleapis.com/…`. That is a **cross-origin**
+request, so the **default Firebase / GCS bucket must have a CORS configuration** that lists your app origins. If CORS
+is unset, the browser reports: *No 'Access-Control-Allow-Origin' header is present*.
+
+1. Copy [`config/storage-cors.example.json`](./config/storage-cors.example.json), replace `YOUR_PROJECT_ID` with your
+   Firebase / GCP project id (same string as in `*.web.app` / `*.firebaseapp.com`), and add any other origins you use
+   (e.g. staging custom domain).
+2. Apply to your **default Storage bucket** (the same name as `storageBucket` in Firebase Console / `FIREBASE_CONFIG`,
+   e.g. `sapie-b09be.firebasestorage.app`):
+
+```bash
+# from the packages/api directory, after saving your edited file as e.g. config/storage-cors.json
+gcloud storage buckets update "gs://PROJECT_ID.firebasestorage.app" --cors-file=config/storage-cors.json
+```
+
+Or with `gsutil`: `gsutil cors set config/storage-cors.json "gs://PROJECT_ID.firebasestorage.app"`.
+
+Changes take effect quickly; hard-refresh the app and retry. **API CORS** (Nest on Cloud Functions) is separate; this
+step is **only** for the Storage bucket used by signed read URLs.
 
 For **`pnpm test`** (`CURRENT_ENV=test-unit`), the Docker **test-unit** stack includes the Storage emulator on host port
 **9199** (see `compose.test-unit.yml` and `.env.test-unit`). `ContentController` tests exercise real
@@ -299,7 +355,8 @@ const user = await getUserByUid(decodedToken.uid);
 
 - **Entry Point**: `firebase-functions.ts`
 - **Runtime**: Node.js 22
-- **CORS**: Enabled for cross-origin requests
+- **CORS (API HTTP)**: Enabled for cross-origin requests to the Functions URL (separate from **Storage bucket CORS** for
+  signed body URLs — see [Browser CORS](#browser-cors-fetch-from-web-app) under Cloud Storage above)
 
 ## Build Process
 

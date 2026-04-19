@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
-import type { User } from 'firebase/auth';
 
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -10,11 +9,18 @@ import { contentItemQueryRetry } from './query-retry-utils';
 import type { Content } from './types';
 
 /** Markdown bytes query: strictly under signed URL TTL (10m); refetch/invalidate when URL rotates. */
-const NOTE_MARKDOWN_STALE_MS = 5 * 60 * 1000;
+const NOTE_MARKDOWN_STALE_MS = 2 * 60 * 1000;
 
 const disabledContentBodySignedUrlQueryKey = [
   'content',
   'body-signed-url',
+  '__disabled__',
+] as const;
+
+const disabledBodySignedUrlFetchSuppressedQueryKey = [
+  'content',
+  'body-signed-url-fetch-suppressed',
+  '__disabled__',
   '__disabled__',
 ] as const;
 
@@ -49,17 +55,53 @@ const disabledContentItemQueryKey = [
   '__disabled__',
 ] as const;
 
-export function useContentBody(id: string | undefined) {
+export type UseContentBodyOptions = {
+  /**
+   * When `false`, skips `GET …/body/signed-url` (no stored body yet per metadata `size`, or the
+   * note editor has suppressed refetch after a successful body save for this session).
+   * When `true` or omitted, runs whenever `id` and auth allow (default for backward compatibility).
+   */
+  enabled?: boolean;
+};
+
+/**
+ * Subscribes to a client-only TanStack Query cache entry set after `PUT …/body` succeeds from the
+ * note editor (see `useSaveNoteBody`). Never runs `queryFn`; `setQueryData` drives updates.
+ */
+export function useBodySignedUrlFetchSuppressedAfterSave(
+  noteId: string | undefined,
+  editorSessionId: string
+) {
+  const safeId = noteId && !noteId.startsWith('dummy_') ? noteId : undefined;
+  return useQuery({
+    queryKey:
+      safeId != null
+        ? contentQueryKeys.bodySignedUrlFetchSuppressedForSession(
+            safeId,
+            editorSessionId
+          )
+        : disabledBodySignedUrlFetchSuppressedQueryKey,
+    queryFn: async () => false,
+    enabled: false,
+    initialData: false,
+  });
+}
+
+export function useContentBody(
+  id: string | undefined,
+  options?: UseContentBodyOptions
+) {
   const { currentUser } = useAuth();
   const safeId = id && !id.startsWith('dummy_') ? id : undefined;
+  const allowSignedUrlFetch = options?.enabled !== false;
   return useQuery({
     queryKey:
       safeId != null
         ? contentQueryKeys.bodySignedUrl(safeId)
         : disabledContentBodySignedUrlQueryKey,
     queryFn: () => contentService.getContentBody(currentUser!, safeId!),
-    enabled: Boolean(currentUser) && safeId != null,
-    staleTime: 5 * 60 * 1000,
+    enabled: Boolean(currentUser) && safeId != null && allowSignedUrlFetch,
+    staleTime: NOTE_MARKDOWN_STALE_MS,
   });
 }
 
@@ -86,27 +128,25 @@ export function useNoteBody(
   });
 }
 
-/** Updates item metadata, refreshes signed-URL, and seeds markdown cache with the saved string (avoids stale editor). */
-async function syncCachesAfterPutNoteBody(
+/**
+ * Applies `PUT …/body` metadata to the item cache and keeps the editor markdown in sync with what was saved **without**
+ * calling `GET …/body/signed-url` again (avoids replacing the in-progress editor; Story 65 covers concurrency).
+ */
+function syncCachesAfterPutNoteBody(
   queryClient: QueryClient,
-  currentUser: User,
   id: string,
-  savedBodyText: string,
-  updated: Content
-): Promise<void> {
+  updated: Content,
+  savedBodyText: string
+): void {
   queryClient.setQueryData(contentQueryKeys.item(id), updated);
-  await queryClient.invalidateQueries({
-    queryKey: contentQueryKeys.bodySignedUrl(id),
-  });
-  const bodyRef = await queryClient.fetchQuery({
-    queryKey: contentQueryKeys.bodySignedUrl(id),
-    queryFn: () => contentService.getContentBody(currentUser, id),
-    staleTime: 5 * 60 * 1000,
-  });
+  const cached = queryClient.getQueryData<{ signedUrl?: string } | null>(
+    contentQueryKeys.bodySignedUrl(id)
+  );
+  const url = cached?.signedUrl;
   queryClient.removeQueries({ queryKey: ['content', 'note-markdown', id] });
-  if (bodyRef?.signedUrl) {
+  if (typeof url === 'string' && url.length > 0) {
     queryClient.setQueryData(
-      contentQueryKeys.noteMarkdown(id, bodyRef.signedUrl),
+      contentQueryKeys.noteMarkdown(id, url),
       savedBodyText
     );
   }
@@ -127,6 +167,8 @@ export function useSaveNoteBody() {
     }: {
       id: string;
       bodyText: string;
+      /** Stable for this `NoteEditorPage` mount — scopes “suppress signed URL fetch” to this editor visit. */
+      editorSessionId: string;
     }): Promise<Content> => {
       if (!currentUser) {
         throw new Error('Not authenticated');
@@ -138,16 +180,14 @@ export function useSaveNoteBody() {
         'text/markdown'
       );
     },
-    onSuccess: async (content, { id, bodyText }) => {
-      if (!currentUser) {
-        return;
-      }
-      await syncCachesAfterPutNoteBody(
-        queryClient,
-        currentUser,
-        id,
-        bodyText,
-        content
+    onSuccess: (content, { id, bodyText, editorSessionId }) => {
+      syncCachesAfterPutNoteBody(queryClient, id, content, bodyText);
+      queryClient.setQueryData(
+        contentQueryKeys.bodySignedUrlFetchSuppressedForSession(
+          id,
+          editorSessionId
+        ),
+        true
       );
     },
   });

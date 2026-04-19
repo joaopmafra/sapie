@@ -1,5 +1,6 @@
 import { Injectable, Logger, Provider } from '@nestjs/common';
 import { FirebaseAdminService } from '../../firebase';
+import { resolveFirebaseStorageBucketName } from '../../firebase/resolve-storage-bucket-name';
 import { FAKE_STORAGE_READ_CONTROLLER_BASE_PATH } from '../../fake-storage/fake-storage-read.controller';
 import { FakeStorageModule } from '../../fake-storage/fake-storage.module';
 
@@ -39,20 +40,8 @@ export class FirebaseContentBodyReadService implements ContentBodyReadService {
 
   constructor(private readonly firebaseAdminService: FirebaseAdminService) {}
 
-  private resolvedBucketName(): string {
-    const explicit = process.env.FIREBASE_STORAGE_BUCKET?.trim();
-    const projectId = process.env.GCLOUD_PROJECT?.trim();
-    const bucketName = explicit || (projectId ? `${projectId}.appspot.com` : '');
-    if (!bucketName) {
-      throw new Error(
-        'Set FIREBASE_STORAGE_BUCKET or GCLOUD_PROJECT so the Storage bucket name can be resolved.'
-      );
-    }
-    return bucketName;
-  }
-
   private defaultBucket() {
-    return this.firebaseAdminService.getStorage().bucket(this.resolvedBucketName());
+    return this.firebaseAdminService.getStorage().bucket(resolveFirebaseStorageBucketName());
   }
 
   async getSignedReadUrl(objectPath: string): Promise<{ signedUrl: string; expiresAt: Date }> {

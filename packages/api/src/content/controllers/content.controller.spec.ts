@@ -276,7 +276,7 @@ describe('ContentController', () => {
     expect(response.body).toHaveProperty('parentId', null);
   });
 
-  it(`GET ${fixture.API_CONTENT}/:id/body returns 404 when content has no body yet`, async () => {
+  it(`GET ${fixture.API_CONTENT}/:id/body/signed-url returns 404 when content has no body yet`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
     const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Empty', root.id);
 
@@ -285,7 +285,7 @@ describe('ContentController', () => {
       .expect(HttpStatus.NOT_FOUND);
   });
 
-  it(`GET ${fixture.API_CONTENT}/:id/body returns 403 when caller does not own the content`, async () => {
+  it(`GET ${fixture.API_CONTENT}/:id/body/signed-url returns 403 when caller does not own the content`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
     const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Private', root.id);
 
@@ -294,7 +294,7 @@ describe('ContentController', () => {
       .expect(HttpStatus.FORBIDDEN);
   });
 
-  it(`GET ${fixture.API_CONTENT}/:id/body returns 404 when content does not exist`, async () => {
+  it(`GET ${fixture.API_CONTENT}/:id/body/signed-url returns 404 when content does not exist`, async () => {
     await fixture.seedRootDirectory(fixture.TEST_USER_ID);
 
     await fixture
@@ -302,7 +302,7 @@ describe('ContentController', () => {
       .expect(HttpStatus.NOT_FOUND);
   });
 
-  it(`GET ${fixture.API_CONTENT}/:id/body returns 400 for a directory`, async () => {
+  it(`GET ${fixture.API_CONTENT}/:id/body/signed-url returns 400 for a directory`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
 
     await fixture

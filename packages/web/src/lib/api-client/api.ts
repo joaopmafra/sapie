@@ -620,7 +620,7 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
         contentControllerGetContentBodySignedUrl: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('contentControllerGetContentBodySignedUrl', 'id', id)
-            const localVarPath = `/api/content/{id}/body`
+            const localVarPath = `/api/content/{id}/body/signed-url`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -649,7 +649,7 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
+         * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body/signed-url` for a signed read URL. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
          * @summary Get content by ID
          * @param {string} id The ID of the content.
          * @param {*} [options] Override http request option.
@@ -889,7 +889,7 @@ export const ContentApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
+         * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body/signed-url` for a signed read URL. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
          * @summary Get content by ID
          * @param {string} id The ID of the content.
          * @param {*} [options] Override http request option.
@@ -986,7 +986,7 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.contentControllerGetContentBodySignedUrl(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
-         * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
+         * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body/signed-url` for a signed read URL. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
          * @summary Get content by ID
          * @param {ContentApiContentControllerGetContentByIdRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -1064,7 +1064,7 @@ export interface ContentApiInterface {
     contentControllerGetContentBodySignedUrl(requestParameters: ContentApiContentControllerGetContentBodySignedUrlRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentBodyUrlResponse>;
 
     /**
-     * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
+     * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body/signed-url` for a signed read URL. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
      * @summary Get content by ID
      * @param {ContentApiContentControllerGetContentByIdRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -1251,7 +1251,7 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
     }
 
     /**
-     * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body` for a signed read URL. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
+     * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body/signed-url` for a signed read URL. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
      * @summary Get content by ID
      * @param {ContentApiContentControllerGetContentByIdRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.

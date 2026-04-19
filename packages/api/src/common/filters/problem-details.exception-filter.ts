@@ -79,6 +79,27 @@ function applyRequestInstance(body: ProblemDetailsBody, req: Request): void {
   }
 }
 
+/** Browser-cacheable GET …/body/signed-url 404s caused stale signed-URL failures after first save; align with success headers. */
+function isGetContentBodySignedUrlPath(req: Request): boolean {
+  if (req.method !== 'GET') {
+    return false;
+  }
+  const path =
+    typeof req.path === 'string' && req.path.length > 0
+      ? req.path
+      : typeof req.url === 'string'
+        ? req.url.split('?')[0]
+        : '';
+  return /^\/api\/content\/[^/]+\/body\/signed-url$/.test(path);
+}
+
+function setNoStoreHeadersForSignedBodyUrl(req: Request, res: Response): void {
+  if (isGetContentBodySignedUrlPath(req)) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+  }
+}
+
 @Catch()
 export class ProblemDetailsExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(ProblemDetailsExceptionFilter.name);
@@ -117,6 +138,7 @@ export class ProblemDetailsExceptionFilter implements ExceptionFilter {
         body.errors = errors;
       }
 
+      setNoStoreHeadersForSignedBodyUrl(req, res);
       res.status(status).setHeader('Content-Type', 'application/problem+json').json(body);
       return;
     }
@@ -134,6 +156,7 @@ export class ProblemDetailsExceptionFilter implements ExceptionFilter {
 
     applyRequestInstance(body, req);
 
+    setNoStoreHeadersForSignedBodyUrl(req, res);
     res.status(status).setHeader('Content-Type', 'application/problem+json').json(body);
   }
 }
