@@ -15,21 +15,29 @@ focus on my study material without worrying about losing changes.
 
 ## Scope
 
-**In scope**
+**MVP for this story (what “done” means here)**
 
-- Rich-text note body below the title (visual editing; no raw-markdown mode for users).
-- Markdown features: headings, bold, italic, ordered/unordered lists, code blocks with syntax highlighting, links.
+- **Plain multiline note body** below the title (e.g. `<textarea>` or equivalent) with autosave and the save-status
+  behavior described below — **not** a rich-text/visual markdown editor. That ships in
+  [Story 67: Rich note content editor (MDXEditor)](../3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md).
 - Auto-save after the user stops typing (**debounce: 5 seconds**).
 - Save status in the note editor header (bundled from [Story 54](../3-stories/2-to-refine/54-story-save_status_display.md); no
   separate story).
 - Note body stored in **Firebase Cloud Storage**; Firestore holds **metadata only** (`bodyUri`, `size`, `updatedAt`
-  alongside existing fields). **`bodyUri` is internal** (object path in the bucket); the **public `GET /api/content/:id`
-  metadata DTO does not expose it** so clients are not tied to storage layout. The client infers “body already saved”
-  from **`size`** (and related fields): **`size` is null (or omitted) until the first successful `PUT …/body`**, then
-  reflects byte length after each save.
+  alongside existing fields — or the nested **`body`** shape introduced in
+  [Story 66](../3-stories/1-ready/66-story-content_body_subdocument_and_client_cache.md) when that story lands).
+  **`bodyUri` is internal** (object path in the bucket); the **public `GET /api/content/:id` metadata DTO does not
+  expose it** so clients are not tied to storage layout. Until Story 66, the client infers “body already saved” from
+  **`size`** (and related fields): **`size` is null (or omitted) until the first successful `PUT …/body`**, then reflects
+  byte length after each save.
 - Load body via **signed URL**: API returns a short-lived URL; the **browser fetches markdown directly from Cloud
   Storage** (not via repeated Cloud Function proxying for the bytes).
 - **Direct navigation** to `/notes/:id` loads metadata (existing TanStack Query hook) **and** body content end-to-end.
+
+**Long-term product vision** (not required to close Story 55)
+
+- Rich-text editing with headings, lists, code blocks, links, etc. — **Story 67**.
+- Clearer body-vs-metadata versioning and TanStack cache policy — **Story 66**.
 
 **Out of scope**
 
@@ -38,6 +46,8 @@ focus on my study material without worrying about losing changes.
 - E2E tests for this story (**deferred for MVP**; see [Testing](#testing)).
 - **Concurrent editing** across multiple browser windows or devices (detect stale version, reload vs overwrite):
   [Story 65: Note Body Concurrency and Conflict Resolution](../3-stories/2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md).
+- **Rich MDXEditor UI** — [Story 67](../3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md).
+- **Nested `body` subdocument + client cache policy** — [Story 66](../3-stories/1-ready/66-story-content_body_subdocument_and_client_cache.md).
 
 ## Dependencies (satisfied)
 
@@ -46,24 +56,33 @@ focus on my study material without worrying about losing changes.
 | [Story 53](../5-done/53-story-create_notes.md) — note editor shell, rename API                                            | Shipped |
 | [Story 62](../5-done/62-story-tanstack_query_refactor.md) — TanStack Query, `useContentItem`, no tree thrash on mutations | Shipped |
 
+**Ordering (follow-on stories)**
+
+- [Story 66](../3-stories/1-ready/66-story-content_body_subdocument_and_client_cache.md) — body model + TanStack cache;
+  scheduled **after** Story 55 (Phases 0–5) and **before** [Story 67](../3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md)
+  (preferred).
+- [Story 67](../3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md) — rich editor; depends on Story 55
+  (Phases 0–5) and is **scheduled after** Story 66 when possible.
+
 **Already delivered (do not re-implement as part of this story)**
 
 - `GET /api/content/:id` — single content item **metadata only** (404 / 403 as appropriate). Required for
   `useContentItem` and shipped with Story 62.
 - Backend `ContentService` / repository already model `bodyUri`, `size`, `updatedAt` on content entities (initially
   `null` for new notes). Only **`size` / `updatedAt` / `bodyMimeType`** (as applicable) appear on the **HTTP metadata**
-  response; **`bodyUri` stays server-side**.
+  response; **`bodyUri` stays server-side** (shape may evolve in Story 66).
 
 ## Details
 
 ### Editor
 
-- Library: **`@mdxeditor/editor`**, configured for visual editing with plugins for the markdown features listed above.
-  Do **not** expose a raw markdown editing mode to users.
+- **Story 55:** plain **textarea** (or equivalent) for wiring, autosave, and save status — **not** `@mdxeditor/editor`
+  (that is [Story 67](../3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md)).
 - New or never-saved notes: **`size` is null** (no body in Storage yet; Firestore still has `bodyUri` null server-side
   until the first save). The UI shows an **empty editor** with a sensible placeholder. The first successful save creates
   the Storage object and sets **`bodyUri` (persisted only server-side)**, **`size`**, and **`updatedAt`** on the
-  entity; the metadata response exposes **`size`** / **`updatedAt`** / **`bodyMimeType`** as today.
+  entity; the metadata response exposes **`size`** / **`updatedAt`** / **`bodyMimeType`** as today (until Story 66
+  refines the DTO).
 
 ### Save status (single, consistent behavior)
 
@@ -106,8 +125,9 @@ Work is delivered in **small vertical slices** (each phase should be demonstrabl
 by phase—there is no separate “requirements vs tasks” list for the web app.
 
 **Caching:** default app `QueryClient` options from [Story 62](../5-done/62-story-tanstack_query_refactor.md) remain in
-force (`staleTime`, `refetchOnWindowFocus`, etc.). Body-specific `staleTime` overrides apply only to body / signed-URL /
-markdown queries as called out in Phase 0.
+force (`staleTime`, `refetchOnWindowFocus`, etc.). Body-specific `staleTime` overrides apply to body / signed-URL /
+markdown queries as called out in Phase 0. **Metadata vs body cache policy** (e.g. `staleTime: 0` for item queries,
+conditional invalidation when `body.updatedAt` advances) is **Story 66** — do not block Story 55 on it unless trivial.
 
 **Frontend unit tests (classical TDD):** Add or extend **React unit tests in the same phase** as the behavior they
 protect—**red–green–refactor** with each slice, not a single test pass at the end of the story. Follow
@@ -127,7 +147,7 @@ the boundary). Use **UI drivers / component objects** to reduce brittle selector
   2. `useContentBody(noteId)` — `GET /api/content/:id/body/signed-url`; **404 → treat as empty body**, not `isError` for the page.
   3. `useNoteBody(...)` — `fetch` markdown from `signedUrl` with `useQuery`; **`enabled: Boolean(signedUrl)`**; when
      there is no body yet, **skip** the bytes fetch and show an empty editor with placeholder.
-- [x] **Simple editor** — plain `<textarea>` (or equivalent) for layout and wiring **before** `@mdxeditor/editor`.
+- [x] **Simple editor** — plain `<textarea>` (or equivalent) for layout and wiring **before** `@mdxeditor/editor` (see **Story 67** for MDXEditor).
 - [x] **`staleTime`** for the markdown query: **5 minutes** (strictly less than signed URL **10 minutes**). Refetch
       signed URL + markdown when stale/expired as needed; rely on **invalidation after save** where applicable.
 - [x] **Dev-only “Seed body” control** — **retired** (explicit **Save** in Phase 1 replaced it). Historically: dev-gated
@@ -178,25 +198,21 @@ the boundary). Use **UI drivers / component objects** to reduce brittle selector
       metadata/bodies are up to date.
 - [ ] **React tests** — cache invalidation on auth transitions does not show another user’s data (per [Frontend unit tests](#implementation-approach-phased)).
 
-### Phase 6 — Rich editor
+### Deferred / superseded
 
-- [ ] **`@mdxeditor/editor`** — install; theme and layout consistent with the note shell; plugins for headings, bold,
-      italic, ordered/unordered lists, code blocks with syntax highlighting, and links; **no** raw-markdown mode for users.
-      Replace the Phase 0 textarea while **reusing** hooks, keys, mutation, and save behavior.
-- [ ] **React tests** — adjust or extend coverage for MDXEditor integration; **reuse** existing drivers/hooks tests where
-      behavior is unchanged (per [Frontend unit tests](#implementation-approach-phased)).
+- **Rich editor (`@mdxeditor/editor`)** — moved to
+  [Story 67: Rich note content editor (MDXEditor)](../3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md)
+  (former “Phase 6” in this file).
+- **Nested `body` metadata + TanStack cache policy** —
+  [Story 66: Content body subdocument and client cache policy](../3-stories/1-ready/66-story-content_body_subdocument_and_client_cache.md).
+- **Concurrent editing / optimistic locking** — follow
+  [Story 65: Note Body Concurrency and Conflict Resolution](../3-stories/2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md).
 
-### Deferred (separate story)
+## Acceptance Criteria (Story 55 — textarea + autosave MVP)
 
-Follow [Story 65: Note Body Concurrency and Conflict Resolution](../3-stories/2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md)
-for optimistic locking on `PUT`, conflict responses, and reload vs overwrite UX across surfaces.
-
-## Acceptance Criteria
-
-- [ ] Opening a note shows its body in the rich-text editor (loaded via signed URL → fetch markdown).
+- [ ] Opening a note shows its body in the **multiline text editor** (loaded via signed URL → fetch markdown when a body exists).
 - [ ] Opening a note with **no body yet** (metadata has **`size` null** and/or **`GET …/body/signed-url` returns 404**) shows an
       empty editor with a placeholder; no error surfaced for “missing body.”
-- [ ] Editor supports headings, bold, italic, ordered/unordered lists, code blocks with syntax highlighting, and links.
 - [ ] Edits auto-save **5 seconds** after the last change (debounce resets on each keystroke/edit).
 - [ ] Save status matches the table above (`idle` / `pending` / `saving` / `saved` / `error`).
 - [ ] Failed save shows error + Retry; retry issues `PUT` with current content.
@@ -205,6 +221,9 @@ for optimistic locking on `PUT`, conflict responses, and reload vs overwrite UX 
       metadata response reflects **`size`** / **`updatedAt`** (and **`bodyMimeType`** as applicable); object exists at the
       defined path with correct headers.
 - [ ] On unmount/navigation away, pending changes are flushed as specified (no silent drop of dirty state).
+
+**Rich-text editing** (headings, toolbar, code highlighting in the editor UI, etc.) — see
+[Story 67](../3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md).
 
 ## Technical Requirements
 
@@ -246,7 +265,7 @@ Frontend implementation is broken down by **phase** under [Implementation approa
 
 - [ ] **[DOCS] OpenAPI / API docs** — document `PUT /:id/body` and `GET /:id/body/signed-url` (and clarify `GET /:id` remains
       metadata-only, **without** `bodyUri` on the wire; **already present from Story 62** with the tightened shape above).
-- [ ] **[DOCS] `packages/api/README.md`** — Storage emulator and local setup.
+- [ ] **[DOCS] `packages/api/README.md`** — Storage emulator and local setup (may overlap Firebase / Storage doc pass).
 
 ## Testing
 
@@ -261,3 +280,5 @@ Frontend implementation is broken down by **phase** under [Implementation approa
 - TanStack Query plan and body-vs-metadata split: [
   `docs/research/client_state_management/phase_1_tanstack_query.md`](../../research/client_state_management/phase_1_tanstack_query.md)
 - MVP ordering: [`docs/research/mvp_objective.md`](../../research/mvp_objective.md)
+- [Story 66 — body subdocument + cache](../3-stories/1-ready/66-story-content_body_subdocument_and_client_cache.md) ·
+  [Story 67 — Rich editor (MDXEditor)](../3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md)
