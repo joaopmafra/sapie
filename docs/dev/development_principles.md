@@ -5,7 +5,7 @@ consistency, and maintainability.
 
 ## Product and process context
 
-- **MVP first**: The goal is a **working study tool quickly** — see [mvp_objective.md](../research/mvp_objective.md).
+- **MVP first**: The goal is a **working study tool quickly** — see [mvp_objective.md](../plans/mvp_objective.md).
   Prefer simple designs that ship over perfect architectures that do not.
 - **Lean Startup**: Build–measure–learn in small iterations; validate with real use.
 - **Agile (values, not Scrum-by-default)**: Favor collaboration, working software, and responding to change; use the

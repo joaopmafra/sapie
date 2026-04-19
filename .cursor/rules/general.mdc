@@ -41,7 +41,7 @@ up or adding a new dev doc (keep it in sync there, not here).
 ## Current objective: MVP
 
 Ship a working study tool **as soon as practical** for interview prep. Full scope and
-order: [mvp_objective.md](../../docs/research/mvp_objective.md).
+order: [mvp_objective.md](../../docs/plans/mvp_objective.md).
 
 ## Development principles (summary)
 

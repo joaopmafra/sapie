@@ -19,7 +19,7 @@ MVP with a **rich markdown editor** using **`@mdxeditor/editor`**: visual editin
 
 - [Story 55](../../5-done/55-story-note_content_editor.md) — Phases **0–5** complete (load path, save, autosave,
   in-flight save behavior, auth/cache boundaries as defined there).
-- [Story 66](../1-ready/66-story-content_body_subdocument_and_client_cache.md) — **strongly preferred** complete first so
+- [Story 66](../../4-in-progress/66-story-content_body_subdocument_and_client_cache.md) — **strongly preferred** complete first so
   the content DTO and TanStack cache policy are stable before MDXEditor integration.
 
 ## Scope (formerly Story 55 Phase 6)
@@ -48,11 +48,11 @@ MVP with a **rich markdown editor** using **`@mdxeditor/editor`**: visual editin
 
 ## Risks and decisions
 
-- **DTO churn:** Prefer completing [Story 66](../1-ready/66-story-content_body_subdocument_and_client_cache.md) before heavy
+- **DTO churn:** Prefer completing [Story 66](../../4-in-progress/66-story-content_body_subdocument_and_client_cache.md) before heavy
   MDXEditor integration so the public metadata shape and cache invalidation rules are stable. If schedule forces overlap,
   branch carefully and coordinate OpenAPI/client regeneration.
 - **Raw markdown:** Do not ship a user-facing “source” or raw-markdown mode; product stance is visual editing only.
 
 ## References
 
-- MVP objective — rich editor and features: [`docs/research/mvp_objective.md`](../../../research/mvp_objective.md)
+- MVP objective — rich editor and features: [`docs/research/mvp_objective.md`](../../../plans/mvp_objective.md)

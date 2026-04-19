@@ -1,7 +1,7 @@
 # Project Management
 
 This directory contains planning artifacts (epics, features, stories). Roadmap and scope for the current push are
-summarized in [MVP objective](../research/mvp_objective.md). A dedicated PM tool may replace this layout later.
+summarized in [MVP objective](../plans/mvp_objective.md). A dedicated PM tool may replace this layout later.
 
 ## Structure
 
