@@ -5,6 +5,9 @@ This document describes how the unit testing principles from
 (`packages/api/`). It covers technology choices, infrastructure setup, test lifecycle, and the
 rationale for each design decision.
 
+For **React** (`packages/web/`)—page-first tests, HTTP fakes, and when to test sub-components or
+pure modules—see [Unit Testing (React) — Sapie](unit_testing_react_sapie.md).
+
 ---
 
 ## Table of Contents
@@ -80,17 +83,51 @@ the `*.spec.ts` naming convention. A test for `content.controller.ts` lives in
 The existing Jest configuration in `package.json` (`rootDir: "src"`,
 `testRegex: ".*\.spec\.ts$"`) covers this layout with no changes required.
 
-**What tests cover:** Every significant behavior in a controller or service — business rules,
-HTTP validation, error cases, permission enforcement — has a corresponding test. Tests exercise
-the complete request-handling stack via `supertest`: HTTP request → guard → controller →
-service → Firestore emulator → HTTP response.
+**What tests cover:** Every significant behavior — business rules, HTTP validation, error
+cases, permission enforcement — should have tests that exercise **observable outcomes**
+(HTTP responses and, when relevant, Firestore state). Prefer doing this **through the
+controller** with `supertest`: HTTP request → guard → controller → **real** service layer →
+collaborators → HTTP response. That way internal refactoring of the service does not break
+tests that only cared about the external contract.
 
-**What is replaced:** Only the `AuthGuard` is replaced with a fake (see
-[Authentication in Tests](#authentication-in-tests)). Everything else, including Firestore
-access via `FirebaseAdminService`, runs against the real emulator.
+**What is replaced:** External boundaries only, using **fakes** (working substitutes), not
+`jest.mock()` on internal Nest providers:
 
-**Test helpers and doubles** (shared `FakeAuthGuard`, `clearFirestoreData()`, `AppFixture`)
-live in `src/test-helpers/` and are excluded from production coverage reporting.
+- **`AuthGuard`** → `FakeAuthGuard` (see [Authentication in Tests](#authentication-in-tests)).
+- **Firestore** → Firebase Emulator (real SDK semantics against a local fake).
+- **Cloud Storage** → Firebase **Storage** emulator on **9199** in the test-unit Docker stack (same
+  “sophisticated fake” idea as Firestore). Default `ContentControllerFixture` does **not** replace
+  `ContentBodyStorageService`. For rare edge cases that are hard to reproduce in the emulator, call
+  `withFakeContentBodyStorage()` before `init()` to use `FakeContentBodyStorageService` via
+  `overrideProvider()` — not mocks of `ContentRepository` or the service under test.
+
+**Test helpers and doubles** (shared `FakeAuthGuard`, `clearFirestoreData()`, `AppFixture`, optional
+`FakeContentBodyStorageService`) live in `src/test-helpers/` (or next to the feature when colocated) and
+are excluded from production coverage reporting.
+
+### Avoid mockist service specs for orchestration code
+
+Do **not** add co-located `content.service.spec.ts`-style tests that **mock** the service’s
+injected collaborators (`jest.fn()` on `ContentRepository`, `ContentBodyStorageService`, etc.) when
+the same behaviors are already covered by **controller specs** that run the real `ContentService`
+with the **Storage emulator** (or the optional `FakeContentBodyStorageService`) and the real Firestore
+emulator.
+
+That pattern duplicates coverage, couples tests to **call sequences** instead of outcomes, and
+contradicts the Classical school preference for real internal collaborators (see
+[Why We Prefer the Classical School](unit_testing_strategy.md#why-we-prefer-the-classical-school)).
+
+**When a service-only spec is justified (rare):** Pure logic with **no** sensible HTTP entry
+(e.g. a standalone function or domain object), or behavior that cannot be reached through the
+public API without unacceptable setup — and even then prefer **real objects + fakes at the
+boundary**, not mocked repositories.
+
+### Co-location convention
+
+- **`*.controller.spec.ts`** — default place for Nest HTTP behavior (including permission and
+  validation paths that ultimately live in services).
+- **`*.service.spec.ts`** — use sparingly, per the rule above; do not default to “one spec file
+  per service class.”
 
 ### The `test/` Directory
 
@@ -133,6 +170,7 @@ WebSocket used by the UI). Typical mappings (see repo root files):
 - **Firestore WebSocket (UI / requests):** `9160` (`websocketPort`; distinct from hybrid local-dev Docker `9170` and
   full emulator / E2E `9150`)
 - **Auth:** `9098` (distinct from hybrid local-dev Docker `9100` and full emulator / E2E `9099`)
+- **Storage:** `9199` (distinct from hybrid local-dev Docker Storage **9200**)
 - **Emulator UI:** `4001`
 - **Emulator Hub:** `4410` (distinct from local-dev `4420` and full emulator `4400`)
 - **Logging:** `4510` (distinct from local-dev `4520` and full emulator `4500`)
@@ -176,8 +214,9 @@ the process environment. The same applies to helpers that run before any importi
 been loaded.
 
 `.env.test-unit` must align with the test-unit compose stack (for example
-`FIRESTORE_EMULATOR_HOST=localhost:8181` and the project id used by Jest — not hybrid local-dev
-Firestore on `8282`). See [`packages/api/.env.test-unit`](../../packages/api/.env.test-unit).
+`FIRESTORE_EMULATOR_HOST=localhost:8181`, `FIREBASE_STORAGE_EMULATOR_HOST=localhost:9199`, and the
+project id used by Jest — not hybrid local-dev Firestore on `8282`). See
+[`packages/api/.env.test-unit`](../../packages/api/.env.test-unit).
 
 ### Container Lifecycle
 

@@ -4,10 +4,13 @@ This file is used to track the PBI (product backlog item), which is the number o
 
 ## Current Last PBI Number
 
-64
+67
 
 ## Recent PBIs Created (limited to 10)
 
+- **67**: Story - Rich note content editor (MDXEditor)
+- **66**: Story - Content body subdocument and client cache policy
+- **65**: Story - Note Body Concurrency and Conflict Resolution
 - **64**: Story - Content Deletion
 - **63**: Story - Folder Creation
 - **62**: Story - TanStack Query Refactor
@@ -15,6 +18,3 @@ This file is used to track the PBI (product backlog item), which is the number o
 - **60**: Story - Denormalize Folder Data for Frontend Optimization
 - **59**: Story - Toggle Information Pane
 - **58**: Story - Note Information Pane
-- **57**: Story - Context Menu on Tree Nodes
-- **56**: Story - Common Actions Menu
-- **55**: Story - Note Content Editor

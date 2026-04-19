@@ -4,6 +4,8 @@ This principle comes from Kent Beck, creator of extreme programming methodology.
 
 ## The Core Idea
 
+When facing complex changes, developers first refactor to make the system simple enough for changing, only then make the change.
+
 - ✅ **First, organize and refactor** - Clean up the existing code structure to make your intended change straightforward
 - ✅ **Then, implement the change** - With a clean foundation, the actual feature or fix becomes much simpler
 - ✅ **Separate refactoring from feature work** - Don't mix cleanup with new functionality in the same commit
@@ -27,6 +29,7 @@ This principle applies to decision-making too. When facing a difficult choice, a
 ## Examples in the Sapie Codebase
 
 ### Refactoring Before Adding Features
+
 ```typescript
 // Instead of adding a new feature to a complex function:
 function complexUserHandler(user, action, context) {
@@ -34,9 +37,15 @@ function complexUserHandler(user, action, context) {
 }
 
 // First, make the change easy by extracting focused functions:
-function validateUser(user) { /* ... */ }
-function processAction(action) { /* ... */ }
-function handleContext(context) { /* ... */ }
+function validateUser(user) {
+  /* ... */
+}
+function processAction(action) {
+  /* ... */
+}
+function handleContext(context) {
+  /* ... */
+}
 
 // Then, the new feature becomes simple to add
 function complexUserHandler(user, action, context) {
@@ -48,6 +57,7 @@ function complexUserHandler(user, action, context) {
 ```
 
 ### Component Refactoring
+
 ```typescript
 // Before adding new props to a component doing too much:
 function UserDashboard({ user, settings, notifications, messages }) {
@@ -77,4 +87,4 @@ function UserDashboard(props) {
 ## References
 
 - [Kent Beck's Original Principle](https://twitter.com/kentbeck/status/250733358307500032)
-- [Adam Tal's Blog Post](https://www.adamtal.me/2019/05/first-make-the-change-easy-then-make-the-easy-change) 
+- [Adam Tal's Blog Post](https://www.adamtal.me/2019/05/first-make-the-change-easy-then-make-the-easy-change)

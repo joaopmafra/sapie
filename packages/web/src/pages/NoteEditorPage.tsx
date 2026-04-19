@@ -5,27 +5,243 @@ import {
   Alert,
   CircularProgress,
   Paper,
+  Button,
 } from '@mui/material';
 import { isAxiosError } from 'axios';
-import React, { useState, useEffect, useRef } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from 'react';
 import { useParams } from 'react-router-dom';
 
 import { ClientErrorAlert } from '../components/ClientErrorAlert';
 import { useAuth } from '../contexts/AuthContext';
-import { ContentType, useContentItem, useRenameContent } from '../lib/content';
+import {
+  ContentType,
+  useBodySignedUrlFetchSuppressedAfterSave,
+  useContentBody,
+  useContentItem,
+  useNoteBody,
+  useRenameContent,
+  useSaveNoteBody,
+} from '../lib/content';
 import { PROBLEM_DETAILS_POINTERS } from '../lib/problemDetailsPointers.ts';
+
+import {
+  NOTE_BODY_AUTOSAVE_DEBOUNCE_MS,
+  NOTE_BODY_SAVED_HEADER_MS,
+  noteEditorSaveHeaderText,
+  type NoteEditorSavePhase,
+} from './note-editor-save-status';
 
 const NoteEditorPage = () => {
   const { noteId } = useParams<{ noteId: string }>();
+  const [editorSessionId] = useState(
+    () => `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+  );
   const { currentUser } = useAuth();
   const { data: note, isLoading, isError, error } = useContentItem(noteId);
+  const suppressBodySignedUrlFetchAfterSave =
+    useBodySignedUrlFetchSuppressedAfterSave(noteId, editorSessionId);
+  const suppressSignedUrlFetch = Boolean(
+    suppressBodySignedUrlFetchAfterSave.data
+  );
+  const fetchBodySignedUrl = Boolean(note && note.size != null);
+  /** When false, signed-URL query is off — do not use its `isPending` (disabled + unfetched stays pending). */
+  const waitForBodySignedUrlQuery =
+    fetchBodySignedUrl && !suppressSignedUrlFetch;
+  const bodySignedUrlQuery = useContentBody(noteId, {
+    enabled: waitForBodySignedUrlQuery,
+  });
+  const signedUrl = bodySignedUrlQuery.data?.signedUrl ?? null;
+  const noteBodyQuery = useNoteBody(noteId, signedUrl);
+  const saveNoteBody = useSaveNoteBody();
   const renameContent = useRenameContent();
 
   const [noteName, setNoteName] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [renameError, setRenameError] = useState<unknown | null>(null);
+  const [draftBody, setDraftBody] = useState('');
+  const [savePhase, setSavePhase] = useState<NoteEditorSavePhase>('idle');
   const nameInputRef = useRef<HTMLInputElement>(null);
   const renameInProgressRef = useRef(false);
+
+  const draftBodyRef = useRef(draftBody);
+  draftBodyRef.current = draftBody;
+  const baselineBodyRef = useRef('');
+  const editorSessionIdRef = useRef(editorSessionId);
+  editorSessionIdRef.current = editorSessionId;
+  const saveMutateAsyncRef = useRef(saveNoteBody.mutateAsync);
+  saveMutateAsyncRef.current = saveNoteBody.mutateAsync;
+
+  const autosaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const savedHeaderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  /** True for the whole `runSave` async turn, including chained PUTs (Story 55 Phase 4). */
+  const saveInFlightRef = useRef(false);
+  /** Another `runSave` was requested while a save was already running — drain after the current PUT. */
+  const queuedRunSaveRef = useRef(false);
+
+  /** Avoid `setSavePhase` after unmount while async save chains still finish (flush / overlap). */
+  const isMountedRef = useRef(true);
+  const safeSetSavePhase = useCallback((phase: NoteEditorSavePhase) => {
+    if (isMountedRef.current) {
+      setSavePhase(phase);
+    }
+  }, []);
+
+  const clearAutosaveDebounce = useCallback(() => {
+    if (autosaveDebounceRef.current) {
+      clearTimeout(autosaveDebounceRef.current);
+      autosaveDebounceRef.current = null;
+    }
+  }, []);
+
+  const clearSavedHeaderTimer = useCallback(() => {
+    if (savedHeaderTimerRef.current) {
+      clearTimeout(savedHeaderTimerRef.current);
+      savedHeaderTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleDebouncedAutosave = useCallback(() => {
+    clearAutosaveDebounce();
+    autosaveDebounceRef.current = setTimeout(() => {
+      autosaveDebounceRef.current = null;
+      void runSaveRef.current();
+    }, NOTE_BODY_AUTOSAVE_DEBOUNCE_MS);
+  }, [clearAutosaveDebounce]);
+
+  const runSaveRef = useRef<() => Promise<void>>(async () => {});
+
+  const runSave = useCallback(async () => {
+    if (saveInFlightRef.current) {
+      queuedRunSaveRef.current = true;
+      return;
+    }
+    saveInFlightRef.current = true;
+    try {
+      for (;;) {
+        const id = noteId;
+        if (!id) {
+          break;
+        }
+
+        const draft = draftBodyRef.current;
+        const base = baselineBodyRef.current;
+        if (draft === base) {
+          queuedRunSaveRef.current = false;
+          safeSetSavePhase('idle');
+          break;
+        }
+
+        safeSetSavePhase('saving');
+        const sent = draft;
+        try {
+          await saveMutateAsyncRef.current({
+            id,
+            bodyText: sent,
+            editorSessionId: editorSessionIdRef.current,
+          });
+        } catch {
+          queuedRunSaveRef.current = false;
+          safeSetSavePhase('error');
+          break;
+        }
+
+        baselineBodyRef.current = sent;
+        const hadQueued = queuedRunSaveRef.current;
+        queuedRunSaveRef.current = false;
+
+        if (draftBodyRef.current !== baselineBodyRef.current || hadQueued) {
+          safeSetSavePhase('pending');
+          continue;
+        }
+
+        safeSetSavePhase('saved');
+        clearSavedHeaderTimer();
+        savedHeaderTimerRef.current = setTimeout(() => {
+          savedHeaderTimerRef.current = null;
+          safeSetSavePhase('idle');
+        }, NOTE_BODY_SAVED_HEADER_MS);
+        break;
+      }
+    } finally {
+      saveInFlightRef.current = false;
+    }
+  }, [clearSavedHeaderTimer, noteId, safeSetSavePhase]);
+
+  runSaveRef.current = runSave;
+
+  const resolvedServerBody = useMemo(() => {
+    if (!noteId || !note) {
+      return undefined;
+    }
+    if (!fetchBodySignedUrl) {
+      return '';
+    }
+    if (!bodySignedUrlQuery.isSuccess) {
+      return undefined;
+    }
+    if (bodySignedUrlQuery.data === null) {
+      return '';
+    }
+    if (!noteBodyQuery.isSuccess) {
+      return undefined;
+    }
+    return noteBodyQuery.data ?? '';
+  }, [
+    noteId,
+    note,
+    fetchBodySignedUrl,
+    bodySignedUrlQuery.isSuccess,
+    bodySignedUrlQuery.data,
+    noteBodyQuery.isSuccess,
+    noteBodyQuery.data,
+  ]);
+
+  useEffect(() => {
+    if (resolvedServerBody === undefined) {
+      return;
+    }
+    const incoming = resolvedServerBody;
+    const currentDraft = draftBodyRef.current;
+    const serverContentChangedVsLocal = incoming !== currentDraft;
+
+    setDraftBody(incoming);
+    baselineBodyRef.current = incoming;
+
+    // Post-save TanStack cache sync often refreshes markdown with the same bytes; do not
+    // reset save phase or cancel the “Saved” header timer in that case (Story 55 Phase 3).
+    if (serverContentChangedVsLocal) {
+      clearAutosaveDebounce();
+      clearSavedHeaderTimer();
+      safeSetSavePhase('idle');
+    }
+  }, [
+    resolvedServerBody,
+    noteId,
+    clearAutosaveDebounce,
+    clearSavedHeaderTimer,
+    safeSetSavePhase,
+  ]);
+
+  useEffect(() => {
+    const idForSession = noteId;
+    return () => {
+      clearAutosaveDebounce();
+      clearSavedHeaderTimer();
+      if (idForSession && draftBodyRef.current !== baselineBodyRef.current) {
+        void runSaveRef.current();
+      }
+    };
+  }, [noteId, clearAutosaveDebounce, clearSavedHeaderTimer]);
 
   useEffect(() => {
     if (note) {
@@ -38,6 +254,13 @@ const NoteEditorPage = () => {
       nameInputRef.current.focus();
     }
   }, [isEditing]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const handleNameKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter') {
@@ -146,85 +369,179 @@ const NoteEditorPage = () => {
     return createError('The specified content is not a note');
   }
 
+  const bodyLoadPending =
+    (waitForBodySignedUrlQuery && bodySignedUrlQuery.isPending) ||
+    (Boolean(signedUrl) && noteBodyQuery.isPending);
+
+  const bodyLoadError =
+    (waitForBodySignedUrlQuery && bodySignedUrlQuery.isError) ||
+    (Boolean(signedUrl) && noteBodyQuery.isError);
+
+  const bodyLoadErrorDetail =
+    (waitForBodySignedUrlQuery ? bodySignedUrlQuery.error : null) ??
+    (signedUrl ? noteBodyQuery.error : null);
+
+  const handleDraftChange = (value: string) => {
+    setDraftBody(value);
+    clearSavedHeaderTimer();
+
+    if (value === baselineBodyRef.current) {
+      clearAutosaveDebounce();
+      safeSetSavePhase('idle');
+      return;
+    }
+
+    safeSetSavePhase('pending');
+    scheduleDebouncedAutosave();
+  };
+
+  const handleRetrySave = () => {
+    clearAutosaveDebounce();
+    void runSave();
+  };
+
+  const saveHeaderText = noteEditorSaveHeaderText(savePhase);
+
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto' }}>
       <Paper elevation={1} sx={{ p: 3 }}>
-        <Box sx={{ mb: 3 }}>
-          {isEditing ? (
-            <Box>
-              <TextField
-                fullWidth
-                inputRef={nameInputRef}
-                value={noteName}
-                onChange={e => setNoteName(e.target.value)}
-                onKeyDown={handleNameKeyDown}
-                onBlur={() => void handleNameSave()}
-                disabled={renameContent.isPending}
-                variant='outlined'
-                placeholder='Enter note name...'
-                error={Boolean(renameError)}
+        <Box
+          sx={{
+            mb: 3,
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: 2,
+          }}
+        >
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            {isEditing ? (
+              <Box>
+                <TextField
+                  fullWidth
+                  inputRef={nameInputRef}
+                  value={noteName}
+                  onChange={e => setNoteName(e.target.value)}
+                  onKeyDown={handleNameKeyDown}
+                  onBlur={() => void handleNameSave()}
+                  disabled={renameContent.isPending}
+                  variant='outlined'
+                  placeholder='Enter note name...'
+                  error={Boolean(renameError)}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      fontSize: '1.5rem',
+                      fontWeight: 500,
+                    },
+                  }}
+                />
+                <ClientErrorAlert
+                  value={renameError}
+                  sx={{ mt: 1 }}
+                  problemDetailJsonPointer={
+                    PROBLEM_DETAILS_POINTERS.CONTENT.name
+                  }
+                />
+              </Box>
+            ) : (
+              <Typography
+                variant='h4'
+                component='h1'
                 sx={{
-                  '& .MuiOutlinedInput-root': {
-                    fontSize: '1.5rem',
-                    fontWeight: 500,
+                  cursor: 'pointer',
+                  '&:hover': {
+                    backgroundColor: 'action.hover',
                   },
+                  p: 1,
+                  borderRadius: 1,
+                  transition: 'background-color 0.2s',
                 }}
-              />
-              <ClientErrorAlert
-                value={renameError}
-                sx={{ mt: 1 }}
-                problemDetailJsonPointer={PROBLEM_DETAILS_POINTERS.CONTENT.name}
-              />
-            </Box>
-          ) : (
-            <Typography
-              variant='h4'
-              component='h1'
-              sx={{
-                cursor: 'pointer',
-                '&:hover': {
-                  backgroundColor: 'action.hover',
-                },
-                p: 1,
-                borderRadius: 1,
-                transition: 'background-color 0.2s',
-              }}
-              onClick={() => {
-                setRenameError(null);
-                setIsEditing(true);
-              }}
-              title='Click to edit name'
-            >
-              {noteName || 'Untitled Note'}
-            </Typography>
-          )}
+                onClick={() => {
+                  setRenameError(null);
+                  setIsEditing(true);
+                }}
+                title='Click to edit name'
+              >
+                {noteName || 'Untitled Note'}
+              </Typography>
+            )}
+          </Box>
+          <Box
+            aria-live='polite'
+            sx={{
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              pt: 0.5,
+            }}
+          >
+            {saveHeaderText ? (
+              <Typography
+                variant='body2'
+                color={
+                  savePhase === 'saved' ? 'success.main' : 'text.secondary'
+                }
+              >
+                {saveHeaderText}
+              </Typography>
+            ) : null}
+            {savePhase === 'error' ? (
+              <Button
+                type='button'
+                size='small'
+                variant='outlined'
+                onClick={() => void handleRetrySave()}
+                disabled={!currentUser || bodyLoadPending}
+              >
+                Retry
+              </Button>
+            ) : null}
+          </Box>
         </Box>
 
         <Box sx={{ mb: 3, color: 'text.secondary' }}>
           <Typography variant='body2'>
-            Created: {note.createdAt.toLocaleDateString()}
-          </Typography>
-          <Typography variant='body2'>
-            Modified: {note.updatedAt.toLocaleDateString()}
+            Last saved on: {note.updatedAt.toLocaleString()}
           </Typography>
         </Box>
 
-        <Box
-          sx={{
-            minHeight: '400px',
-            border: '1px dashed',
-            borderColor: 'divider',
-            borderRadius: 1,
-            p: 2,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'text.secondary',
-          }}
-        >
-          <Typography variant='body1'>
-            Note content editing will be implemented in future tasks.
-          </Typography>
+        <Box sx={{ mb: 2 }}>
+          {bodyLoadError ? (
+            <Alert severity='error' sx={{ mb: 2 }}>
+              {bodyLoadErrorDetail instanceof Error
+                ? bodyLoadErrorDetail.message
+                : 'Failed to load note body.'}
+            </Alert>
+          ) : null}
+
+          {bodyLoadPending ? (
+            <Box
+              sx={{
+                minHeight: '240px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <CircularProgress size={32} />
+            </Box>
+          ) : (
+            <>
+              <TextField
+                multiline
+                fullWidth
+                minRows={16}
+                value={draftBody}
+                onChange={e => handleDraftChange(e.target.value)}
+                placeholder='Start writing your note…'
+                disabled={!currentUser || bodyLoadPending}
+                inputProps={{
+                  'aria-label': 'Note body',
+                }}
+              />
+            </>
+          )}
         </Box>
       </Paper>
     </Box>

@@ -1,8 +1,9 @@
-import { AppFixture } from '../../test-helpers/app.fixture';
+import { HttpStatus } from '@nestjs/common';
 import * as supertest from 'supertest';
+
+import { AppFixture } from '../../test-helpers/app.fixture';
 import { TEST_USER_ID_HEADER } from '../../test-helpers/fake-auth.guard';
 import { Content } from '../entities/content.entity';
-import { HttpStatus } from '@nestjs/common';
 
 export class ContentControllerFixture extends AppFixture {
   readonly API_CONTENT = '/api/content';
@@ -13,7 +14,8 @@ export class ContentControllerFixture extends AppFixture {
   readonly OTHER_USER_ID = 'content-test-user-2';
 
   async init(): Promise<void> {
-    await this.createTestingModuleBuilder().withFakeAuth().buildAndInit();
+    this.createTestingModuleBuilder().withFakeAuth();
+    await this.buildAndInit();
   }
 
   async callGetApiContentRootExpectingOk(userId: string): Promise<supertest.Response> {
@@ -61,10 +63,10 @@ export class ContentControllerFixture extends AppFixture {
       .send(payload);
   }
 
-  callApiPatchContentName(
+  callApiPatchContent(
     testUserId: string,
     contentId: string,
-    payload: { name: string }
+    payload: Record<string, unknown>
   ): supertest.Test {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return supertest(this.getHttpServer())
@@ -73,12 +75,12 @@ export class ContentControllerFixture extends AppFixture {
       .send(payload);
   }
 
-  async callApiPatchContentNameExpectingOk(
+  async callApiPatchContentExpectingOk(
     testUserId: string,
     contentId: string,
-    payload: { name: string }
+    payload: Record<string, unknown>
   ): Promise<supertest.Response> {
-    return this.callApiPatchContentName(testUserId, contentId, payload).expect(HttpStatus.OK);
+    return this.callApiPatchContent(testUserId, contentId, payload).expect(HttpStatus.OK);
   }
 
   async callApiGetContentByParentIdExpectingOkAsContentArray(
@@ -107,5 +109,26 @@ export class ContentControllerFixture extends AppFixture {
   ): Promise<Content> {
     const response = await this.callApiGetContentById(testUserId, contentId).expect(HttpStatus.OK);
     return response.body as Content;
+  }
+
+  callApiGetContentBodySignedUrl(testUserId: string, contentId: string): supertest.Test {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return supertest(this.getHttpServer())
+      .get(`${this.API_CONTENT}/${contentId}/body/signed-url`)
+      .set(TEST_USER_ID_HEADER, testUserId);
+  }
+
+  callApiPutContentBody(
+    testUserId: string,
+    contentId: string,
+    body: string | Buffer,
+    contentType = 'text/plain; charset=utf-8'
+  ): supertest.Test {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return supertest(this.getHttpServer())
+      .put(`${this.API_CONTENT}/${contentId}/body`)
+      .set(TEST_USER_ID_HEADER, testUserId)
+      .set('Content-Type', contentType)
+      .send(body);
   }
 }

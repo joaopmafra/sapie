@@ -1,6 +1,7 @@
 import type { User } from 'firebase/auth';
 
 import { Configuration } from './api-client';
+import { getApiBaseUrl } from './apiBaseUrl.ts';
 
 export const createAuthenticatedApiConfiguration = async (
   basePath?: string,
@@ -24,3 +25,11 @@ export const createAuthenticatedApiConfiguration = async (
     },
   });
 };
+
+export async function getApiAuthRequestOptions(user: User) {
+  const config = await createAuthenticatedApiConfiguration(
+    getApiBaseUrl(),
+    user
+  );
+  return config.baseOptions;
+}

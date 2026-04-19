@@ -41,7 +41,8 @@ sapie/
 ├── README.md                    # High-level overview with package references
 ├── docs/
 │   ├── dev/
-│   │   └── documentation_guidelines.md  # This file
+│   │   ├── documentation_guidelines.md  # This file
+│   │   └── content_naming.md            # Content (metadata) vs content body (Storage)
 │   └── [pm/, research/, other/]
 └── packages/
     ├── web/
@@ -180,12 +181,12 @@ For package-specific testing instructions:
 
 Run these commands to test the API:
 
-```bash
+\```bash
 cd packages/api
 pnpm test
 pnpm test:watch
 pnpm test:e2e
-```
+\```
 
 The API uses Jest with these configuration options:
 

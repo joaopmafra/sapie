@@ -1,11 +1,11 @@
 import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
-import { UpdateContentNameDto } from '../dto/content.dto';
+import { UpdateContentRequest } from '../dto/content.dto';
 import { CONTENT_NAME_MAX_LENGTH, CONTENT_NAME_MIN_LENGTH } from './content-name.validation';
 
 describe('content name validation (DTO)', () => {
   function validateName(name: unknown): string[] {
-    const dto = plainToInstance(UpdateContentNameDto, { name });
+    const dto = plainToInstance(UpdateContentRequest, { name });
     const errors = validateSync(dto);
     const nameErrors = errors.find(e => e.property === 'name');
     return nameErrors ? Object.values(nameErrors.constraints ?? {}) : [];
@@ -20,8 +20,11 @@ describe('content name validation (DTO)', () => {
     expect(validateName('x'.repeat(CONTENT_NAME_MAX_LENGTH))).toEqual([]);
   });
 
-  it('rejects non-string', () => {
-    expect(validateName(undefined)).not.toEqual([]);
+  it('allows omitted name at DTO level (PATCH body may omit `name`)', () => {
+    expect(validateName(undefined)).toEqual([]);
+  });
+
+  it('rejects null or non-string when `name` is present', () => {
     expect(validateName(null)).not.toEqual([]);
     expect(validateName(1)).not.toEqual([]);
   });

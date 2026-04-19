@@ -53,11 +53,14 @@ Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 *AppApi* | [**appControllerGetHello**](docs/AppApi.md#appcontrollergethello) | **GET** /api | Get API status
 *AuthenticationApi* | [**authControllerGetCurrentUser**](docs/AuthenticationApi.md#authcontrollergetcurrentuser) | **GET** /api/auth | Get current user information
-*ContentApi* | [**contentControllerCreateContent**](docs/ContentApi.md#contentcontrollercreatecontent) | **POST** /api/content | Create a new note
-*ContentApi* | [**contentControllerGetContentById**](docs/ContentApi.md#contentcontrollergetcontentbyid) | **GET** /api/content/{id} | Get content item by ID
+*ContentApi* | [**contentControllerCreateContent**](docs/ContentApi.md#contentcontrollercreatecontent) | **POST** /api/content | Create content (note)
+*ContentApi* | [**contentControllerGetContentBodySignedUrl**](docs/ContentApi.md#contentcontrollergetcontentbodysignedurl) | **GET** /api/content/{id}/body/signed-url | Get signed URL to read content body
+*ContentApi* | [**contentControllerGetContentById**](docs/ContentApi.md#contentcontrollergetcontentbyid) | **GET** /api/content/{id} | Get content by ID
 *ContentApi* | [**contentControllerGetRootDirectory**](docs/ContentApi.md#contentcontrollergetrootdirectory) | **GET** /api/content/root | Get or create user\&#39;s root directory
 *ContentApi* | [**contentControllerListContents**](docs/ContentApi.md#contentcontrollerlistcontents) | **GET** /api/content/{id}/children | List a parent\&#39;s children
-*ContentApi* | [**contentControllerRenameContent**](docs/ContentApi.md#contentcontrollerrenamecontent) | **PATCH** /api/content/{id} | Rename content
+*ContentApi* | [**contentControllerPatchContent**](docs/ContentApi.md#contentcontrollerpatchcontent) | **PATCH** /api/content/{id} | Patch content metadata
+*ContentApi* | [**contentControllerPutContentBody**](docs/ContentApi.md#contentcontrollerputcontentbody) | **PUT** /api/content/{id}/body | Upload or replace content body
+*FakeStorageReadApi* | [**fakeStorageReadControllerRead**](docs/FakeStorageReadApi.md#fakestoragereadcontrollerread) | **GET** /api/fake-storage/read | 
 *HealthApi* | [**healthControllerGetHealth**](docs/HealthApi.md#healthcontrollergethealth) | **GET** /api/health | Health check endpoint
 
 
@@ -65,13 +68,14 @@ Class | Method | HTTP request | Description
 
  - [AuthControllerGetCurrentUser401Response](docs/AuthControllerGetCurrentUser401Response.md)
  - [AuthenticatedUser](docs/AuthenticatedUser.md)
- - [ContentDto](docs/ContentDto.md)
- - [CreateContentDto](docs/CreateContentDto.md)
+ - [ContentBodyUrlResponse](docs/ContentBodyUrlResponse.md)
+ - [ContentResponse](docs/ContentResponse.md)
+ - [CreateContentRequest](docs/CreateContentRequest.md)
  - [HealthControllerGetHealth200Response](docs/HealthControllerGetHealth200Response.md)
  - [ProblemDetailsDto](docs/ProblemDetailsDto.md)
  - [ProblemDetailsErrorItemDto](docs/ProblemDetailsErrorItemDto.md)
  - [ProviderDataDto](docs/ProviderDataDto.md)
- - [UpdateContentNameDto](docs/UpdateContentNameDto.md)
+ - [UpdateContentRequest](docs/UpdateContentRequest.md)
 
 
 <a id="documentation-for-authorization"></a>

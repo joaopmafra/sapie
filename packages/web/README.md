@@ -42,7 +42,8 @@ packages/web/
 │   └── index.css                    # Global styles
 ├── public/                          # Public assets
 ├── dist/                            # Build output
-├── FIREBASE_SETUP.md                # Firebase authentication setup guide
+├── docs/                            # Firebase / client guides (see docs/README.md)
+├── FIREBASE_SETUP.md                # Entry point → docs/firebase-web.md
 ├── .prettierrc                      # Prettier configuration
 ├── .prettierignore                  # Prettier ignore patterns
 ├── eslint.config.js                 # ESLint configuration (with Prettier integration)
@@ -107,7 +108,7 @@ For development, the application works with placeholder Firebase configuration. 
 2. **Configure environment variables** in `.env.local` (this directory)
 3. **Enable Email/Password and Google providers** in Firebase Console
 
-See the **[Firebase Setup Guide](./FIREBASE_SETUP.md)** for detailed step-by-step instructions.
+See **[Firebase (web)](./docs/firebase-web.md)** (short entry: [FIREBASE_SETUP.md](docs/firebase-setup.md)).
 
 ### FirebaseUI Configuration
 
@@ -180,7 +181,7 @@ No real Firebase project is required for basic testing against emulators.
 
 ### Environment Variables
 
-Required environment variables for production (see [Firebase Setup Guide](./FIREBASE_SETUP.md)):
+Required environment variables for production (see [Firebase (web)](./docs/firebase-web.md)):
 
 ```bash
 # Firebase Configuration

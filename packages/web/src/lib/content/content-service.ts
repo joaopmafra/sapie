@@ -1,14 +1,17 @@
+import { isAxiosError } from 'axios';
 import type { User } from 'firebase/auth';
 
 import {
+  Configuration,
   ContentApi,
-  type ContentDto,
-  type CreateContentDto,
-  type UpdateContentNameDto,
+  type ContentBodyUrlResponse,
+  type ContentResponse,
+  type CreateContentRequest,
 } from '../api-client';
-import { createAuthenticatedApiConfiguration } from '../auth-utils';
+import { getApiBaseUrl } from '../apiBaseUrl.ts';
+import { getApiAuthRequestOptions } from '../auth-utils';
 
-import type { Content } from './types';
+import type { Content, UpdateContentRequest } from './types';
 import { ContentType } from './types';
 
 /**
@@ -21,25 +24,31 @@ import { ContentType } from './types';
  * the user's Firebase ID token in API requests.
  */
 export class ContentService {
-  private readonly basePath: string;
   private readonly contentApi: ContentApi;
 
-  constructor(basePath?: string) {
-    this.basePath = basePath || '';
-    // The first argument to ContentApi is a Configuration object, which we can leave undefined
-    // because we will pass authentication headers on each request.
-    this.contentApi = new ContentApi(undefined, this.basePath);
+  constructor() {
+    const basePath = getApiBaseUrl();
+    // Per-request auth still comes from `createAuthenticatedApiConfiguration` → `baseOptions.headers`.
+    // A real `Configuration` is required so `serializeDataIfNeeded` uses `isJsonMime` for the request
+    // `Content-Type` instead of JSON-stringifying every non-string (which breaks `File` on `PUT …/body`).
+    this.contentApi = new ContentApi(new Configuration({ basePath }), basePath);
   }
 
-  private mapContentDtoToContent(dto: ContentDto): Content {
+  private mapContentResponseToContent(dto: ContentResponse): Content {
+    const dtoRecord = dto as unknown as Record<string, unknown>;
+    const bodyMimeType =
+      'bodyMimeType' in dtoRecord
+        ? ((dtoRecord.bodyMimeType as string | null | undefined) ?? null)
+        : null;
+
     return {
       id: dto.id,
       name: dto.name,
       ownerId: dto.ownerId,
       type: dto.type as ContentType,
       parentId: dto.parentId as string | null,
-      contentUrl: dto.contentUrl as string | undefined,
       size: dto.size as number | undefined,
+      bodyMimeType,
       createdAt: new Date(dto.createdAt),
       updatedAt: new Date(dto.updatedAt),
     };
@@ -57,16 +66,12 @@ export class ContentService {
    */
   async getRootDirectory(currentUser: User): Promise<Content> {
     try {
-      const config = await createAuthenticatedApiConfiguration(
-        this.basePath,
-        currentUser
-      );
+      const options = await getApiAuthRequestOptions(currentUser);
 
-      const response = await this.contentApi.contentControllerGetRootDirectory(
-        config.baseOptions
-      );
+      const response =
+        await this.contentApi.contentControllerGetRootDirectory(options);
 
-      return this.mapContentDtoToContent(response.data);
+      return this.mapContentResponseToContent(response.data);
     } catch (error) {
       console.error('Failed to get root directory:', error);
       throw error;
@@ -75,17 +80,14 @@ export class ContentService {
 
   async getContentById(currentUser: User, id: string): Promise<Content> {
     try {
-      const config = await createAuthenticatedApiConfiguration(
-        this.basePath,
-        currentUser
-      );
+      const options = await getApiAuthRequestOptions(currentUser);
 
       const response = await this.contentApi.contentControllerGetContentById(
         { id },
-        config.baseOptions
+        options
       );
 
-      return this.mapContentDtoToContent(response.data);
+      return this.mapContentResponseToContent(response.data);
     } catch (error) {
       console.error('Failed to get content by id:', error);
       throw error;
@@ -97,17 +99,14 @@ export class ContentService {
     parentId: string
   ): Promise<Content[]> {
     try {
-      const config = await createAuthenticatedApiConfiguration(
-        this.basePath,
-        currentUser
-      );
+      const options = await getApiAuthRequestOptions(currentUser);
 
       const response = await this.contentApi.contentControllerListContents(
         { id: parentId },
-        config.baseOptions
+        options
       );
 
-      return response.data.map(item => this.mapContentDtoToContent(item));
+      return response.data.map(item => this.mapContentResponseToContent(item));
     } catch (error) {
       console.error('Failed to get content:', error);
       throw error;
@@ -120,49 +119,112 @@ export class ContentService {
     parentId: string
   ): Promise<Content> {
     try {
-      const config = await createAuthenticatedApiConfiguration(
-        this.basePath,
-        currentUser
-      );
+      const options = await getApiAuthRequestOptions(currentUser);
 
-      const createContentDto: CreateContentDto = {
+      const createContentRequest: CreateContentRequest = {
         name,
         parentId,
       };
 
       const response = await this.contentApi.contentControllerCreateContent(
-        { createContentDto },
-        config.baseOptions
+        { createContentRequest },
+        options
       );
 
-      return this.mapContentDtoToContent(response.data);
+      return this.mapContentResponseToContent(response.data);
     } catch (error) {
       console.error('Failed to create note:', error);
       throw error;
     }
   }
 
-  async renameContent(
+  /**
+   * `GET /api/content/:id/body/signed-url` — signed read URL. Returns `null` when the note has no body yet (HTTP 404).
+   */
+  async getContentBody(
+    currentUser: User,
+    id: string
+  ): Promise<ContentBodyUrlResponse | null> {
+    try {
+      const baseOptions = await getApiAuthRequestOptions(currentUser);
+      const headers = {
+        ...((baseOptions.headers as Record<string, string> | undefined) ?? {}),
+        'Cache-Control': 'no-cache',
+        Pragma: 'no-cache',
+      };
+      const options = { ...baseOptions, headers };
+
+      const response =
+        await this.contentApi.contentControllerGetContentBodySignedUrl(
+          { id },
+          options
+        );
+
+      return response.data;
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 404) {
+        return null;
+      }
+      console.error('Failed to get content body signed URL:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Fetches markdown (or other) bytes using a signed Storage URL (no Firebase bearer; auth is in the URL).
+   */
+  async fetchNoteMarkdown(signedUrl: string): Promise<string> {
+    const response = await fetch(signedUrl);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to download note body: HTTP ${response.status} ${response.statusText}`
+      );
+    }
+    return response.text();
+  }
+
+  /**
+   * `PUT /api/content/:id/body` — raw body; `contentType` is stored with the object (e.g. `text/markdown`).
+   */
+  async putContentBody(
     currentUser: User,
     id: string,
-    name: string
+    bodyText: string,
+    contentType: string
   ): Promise<Content> {
     try {
-      const config = await createAuthenticatedApiConfiguration(
-        this.basePath,
-        currentUser
+      const options = await getApiAuthRequestOptions(currentUser);
+
+      const file = new File([bodyText], 'note-body', { type: contentType });
+
+      const response = await this.contentApi.contentControllerPutContentBody(
+        { id, contentType, body: file },
+        options
       );
 
-      const updateContentNameDto: UpdateContentNameDto = { name };
-
-      const response = await this.contentApi.contentControllerRenameContent(
-        { id, updateContentNameDto },
-        config.baseOptions
-      );
-
-      return this.mapContentDtoToContent(response.data);
+      return this.mapContentResponseToContent(response.data);
     } catch (error) {
-      console.error('Failed to rename content:', error);
+      console.error('Failed to put content body:', error);
+      throw error;
+    }
+  }
+
+  async patchContent(
+    currentUser: User,
+    id: string,
+    body: UpdateContentRequest
+  ): Promise<Content> {
+    try {
+      const options = await getApiAuthRequestOptions(currentUser);
+
+      const response = await this.contentApi.contentControllerPatchContent(
+        { id, updateContentRequest: body },
+        options
+      );
+
+      return this.mapContentResponseToContent(response.data);
+    } catch (error) {
+      console.error('Failed to patch content:', error);
       throw error;
     }
   }
@@ -191,10 +253,4 @@ export class ContentService {
   }
 }
 
-/**
- * Default Content Service Instance
- *
- * Pre-configured content service instance that can be imported and used directly.
- * Uses the default base path configuration.
- */
 export const contentService = new ContentService();

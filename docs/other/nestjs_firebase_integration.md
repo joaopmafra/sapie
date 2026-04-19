@@ -1,6 +1,6 @@
 # NestJS Firebase Integration Guide
 
-**TODO:** merge this document to the existing [FIREBASE_ADMIN_SETUP.md](../../packages/api/FIREBASE_ADMIN_SETUP.md).
+**TODO:** merge this document into [packages/api/docs/firebase-admin-setup.md](../../packages/api/docs/firebase-admin-setup.md) (and trim duplication).
 
 This document provides comprehensive information about Firebase integration in the Sapie API, including authentication,
 user management, and development setup.
@@ -253,7 +253,7 @@ FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
 
 ### Firebase Project Configuration
 
-See `packages/api/FIREBASE_ADMIN_SETUP.md` for detailed setup instructions.
+See `packages/api/docs/firebase-admin-setup.md` for detailed setup instructions.
 
 ## Testing
 

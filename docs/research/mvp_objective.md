@@ -25,10 +25,12 @@ The core feature. Notes are the primary content type.
 
 - Create notes in folders (modal with name + location)
 - Editable note name (inline in editor)
-- Rich text editor with: headings, bold/italic, lists, **code blocks with syntax highlighting** (essential for DSA
-  and system design), links
-- Auto-save with visible save status
-- Candidate library: `@mdxeditor/editor` (already referenced in research notes)
+- **Sequencing (backlog):** [Story 55](../pm/5-done/55-story-note_content_editor.md) ships a **multiline text
+  editor + auto-save** first; [Story 66](../pm/3-stories/1-ready/66-story-content_body_subdocument_and_client_cache.md)
+  introduces nested body metadata + client cache policy; [Story 67](../pm/3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md)
+  adds the **rich text editor** with: headings, bold/italic, lists, **code blocks with syntax highlighting** (essential
+  for DSA and system design), links — using `@mdxeditor/editor` (already referenced in research notes)
+- Auto-save with visible save status (Story 55 onward)
 
 **Math/LaTeX**: defer to a later iteration.
 
@@ -36,6 +38,10 @@ The core feature. Notes are the primary content type.
 
 Essential for organizing notes across 4 study domains (AI, DSA, System Design, DevSecOps) from day one.
 Without folders, all content lands in the root directory and becomes unmanageable immediately.
+
+**Nested folders:** The content tree already supports nesting ([Story 50](../pm/5-done/50-story-nested_folders_support.md)).
+Folder **creation** (including nested) is tracked in [Story 63](../pm/3-stories/1-ready/63-story-folder_creation.md); treat that
+as the primary backlog item rather than duplicating a “nested directories” story unless a new product gap appears.
 
 **Scope for MVP:**
 
@@ -139,7 +145,7 @@ Full plan: `docs/research/client_state_management/phase_1_tanstack_query.md`
 |----------|---------------------------------------------------------------|-----------------------|
 | 1        | Complete Story 53 (Tasks 4–6): note editor shell + rename API | —                     |
 | 2        | TanStack Query refactor                                       | Story 53 complete     |
-| 3        | Note content editor with auto-save (Story 55)                 | TanStack Query        |
+| 3        | Note content editor with auto-save (Story 55 → 66 → 67)       | TanStack Query        |
 | 4        | Folder creation                                               | Story 53 complete     |
 | 5        | Content deletion (notes + folders)                            | Story 53 complete     |
 | 6        | Flashcard deck + card creation (in note editor)               | Note editor           |

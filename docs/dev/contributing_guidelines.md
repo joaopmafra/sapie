@@ -58,11 +58,12 @@ Checks lint, format, types, and tests.
 
 We ship fast and still use **XP-style** tests where they pay off ([general.mdc](../../.cursor/rules/general.mdc)).
 
-| Area    | Expectation                                                                                                                                                                                             |
-|---------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **API** | Prefer **Classical TDD** for behavior changes — [unit_testing_strategy.md](unit_testing_strategy.md), [unit_testing_sapie.md](unit_testing_sapie.md). Focus on auth, authorization, and data integrity. |
-| **Web** | Story-driven; add tests when the story requires or for non-trivial logic (not thin library wrappers).                                                                                                   |
-| **E2E** | **Not maintained** for the current MVP push unless a story explicitly says otherwise.                                                                                                                   |
+- **API:** Prefer **Classical TDD** for behavior changes — [unit_testing_strategy.md](unit_testing_strategy.md),
+  [unit_testing_sapie.md](unit_testing_sapie.md). Exercise HTTP behavior via **controller specs** with **fakes at
+  external boundaries** only; do not add parallel `*.service.spec.ts` files that mock internal repositories when the
+  controller suite already covers the same outcomes.
+- **Web:** Story-driven; add tests when the story requires or for non-trivial logic (not thin library wrappers).
+- **E2E:** **Not maintained** for the current MVP push unless a story explicitly says otherwise.
 
 Do not add tests whose only purpose is to mock third-party SDKs. If tests are deferred for speed, say so in the story.
 

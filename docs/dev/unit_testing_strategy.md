@@ -55,15 +55,15 @@ _Growing Object-Oriented Software, Guided by Tests_. Its key properties:
 
 ### Comparison
 
-| Dimension | Classical (Detroit) | Mockist (London) |
-|---|---|---|
-| **Unit definition** | A behavior (spans many classes) | A single class or function |
-| **Dependencies** | Real or fakes | All mocked |
-| **What is verified** | Observable output / state | Interactions (method calls) |
-| **Refactor safety** | High — tests survive internal refactoring | Low — tests break on refactoring |
-| **Bug detection** | High — fakes behave like real systems | Medium — mocks can paper over bugs |
-| **Design feedback** | Emergent — tests focus on contracts | Prescriptive — tests prescribe wiring |
-| **Originated with** | Kent Beck | Steve Freeman & Nat Pryce |
+| Dimension            | Classical (Detroit)                       | Mockist (London)                      |
+| -------------------- | ----------------------------------------- | ------------------------------------- |
+| **Unit definition**  | A behavior (spans many classes)           | A single class or function            |
+| **Dependencies**     | Real or fakes                             | All mocked                            |
+| **What is verified** | Observable output / state                 | Interactions (method calls)           |
+| **Refactor safety**  | High — tests survive internal refactoring | Low — tests break on refactoring      |
+| **Bug detection**    | High — fakes behave like real systems     | Medium — mocks can paper over bugs    |
+| **Design feedback**  | Emergent — tests focus on contracts       | Prescriptive — tests prescribe wiring |
+| **Originated with**  | Kent Beck                                 | Steve Freeman & Nat Pryce             |
 
 ---
 
@@ -130,13 +130,13 @@ Mocks are the primary test double in the Mockist school.
 
 ### Summary Table
 
-| Double | Has logic? | Verifies? | Primary school |
-|---|---|---|---|
-| Dummy | No | No | Either |
-| Stub | No (hardcoded) | No | Either |
-| Fake | Yes (simplified) | No | Classical |
-| Spy | Records calls | Yes (via assertions) | Either |
-| Mock | Records + expects | Yes (automatically) | Mockist |
+| Double | Has logic?        | Verifies?            | Primary school |
+| ------ | ----------------- | -------------------- | -------------- |
+| Dummy  | No                | No                   | Either         |
+| Stub   | No (hardcoded)    | No                   | Either         |
+| Fake   | Yes (simplified)  | No                   | Classical      |
+| Spy    | Records calls     | Yes (via assertions) | Either         |
+| Mock   | Records + expects | Yes (automatically)  | Mockist        |
 
 ---
 
@@ -185,11 +185,11 @@ mock and configure expectations. The cost manifests over time:
 
 Rough cost model for 100 tests over a typical codebase lifetime:
 
-| | Mockist | Classical |
-|---|---|---|
-| Writing tests | ~500 min (5 min each) | ~260 min (60 min fake + 2 min each) |
-| Post-refactor repair | ~200 min (20 tests × 10 min) | 0 min |
-| **Total** | **~700 min** | **~260 min** |
+|                      | Mockist                      | Classical                           |
+| -------------------- | ---------------------------- | ----------------------------------- |
+| Writing tests        | ~500 min (5 min each)        | ~260 min (60 min fake + 2 min each) |
+| Post-refactor repair | ~200 min (20 tests × 10 min) | 0 min                               |
+| **Total**            | **~700 min**                 | **~260 min**                        |
 
 The upfront investment in a well-built fake pays for itself within the first major refactoring.
 
@@ -207,6 +207,19 @@ The Classical school is not dogmatic. There are cases where mocks (or spies) are
 
 The key principle: prefer fakes for _collaborators that maintain state_; consider mocks or spies
 for _collaborators that trigger side effects_.
+
+### Layered apps (e.g. NestJS): do not mock internal providers “for coverage”
+
+In a typical API stack (controller → service → repository), **classical tests should not mock
+the repository or service** just to unit-test the layer in the middle. If the behavior is
+exposed through HTTP, drive the **same** behavior through the controller using **supertest**,
+keep the **real** service and repository wired, and replace only **outer** boundaries (auth,
+database emulator, storage fake, etc.). Mocking `ContentRepository` in `ContentService` specs
+while also testing `ContentController` duplicates effort and produces **mockist** tests that
+break on refactoring and prove little about integrated behavior.
+
+Reserve mocks/spies for true side-effect edges or adapter-level tests, as above. Project-specific
+wording and examples: [Unit Testing — Sapie Implementation](unit_testing_sapie.md).
 
 ---
 
@@ -292,10 +305,10 @@ be kept in sync with production code — exactly the same divergence risk descri
 
 ### Summary
 
-| Seeding method | Use for | Risk if misused |
-|---|---|---|
-| Through the application (API / service) | Business logic tests | None — single source of truth |
-| Directly against the storage layer | Migration / backward-compatibility tests | Creates a second encoding of write logic that can drift |
+| Seeding method                          | Use for                                  | Risk if misused                                         |
+| --------------------------------------- | ---------------------------------------- | ------------------------------------------------------- |
+| Through the application (API / service) | Business logic tests                     | None — single source of truth                           |
+| Directly against the storage layer      | Migration / backward-compatibility tests | Creates a second encoding of write logic that can drift |
 
 ---
 

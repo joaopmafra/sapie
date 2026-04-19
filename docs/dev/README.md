@@ -17,10 +17,15 @@ Assistants: [ai_agent_guidelines.md](ai_agent_guidelines.md)
 
 Firebase Emulator Suite for dev and tests is started via **Docker Compose** at the repo root
 (`compose.local-dev.yml`, `compose.test-unit.yml`, `compose.emulator.yml`, `compose.test-e2e.yml`). Rationale:
-[ADR 0001](../adr/0001-firebase-emulators-docker-compose.md). Commands: [ai_agent_guidelines.md](ai_agent_guidelines.md#firebase-emulators-docker-compose).
+[ADR 0001](../adr/0001-firebase-emulators-docker-compose.md) (Compose / ports). Note body in Storage + API/testing
+decisions: [ADR 0002](../adr/0002-note-body-storage-and-api.md) (see [content naming](content_naming.md)). Commands:
+[ai_agent_guidelines.md](ai_agent_guidelines.md#firebase-emulators-docker-compose).
 
 Supporting material:
 
+- [Firebase — new hosted environment (project)](firebase_environment_setup.md) — create Auth, Firestore, Storage; CLI
+  alias; deploy; IAM + bucket CORS checklist
+- [Content naming — metadata vs content body](content_naming.md) — Firestore **content** vs Storage **content body**
 - [xp_simplicity_is_the_key.md](xp_simplicity_is_the_key.md)
 - [tdd_baby_steps.md](tdd_baby_steps.md)
 - [unit_testing_strategy.md](unit_testing_strategy.md)

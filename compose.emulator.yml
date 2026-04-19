@@ -16,7 +16,7 @@ services:
       [
         "sh",
         "-c",
-        "set -e && cd /workspace/packages/api && pnpm install --prod --frozen-lockfile && cd /workspace && exec firebase emulators:start --project emulator --only auth,firestore,functions,hosting,ui",
+        "set -e && cd /workspace/packages/api && pnpm install --prod --frozen-lockfile && cd /workspace && exec firebase emulators:start --project emulator --only auth,firestore,functions,storage,hosting,ui",
       ]
     ports:
       - "4000:4000"
@@ -27,6 +27,7 @@ services:
       - "8080:8080"
       - "9099:9099"
       - "9150:9150"
+      - "9210:9210"
     volumes:
       - ./.firebaserc:/workspace/.firebaserc:ro
       - ./firebase.emulator.json:/workspace/firebase.json:ro

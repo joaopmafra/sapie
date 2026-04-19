@@ -121,6 +121,11 @@ For detailed documentation on each package:
 - **[API](./packages/api/README.md)** - NestJS backend development, endpoints, and testing
 - **[E2E Tests](./packages/test-e2e/README.md)** - End-to-end testing with Playwright
 
+Firebase and GCP deep dives (Auth, Admin SDK, **signed URLs / IAM**, **Storage bucket CORS**):
+
+- **[API package docs](./packages/api/docs/README.md)**
+- **[Web package docs](./packages/web/docs/README.md)**
+
 ## Authentication
 
 Sapie includes user authentication powered by **Firebase Auth** with **FirebaseUI**.
@@ -129,7 +134,8 @@ Sapie includes user authentication powered by **Firebase Auth** with **FirebaseU
 persistence.
 
 For detailed authentication setup, configuration, and usage instructions, see the
-**[Web App Authentication Documentation](./packages/web/README.md#authentication)**.
+**[Web App Authentication Documentation](./packages/web/README.md#authentication)** and
+**[Firebase (web)](./packages/web/docs/firebase-web.md)**.
 
 ## Development
 

@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
-import { ProblemDetailsDto, ProblemDetailsErrorItemDto } from './common/dto/problem-details.dto';
+import { ProblemDetailsDto, ProblemDetailsErrorItemDto } from './dto/problem-details.dto';
 
 export function setupSwagger(app: INestApplication) {
   const config = new DocumentBuilder()

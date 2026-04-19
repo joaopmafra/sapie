@@ -1,4 +1,17 @@
-import { Controller, Get, Request, Logger, Post, Body, Patch, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Request,
+  Logger,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Put,
+  Headers,
+  Header,
+  BadRequestException,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -13,14 +26,21 @@ import {
   ApiBadRequestResponse,
   ApiUnprocessableEntityResponse,
   ApiParam,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
 import { apiProblemDetailsSchema } from '../../common/dto/problem-details.dto';
 import { Auth } from '../../auth';
 import { AuthenticatedRequest } from '../../auth';
 import { RootDirectoryService } from '../services/root-directory.service';
-import { Content } from '../entities/content.entity';
 import { ContentService } from '../services/content.service';
-import { ContentDto, CreateContentDto, UpdateContentNameDto } from '../dto/content.dto';
+import {
+  ContentBodyUrlResponse,
+  ContentResponse,
+  CreateContentRequest,
+  toContentResponse,
+  UpdateContentRequest,
+} from '../dto/content.dto';
 
 /**
  * Content Controller
@@ -41,15 +61,17 @@ export class ContentController {
   @Post()
   @Auth()
   @ApiOperation({
-    summary: 'Create a new note',
-    description: 'Creates a new note with a given name and parent ID.',
+    summary: 'Create content (note)',
+    description:
+      'Creates leaf content under the given parent. MVP only creates items of type `note`; ' +
+      'other kinds may reuse or extend this contract later.',
   })
   @ApiCreatedResponse({
-    description: 'Note created successfully.',
-    type: ContentDto,
+    description: 'Content (metadata) created successfully.',
+    type: ContentResponse,
   })
   @ApiConflictResponse({
-    description: 'A note with the same name already exists in the target location.',
+    description: 'Content with the same name already exists in the target location.',
     ...apiProblemDetailsSchema,
   })
   @ApiForbiddenResponse({
@@ -70,22 +92,27 @@ export class ContentController {
   })
   async createContent(
     @Request() request: AuthenticatedRequest,
-    @Body() createContentDto: CreateContentDto
-  ): Promise<Content> {
+    @Body() createContentRequest: CreateContentRequest
+  ): Promise<ContentResponse> {
     const { user } = request;
-    const { name, parentId } = createContentDto;
+    const { name, parentId } = createContentRequest;
     this.logger.debug(
-      `Creating note for user: ${user.uid} with name: ${name} and parentId: ${parentId}`
+      `Creating content for user: ${user.uid} with name: ${name} and parentId: ${parentId}`
     );
-    return this.contentService.create(name, parentId, user.uid);
+    const created = await this.contentService.create(name, parentId, user.uid);
+    return toContentResponse(created);
   }
 
   @Patch(':id')
   @Auth()
   @ApiOperation({
-    summary: 'Rename content',
+    summary: 'Patch content metadata',
     description:
-      'Updates the display name of a content. Names must be unique among siblings (same parent).',
+      'Partially updates content metadata. Today this supports renaming (`name`). ' +
+      'Moving an item to another folder (`parentId`) will use the same route; that behavior is **not implemented yet** ' +
+      'and returns `400 Bad Request` if `parentId` is sent. ' +
+      'Content body bytes and storage-derived fields (`bodyUri`, `size`, `bodyMimeType`) are changed only via `PUT …/body`. ' +
+      'When renaming, names must stay unique among siblings under the same parent.',
   })
   @ApiParam({
     name: 'id',
@@ -94,8 +121,8 @@ export class ContentController {
     type: String,
   })
   @ApiOkResponse({
-    description: 'Content renamed successfully.',
-    type: ContentDto,
+    description: 'Content metadata updated successfully.',
+    type: ContentResponse,
   })
   @ApiNotFoundResponse({
     description:
@@ -103,11 +130,13 @@ export class ContentController {
     ...apiProblemDetailsSchema,
   })
   @ApiConflictResponse({
-    description: 'Another item with the same name already exists in this location.',
+    description: 'Other content in this location already uses that name.',
     ...apiProblemDetailsSchema,
   })
   @ApiBadRequestResponse({
-    description: 'Malformed request body or parameters.',
+    description:
+      'Malformed request body or parameters, empty patch body, reserved fields not yet supported (e.g. `parentId`), ' +
+      'or rename requested without a `name` field.',
     ...apiProblemDetailsSchema,
   })
   @ApiUnprocessableEntityResponse({
@@ -118,26 +147,37 @@ export class ContentController {
     description: 'Unauthorized - Valid Firebase ID token required',
     ...apiProblemDetailsSchema,
   })
-  /**
-   * TODO: Currently this endpoint implements only content renaming. In the future it's likely that we will need to
-   *  add support for other fields and content files (the content entity contains only metadata) as well. About the
-   *  content files handling, maybe we should create a new controller for that.
-   */
-  async renameContent(
+  async patchContent(
     @Request() request: AuthenticatedRequest,
     @Param('id') id: string,
-    @Body() updateContentNameDto: UpdateContentNameDto
-  ): Promise<Content> {
+    @Body() body: UpdateContentRequest
+  ): Promise<ContentResponse> {
     const { user } = request;
-    this.logger.debug(`Renaming content ${id} for user: ${user.uid}`);
-    return this.contentService.renameContent(id, updateContentNameDto.name, user.uid);
+
+    if (body.parentId !== undefined) {
+      throw new BadRequestException(
+        'Moving content to another folder is not implemented yet; omit `parentId` from the request body.'
+      );
+    }
+
+    if (body.name === undefined || body.name === null) {
+      throw new BadRequestException(
+        'Request body must include `name` until additional patch fields (such as `parentId`) are supported.'
+      );
+    }
+
+    this.logger.debug(`Patching content ${id} for user: ${user.uid}`);
+    const updated = await this.contentService.patchContent(id, body.name, user.uid);
+    return toContentResponse(updated);
   }
 
   @Get(':id/children')
   @Auth()
   @ApiOperation({
     summary: "List a parent's children",
-    description: 'Returns a list of content items for a given parent ID.',
+    description:
+      'Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. ' +
+      'Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).',
   })
   @ApiParam({
     name: 'id',
@@ -146,8 +186,8 @@ export class ContentController {
     type: String,
   })
   @ApiOkResponse({
-    description: 'Content retrieved successfully.',
-    type: [ContentDto],
+    description: 'Child content (metadata) returned successfully.',
+    type: [ContentResponse],
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Valid Firebase ID token required',
@@ -156,14 +196,135 @@ export class ContentController {
   async listContents(
     @Request() request: AuthenticatedRequest,
     @Param('id') id: string
-  ): Promise<Content[]> {
+  ): Promise<ContentResponse[]> {
     const { user } = request;
     this.logger.debug(`Getting content for user: ${user.uid} with parent content ID: ${id}`);
 
     // uncomment to test the loading indicator
     // await new Promise(resolve => setTimeout(resolve, 1000));
 
-    return this.contentService.findByParentIdAndOwnerId(id, request.user.uid);
+    const children = await this.contentService.findByParentIdAndOwnerId(id, request.user.uid);
+    return children.map(toContentResponse);
+  }
+
+  @Get(':id/body/signed-url')
+  @Auth()
+  @ApiOperation({
+    summary: 'Get signed URL to read content body',
+    description:
+      'Returns a short-lived signed URL for downloading the content body from Cloud Storage (valid 10 minutes). ' +
+      '404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes. ',
+  })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description:
+      'The ID of the content whose content body is read (leaf types such as a note in MVP).',
+    type: String,
+  })
+  @ApiOkResponse({
+    description: 'Signed URL and expiry.',
+    type: ContentBodyUrlResponse,
+  })
+  @ApiNotFoundResponse({
+    description:
+      'Content not found, no content body yet, or wrong type (see operation description).',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiForbiddenResponse({
+    description: 'Authenticated user does not own this content.',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiBadRequestResponse({
+    description: 'Body storage is not applicable (e.g. directory).',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Valid Firebase ID token required',
+    ...apiProblemDetailsSchema,
+  })
+  // TODO: Revisit inlining a signed read URL into `GET /:id` or `GET /:id/children` if we need fewer client round
+  //  trips (trade-offs: signing volume, payload size, URL expiry vs metadata cache).
+  @Header('Cache-Control', 'no-store, no-cache, must-revalidate')
+  @Header('Pragma', 'no-cache')
+  async getContentBodySignedUrl(
+    @Request() request: AuthenticatedRequest,
+    @Param('id') id: string
+  ): Promise<ContentBodyUrlResponse> {
+    const { user } = request;
+    this.logger.debug(`Getting body signed URL for content ${id}, user ${user.uid}`);
+    return this.contentService.getContentBodySignedUrl(id, user.uid);
+  }
+
+  @Put(':id/body')
+  @Auth()
+  @ApiConsumes('application/octet-stream', 'text/plain', 'text/markdown', 'image/png', 'image/jpeg')
+  @ApiBody({
+    description:
+      'Raw bytes of the content body. The `Content-Type` header sets the stored media type (e.g. markdown as `text/plain` or `text/markdown`, images as `image/*`). ' +
+      'Omitting `Content-Type` defaults to `application/octet-stream`. `multipart/*` is rejected (415) until explicitly supported.',
+    schema: { type: 'string', format: 'binary' },
+  })
+  @ApiOperation({
+    summary: 'Upload or replace content body',
+    description:
+      'Single endpoint for any raw body type the client declares via `Content-Type`. Updates Cloud Storage object metadata and Firestore (`bodyUri`, `size`, `bodyMimeType`).',
+  })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description:
+      'The ID of the content whose content body is replaced (leaf types such as a note in MVP).',
+    type: String,
+  })
+  @ApiOkResponse({
+    description: 'Updated content metadata (no inline content body).',
+    type: ContentResponse,
+  })
+  @ApiNotFoundResponse({
+    description: 'Content not found.',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiForbiddenResponse({
+    description: 'Authenticated user does not own this content.',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiBadRequestResponse({
+    description: 'Body storage is not applicable (e.g. directory) or malformed request.',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiResponse({
+    status: 415,
+    description: 'Unsupported media type (e.g. multipart body on this route).',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Valid Firebase ID token required',
+    ...apiProblemDetailsSchema,
+  })
+  async putContentBody(
+    @Request() request: AuthenticatedRequest & { body: unknown },
+    @Param('id') id: string,
+    @Headers('content-type') contentType?: string
+  ): Promise<ContentResponse> {
+    const { user } = request;
+    const buffer = this.readRawPutBody(request.body);
+    this.logger.debug(`Putting body for content ${id}, user ${user.uid} (${buffer.length} bytes)`);
+    const updated = await this.contentService.putContentBody(id, user.uid, buffer, contentType);
+    return toContentResponse(updated);
+  }
+
+  private readRawPutBody(body: unknown): Buffer {
+    if (Buffer.isBuffer(body)) {
+      return body;
+    }
+    if (typeof body === 'string') {
+      return Buffer.from(body, 'utf8');
+    }
+    if (body === undefined || body === null) {
+      return Buffer.alloc(0);
+    }
+    throw new BadRequestException('Request body must be raw bytes for this endpoint');
   }
 
   /**
@@ -173,7 +334,7 @@ export class ContentController {
    * and returns it. If the directory doesn't exist, it will be created.
    *
    * @param request - HTTP request with authenticated user context
-   * @returns Promise<Content> - The user's root directory
+   * @returns Promise<ContentResponse> - The user's root directory
    */
   @Get('/root')
   @Auth()
@@ -187,7 +348,7 @@ export class ContentController {
   @ApiResponse({
     status: 200,
     description: 'Root directory retrieved or created successfully',
-    type: ContentDto,
+    type: ContentResponse,
   })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Valid Firebase ID token required',
@@ -197,7 +358,7 @@ export class ContentController {
     description: 'Internal server error - Failed to ensure root directory',
     ...apiProblemDetailsSchema,
   })
-  async getRootDirectory(@Request() request: AuthenticatedRequest): Promise<Content> {
+  async getRootDirectory(@Request() request: AuthenticatedRequest): Promise<ContentResponse> {
     const userId = request.user.uid;
 
     try {
@@ -210,7 +371,7 @@ export class ContentController {
       this.logger.debug(
         `Successfully retrieved root directory for user: ${userId}, directory ID: ${rootDirectory.id}`
       );
-      return rootDirectory;
+      return toContentResponse(rootDirectory);
     } catch (error) {
       this.logger.error(`Failed to get root directory for user: ${userId}`, error);
       throw error;
@@ -220,18 +381,20 @@ export class ContentController {
   @Get(':id')
   @Auth()
   @ApiOperation({
-    summary: 'Get content item by ID',
-    description: 'Returns metadata for a single note or folder owned by the authenticated user.',
+    summary: 'Get content by ID',
+    description:
+      'Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body/signed-url` for a signed read URL. ' +
+      'Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).',
   })
   @ApiParam({
     name: 'id',
     required: true,
-    description: 'The ID of the content item.',
+    description: 'The ID of the content.',
     type: String,
   })
   @ApiOkResponse({
-    description: 'Content item found.',
-    type: ContentDto,
+    description: 'Content (metadata) found.',
+    type: ContentResponse,
   })
   @ApiNotFoundResponse({
     description:
@@ -245,9 +408,10 @@ export class ContentController {
   async getContentById(
     @Request() request: AuthenticatedRequest,
     @Param('id') id: string
-  ): Promise<Content> {
+  ): Promise<ContentResponse> {
     const { user } = request;
     this.logger.debug(`Getting content ${id} for user: ${user.uid}`);
-    return this.contentService.findByIdAndOwnerId(id, user.uid);
+    const item = await this.contentService.findByIdAndOwnerId(id, user.uid);
+    return toContentResponse(item);
   }
 }

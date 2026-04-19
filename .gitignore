@@ -86,3 +86,7 @@ functions
 
 exec
 /.vscode
+
+.playwright-mcp
+
+.private

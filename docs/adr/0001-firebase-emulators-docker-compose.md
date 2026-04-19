@@ -36,7 +36,8 @@ profile.
       warns). Storage included in **`--only`** when present in config so future features do not require compose churn.
     - `compose.test-unit.yml` — Jest in `packages/api`; project **`demo-test-unit`**; `firebase.test-unit.json`; **tmpfs
       **
-      for Firestore data; non-default ports (e.g. Firestore **8181**, Auth **9098**, UI **4001**) documented in
+      for Firestore data; non-default ports (e.g. Firestore **8181**, Auth **9098**, Storage **9199**, UI **4001**)
+      documented in
       `docs/dev/unit_testing_sapie.md`. Helpers: `scripts/emulator-test-unit-start.sh`,
       `scripts/emulator-test-unit-stop.sh`, `scripts/emulator-test-unit-remove.sh`.
     - `compose.emulator.yml` — full stack in Docker; **`pnpm emulator`** → `scripts/build-run-on-emulator.sh` after

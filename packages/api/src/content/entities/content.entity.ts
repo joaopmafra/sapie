@@ -13,14 +13,14 @@ export enum ContentType {
 /**
  * Content Entity Interface
  *
- * Represents a content item in the system, which can be either a directory or a note.
- * This interface is used for in-memory representation and API responses.
+ * Content metadata for something in the tree (directory or note). See `docs/dev/content_naming.md`
+ * for **content** vs **content body**.
  */
 export interface Content {
-  /** Unique identifier for the content item */
+  /** Unique identifier for the content (metadata record) */
   id: string;
 
-  /** Display name of the content item */
+  /** Display name of the content */
   name: string;
 
   /** Type of content (directory or note) */
@@ -32,11 +32,20 @@ export interface Content {
   /** ID of the user who owns this content */
   ownerId: string;
 
-  /** URL to the actual content file (only for files, not directories) */
-  contentUrl?: string | null;
+  /**
+   * Object path for the content body in the configured default bucket (`ownerId/content/contentId`),
+   * provider-agnostic (no `gs://` prefix). Null until the first body save.
+   */
+  bodyUri?: string | null;
 
   /** Size of the content in bytes (only for files, not directories) */
   size?: number | null;
+
+  /**
+   * IANA media type of the stored body object (from the last successful `PUT …/body` `Content-Type`),
+   * e.g. `text/plain`, `image/png`. Null until the first body save.
+   */
+  bodyMimeType?: string | null;
 
   /** Timestamp when the content was created */
   createdAt: Date;
@@ -53,7 +62,7 @@ export interface Content {
  * and Firestore Timestamp objects.
  */
 export interface ContentDocument {
-  /** Display name of the content item */
+  /** Display name of the content */
   name: string;
 
   /** Type of content (directory or note) */
@@ -65,11 +74,14 @@ export interface ContentDocument {
   /** ID of the user who owns this content */
   ownerId: string;
 
-  /** URL to the actual content file (only for files, not directories) */
-  contentUrl?: string;
+  /** Object path for content body (see {@link Content.bodyUri}). */
+  bodyUri?: string;
 
   /** Size of the content in bytes (only for files, not directories) */
   size?: number;
+
+  /** Media type of the stored body (see {@link Content.bodyMimeType}). */
+  bodyMimeType?: string | null;
 
   /** Firestore timestamp when the content was created */
   createdAt: admin.firestore.Timestamp;
@@ -79,12 +91,12 @@ export interface ContentDocument {
 }
 
 /**
- * Create Content Request Interface
+ * Fields used when persisting new content (metadata), e.g. from the repository layer.
  *
- * Represents the data required to create a new content item.
+ * For the HTTP **command** shape (`POST /api/content`), use {@link CreateContentRequest} in `content.dto.ts`.
  */
-export interface CreateContentRequest {
-  /** Display name of the content item */
+export interface ContentCreationInput {
+  /** Display name of the content */
   name: string;
 
   /** Type of content (directory or note) */
@@ -93,27 +105,8 @@ export interface CreateContentRequest {
   /** ID of the parent directory, null for root directory */
   parentId: string | null;
 
-  /** URL to the actual content file (only for files, not directories) */
-  contentUrl?: string;
-
-  /** Size of the content in bytes (only for files, not directories) */
-  size?: number;
-}
-
-/**
- * Update Content Request Interface
- *
- * Represents the data that can be updated for an existing content item.
- */
-export interface UpdateContentRequest {
-  /** Display name of the content item */
-  name?: string;
-
-  /** ID of the parent directory */
-  parentId?: string | null;
-
-  /** URL to the actual content file (only for files, not directories) */
-  contentUrl?: string;
+  /** Object path for content body (see {@link Content.bodyUri}). */
+  bodyUri?: string;
 
   /** Size of the content in bytes (only for files, not directories) */
   size?: number;

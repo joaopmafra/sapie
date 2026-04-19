@@ -13,18 +13,27 @@ import {
   ProblemDetailsExceptionFilter,
 } from './problem-details.exception-filter';
 
-function createMockHost(reqUrl: string): {
+function createMockHost(
+  reqUrl: string,
+  reqOverrides?: Partial<Pick<Request, 'method' | 'path'>>
+): {
   host: ArgumentsHost;
   status: jest.Mock;
   json: jest.Mock;
+  setHeader: jest.Mock;
 } {
   const json = jest.fn();
   const setHeader = jest.fn().mockReturnValue({ json });
   const status = jest.fn().mockReturnValue({
     setHeader,
   });
-  const res = { status } as unknown as Response;
-  const req = { url: reqUrl } as Request;
+  const res = { setHeader, status } as unknown as Response;
+  const req = {
+    url: reqUrl,
+    method: 'GET',
+    path: reqUrl.split('?')[0],
+    ...reqOverrides,
+  } as Request;
 
   const host = {
     switchToHttp: () => ({
@@ -33,7 +42,7 @@ function createMockHost(reqUrl: string): {
     }),
   } as ArgumentsHost;
 
-  return { host, status, json };
+  return { host, status, json, setHeader };
 }
 
 function getProblemBodyFromJsonMock(json: jest.Mock): ProblemDetailsBody {
@@ -188,6 +197,16 @@ describe('ProblemDetailsExceptionFilter', () => {
     const body = getProblemBodyFromJsonMock(json);
     assertProblemDetailsEnvelope(body);
     expect(body.instance).toBeUndefined();
+  });
+
+  it('sets no-store on GET /api/content/:id/body/signed-url error responses', () => {
+    const { host, setHeader } = createMockHost('/api/content/n1/body/signed-url', {
+      path: '/api/content/n1/body/signed-url',
+    });
+    filter.catch(new NotFoundException('Content has no stored body yet'), host);
+
+    expect(setHeader).toHaveBeenCalledWith('Cache-Control', 'no-store, no-cache, must-revalidate');
+    expect(setHeader).toHaveBeenCalledWith('Pragma', 'no-cache');
   });
 
   it('maps non-Http Error to 500 problem+json with full shape', () => {

@@ -216,7 +216,7 @@ does not return the note body text. Note body content is stored in Cloud Storage
 signed URL flow implemented in Story 55:
 
 - `GET /api/content/:id` → metadata (this step)
-- `GET /api/content/:id/body` → signed URL pointing to Cloud Storage (Story 55)
+- `GET /api/content/:id/body/signed-url` → signed URL pointing to Cloud Storage (Story 55)
 - Client fetches markdown directly from Cloud Storage using the signed URL (Story 55)
 
 This TanStack Query refactor only concerns itself with the metadata query (`useContentItem`). The content body
@@ -231,7 +231,7 @@ async getContentById(currentUser: User, id: string): Promise<Content> {
     { id },
     config.baseOptions
   );
-  return this.mapContentDtoToContent(response.data);
+  return this.mapContentResponseToContent(response.data);
 }
 ```
 

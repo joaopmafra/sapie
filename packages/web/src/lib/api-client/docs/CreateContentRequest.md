@@ -1,4 +1,4 @@
-# CreateContentDto
+# CreateContentRequest
 
 
 ## Properties
@@ -11,9 +11,9 @@ Name | Type | Description | Notes
 ## Example
 
 ```typescript
-import { CreateContentDto } from 'api-client';
+import { CreateContentRequest } from 'api-client';
 
-const instance: CreateContentDto = {
+const instance: CreateContentRequest = {
     name,
     parentId,
 };

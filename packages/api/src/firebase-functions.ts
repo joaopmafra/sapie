@@ -1,18 +1,24 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { onRequest } from 'firebase-functions/v2/https';
 import { HttpServer } from '@nestjs/common/interfaces/http/http-server.interface';
 import { MillisecondLogger } from './logger/millisecond.logger';
 import { applyHttpAppConfiguration } from './common/http/apply-http-app-configuration';
-import { setupSwagger } from './swagger-setup';
+import { setupSwagger } from './common/swagger-setup';
+import { setupEnvVars } from './common/env-setup';
 
 // This file is used only when running on Firebase or on the Emulator Suite. For local development,
 // the entrypoint is main.ts.
 
-let cachedApp: HttpServer;
+let cachedServer: HttpServer;
 
 async function createNestServer() {
-  if (!cachedApp) {
+  if (!cachedServer) {
+    // Set up environment variables
+    setupEnvVars();
+
+    // Lazy load AppModule to let dotenv run before nest modules initialization
+    const { AppModule } = await import('./app.module');
+
     const app = await NestFactory.create(AppModule, {
       logger: new MillisecondLogger(),
     });
@@ -30,11 +36,12 @@ async function createNestServer() {
     if (process.env.FUNCTIONS_EMULATOR) setupSwagger(app);
 
     await app.init();
+
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    cachedApp = app.getHttpAdapter().getInstance();
+    cachedServer = app.getHttpAdapter().getInstance();
   }
 
-  return cachedApp;
+  return cachedServer;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access

@@ -15,7 +15,7 @@ services:
         "--project",
         "demo-test-unit",
         "--only",
-        "auth,firestore,ui",
+        "auth,firestore,storage,ui",
       ]
     ports:
       # Firestore HTTP (must match emulators.firestore.port in the mounted test-unit config)
@@ -31,9 +31,12 @@ services:
       - "4410:4410"
       # Logging service (emulators.logging.port)
       - "4510:4510"
+      # Storage (emulators.storage.port); distinct from local-dev Storage 9200
+      - "9199:9199"
     volumes:
       - ./.firebaserc:/srv/firebase/.firebaserc:ro
       - ./firebase.test-unit.json:/srv/firebase/firebase.json:ro
+      - ./storage.test-unit.rules:/srv/firebase/storage.test-unit.rules:ro
       - ./firebase/emulator-cache:/root/.cache/firebase/emulators
     tmpfs:
       - /srv/firebase/firestore-data

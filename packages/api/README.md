@@ -26,7 +26,7 @@ packages/api/
 │   └── main.ts              # Local development entry point
 ├── test/                    # E2E tests
 ├── dist/                    # Build output
-├── FIREBASE_ADMIN_SETUP.md  # Firebase Admin SDK setup guide
+├── docs/                    # Firebase / GCP operational guides (see docs/README.md)
 ├── .prettierrc              # Prettier configuration
 ├── eslint.config.mjs        # ESLint configuration (with Prettier integration)
 └── package.json             # Package configuration (@sapie/api)
@@ -37,17 +37,20 @@ packages/api/
 The API supports multiple development environments:
 
 ### 1. Full Emulator Environment (`pnpm run emulator`)
+
 - Hosting + Functions + emulators in **Docker** ([`compose.emulator.yml`](../../compose.emulator.yml)); see root README
 - Complete isolation from production
 - Slower startup but maximum safety
 
 ### 2. Hybrid Local Development (`pnpm run dev:local`)
+
 - **NEW**: API runs locally with hot reloading
 - Firebase services run in emulators (Auth, Firestore)
 - Fast development with emulated Firebase services
 - Best of both worlds: speed + safety
 
 ### 3. Local Development (`pnpm run dev`)
+
 - API runs locally
 - Uses local environment configuration
 
@@ -69,19 +72,21 @@ The API supports multiple development environments:
    ```
 
 3. **Access services**:
-   - API: http://localhost:3000
-   - API Swagger: http://localhost:3000/api/docs
-   - Firebase Auth Emulator (hybrid local): http://localhost:9100
-   - Firestore Emulator (hybrid local): http://localhost:8282
+    - API: http://localhost:3000
+    - API Swagger: http://localhost:3000/api/docs
+    - Firebase Auth Emulator (hybrid local): http://localhost:9100
+    - Firestore Emulator (hybrid local): http://localhost:8282
 
 ## Environment Configuration
 
 The API uses environment files in this order:
+
 1. `.env.${CURRENT_ENV}` (environment-specific)
 
 ### Local Development Variables
 
 See `.env.local-dev.example` for all required variables:
+
 - `CURRENT_ENV=local-dev`
 - `NODE_ENV=development`
 - `FUNCTIONS_EMULATOR=true`
@@ -247,10 +252,35 @@ The Firebase Admin SDK is automatically configured for different environments:
 - **Development with Firebase Emulator**: Uses project ID configuration
 - **Local Development**: Can use service account key file or default credentials
 
-For detailed setup instructions, see [FIREBASE_ADMIN_SETUP.md](./FIREBASE_ADMIN_SETUP.md).
+For Admin SDK credentials and emulators, see [docs/firebase-admin-setup.md](./docs/firebase-admin-setup.md).
 
 For comprehensive authentication documentation,
 see [NestJS Firebase Integration Guide](../../docs/other/nestjs_firebase_integration.md).
+
+#### Cloud Storage (content bodies)
+
+Naming: [Content naming](../../docs/dev/content_naming.md) (**content** = Firestore metadata, **content body** =
+Storage blob). Bytes for `PUT /api/content/:id/body` (any raw `Content-Type`, e.g. markdown, images) are stored at
+`{ownerId}/content/{contentId}` in your Firebase project’s default bucket (or the bucket set explicitly below). The
+Admin SDK talks to the **Storage emulator** when
+`FIREBASE_STORAGE_EMULATOR_HOST` is set (Firebase default port is **9199**).
+
+- **`FIREBASE_STORAGE_EMULATOR_HOST`**: e.g. `localhost:9199` — use with the Firebase Storage emulator for local/hybrid
+  dev
+- **`FIREBASE_STORAGE_BUCKET`**: Optional explicit bucket name (overrides everything below). Use if your default bucket is
+  not the one inferred from the environment.
+- **Bucket resolution (production)**: On Firebase Cloud Functions / emulator, `FIREBASE_CONFIG` is set automatically and
+  includes `storageBucket`. The API uses that value so it matches your project’s real default bucket (legacy
+  `*.appspot.com` or newer `*.firebasestorage.app` since ~Oct 2024). If `FIREBASE_CONFIG` is absent, it falls back to
+  `{GCLOUD_PROJECT}.appspot.com` (suitable for some local/test setups only).
+
+**Signed read URLs** (IAM `signBlob`, Service Account Token Creator, optional key-file signing) and **GCS bucket CORS**
+for `fetch(signedUrl)` from the SPA are documented in **[docs/firebase-gcp-storage.md](./docs/firebase-gcp-storage.md)**.
+
+For **`pnpm test`** (`CURRENT_ENV=test-unit`), the Docker **test-unit** stack includes the Storage emulator on host port
+**9199** (see `compose.test-unit.yml` and `.env.test-unit`). `ContentController` tests exercise real
+`ContentBodyStorageService` against it. For rare cases where the emulator is awkward, use
+`ContentControllerFixture.withFakeContentBodyStorage()` before `init()` (see `fake-content-body-storage.service.ts`).
 
 #### Usage
 
@@ -276,7 +306,8 @@ const user = await getUserByUid(decodedToken.uid);
 
 - **Entry Point**: `firebase-functions.ts`
 - **Runtime**: Node.js 22
-- **CORS**: Enabled for cross-origin requests
+- **CORS (API HTTP)**: Enabled for cross-origin requests to the Functions URL (separate from **Storage bucket CORS** for
+  signed body URLs — see [Browser CORS](./docs/firebase-gcp-storage.md#browser-cors-fetch-from-web-app))
 
 ## Build Process
 
@@ -362,6 +393,7 @@ firebase deploy --only functions
 ## Useful commands
 
 ### Generate Auth Token in Firebase Emulator
+
 Hybrid local (`compose.local-dev.yml`) uses Auth on **9100**. Full emulator / E2E use **9099**.
 
 ```shell

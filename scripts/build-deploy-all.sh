@@ -13,6 +13,8 @@ fi
 
 ./scripts/verify-test-all.sh
 
+scripts/build-all.sh "$ENV"
+
 echo "Deploying to Firebase..."
 firebase deploy --project "$ENV"
 echo "Done!"
