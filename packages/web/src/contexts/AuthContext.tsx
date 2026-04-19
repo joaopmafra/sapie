@@ -1,10 +1,11 @@
 // @refresh reset
 import type { User } from 'firebase/auth';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 
 import { auth } from '../lib/firebase/config';
+import { queryClient } from '../lib/queryClient';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -39,9 +40,18 @@ interface AuthProviderProps {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const previousAuthUidRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
+      const nextUid = user?.uid ?? null;
+      const previousUid = previousAuthUidRef.current;
+
+      if (previousUid !== undefined && previousUid !== nextUid) {
+        queryClient.clear();
+      }
+      previousAuthUidRef.current = nextUid;
+
       setCurrentUser(user);
       setLoading(false);
     });

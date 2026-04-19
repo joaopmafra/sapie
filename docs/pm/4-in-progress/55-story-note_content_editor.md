@@ -194,9 +194,9 @@ the boundary). Use **UI drivers / component objects** to reduce brittle selector
 
 ### Phase 5 — Auth boundaries
 
-- [ ] **After login and logout** — invalidate TanStack Query cache so the user sees data for the current session only and
+- [x] **After login and logout** — invalidate TanStack Query cache so the user sees data for the current session only and
       metadata/bodies are up to date.
-- [ ] **React tests** — cache invalidation on auth transitions does not show another user’s data (per [Frontend unit tests](#implementation-approach-phased)).
+- [x] **React tests** — cache invalidation on auth transitions does not show another user’s data (per [Frontend unit tests](#implementation-approach-phased)).
 
 ### Deferred / superseded
 
