@@ -253,7 +253,7 @@ FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
 
 ### Firebase Project Configuration
 
-See `packages/api/docs/firebase-admin-setup.md` for detailed setup instructions (entry: `packages/api/FIREBASE_ADMIN_SETUP.md`).
+See `packages/api/docs/firebase-admin-setup.md` for detailed setup instructions.
 
 ## Testing
 

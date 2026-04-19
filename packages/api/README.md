@@ -27,7 +27,6 @@ packages/api/
 ├── test/                    # E2E tests
 ├── dist/                    # Build output
 ├── docs/                    # Firebase / GCP operational guides (see docs/README.md)
-├── FIREBASE_ADMIN_SETUP.md  # Entry point → docs/firebase-admin-setup.md
 ├── .prettierrc              # Prettier configuration
 ├── eslint.config.mjs        # ESLint configuration (with Prettier integration)
 └── package.json             # Package configuration (@sapie/api)
@@ -253,7 +252,7 @@ The Firebase Admin SDK is automatically configured for different environments:
 - **Development with Firebase Emulator**: Uses project ID configuration
 - **Local Development**: Can use service account key file or default credentials
 
-For Admin SDK credentials and emulators, see [docs/firebase-admin-setup.md](./docs/firebase-admin-setup.md) (short entry: [FIREBASE_ADMIN_SETUP.md](./FIREBASE_ADMIN_SETUP.md)).
+For Admin SDK credentials and emulators, see [docs/firebase-admin-setup.md](./docs/firebase-admin-setup.md).
 
 For comprehensive authentication documentation,
 see [NestJS Firebase Integration Guide](../../docs/other/nestjs_firebase_integration.md).

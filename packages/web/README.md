@@ -108,7 +108,7 @@ For development, the application works with placeholder Firebase configuration. 
 2. **Configure environment variables** in `.env.local` (this directory)
 3. **Enable Email/Password and Google providers** in Firebase Console
 
-See **[Firebase (web)](./docs/firebase-web.md)** (short entry: [FIREBASE_SETUP.md](./FIREBASE_SETUP.md)).
+See **[Firebase (web)](./docs/firebase-web.md)** (short entry: [FIREBASE_SETUP.md](docs/firebase-setup.md)).
 
 ### FirebaseUI Configuration
 
