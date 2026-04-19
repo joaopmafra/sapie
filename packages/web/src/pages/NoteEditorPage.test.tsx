@@ -264,6 +264,279 @@ describe('NoteEditorPage', () => {
     expect(screen.getByText('Saving…')).toBeInTheDocument();
   });
 
+  it('does not start a second PUT until the first finishes; then saves latest draft', async () => {
+    jest.useFakeTimers();
+    mockedContentService.getContentById.mockResolvedValue(baseNote);
+    mockedContentService.getContentBody.mockResolvedValue({
+      signedUrl: 'https://storage.example/blob',
+      expiresAt: new Date().toISOString(),
+    });
+    mockedContentService.fetchNoteMarkdown.mockResolvedValue('# Hello');
+
+    let releaseFirst: (c: Content) => void;
+    const firstPut = new Promise<Content>(resolve => {
+      releaseFirst = resolve;
+    });
+    mockedContentService.putContentBody
+      .mockImplementationOnce(() => firstPut)
+      .mockResolvedValueOnce({
+        ...baseNote,
+        size: 2,
+        updatedAt: new Date('2025-07-01'),
+      });
+
+    renderNoteEditor();
+
+    const body = await screen.findByRole('textbox', { name: 'Note body' });
+    fireEvent.change(body, { target: { value: 'v1' } });
+    await advanceAutosaveDebounce();
+
+    await waitFor(() => {
+      expect(mockedContentService.putContentBody).toHaveBeenCalledTimes(1);
+    });
+    expect(mockedContentService.putContentBody).toHaveBeenCalledWith(
+      mockUser,
+      'note-1',
+      'v1',
+      'text/markdown'
+    );
+
+    fireEvent.change(body, { target: { value: 'v2' } });
+    await act(async () => {
+      jest.advanceTimersByTime(NOTE_BODY_AUTOSAVE_DEBOUNCE_MS);
+      for (let i = 0; i < 60; i += 1) {
+        await Promise.resolve();
+      }
+    });
+    expect(mockedContentService.putContentBody).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      releaseFirst!({
+        ...baseNote,
+        size: 2,
+        updatedAt: new Date('2025-06-30'),
+      });
+      for (let i = 0; i < 80; i += 1) {
+        await Promise.resolve();
+      }
+    });
+
+    await waitFor(() => {
+      expect(mockedContentService.putContentBody).toHaveBeenCalledTimes(2);
+    });
+    expect(mockedContentService.putContentBody).toHaveBeenLastCalledWith(
+      mockUser,
+      'note-1',
+      'v2',
+      'text/markdown'
+    );
+  });
+
+  /**
+   * Same serialization goal as the test above, but only the `while` loop’s `continue`
+   * path: edits during the first PUT must not wait for another debounce timer to fire.
+   * (The other test also advances debounce while the first PUT is pending, which sets
+   * `queuedRunSaveRef` in addition to leaving draft !== baseline after the first save.)
+   */
+  it('issues a follow-up PUT immediately after the first when edits happened only during the in-flight save', async () => {
+    jest.useFakeTimers();
+    mockedContentService.getContentById.mockResolvedValue(baseNote);
+    mockedContentService.getContentBody.mockResolvedValue({
+      signedUrl: 'https://storage.example/blob',
+      expiresAt: new Date().toISOString(),
+    });
+    mockedContentService.fetchNoteMarkdown.mockResolvedValue('# Hello');
+
+    let releaseFirst: (c: Content) => void;
+    const firstPut = new Promise<Content>(resolve => {
+      releaseFirst = resolve;
+    });
+    mockedContentService.putContentBody
+      .mockImplementationOnce(() => firstPut)
+      .mockResolvedValueOnce({
+        ...baseNote,
+        size: 3,
+        updatedAt: new Date('2025-08-01'),
+      });
+
+    renderNoteEditor();
+
+    const body = await screen.findByRole('textbox', { name: 'Note body' });
+    fireEvent.change(body, { target: { value: 'v1' } });
+    await advanceAutosaveDebounce();
+
+    await waitFor(() => {
+      expect(mockedContentService.putContentBody).toHaveBeenCalledTimes(1);
+    });
+
+    fireEvent.change(body, { target: { value: 'v2' } });
+    expect(mockedContentService.putContentBody).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      releaseFirst!({
+        ...baseNote,
+        size: 2,
+        updatedAt: new Date('2025-06-30'),
+      });
+      for (let i = 0; i < 80; i += 1) {
+        await Promise.resolve();
+      }
+    });
+
+    await waitFor(() => {
+      expect(mockedContentService.putContentBody).toHaveBeenCalledTimes(2);
+    });
+    expect(mockedContentService.putContentBody).toHaveBeenLastCalledWith(
+      mockUser,
+      'note-1',
+      'v2',
+      'text/markdown'
+    );
+  });
+
+  it('on unmount, queues flush behind an in-flight PUT then persists the latest draft', async () => {
+    jest.useFakeTimers();
+    mockedContentService.getContentById.mockResolvedValue(baseNote);
+    mockedContentService.getContentBody.mockResolvedValue({
+      signedUrl: 'https://storage.example/blob',
+      expiresAt: new Date().toISOString(),
+    });
+    mockedContentService.fetchNoteMarkdown.mockResolvedValue('# Hello');
+
+    let releaseFirst: (c: Content) => void;
+    const firstPut = new Promise<Content>(resolve => {
+      releaseFirst = resolve;
+    });
+    mockedContentService.putContentBody
+      .mockImplementationOnce(() => firstPut)
+      .mockResolvedValueOnce({
+        ...baseNote,
+        size: 3,
+        updatedAt: new Date('2025-09-01'),
+      });
+
+    const { unmount } = renderNoteEditor();
+
+    const body = await screen.findByRole('textbox', { name: 'Note body' });
+    fireEvent.change(body, { target: { value: 'v1' } });
+    await advanceAutosaveDebounce();
+
+    await waitFor(() => {
+      expect(mockedContentService.putContentBody).toHaveBeenCalledTimes(1);
+    });
+
+    fireEvent.change(body, { target: { value: 'v2' } });
+    unmount();
+
+    await act(async () => {
+      releaseFirst!({
+        ...baseNote,
+        size: 2,
+        updatedAt: new Date('2025-06-30'),
+      });
+      for (let i = 0; i < 120; i += 1) {
+        await Promise.resolve();
+      }
+    });
+
+    await waitFor(() => {
+      expect(mockedContentService.putContentBody).toHaveBeenCalledTimes(2);
+    });
+    expect(mockedContentService.putContentBody).toHaveBeenNthCalledWith(
+      1,
+      mockUser,
+      'note-1',
+      'v1',
+      'text/markdown'
+    );
+    expect(mockedContentService.putContentBody).toHaveBeenNthCalledWith(
+      2,
+      mockUser,
+      'note-1',
+      'v2',
+      'text/markdown'
+    );
+  });
+
+  it('after a failed save, Retry in flight plus debounced runSave still serializes to the latest draft', async () => {
+    jest.useFakeTimers();
+    mockedContentService.getContentById.mockResolvedValue(baseNote);
+    mockedContentService.getContentBody.mockResolvedValue({
+      signedUrl: 'https://storage.example/blob',
+      expiresAt: new Date().toISOString(),
+    });
+    mockedContentService.fetchNoteMarkdown.mockResolvedValue('# Hello');
+
+    let releaseRetry: (c: Content) => void;
+    const retryPut = new Promise<Content>(resolve => {
+      releaseRetry = resolve;
+    });
+
+    mockedContentService.putContentBody
+      .mockRejectedValueOnce(new Error('Network down'))
+      .mockImplementationOnce(() => retryPut)
+      .mockResolvedValueOnce({
+        ...baseNote,
+        size: 6,
+        updatedAt: new Date('2025-10-01'),
+      });
+
+    renderNoteEditor();
+
+    const body = await screen.findByRole('textbox', { name: 'Note body' });
+    fireEvent.change(body, { target: { value: 'oops' } });
+    await advanceAutosaveDebounce();
+
+    expect(await screen.findByText('Error saving')).toBeInTheDocument();
+    expect(mockedContentService.putContentBody).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await act(async () => {
+      for (let i = 0; i < 30; i += 1) {
+        await Promise.resolve();
+      }
+    });
+    expect(mockedContentService.putContentBody).toHaveBeenCalledTimes(2);
+
+    fireEvent.change(body, { target: { value: 'oops2' } });
+    await act(async () => {
+      jest.advanceTimersByTime(NOTE_BODY_AUTOSAVE_DEBOUNCE_MS);
+      for (let i = 0; i < 60; i += 1) {
+        await Promise.resolve();
+      }
+    });
+    expect(mockedContentService.putContentBody).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      releaseRetry!({
+        ...baseNote,
+        size: 4,
+        updatedAt: new Date('2025-09-15'),
+      });
+      for (let i = 0; i < 100; i += 1) {
+        await Promise.resolve();
+      }
+    });
+
+    await waitFor(() => {
+      expect(mockedContentService.putContentBody).toHaveBeenCalledTimes(3);
+    });
+    expect(mockedContentService.putContentBody).toHaveBeenNthCalledWith(
+      2,
+      mockUser,
+      'note-1',
+      'oops',
+      'text/markdown'
+    );
+    expect(mockedContentService.putContentBody).toHaveBeenNthCalledWith(
+      3,
+      mockUser,
+      'note-1',
+      'oops2',
+      'text/markdown'
+    );
+  });
+
   it('flushes pending edits on unmount without waiting for debounce', async () => {
     jest.useFakeTimers();
     mockedContentService.getContentById.mockResolvedValue(baseNote);

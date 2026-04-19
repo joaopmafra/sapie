@@ -187,10 +187,10 @@ the boundary). Use **UI drivers / component objects** to reduce brittle selector
 
 ### Phase 4 — In-flight saves (single editor)
 
-- [ ] **Serialize or queue** debounced/automatic saves when a `PUT` is already in flight so edits made while saving are
+- [x] **Serialize or queue** debounced/automatic saves when a `PUT` is already in flight so edits made while saving are
       not lost and the server is not left in an ambiguous state. (This is **not** multi-tab conflict handling; that is
       [Story 65](../3-stories/2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md).)
-- [ ] **React tests** — overlapping edits while a save is in flight; no dropped updates (per [Frontend unit tests](#implementation-approach-phased)).
+- [x] **React tests** — overlapping edits while a save is in flight; no dropped updates (per [Frontend unit tests](#implementation-approach-phased)).
 
 ### Phase 5 — Auth boundaries
 

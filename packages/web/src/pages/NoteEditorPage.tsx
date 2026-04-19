@@ -83,6 +83,18 @@ const NoteEditorPage = () => {
   const savedHeaderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
+  /** True for the whole `runSave` async turn, including chained PUTs (Story 55 Phase 4). */
+  const saveInFlightRef = useRef(false);
+  /** Another `runSave` was requested while a save was already running — drain after the current PUT. */
+  const queuedRunSaveRef = useRef(false);
+
+  /** Avoid `setSavePhase` after unmount while async save chains still finish (flush / overlap). */
+  const isMountedRef = useRef(true);
+  const safeSetSavePhase = useCallback((phase: NoteEditorSavePhase) => {
+    if (isMountedRef.current) {
+      setSavePhase(phase);
+    }
+  }, []);
 
   const clearAutosaveDebounce = useCallback(() => {
     if (autosaveDebounceRef.current) {
@@ -109,44 +121,61 @@ const NoteEditorPage = () => {
   const runSaveRef = useRef<() => Promise<void>>(async () => {});
 
   const runSave = useCallback(async () => {
-    const id = noteId;
-    if (!id) {
+    if (saveInFlightRef.current) {
+      queuedRunSaveRef.current = true;
       return;
     }
-    const draft = draftBodyRef.current;
-    const base = baselineBodyRef.current;
-    if (draft === base) {
-      setSavePhase('idle');
-      return;
-    }
-
-    setSavePhase('saving');
+    saveInFlightRef.current = true;
     try {
-      const sent = draft;
-      await saveMutateAsyncRef.current({
-        id,
-        bodyText: sent,
-        editorSessionId: editorSessionIdRef.current,
-      });
-      const nowDraft = draftBodyRef.current;
-      baselineBodyRef.current = sent;
+      for (;;) {
+        const id = noteId;
+        if (!id) {
+          break;
+        }
 
-      if (nowDraft !== sent) {
-        setSavePhase('pending');
-        scheduleDebouncedAutosave();
-        return;
+        const draft = draftBodyRef.current;
+        const base = baselineBodyRef.current;
+        if (draft === base) {
+          queuedRunSaveRef.current = false;
+          safeSetSavePhase('idle');
+          break;
+        }
+
+        safeSetSavePhase('saving');
+        const sent = draft;
+        try {
+          await saveMutateAsyncRef.current({
+            id,
+            bodyText: sent,
+            editorSessionId: editorSessionIdRef.current,
+          });
+        } catch {
+          queuedRunSaveRef.current = false;
+          safeSetSavePhase('error');
+          break;
+        }
+
+        baselineBodyRef.current = sent;
+        const hadQueued = queuedRunSaveRef.current;
+        queuedRunSaveRef.current = false;
+
+        if (draftBodyRef.current !== baselineBodyRef.current || hadQueued) {
+          safeSetSavePhase('pending');
+          continue;
+        }
+
+        safeSetSavePhase('saved');
+        clearSavedHeaderTimer();
+        savedHeaderTimerRef.current = setTimeout(() => {
+          savedHeaderTimerRef.current = null;
+          safeSetSavePhase('idle');
+        }, NOTE_BODY_SAVED_HEADER_MS);
+        break;
       }
-
-      setSavePhase('saved');
-      clearSavedHeaderTimer();
-      savedHeaderTimerRef.current = setTimeout(() => {
-        savedHeaderTimerRef.current = null;
-        setSavePhase('idle');
-      }, NOTE_BODY_SAVED_HEADER_MS);
-    } catch {
-      setSavePhase('error');
+    } finally {
+      saveInFlightRef.current = false;
     }
-  }, [clearSavedHeaderTimer, noteId, scheduleDebouncedAutosave]);
+  }, [clearSavedHeaderTimer, noteId, safeSetSavePhase]);
 
   runSaveRef.current = runSave;
 
@@ -193,13 +222,14 @@ const NoteEditorPage = () => {
     if (serverContentChangedVsLocal) {
       clearAutosaveDebounce();
       clearSavedHeaderTimer();
-      setSavePhase('idle');
+      safeSetSavePhase('idle');
     }
   }, [
     resolvedServerBody,
     noteId,
     clearAutosaveDebounce,
     clearSavedHeaderTimer,
+    safeSetSavePhase,
   ]);
 
   useEffect(() => {
@@ -208,11 +238,7 @@ const NoteEditorPage = () => {
       clearAutosaveDebounce();
       clearSavedHeaderTimer();
       if (idForSession && draftBodyRef.current !== baselineBodyRef.current) {
-        void saveMutateAsyncRef.current({
-          id: idForSession,
-          bodyText: draftBodyRef.current,
-          editorSessionId: editorSessionIdRef.current,
-        });
+        void runSaveRef.current();
       }
     };
   }, [noteId, clearAutosaveDebounce, clearSavedHeaderTimer]);
@@ -228,6 +254,13 @@ const NoteEditorPage = () => {
       nameInputRef.current.focus();
     }
   }, [isEditing]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const handleNameKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter') {
@@ -354,11 +387,11 @@ const NoteEditorPage = () => {
 
     if (value === baselineBodyRef.current) {
       clearAutosaveDebounce();
-      setSavePhase('idle');
+      safeSetSavePhase('idle');
       return;
     }
 
-    setSavePhase('pending');
+    safeSetSavePhase('pending');
     scheduleDebouncedAutosave();
   };
 
