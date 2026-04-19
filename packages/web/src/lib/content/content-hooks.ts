@@ -8,7 +8,12 @@ import { contentQueryKeys } from './query-keys';
 import { contentItemQueryRetry } from './query-retry-utils';
 import type { Content } from './types';
 
-/** Markdown bytes query: strictly under signed URL TTL (10m); refetch/invalidate when URL rotates. */
+/**
+ * Markdown bytes query: strictly under signed URL TTL (5m); refetch/invalidate when URL rotates.
+ *
+ * TODO: maybe we need to completely disable the cache for content bodies since Firestore reads are cheap and we want
+ *  the user to always see the latest version.
+ */
 const NOTE_MARKDOWN_STALE_MS = 2 * 60 * 1000;
 
 const disabledContentBodySignedUrlQueryKey = [

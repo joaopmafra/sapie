@@ -5,7 +5,7 @@ import { FAKE_STORAGE_READ_CONTROLLER_BASE_PATH } from '../../fake-storage/fake-
 import { FakeStorageModule } from '../../fake-storage/fake-storage.module';
 
 /** TTL for issued read URLs (matches historical `ContentBodyStorageService` behavior). */
-export const CONTENT_BODY_SIGNED_READ_URL_TTL_MS = 10 * 60 * 1000;
+export const CONTENT_BODY_SIGNED_READ_URL_TTL_MS = 5 * 60 * 1000;
 
 export const CONTENT_BODY_READ_SERVICE = Symbol('CONTENT_BODY_READ_SERVICE');
 
@@ -44,6 +44,26 @@ export class FirebaseContentBodyReadService implements ContentBodyReadService {
     return this.firebaseAdminService.getStorage().bucket(resolveFirebaseStorageBucketName());
   }
 
+  /**
+   * Generates a time-limited signed URL for reading an object from Cloud Storage.
+   *
+   * @param objectPath - The full path to the object within the bucket.
+   * @returns An object containing the `signedUrl` and its `expiresAt` timestamp.
+   *
+   * @remarks
+   * **Implementation Detail: IAM-based Signing**
+   * Currently uses the IAM `signBlob` API, which requires the IAM `iam.serviceAccounts.signBlob`
+   * permission. This is the preferred "zero-secret" approach as it leverages the ambient service
+   * account identity rather than requiring a managed private key file.
+   *
+   * **Performance & Scalability Considerations:**
+   * - **Latency:** Each call incurs a network round-trip to the IAM API (~50-200ms).
+   * - **Quota:** Subject to `iam.googleapis.com/sign_blob_requests` rate limits.
+   * * If the application reaches a scale where URL generation becomes a bottleneck or hits quota,
+   * consider switching to **Local Signing**. This would require providing a service account
+   * private key to the SDK, allowing for near-instant offline signing, at the cost of increased
+   * compute costs, management complexity, and security risks.
+   */
   async getSignedReadUrl(objectPath: string): Promise<{ signedUrl: string; expiresAt: Date }> {
     const expiresAt = new Date(Date.now() + CONTENT_BODY_SIGNED_READ_URL_TTL_MS);
     const [signedUrl] = await this.defaultBucket().file(objectPath).getSignedUrl({
