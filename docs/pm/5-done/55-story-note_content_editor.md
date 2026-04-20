@@ -25,7 +25,7 @@ focus on my study material without worrying about losing changes.
   separate story).
 - Note body stored in **Firebase Cloud Storage**; Firestore holds **metadata only** (`bodyUri`, `size`, `updatedAt`
   alongside existing fields — or the nested **`body`** shape introduced in
-  [Story 66](../3-stories/1-ready/66-story-content_body_subdocument_and_client_cache.md) when that story lands).
+  [Story 66](66-story-content_body_subdocument_and_client_cache.md) when that story lands).
   **`bodyUri` is internal** (object path in the bucket); the **public `GET /api/content/:id` metadata DTO does not
   expose it** so clients are not tied to storage layout. Until Story 66, the client infers “body already saved” from
   **`size`** (and related fields): **`size` is null (or omitted) until the first successful `PUT …/body`**, then reflects
@@ -47,7 +47,7 @@ focus on my study material without worrying about losing changes.
 - **Concurrent editing** across multiple browser windows or devices (detect stale version, reload vs overwrite):
   [Story 65: Note Body Concurrency and Conflict Resolution](../3-stories/2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md).
 - **Rich MDXEditor UI** — [Story 67](../3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md).
-- **Nested `body` subdocument + client cache policy** — [Story 66](../3-stories/1-ready/66-story-content_body_subdocument_and_client_cache.md).
+- **Nested `body` subdocument + client cache policy** — [Story 66](66-story-content_body_subdocument_and_client_cache.md).
 
 ## Dependencies (satisfied)
 
@@ -58,7 +58,7 @@ focus on my study material without worrying about losing changes.
 
 **Ordering (follow-on stories)**
 
-- [Story 66](../3-stories/1-ready/66-story-content_body_subdocument_and_client_cache.md) — body model + TanStack cache;
+- [Story 66](66-story-content_body_subdocument_and_client_cache.md) — body model + TanStack cache;
   scheduled **after** Story 55 (Phases 0–5) and **before** [Story 67](../3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md)
   (preferred).
 - [Story 67](../3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md) — rich editor; depends on Story 55
@@ -204,7 +204,7 @@ the boundary). Use **UI drivers / component objects** to reduce brittle selector
   [Story 67: Rich note content editor (MDXEditor)](../3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md)
   (former “Phase 6” in this file).
 - **Nested `body` metadata + TanStack cache policy** —
-  [Story 66: Content body subdocument and client cache policy](../3-stories/1-ready/66-story-content_body_subdocument_and_client_cache.md).
+  [Story 66: Content body subdocument and client cache policy](66-story-content_body_subdocument_and_client_cache.md).
 - **Concurrent editing / optimistic locking** — follow
   [Story 65: Note Body Concurrency and Conflict Resolution](../3-stories/2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md).
 
@@ -279,6 +279,6 @@ Frontend implementation is broken down by **phase** under [Implementation approa
 
 - TanStack Query plan and body-vs-metadata split: [
   `docs/research/client_state_management/phase_1_tanstack_query.md`](../../research/client_state_management/phase_1_tanstack_query.md)
-- MVP ordering: [`docs/research/mvp_objective.md`](../../research/mvp_objective.md)
-- [Story 66 — body subdocument + cache](../3-stories/1-ready/66-story-content_body_subdocument_and_client_cache.md) ·
+- MVP ordering: [`docs/research/mvp_objective.md`](../../plans/mvp_objective.md)
+- [Story 66 — body subdocument + cache](66-story-content_body_subdocument_and_client_cache.md) ·
   [Story 67 — Rich editor (MDXEditor)](../3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md)

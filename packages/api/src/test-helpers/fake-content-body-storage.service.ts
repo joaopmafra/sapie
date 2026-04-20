@@ -22,9 +22,9 @@ export class FakeContentBodyStorageService {
     contentId: string,
     body: Buffer,
     mimeType: string
-  ): Promise<{ bodyUri: string; size: number }> {
+  ): Promise<{ objectPath: string; size: number }> {
     this.lastUpload = { ownerId, contentId, body, mimeType };
-    const bodyUri = `${ownerId}/content/${contentId}`;
-    return Promise.resolve({ bodyUri, size: body.length });
+    const objectPath = `${ownerId}/content/${contentId}`;
+    return Promise.resolve({ objectPath, size: body.length });
   }
 }

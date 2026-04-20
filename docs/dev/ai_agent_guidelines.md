@@ -2,7 +2,7 @@
 
 Rules for automated assistants (Cursor, Copilot, etc.) working on Sapie. Human contributors should read
 [contributing_guidelines.md](contributing_guidelines.md) first. Product priority is always **MVP quickly**
-([general.mdc](../../.cursor/rules/general.mdc), [mvp_objective.md](../research/mvp_objective.md)).
+([general.mdc](../../.cursor/rules/general.mdc), [mvp_objective.md](../plans/mvp_objective.md)).
 
 ## Delivery style
 

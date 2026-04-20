@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted (amended 2026-04-19 — Story 66 nested `body` metadata)
 
 ## Date
 
@@ -18,33 +18,39 @@ read URLs**, and **auto-saving** from the client. We also needed consistency wit
 emulator fakes), **no production data** yet (staging only), and **portable** metadata so a future move to another object
 store (e.g. S3) does not require rewriting stored URLs in Firestore.
 
+**Story 66** requires a clear separation between **metadata edits** (e.g. rename) and **body byte changes**, so clients
+can refetch cheap metadata often while **skipping** redundant Storage downloads when the body version is unchanged.
+
 ## Decision
 
 ### 1. Split create vs body write (two API steps)
 
-- **`POST /api/content`** (and existing create flows) persist **metadata only** (`bodyUri` null until first save).
-- **`PUT /api/content/:id/body`** accepts **raw markdown** (`Content-Type: text/plain`) and writes the object, then
-  updates Firestore `bodyUri`, `size`, `updatedAt`.
+- **`POST /api/content`** (and existing create flows) persist **metadata only**; notes start with **`body: null`** until
+  the first save.
+- **`PUT /api/content/:id/body`** accepts a **raw body** and writes the object, then updates Firestore **`body`** (nested
+  object) including **`body.updatedAt`**, and updates top-level **`updatedAt`** for general “content touched” semantics.
 
-We **do not** add a separate server-side “body status” enum (`pending` / `fulfilled`). **`bodyUri` null vs non-null**
-is enough: the client tracks dirty/editor state; the server answers whether a Storage object exists.
+We **do not** add a separate server-side “body status” enum (`pending` / `fulfilled`). **`body` null vs non-null** is
+enough: the client tracks dirty/editor state; the server answers whether a Storage object exists.
 
-### 2. Firestore stores a provider-agnostic object path (`bodyUri`)
+### 2. Firestore stores a nested `body` object (internal path + public summary on HTTP)
 
-- Field name **`bodyUri`** (replacing the earlier `contentUrl` name).
-- Value is **only** the object key inside the configured default bucket:
-  `{ownerId}/content/{contentId}` where `contentId` is the Firestore document id of the note.
-- **No** `gs://` or `https://` prefix in Firestore so bucket or provider changes do not imply a metadata migration.
-
-We did **not** implement migration from legacy `contentUrl` documents: nothing had shipped to production yet.
+- Preferred Firestore shape: **`body: { uri, size, mimeType, createdAt, updatedAt }`** where **`uri`** is the
+  provider-agnostic object key inside the configured default bucket: `{ownerId}/content/{contentId}` (no `gs://` or
+  `https://` prefix).
+- **HTTP `ContentResponse` for notes** exposes a **public summary only**:
+  **`body: { mimeType, size, createdAt, updatedAt } | null`** — **no** storage URI on the wire.
+- **Top-level `updatedAt`** changes on rename and other metadata updates and **must not** substitute for
+  **`body.updatedAt`** when deciding whether body bytes changed.
+- **Directories** omit **`body`** on the wire; persisted documents use **`body: null`** (or omit).
 
 ### 3. Read path: signed URL contract, separate from metadata `GET`
 
 - **`GET /api/content/:id`** remains **metadata only** (no inline body bytes).
-- **`GET /api/content/:id/body/signed-url`** returns **`{ signedUrl, expiresAt }`** (ISO-8601). The browser **fetches** markdown
-  from `signedUrl` (not proxied through the API for every byte).
-- **Signed URL lifetime:** **10 minutes** (security vs refresh cost). Client caching guidance lives in Story 55 /
-  TanStack plan (e.g. markdown `staleTime` strictly shorter than URL lifetime).
+- **`GET /api/content/:id/body/signed-url`** returns **`{ signedUrl, expiresAt }`** (ISO-8601). The browser **fetches**
+  markdown from `signedUrl` (not proxied through the API for every byte).
+- **Signed URL lifetime:** **10 minutes** (security vs refresh cost). Clients should treat **403/401** on `fetch(signedUrl)`
+  as **expired URL**: obtain a **new** signed URL and retry while **`body.updatedAt`** is unchanged.
 
 ### 4. Storage emulator in test-unit + production-style signing caveat
 
@@ -76,9 +82,10 @@ and clients can still `fetch(signedUrl)`. Production continues to use real **V4 
 ## Consequences
 
 - **Client** must implement the two-step load (`GET` metadata → `GET` …/body/signed-url → `fetch` markdown) and debounced
-  **`PUT` …/body** as in Story 55.
-- **Staging** environments that ever stored **`contentUrl`** only are not migrated by code; operators may clear or
-  resave if needed before production.
+  **`PUT` …/body** as in Story 55. TanStack Query should key **note body bytes** by **`body.updatedAt`** (or equivalent)
+  so **rename-only** metadata refetches do not force redundant downloads.
+- **Environments** with older flat Firestore fields must **migrate or wipe** data; the API expects nested **`body`**
+  only.
 - **CI / developers** must run the **test-unit** Compose stack (including Storage on **9199**) for `packages/api`
   **`pnpm test`** when exercising body endpoints; see **`scripts/emulator-test-unit-start.sh`**.
 - **Observability:** emulator “signed” URLs are **not** cryptographically identical to production signed URLs; tests
@@ -87,6 +94,7 @@ and clients can still `fetch(signedUrl)`. Production continues to use real **V4 
 ## Related documentation (names only; paths may move)
 
 - `docs/pm/4-in-progress/55-story-note_content_editor.md` — product scope and acceptance criteria
+- `docs/pm/4-in-progress/66-story-content_body_subdocument_and_client_cache.md` — nested `body`, cache policy
 - `docs/dev/unit_testing_sapie.md` — test-unit ports, Storage emulator, optional fake
 - `docs/dev/unit_testing_strategy.md` — Classical vs mockist, layered Nest testing
 - `docs/adr/0001-firebase-emulators-docker-compose.md` — Compose profiles and port discipline

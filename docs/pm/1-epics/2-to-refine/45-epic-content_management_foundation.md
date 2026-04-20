@@ -18,7 +18,7 @@ supporting intuitive navigation, editing, and contextual actions.
 ## Related stories (content tree & note body track)
 
 **Note body editing (sequence):** [Story 55](../../5-done/55-story-note_content_editor.md) (textarea + autosave MVP)
-→ [Story 66](../../3-stories/1-ready/66-story-content_body_subdocument_and_client_cache.md) (nested `body` + TanStack cache)
+→ [Story 66](../../5-done/66-story-content_body_subdocument_and_client_cache.md) (nested `body` + TanStack cache)
 → [Story 67](../../3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md) (MDXEditor). **Concurrency / conflicts:**
 [Story 65](../../3-stories/2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md) (after 67 unless reprioritized).
 

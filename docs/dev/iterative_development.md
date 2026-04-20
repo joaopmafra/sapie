@@ -1,6 +1,6 @@
 # Iterative development
 
-Sapie targets an **MVP as soon as practical** ([mvp_objective.md](../research/mvp_objective.md)). This page explains how
+Sapie targets an **MVP as soon as practical** ([mvp_objective.md](../plans/mvp_objective.md)). This page explains how
 to
 slice work so each increment is **usable end-to-end**, not a pile of half-finished layers.
 

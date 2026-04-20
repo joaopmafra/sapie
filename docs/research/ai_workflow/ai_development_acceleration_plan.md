@@ -5,7 +5,7 @@
 This document captures **how we intend to speed up MVP delivery** by combining spec-driven requirements, a capable
 coding agent stack, and automated browser verification. It complements the broader tactics
 in [development_speed_optimization.md](../development_speed_optimization.md) and the product scope
-in [mvp_objective.md](../mvp_objective.md). Track what you actually adopt
+in [mvp_objective.md](../../plans/mvp_objective.md). Track what you actually adopt
 in [ai_workflow_adoption_log.md](ai_workflow_adoption_log.md).
 
 **Status:** active research — tools and workflows below are adoption targets, not fully rolled out until reflected in
@@ -112,7 +112,7 @@ These are **candidates**, not commitments — pick what reduces calendar time wi
 - **Cost** — **Model routing** (cheap model for refactors, stronger for design) if using multi-model setups (see oMo
   docs).
 
-**Deferred by design (see [mvp_objective.md](../mvp_objective.md)):** full offline mode, heavy RL-style agent loops, or
+**Deferred by design (see [mvp_objective.md](../../plans/mvp_objective.md)):** full offline mode, heavy RL-style agent loops, or
 “generate the whole app from one prompt” — out of scope until the study tool is usable daily.
 
 ---
@@ -123,7 +123,7 @@ Single list: **Sapie** docs first, then **tools and upstream** (each external UR
 
 ### Sapie (this repo)
 
-- [mvp_objective.md](../mvp_objective.md) — what we are building and in what order
+- [mvp_objective.md](../../plans/mvp_objective.md) — what we are building and in what order
 - [development_speed_optimization.md](../development_speed_optimization.md) — broader speed tactics (dev servers, hooks,
   etc.)
 - [iterative_development.md](../../dev/iterative_development.md) — vertical slices

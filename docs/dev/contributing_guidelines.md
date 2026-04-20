@@ -1,6 +1,6 @@
 # Contributing Guidelines
 
-Sapie’s priority is a **working MVP quickly** — see [mvp_objective.md](../research/mvp_objective.md) and
+Sapie’s priority is a **working MVP quickly** — see [mvp_objective.md](../plans/mvp_objective.md) and
 [.cursor/rules/general.mdc](../../.cursor/rules/general.mdc). This page is for **people**; assistants should also read
 [ai_agent_guidelines.md](ai_agent_guidelines.md).
 

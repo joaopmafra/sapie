@@ -11,11 +11,11 @@ explicitly required later.
 
 ## Epic Reference
 
-- [Epic 45: Content Management Foundation](../../1-epics/2-to-refine/45-epic-content_management_foundation.md)
+- [Epic 45: Content Management Foundation](../1-epics/2-to-refine/45-epic-content_management_foundation.md)
 
 ## Feature Reference
 
-- [Feature 47: Note Editing & Management](../../2-features/1-ready/47-feature-note_editing_and_management.md)
+- [Feature 47: Note Editing & Management](../2-features/1-ready/47-feature-note_editing_and_management.md)
 
 ## Problem statement
 
@@ -26,7 +26,7 @@ explicitly required later.
 
 ## Dependencies
 
-- [Story 55](../../5-done/55-story-note_content_editor.md) — Phases 0–5 (note editor with autosave, load/save path)
+- [Story 55](55-story-note_content_editor.md) — Phases 0–5 (note editor with autosave, load/save path)
   should be complete or in progress so hooks and mutations exist to extend.
 - **Preferred order:** ship after Story 55 core editor behavior is stable; **before**
   [Story 67: Rich note content editor (MDXEditor)](./67-story-rich_note_content_editor_mdx.md) so DTO and cache policy do not
@@ -68,7 +68,7 @@ Nested object on content (field names should match backend conventions):
 - [ ] **Signed URL expiry / errors:** if `fetch(signedUrl)` fails with **403** (or similar) while `body.updatedAt` is
       unchanged, obtain a **new** signed URL and retry the bytes fetch (URL can expire even when the body did not change).
 - [ ] **Editor save path:** after successful `PUT`, do **not** replace the editor from the server unless explicitly
-      desired; align with [Story 65](../2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md) later.
+      desired; align with [Story 65](../3-stories/2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md) later.
 - [ ] **Tests:** unit tests for comparison / invalidation policy (pure functions + `QueryClient` where helpful).
 
 ### Out of scope (unless expanded)
@@ -95,10 +95,10 @@ Nested object on content (field names should match backend conventions):
 
 - **Rename vs body:** Prefer **rename** to bump top-level `updatedAt` (or name-only fields) **without** advancing
   `body.updatedAt` when the Storage object did not change — requires backend discipline.
-- **Multi-tab / multi-surface:** Until [Story 65](../2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md),
+- **Multi-tab / multi-surface:** Until [Story 65](../3-stories/2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md),
   acceptable policy is **last writer wins** for the body; document any UX caveats in release notes if needed.
 
 ## References
 
-- [Story 65: Note Body Concurrency…](../2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md) — update
+- [Story 65: Note Body Concurrency…](../3-stories/2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md) — update
   cross-references if the version field name changes (`body.updatedAt` vs other).

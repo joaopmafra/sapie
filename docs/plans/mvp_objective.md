@@ -26,7 +26,7 @@ The core feature. Notes are the primary content type.
 - Create notes in folders (modal with name + location)
 - Editable note name (inline in editor)
 - **Sequencing (backlog):** [Story 55](../pm/5-done/55-story-note_content_editor.md) ships a **multiline text
-  editor + auto-save** first; [Story 66](../pm/3-stories/1-ready/66-story-content_body_subdocument_and_client_cache.md)
+  editor + auto-save** first; [Story 66](../pm/5-done/66-story-content_body_subdocument_and_client_cache.md)
   introduces nested body metadata + client cache policy; [Story 67](../pm/3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md)
   adds the **rich text editor** with: headings, bold/italic, lists, **code blocks with syntax highlighting** (essential
   for DSA and system design), links — using `@mdxeditor/editor` (already referenced in research notes)

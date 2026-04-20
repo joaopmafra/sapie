@@ -7,7 +7,7 @@ export const contentQueryKeys = {
   bodySignedUrl: (id: string) => ['content', 'body-signed-url', id] as const,
   /**
    * Client-only flag (never fetched): after a successful `PUT …/body`, the note editor stops enabling
-   * the signed-URL query so `size` flipping from empty→non-empty does not trigger `GET …/body/signed-url`.
+   * the signed-URL query so `body` appearing after first save does not trigger `GET …/body/signed-url`.
    * Scoped by a per-mount session id so leaving and re-entering the editor (or history navigation) clears suppression.
    */
   bodySignedUrlFetchSuppressedForSession: (
@@ -21,9 +21,10 @@ export const contentQueryKeys = {
       editorSessionId,
     ] as const,
   /**
-   * Fetched markdown bytes for a note. Key includes `signedUrl` so the cache stays correct when the URL rotates (~10m)
-   * or after invalidation. Invalidate with prefix `['content', 'note-markdown', id]` after saves.
+   * Fetched **note body text** (markdown / plain text) from Storage. Includes `bodyVersion` (`body.updatedAt` ISO) so
+   * rename-only metadata refetches reuse cache, while body changes load a new cache entry. Other content kinds with
+   * non-text bodies use separate keys when introduced.
    */
-  noteMarkdown: (id: string, signedUrl: string) =>
-    ['content', 'note-markdown', id, signedUrl] as const,
+  noteBodyText: (id: string, bodyVersion: string) =>
+    ['content', 'note-body-text', id, bodyVersion] as const,
 } as const;

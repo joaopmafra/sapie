@@ -10,10 +10,9 @@ Name | Type | Description | Notes
 **type** | **string** | Type of content | [default to undefined]
 **parentId** | **string** | ID of the parent directory, null for root directory | [default to undefined]
 **ownerId** | **string** | ID of the user who owns this content | [default to undefined]
-**size** | **object** | **Notes only.** Byte size of the content body after the last &#x60;PUT …/body&#x60;. Omitted for directories. Null before the first body save. | [optional] [default to undefined]
-**bodyMimeType** | **object** | **Notes only.** IANA media type of the content body from the last &#x60;PUT …/body&#x60; (e.g. &#x60;text/plain&#x60;, &#x60;image/png&#x60;). Omitted for directories. Null until the first body save. | [optional] [default to undefined]
+**body** | [**ContentBodySummaryResponse**](ContentBodySummaryResponse.md) | **Notes only.** Public summary of the stored body. Omitted for directories. &#x60;null&#x60; before the first &#x60;PUT …/body&#x60;. | [optional] [default to undefined]
 **createdAt** | **string** | Timestamp when the content was created | [default to undefined]
-**updatedAt** | **string** | Timestamp when the content was last updated | [default to undefined]
+**updatedAt** | **string** | Timestamp when content metadata last changed (e.g. rename). Distinct from &#x60;body.updatedAt&#x60;, which tracks body bytes. | [default to undefined]
 
 ## Example
 
@@ -26,8 +25,7 @@ const instance: ContentResponse = {
     type,
     parentId,
     ownerId,
-    size,
-    bodyMimeType,
+    body,
     createdAt,
     updatedAt,
 };

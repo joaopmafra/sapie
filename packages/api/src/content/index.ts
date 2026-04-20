@@ -7,12 +7,14 @@
 // Entity types and interfaces
 export {
   Content,
+  ContentBody,
   ContentDocument,
   ContentType,
   ContentCreationInput,
 } from './entities/content.entity';
 
 export {
+  ContentBodySummaryResponse,
   ContentBodyUrlResponse,
   ContentResponse,
   CreateContentRequest,

@@ -127,7 +127,7 @@ const { status, data } = await apiInstance.contentControllerGetContentBodySigned
 # **contentControllerGetContentById**
 > ContentResponse contentControllerGetContentById()
 
-Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body/signed-url` for a signed read URL. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
+Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body/signed-url` for a signed read URL. Directory items omit `body`; notes include `body: null` until the first `PUT …/body`, then a public summary (no storage URI).
 
 ### Example
 
@@ -226,7 +226,7 @@ This endpoint does not have any parameters.
 # **contentControllerListContents**
 > Array<ContentResponse> contentControllerListContents()
 
-Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
+Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `body`; notes include `body: null` until the first `PUT …/body`, then a public summary (no storage URI).
 
 ### Example
 
@@ -278,7 +278,7 @@ const { status, data } = await apiInstance.contentControllerListContents(
 # **contentControllerPatchContent**
 > ContentResponse contentControllerPatchContent(updateContentRequest)
 
-Partially updates content metadata. Today this supports renaming (`name`). Moving an item to another folder (`parentId`) will use the same route; that behavior is **not implemented yet** and returns `400 Bad Request` if `parentId` is sent. Content body bytes and storage-derived fields (`bodyUri`, `size`, `bodyMimeType`) are changed only via `PUT …/body`. When renaming, names must stay unique among siblings under the same parent.
+Partially updates content metadata. Today this supports renaming (`name`). Moving an item to another folder (`parentId`) will use the same route; that behavior is **not implemented yet** and returns `400 Bad Request` if `parentId` is sent. Body bytes and the nested `body` summary are changed only via `PUT …/body`. When renaming, names must stay unique among siblings under the same parent.
 
 ### Example
 
@@ -338,7 +338,7 @@ const { status, data } = await apiInstance.contentControllerPatchContent(
 # **contentControllerPutContentBody**
 > ContentResponse contentControllerPutContentBody(body)
 
-Single endpoint for any raw body type the client declares via `Content-Type`. Updates Cloud Storage object metadata and Firestore (`bodyUri`, `size`, `bodyMimeType`).
+Single endpoint for any raw body type the client declares via `Content-Type`. Updates Cloud Storage and nested Firestore `body` (incl. `body.updatedAt`).
 
 ### Example
 

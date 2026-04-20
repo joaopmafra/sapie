@@ -13,7 +13,7 @@ Sapie documentation is grouped by audience:
 
 **Quick links**
 
-- Current product goal: [MVP objective](research/mvp_objective.md)
+- Current product goal: [MVP objective](plans/mvp_objective.md)
 - How to work on the repo: [Contributing guidelines](dev/contributing_guidelines.md)
 - AI-assisted workflow (research):
     - [AI development acceleration plan](research/ai_workflow/ai_development_acceleration_plan.md)
