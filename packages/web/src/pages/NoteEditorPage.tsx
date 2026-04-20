@@ -21,6 +21,7 @@ import { ClientErrorAlert } from '../components/ClientErrorAlert';
 import { useAuth } from '../contexts/AuthContext';
 import {
   ContentType,
+  noteBodyVersionKey,
   useBodySignedUrlFetchSuppressedAfterSave,
   useContentBody,
   useContentItem,
@@ -49,7 +50,7 @@ const NoteEditorPage = () => {
   const suppressSignedUrlFetch = Boolean(
     suppressBodySignedUrlFetchAfterSave.data
   );
-  const fetchBodySignedUrl = Boolean(note && note.size != null);
+  const fetchBodySignedUrl = Boolean(note && note.body != null);
   /** When false, signed-URL query is off — do not use its `isPending` (disabled + unfetched stays pending). */
   const waitForBodySignedUrlQuery =
     fetchBodySignedUrl && !suppressSignedUrlFetch;
@@ -57,7 +58,8 @@ const NoteEditorPage = () => {
     enabled: waitForBodySignedUrlQuery,
   });
   const signedUrl = bodySignedUrlQuery.data?.signedUrl ?? null;
-  const noteBodyQuery = useNoteBody(noteId, signedUrl);
+  const bodyVersionKey = note ? noteBodyVersionKey(note) : null;
+  const noteBodyQuery = useNoteBody(noteId, signedUrl, bodyVersionKey);
   const saveNoteBody = useSaveNoteBody();
   const renameContent = useRenameContent();
 
@@ -217,7 +219,7 @@ const NoteEditorPage = () => {
     setDraftBody(incoming);
     baselineBodyRef.current = incoming;
 
-    // Post-save TanStack cache sync often refreshes markdown with the same bytes; do not
+    // Post-save TanStack cache sync often refreshes body text with the same bytes; do not
     // reset save phase or cancel the “Saved” header timer in that case (Story 55 Phase 3).
     if (serverContentChangedVsLocal) {
       clearAutosaveDebounce();

@@ -11,6 +11,7 @@ docs/AuthControllerGetCurrentUser401Response.md
 docs/AuthenticatedUser.md
 docs/AuthenticationApi.md
 docs/ContentApi.md
+docs/ContentBodySummaryResponse.md
 docs/ContentBodyUrlResponse.md
 docs/ContentResponse.md
 docs/CreateContentRequest.md

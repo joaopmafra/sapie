@@ -39,6 +39,7 @@ describe('ContentController', () => {
     expect(response.body).not.toHaveProperty('bodyUri');
     expect(response.body).not.toHaveProperty('size');
     expect(response.body).not.toHaveProperty('bodyMimeType');
+    expect(response.body).not.toHaveProperty('body');
   });
 
   it(`GET ${fixture.API_CONTENT_ROOT} is idempotent`, async () => {
@@ -276,6 +277,41 @@ describe('ContentController', () => {
     expect(response.body).toHaveProperty('parentId', null);
   });
 
+  it(`PATCH ${fixture.API_CONTENT}/:id rename does not advance nested body.updatedAt after a body save`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Doc', root.id);
+    await fixture
+      .callApiPutContentBody(fixture.TEST_USER_ID, note.id, '# Hello')
+      .expect(HttpStatus.OK);
+
+    const before = await fixture.callApiGetContentByIdExpectingOkAsContent(
+      fixture.TEST_USER_ID,
+      note.id
+    );
+    const bodyBefore = before as unknown as { body: { updatedAt: string } };
+    expect(bodyBefore.body?.updatedAt).toBeTruthy();
+
+    const patchResponse = await fixture.callApiPatchContentExpectingOk(
+      fixture.TEST_USER_ID,
+      note.id,
+      { name: 'Renamed note' }
+    );
+    expect(patchResponse.body).toHaveProperty('name', 'Renamed note');
+
+    const after = await fixture.callApiGetContentByIdExpectingOkAsContent(
+      fixture.TEST_USER_ID,
+      note.id
+    );
+    const bodyAfter = after as unknown as {
+      body: { updatedAt: string };
+      updatedAt: string;
+    };
+    expect(bodyAfter.body.updatedAt).toBe(bodyBefore.body.updatedAt);
+    expect(new Date(bodyAfter.updatedAt).getTime()).toBeGreaterThanOrEqual(
+      new Date(bodyBefore.body.updatedAt).getTime()
+    );
+  });
+
   it(`GET ${fixture.API_CONTENT}/:id/body/signed-url returns 404 when content has no body yet`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
     const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Empty', root.id);
@@ -322,16 +358,22 @@ describe('ContentController', () => {
       id: note.id,
       type: 'note',
       ownerId: fixture.TEST_USER_ID,
-      bodyMimeType: 'text/plain',
+      body: {
+        mimeType: 'text/plain',
+        size: Buffer.byteLength('# Hello', 'utf8'),
+      },
     });
-    expect(putResponse.body).toHaveProperty('size', Buffer.byteLength('# Hello', 'utf8'));
+    expect(putResponse.body).not.toHaveProperty('bodyUri');
 
     const meta = await fixture.callApiGetContentByIdExpectingOkAsContent(
       fixture.TEST_USER_ID,
       note.id
     );
-    expect(meta.size).toBe(Buffer.byteLength('# Hello', 'utf8'));
-    expect(meta.bodyMimeType).toBe('text/plain');
+    const metaBody = meta as unknown as {
+      body: { size: number; mimeType: string; updatedAt: string };
+    };
+    expect(metaBody.body.size).toBe(Buffer.byteLength('# Hello', 'utf8'));
+    expect(metaBody.body.mimeType).toBe('text/plain');
 
     const signed = await fixture
       .callApiGetContentBodySignedUrl(fixture.TEST_USER_ID, note.id)
@@ -359,8 +401,10 @@ describe('ContentController', () => {
 
     expect(putResponse.body).toMatchObject({
       id: note.id,
-      bodyMimeType: 'application/octet-stream',
-      size: payload.length,
+      body: {
+        mimeType: 'application/octet-stream',
+        size: payload.length,
+      },
     });
 
     const signed = await fixture

@@ -8,6 +8,39 @@ import {
 import { IsContentNameSafeForFileName } from '../validation/content-name.validator';
 
 /**
+ * Public HTTP summary of a stored note body (no storage path / internal URI).
+ */
+export class ContentBodySummaryResponse {
+  @ApiProperty({
+    description:
+      'IANA media type of the stored body from the last successful `PUT …/body` (e.g. `text/plain`, `image/png`).',
+    example: 'text/plain',
+  })
+  mimeType: string;
+
+  @ApiProperty({
+    description: 'Byte size of the stored body after the last `PUT …/body`.',
+    example: 1024,
+  })
+  size: number;
+
+  @ApiProperty({
+    description: 'When the body object was first written for this note.',
+    type: 'string',
+    format: 'date-time',
+  })
+  createdAt: Date;
+
+  @ApiProperty({
+    description:
+      'When the body bytes last changed. Clients use this (not top-level `updatedAt`) to decide whether to re-download body bytes.',
+    type: 'string',
+    format: 'date-time',
+  })
+  updatedAt: Date;
+}
+
+/**
  * HTTP response body: content (metadata) returned by the API.
  * Intentionally not `implements Content` so the wire shape can diverge from the domain entity.
  */
@@ -47,20 +80,11 @@ export class ContentResponse {
 
   @ApiPropertyOptional({
     description:
-      '**Notes only.** Byte size of the content body after the last `PUT …/body`. Omitted for directories. Null before the first body save.',
-    example: 1024,
+      '**Notes only.** Public summary of the stored body. Omitted for directories. `null` before the first `PUT …/body`.',
+    type: ContentBodySummaryResponse,
     nullable: true,
   })
-  size?: number | null;
-
-  @ApiPropertyOptional({
-    description:
-      '**Notes only.** IANA media type of the content body from the last `PUT …/body` (e.g. `text/plain`, `image/png`). ' +
-      'Omitted for directories. Null until the first body save.',
-    example: 'text/plain',
-    nullable: true,
-  })
-  bodyMimeType?: string | null;
+  body?: ContentBodySummaryResponse | null;
 
   @ApiProperty({
     description: 'Timestamp when the content was created',
@@ -70,7 +94,8 @@ export class ContentResponse {
   createdAt: Date;
 
   @ApiProperty({
-    description: 'Timestamp when the content was last updated',
+    description:
+      'Timestamp when content metadata last changed (e.g. rename). Distinct from `body.updatedAt`, which tracks body bytes.',
     type: 'string',
     format: 'date-time',
   })
@@ -79,7 +104,7 @@ export class ContentResponse {
 
 /**
  * Map persisted content to the HTTP metadata shape.
- * Directories omit `size`, and `bodyMimeType` (not serialized).
+ * Directories omit `body`; notes include `body: null` until the first body save.
  */
 export function toContentResponse(content: Content): ContentResponse {
   const response = new ContentResponse();
@@ -91,8 +116,16 @@ export function toContentResponse(content: Content): ContentResponse {
   response.createdAt = content.createdAt;
   response.updatedAt = content.updatedAt;
   if (content.type !== ContentType.DIRECTORY) {
-    response.size = content.size ?? null;
-    response.bodyMimeType = content.bodyMimeType ?? null;
+    if (content.body) {
+      const summary = new ContentBodySummaryResponse();
+      summary.mimeType = content.body.mimeType;
+      summary.size = content.body.size;
+      summary.createdAt = content.body.createdAt;
+      summary.updatedAt = content.body.updatedAt;
+      response.body = summary;
+    } else {
+      response.body = null;
+    }
   }
   return response;
 }
@@ -140,7 +173,7 @@ export class ContentBodyUrlResponse {
 /**
  * PATCH payload for `/api/content/:id`.
  *
- * Body storage fields (`bodyUri`, `size`, `bodyMimeType`) are updated only via `PUT …/body`, not here.
+ * Body storage is updated only via `PUT …/body`, not here.
  */
 export class UpdateContentRequest {
   @ApiPropertyOptional({

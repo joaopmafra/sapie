@@ -10,6 +10,17 @@ export enum ContentType {
 }
 
 /**
+ * Public HTTP summary of a stored note body (matches API `ContentResponse.body`).
+ */
+export interface ContentBodySummary {
+  mimeType: string;
+  size: number;
+  createdAt: Date;
+  /** Body-bytes version; use this (not top-level `updatedAt`) for cache invalidation. */
+  updatedAt: Date;
+}
+
+/**
  * Content Entity Interface
  *
  * Firestore metadata for something in the tree (directory or note). Matches the backend `Content`.
@@ -31,16 +42,16 @@ export interface Content {
   /** ID of the user who owns this content */
   ownerId: string;
 
-  /** Size of the content in bytes (only for files, not directories) */
-  size?: number;
-
-  /** Media type of the stored note body after last `PUT …/body`; null until first save (see API `bodyMimeType`). */
-  bodyMimeType?: string | null;
+  /**
+   * **Notes:** summary of the stored body, or `null` before the first `PUT …/body`.
+   * **Directories:** omitted / `undefined` on the wire.
+   */
+  body?: ContentBodySummary | null;
 
   /** Timestamp when the content was created */
   createdAt: Date;
 
-  /** Timestamp when the content was last updated */
+  /** Metadata last changed (e.g. rename); not the stored note body version (`body.updatedAt`). */
   updatedAt: Date;
 }
 
@@ -67,12 +78,6 @@ export interface ContentCreationInput {
 
   /** ID of the parent directory, null for root directory */
   parentId: string | null;
-
-  /** Optional; see `Content.bodyUri` when the backend exposes it on create payloads. */
-  bodyUri?: string | null;
-
-  /** Size of the content in bytes (only for files, not directories) */
-  size?: number;
 }
 
 /**

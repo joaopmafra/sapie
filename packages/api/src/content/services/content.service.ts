@@ -131,19 +131,19 @@ export class ContentService {
       throw new BadRequestException('Body storage is not applicable for directories');
     }
 
-    if (!existing.size || !existing.bodyUri) {
+    if (!existing.body?.uri || existing.body.size == null) {
       throw new NotFoundException('Content has no stored body yet');
     }
 
     const { signedUrl, expiresAt } = await this.contentBodyReadService.getSignedReadUrl(
-      existing.bodyUri
+      existing.body.uri
     );
 
     return { signedUrl, expiresAt: expiresAt.toISOString() };
   }
 
   /**
-   * Uploads raw bytes for a content body and updates Firestore metadata (`bodyUri`, `size`, `bodyMimeType`).
+   * Uploads raw bytes for a content body and updates nested Firestore `body` (incl. `body.updatedAt`) + top-level `updatedAt`.
    */
   async putContentBody(
     id: string,
@@ -175,9 +175,14 @@ export class ContentService {
       throw new BadRequestException('Content-Type media type is too long');
     }
 
-    const { bodyUri, size } = await this.contentBodyStorage.uploadBody(ownerId, id, body, mimeType);
+    const { objectPath, size } = await this.contentBodyStorage.uploadBody(
+      ownerId,
+      id,
+      body,
+      mimeType
+    );
     const now = new Date();
-    await this.contentRepository.updateContentBodyMetadata(id, bodyUri, size, now, mimeType);
+    await this.contentRepository.updateContentBodyMetadata(id, objectPath, size, now, mimeType);
 
     const updated = await this.contentRepository.findById(id);
     if (!updated) {

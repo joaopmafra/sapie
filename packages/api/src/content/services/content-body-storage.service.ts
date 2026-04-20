@@ -23,7 +23,7 @@ export class ContentBodyStorageService {
   }
 
   /**
-   * Uploads raw bytes for a content body and returns the object path and byte length (for Firestore `bodyUri` / `size`).
+   * Uploads raw bytes for a content body and returns the bucket object path and byte length (persisted as `body.uri` / `body.size`).
    * `mimeType` is stored as the object `contentType` in Cloud Storage.
    */
   async uploadBody(
@@ -31,7 +31,7 @@ export class ContentBodyStorageService {
     contentId: string,
     body: Buffer,
     mimeType: string
-  ): Promise<{ bodyUri: string; size: number }> {
+  ): Promise<{ objectPath: string; size: number }> {
     const bucket = this.defaultBucket();
     const path = this.objectPath(ownerId, contentId);
     const file = bucket.file(path);
@@ -44,6 +44,6 @@ export class ContentBodyStorageService {
     });
 
     this.logger.debug(`Uploaded content body for ${contentId} (${body.length} bytes, ${mimeType})`);
-    return { bodyUri: path, size: body.length };
+    return { objectPath: path, size: body.length };
   }
 }

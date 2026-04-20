@@ -68,6 +68,7 @@ Class | Method | HTTP request | Description
 
  - [AuthControllerGetCurrentUser401Response](docs/AuthControllerGetCurrentUser401Response.md)
  - [AuthenticatedUser](docs/AuthenticatedUser.md)
+ - [ContentBodySummaryResponse](docs/ContentBodySummaryResponse.md)
  - [ContentBodyUrlResponse](docs/ContentBodyUrlResponse.md)
  - [ContentResponse](docs/ContentResponse.md)
  - [CreateContentRequest](docs/CreateContentRequest.md)

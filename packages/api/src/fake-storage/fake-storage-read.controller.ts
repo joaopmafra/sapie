@@ -14,7 +14,7 @@ import { resolveFirebaseStorageBucketName } from '../firebase/resolve-storage-bu
 
 export const FAKE_STORAGE_READ_CONTROLLER_BASE_PATH = '/api/fake-storage';
 
-/** Accepts Firebase-style object paths used as `bodyUri` (no `..`, no leading slash). */
+/** Accepts Firebase-style storage object paths (no `..`, no leading slash). */
 const OBJECT_PATH_PATTERN = /^[^/]+\/content\/[^/]+$/;
 
 /**

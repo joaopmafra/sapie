@@ -100,6 +100,37 @@ export interface AuthenticatedUser {
 /**
  * 
  * @export
+ * @interface ContentBodySummaryResponse
+ */
+export interface ContentBodySummaryResponse {
+    /**
+     * IANA media type of the stored body from the last successful `PUT …/body` (e.g. `text/plain`, `image/png`).
+     * @type {string}
+     * @memberof ContentBodySummaryResponse
+     */
+    'mimeType': string;
+    /**
+     * Byte size of the stored body after the last `PUT …/body`.
+     * @type {number}
+     * @memberof ContentBodySummaryResponse
+     */
+    'size': number;
+    /**
+     * When the body object was first written for this note.
+     * @type {string}
+     * @memberof ContentBodySummaryResponse
+     */
+    'createdAt': string;
+    /**
+     * When the body bytes last changed. Clients use this (not top-level `updatedAt`) to decide whether to re-download body bytes.
+     * @type {string}
+     * @memberof ContentBodySummaryResponse
+     */
+    'updatedAt': string;
+}
+/**
+ * 
+ * @export
  * @interface ContentBodyUrlResponse
  */
 export interface ContentBodyUrlResponse {
@@ -153,17 +184,11 @@ export interface ContentResponse {
      */
     'ownerId': string;
     /**
-     * **Notes only.** Byte size of the content body after the last `PUT …/body`. Omitted for directories. Null before the first body save.
-     * @type {object}
+     * **Notes only.** Public summary of the stored body. Omitted for directories. `null` before the first `PUT …/body`.
+     * @type {ContentBodySummaryResponse}
      * @memberof ContentResponse
      */
-    'size'?: object | null;
-    /**
-     * **Notes only.** IANA media type of the content body from the last `PUT …/body` (e.g. `text/plain`, `image/png`). Omitted for directories. Null until the first body save.
-     * @type {object}
-     * @memberof ContentResponse
-     */
-    'bodyMimeType'?: object | null;
+    'body'?: ContentBodySummaryResponse | null;
     /**
      * Timestamp when the content was created
      * @type {string}
@@ -171,7 +196,7 @@ export interface ContentResponse {
      */
     'createdAt': string;
     /**
-     * Timestamp when the content was last updated
+     * Timestamp when content metadata last changed (e.g. rename). Distinct from `body.updatedAt`, which tracks body bytes.
      * @type {string}
      * @memberof ContentResponse
      */
@@ -649,7 +674,7 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body/signed-url` for a signed read URL. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
+         * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body/signed-url` for a signed read URL. Directory items omit `body`; notes include `body: null` until the first `PUT …/body`, then a public summary (no storage URI).
          * @summary Get content by ID
          * @param {string} id The ID of the content.
          * @param {*} [options] Override http request option.
@@ -721,7 +746,7 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
+         * Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `body`; notes include `body: null` until the first `PUT …/body`, then a public summary (no storage URI).
          * @summary List a parent\'s children
          * @param {string} id The ID of the parent content.
          * @param {*} [options] Override http request option.
@@ -759,7 +784,7 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Partially updates content metadata. Today this supports renaming (`name`). Moving an item to another folder (`parentId`) will use the same route; that behavior is **not implemented yet** and returns `400 Bad Request` if `parentId` is sent. Content body bytes and storage-derived fields (`bodyUri`, `size`, `bodyMimeType`) are changed only via `PUT …/body`. When renaming, names must stay unique among siblings under the same parent.
+         * Partially updates content metadata. Today this supports renaming (`name`). Moving an item to another folder (`parentId`) will use the same route; that behavior is **not implemented yet** and returns `400 Bad Request` if `parentId` is sent. Body bytes and the nested `body` summary are changed only via `PUT …/body`. When renaming, names must stay unique among siblings under the same parent.
          * @summary Patch content metadata
          * @param {string} id The ID of the content.
          * @param {UpdateContentRequest} updateContentRequest 
@@ -803,7 +828,7 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Single endpoint for any raw body type the client declares via `Content-Type`. Updates Cloud Storage object metadata and Firestore (`bodyUri`, `size`, `bodyMimeType`).
+         * Single endpoint for any raw body type the client declares via `Content-Type`. Updates Cloud Storage and nested Firestore `body` (incl. `body.updatedAt`).
          * @summary Upload or replace content body
          * @param {string} id The ID of the content whose content body is replaced (leaf types such as a note in MVP).
          * @param {string} contentType 
@@ -889,7 +914,7 @@ export const ContentApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body/signed-url` for a signed read URL. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
+         * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body/signed-url` for a signed read URL. Directory items omit `body`; notes include `body: null` until the first `PUT …/body`, then a public summary (no storage URI).
          * @summary Get content by ID
          * @param {string} id The ID of the content.
          * @param {*} [options] Override http request option.
@@ -914,7 +939,7 @@ export const ContentApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
+         * Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `body`; notes include `body: null` until the first `PUT …/body`, then a public summary (no storage URI).
          * @summary List a parent\'s children
          * @param {string} id The ID of the parent content.
          * @param {*} [options] Override http request option.
@@ -927,7 +952,7 @@ export const ContentApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Partially updates content metadata. Today this supports renaming (`name`). Moving an item to another folder (`parentId`) will use the same route; that behavior is **not implemented yet** and returns `400 Bad Request` if `parentId` is sent. Content body bytes and storage-derived fields (`bodyUri`, `size`, `bodyMimeType`) are changed only via `PUT …/body`. When renaming, names must stay unique among siblings under the same parent.
+         * Partially updates content metadata. Today this supports renaming (`name`). Moving an item to another folder (`parentId`) will use the same route; that behavior is **not implemented yet** and returns `400 Bad Request` if `parentId` is sent. Body bytes and the nested `body` summary are changed only via `PUT …/body`. When renaming, names must stay unique among siblings under the same parent.
          * @summary Patch content metadata
          * @param {string} id The ID of the content.
          * @param {UpdateContentRequest} updateContentRequest 
@@ -941,7 +966,7 @@ export const ContentApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Single endpoint for any raw body type the client declares via `Content-Type`. Updates Cloud Storage object metadata and Firestore (`bodyUri`, `size`, `bodyMimeType`).
+         * Single endpoint for any raw body type the client declares via `Content-Type`. Updates Cloud Storage and nested Firestore `body` (incl. `body.updatedAt`).
          * @summary Upload or replace content body
          * @param {string} id The ID of the content whose content body is replaced (leaf types such as a note in MVP).
          * @param {string} contentType 
@@ -986,7 +1011,7 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.contentControllerGetContentBodySignedUrl(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
-         * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body/signed-url` for a signed read URL. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
+         * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body/signed-url` for a signed read URL. Directory items omit `body`; notes include `body: null` until the first `PUT …/body`, then a public summary (no storage URI).
          * @summary Get content by ID
          * @param {ContentApiContentControllerGetContentByIdRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -1005,7 +1030,7 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.contentControllerGetRootDirectory(options).then((request) => request(axios, basePath));
         },
         /**
-         * Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
+         * Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `body`; notes include `body: null` until the first `PUT …/body`, then a public summary (no storage URI).
          * @summary List a parent\'s children
          * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -1015,7 +1040,7 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.contentControllerListContents(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
-         * Partially updates content metadata. Today this supports renaming (`name`). Moving an item to another folder (`parentId`) will use the same route; that behavior is **not implemented yet** and returns `400 Bad Request` if `parentId` is sent. Content body bytes and storage-derived fields (`bodyUri`, `size`, `bodyMimeType`) are changed only via `PUT …/body`. When renaming, names must stay unique among siblings under the same parent.
+         * Partially updates content metadata. Today this supports renaming (`name`). Moving an item to another folder (`parentId`) will use the same route; that behavior is **not implemented yet** and returns `400 Bad Request` if `parentId` is sent. Body bytes and the nested `body` summary are changed only via `PUT …/body`. When renaming, names must stay unique among siblings under the same parent.
          * @summary Patch content metadata
          * @param {ContentApiContentControllerPatchContentRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -1025,7 +1050,7 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.contentControllerPatchContent(requestParameters.id, requestParameters.updateContentRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         * Single endpoint for any raw body type the client declares via `Content-Type`. Updates Cloud Storage object metadata and Firestore (`bodyUri`, `size`, `bodyMimeType`).
+         * Single endpoint for any raw body type the client declares via `Content-Type`. Updates Cloud Storage and nested Firestore `body` (incl. `body.updatedAt`).
          * @summary Upload or replace content body
          * @param {ContentApiContentControllerPutContentBodyRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -1064,7 +1089,7 @@ export interface ContentApiInterface {
     contentControllerGetContentBodySignedUrl(requestParameters: ContentApiContentControllerGetContentBodySignedUrlRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentBodyUrlResponse>;
 
     /**
-     * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body/signed-url` for a signed read URL. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
+     * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body/signed-url` for a signed read URL. Directory items omit `body`; notes include `body: null` until the first `PUT …/body`, then a public summary (no storage URI).
      * @summary Get content by ID
      * @param {ContentApiContentControllerGetContentByIdRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -1083,7 +1108,7 @@ export interface ContentApiInterface {
     contentControllerGetRootDirectory(options?: RawAxiosRequestConfig): AxiosPromise<ContentResponse>;
 
     /**
-     * Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
+     * Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `body`; notes include `body: null` until the first `PUT …/body`, then a public summary (no storage URI).
      * @summary List a parent\'s children
      * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -1093,7 +1118,7 @@ export interface ContentApiInterface {
     contentControllerListContents(requestParameters: ContentApiContentControllerListContentsRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ContentResponse>>;
 
     /**
-     * Partially updates content metadata. Today this supports renaming (`name`). Moving an item to another folder (`parentId`) will use the same route; that behavior is **not implemented yet** and returns `400 Bad Request` if `parentId` is sent. Content body bytes and storage-derived fields (`bodyUri`, `size`, `bodyMimeType`) are changed only via `PUT …/body`. When renaming, names must stay unique among siblings under the same parent.
+     * Partially updates content metadata. Today this supports renaming (`name`). Moving an item to another folder (`parentId`) will use the same route; that behavior is **not implemented yet** and returns `400 Bad Request` if `parentId` is sent. Body bytes and the nested `body` summary are changed only via `PUT …/body`. When renaming, names must stay unique among siblings under the same parent.
      * @summary Patch content metadata
      * @param {ContentApiContentControllerPatchContentRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -1103,7 +1128,7 @@ export interface ContentApiInterface {
     contentControllerPatchContent(requestParameters: ContentApiContentControllerPatchContentRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentResponse>;
 
     /**
-     * Single endpoint for any raw body type the client declares via `Content-Type`. Updates Cloud Storage object metadata and Firestore (`bodyUri`, `size`, `bodyMimeType`).
+     * Single endpoint for any raw body type the client declares via `Content-Type`. Updates Cloud Storage and nested Firestore `body` (incl. `body.updatedAt`).
      * @summary Upload or replace content body
      * @param {ContentApiContentControllerPutContentBodyRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -1251,7 +1276,7 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
     }
 
     /**
-     * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body/signed-url` for a signed read URL. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
+     * Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body/signed-url` for a signed read URL. Directory items omit `body`; notes include `body: null` until the first `PUT …/body`, then a public summary (no storage URI).
      * @summary Get content by ID
      * @param {ContentApiContentControllerGetContentByIdRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -1274,7 +1299,7 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
     }
 
     /**
-     * Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).
+     * Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `body`; notes include `body: null` until the first `PUT …/body`, then a public summary (no storage URI).
      * @summary List a parent\'s children
      * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -1286,7 +1311,7 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
     }
 
     /**
-     * Partially updates content metadata. Today this supports renaming (`name`). Moving an item to another folder (`parentId`) will use the same route; that behavior is **not implemented yet** and returns `400 Bad Request` if `parentId` is sent. Content body bytes and storage-derived fields (`bodyUri`, `size`, `bodyMimeType`) are changed only via `PUT …/body`. When renaming, names must stay unique among siblings under the same parent.
+     * Partially updates content metadata. Today this supports renaming (`name`). Moving an item to another folder (`parentId`) will use the same route; that behavior is **not implemented yet** and returns `400 Bad Request` if `parentId` is sent. Body bytes and the nested `body` summary are changed only via `PUT …/body`. When renaming, names must stay unique among siblings under the same parent.
      * @summary Patch content metadata
      * @param {ContentApiContentControllerPatchContentRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -1298,7 +1323,7 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
     }
 
     /**
-     * Single endpoint for any raw body type the client declares via `Content-Type`. Updates Cloud Storage object metadata and Firestore (`bodyUri`, `size`, `bodyMimeType`).
+     * Single endpoint for any raw body type the client declares via `Content-Type`. Updates Cloud Storage and nested Firestore `body` (incl. `body.updatedAt`).
      * @summary Upload or replace content body
      * @param {ContentApiContentControllerPutContentBodyRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.

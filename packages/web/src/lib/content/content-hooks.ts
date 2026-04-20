@@ -3,18 +3,19 @@ import type { QueryClient } from '@tanstack/react-query';
 
 import { useAuth } from '../../contexts/AuthContext';
 
+import { noteBodyVersionKey } from './content-body-cache-policy';
 import { contentService } from './content-service';
 import { contentQueryKeys } from './query-keys';
 import { contentItemQueryRetry } from './query-retry-utils';
 import type { Content } from './types';
 
-/**
- * Markdown bytes query: strictly under signed URL TTL (5m); refetch/invalidate when URL rotates.
- *
- * TODO: maybe we need to completely disable the cache for content bodies since Firestore reads are cheap and we want
- *  the user to always see the latest version.
- */
-const NOTE_MARKDOWN_STALE_MS = 2 * 60 * 1000;
+/** Note body fetch: keep shorter than signed URL TTL; `body.updatedAt` in the query key is the main freshness lever. */
+const NOTE_BODY_FETCH_STALE_MS = 2 * 60 * 1000;
+
+const METADATA_REFETCH = {
+  staleTime: 0,
+  refetchOnMount: 'always' as const,
+};
 
 const disabledContentBodySignedUrlQueryKey = [
   'content',
@@ -29,11 +30,11 @@ const disabledBodySignedUrlFetchSuppressedQueryKey = [
   '__disabled__',
 ] as const;
 
-const disabledNoteBodyMarkdownQueryKey = [
+const disabledNoteBodyTextQueryKey = [
   'content',
-  'note-markdown',
+  'note-body-text',
   '__disabled__',
-  '__none__',
+  '__no_version__',
 ] as const;
 
 export function useRootDirectory() {
@@ -42,6 +43,7 @@ export function useRootDirectory() {
     queryKey: contentQueryKeys.root(),
     queryFn: () => contentService.getRootDirectory(currentUser!),
     enabled: Boolean(currentUser),
+    ...METADATA_REFETCH,
   });
 }
 
@@ -51,18 +53,13 @@ export function useFolderChildren(parentId: string | undefined) {
     queryKey: contentQueryKeys.children(parentId!),
     queryFn: () => contentService.getContentByParentId(currentUser!, parentId!),
     enabled: Boolean(currentUser) && Boolean(parentId),
+    ...METADATA_REFETCH,
   });
 }
 
-const disabledContentItemQueryKey = [
-  'content',
-  'item',
-  '__disabled__',
-] as const;
-
 export type UseContentBodyOptions = {
   /**
-   * When `false`, skips `GET …/body/signed-url` (no stored body yet per metadata `size`, or the
+   * When `false`, skips `GET …/body/signed-url` (no stored body yet per metadata `body`, or the
    * note editor has suppressed refetch after a successful body save for this session).
    * When `true` or omitted, runs whenever `id` and auth allow (default for backward compatibility).
    */
@@ -106,35 +103,67 @@ export function useContentBody(
         : disabledContentBodySignedUrlQueryKey,
     queryFn: () => contentService.getContentBody(currentUser!, safeId!),
     enabled: Boolean(currentUser) && safeId != null && allowSignedUrlFetch,
-    staleTime: NOTE_MARKDOWN_STALE_MS,
+    staleTime: NOTE_BODY_FETCH_STALE_MS,
   });
 }
 
+function isUnauthorizedNoteBodyError(error: unknown): boolean {
+  const s = (error as Error & { status?: number }).status;
+  return s === 403 || s === 401;
+}
+
 /**
- * Loads markdown from a signed Storage URL. Skips the network when `signedUrl` is missing (no body yet).
+ * Loads note body text from a signed Storage URL. Skips the network when `signedUrl` or `bodyVersion` is missing.
+ * On **403 / 401** (expired URL), refreshes the signed URL once and retries the fetch.
+ *
+ * @param bodyVersion — `body.updatedAt.toISOString()` from metadata; included in the query key so rename-only
+ *   refetches reuse cache, while body changes load a new cache entry.
  */
 export function useNoteBody(
   noteId: string | undefined,
-  signedUrl: string | null | undefined
+  signedUrl: string | null | undefined,
+  bodyVersion: string | null | undefined
 ) {
   const { currentUser } = useAuth();
+  const queryClient = useQueryClient();
   const safeId = noteId && !noteId.startsWith('dummy_') ? noteId : undefined;
   const url =
     typeof signedUrl === 'string' && signedUrl.length > 0 ? signedUrl : null;
 
   return useQuery({
     queryKey:
-      safeId != null && url != null
-        ? contentQueryKeys.noteMarkdown(safeId, url)
-        : disabledNoteBodyMarkdownQueryKey,
-    queryFn: () => contentService.fetchNoteMarkdown(url!),
-    enabled: Boolean(currentUser) && safeId != null && url != null,
-    staleTime: NOTE_MARKDOWN_STALE_MS,
+      safeId != null && url != null && bodyVersion != null
+        ? contentQueryKeys.noteBodyText(safeId, bodyVersion)
+        : disabledNoteBodyTextQueryKey,
+    queryFn: async () => {
+      const tryDownload = async (u: string) =>
+        contentService.fetchNoteBodyText(u);
+      try {
+        return await tryDownload(url!);
+      } catch (e) {
+        if (!isUnauthorizedNoteBodyError(e)) throw e;
+        await queryClient.invalidateQueries({
+          queryKey: contentQueryKeys.bodySignedUrl(safeId!),
+        });
+        const fresh = await queryClient.fetchQuery({
+          queryKey: contentQueryKeys.bodySignedUrl(safeId!),
+          queryFn: () => contentService.getContentBody(currentUser!, safeId!),
+        });
+        if (!fresh?.signedUrl) throw e;
+        return tryDownload(fresh.signedUrl);
+      }
+    },
+    enabled:
+      Boolean(currentUser) &&
+      safeId != null &&
+      url != null &&
+      bodyVersion != null,
+    staleTime: NOTE_BODY_FETCH_STALE_MS,
   });
 }
 
 /**
- * Applies `PUT …/body` metadata to the item cache and keeps the editor markdown in sync with what was saved **without**
+ * Applies `PUT …/body` metadata to the item cache and keeps the editor body text in sync with what was saved **without**
  * calling `GET …/body/signed-url` again (avoids replacing the in-progress editor; Story 65 covers concurrency).
  */
 function syncCachesAfterPutNoteBody(
@@ -144,14 +173,11 @@ function syncCachesAfterPutNoteBody(
   savedBodyText: string
 ): void {
   queryClient.setQueryData(contentQueryKeys.item(id), updated);
-  const cached = queryClient.getQueryData<{ signedUrl?: string } | null>(
-    contentQueryKeys.bodySignedUrl(id)
-  );
-  const url = cached?.signedUrl;
-  queryClient.removeQueries({ queryKey: ['content', 'note-markdown', id] });
-  if (typeof url === 'string' && url.length > 0) {
+  const ver = noteBodyVersionKey(updated);
+  queryClient.removeQueries({ queryKey: ['content', 'note-body-text', id] });
+  if (ver != null) {
     queryClient.setQueryData(
-      contentQueryKeys.noteMarkdown(id, url),
+      contentQueryKeys.noteBodyText(id, ver),
       savedBodyText
     );
   }
@@ -201,14 +227,16 @@ export function useSaveNoteBody() {
 export function useContentItem(id: string | undefined) {
   const { currentUser } = useAuth();
   const safeId = id && !id.startsWith('dummy_') ? id : undefined;
+
   return useQuery({
     queryKey:
       safeId != null
         ? contentQueryKeys.item(safeId)
-        : disabledContentItemQueryKey,
+        : (['content', 'item', '__disabled__'] as const),
     queryFn: () => contentService.getContentById(currentUser!, safeId!),
     enabled: Boolean(currentUser) && safeId != null,
     retry: contentItemQueryRetry,
+    ...METADATA_REFETCH,
   });
 }
 

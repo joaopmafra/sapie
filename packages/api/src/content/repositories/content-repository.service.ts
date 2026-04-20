@@ -1,7 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { FirebaseAdminService } from '../../firebase';
-import { Content, ContentDocument, ContentType } from '../entities/content.entity';
+import {
+  Content,
+  ContentBody,
+  ContentBodyDocument,
+  ContentDocument,
+  ContentType,
+} from '../entities/content.entity';
 
 @Injectable()
 export class ContentRepository {
@@ -84,9 +90,7 @@ export class ContentRepository {
       type: ContentType.NOTE,
       parentId: params.parentId,
       ownerId: params.ownerId,
-      bodyUri: null,
-      size: null,
-      bodyMimeType: null,
+      body: null,
       createdAt: params.createdAt,
       updatedAt: params.updatedAt,
     };
@@ -95,7 +99,13 @@ export class ContentRepository {
 
     return {
       id: docRef.id,
-      ...newContentData,
+      name: newContentData.name,
+      type: newContentData.type,
+      parentId: newContentData.parentId,
+      ownerId: newContentData.ownerId,
+      body: null,
+      createdAt: params.createdAt,
+      updatedAt: params.updatedAt,
     };
   }
 
@@ -108,29 +118,71 @@ export class ContentRepository {
 
   async updateContentBodyMetadata(
     id: string,
-    bodyUri: string,
+    objectPath: string,
     size: number,
     updatedAt: Date,
-    bodyMimeType: string
+    mimeType: string
   ): Promise<void> {
-    await this.firestore.collection(this.contentCollection).doc(id).update({
-      bodyUri,
+    const ref = this.firestore.collection(this.contentCollection).doc(id);
+    const snap = await ref.get();
+    const data = snap.data() as ContentDocument | undefined;
+    const existingNested = data?.body;
+    let createdAt = updatedAt;
+    if (this.isContentBodyDocument(existingNested)) {
+      createdAt = existingNested.createdAt.toDate();
+    }
+
+    const body: ContentBodyDocument = {
+      uri: objectPath,
       size,
-      bodyMimeType,
-      updatedAt,
+      mimeType,
+      createdAt: admin.firestore.Timestamp.fromDate(createdAt),
+      updatedAt: admin.firestore.Timestamp.fromDate(updatedAt),
+    };
+
+    await ref.update({
+      body,
+      updatedAt: admin.firestore.Timestamp.fromDate(updatedAt),
     });
   }
 
-  private convertDocumentToContent(id: string, data: ContentDocument): Content {
-    const bodyUri =
-      data.bodyUri !== undefined && data.bodyUri !== null && data.bodyUri !== ''
-        ? data.bodyUri
-        : null;
+  private isContentBodyDocument(v: unknown): v is ContentBodyDocument {
+    if (!v || typeof v !== 'object') return false;
+    const o = v as ContentBodyDocument;
+    return (
+      typeof o.uri === 'string' &&
+      typeof o.size === 'number' &&
+      typeof o.mimeType === 'string' &&
+      o.createdAt != null &&
+      typeof o.createdAt.toDate === 'function' &&
+      o.updatedAt != null &&
+      typeof o.updatedAt.toDate === 'function'
+    );
+  }
 
-    const bodyMimeType =
-      data.bodyMimeType !== undefined && data.bodyMimeType !== null && data.bodyMimeType !== ''
-        ? data.bodyMimeType
-        : null;
+  private bodyFromNested(b: ContentBodyDocument): ContentBody {
+    return {
+      uri: b.uri,
+      size: b.size,
+      mimeType: b.mimeType,
+      createdAt: b.createdAt.toDate(),
+      updatedAt: b.updatedAt.toDate(),
+    };
+  }
+
+  private convertDocumentToContent(id: string, data: ContentDocument): Content {
+    if (this.isContentBodyDocument(data.body)) {
+      return {
+        id,
+        name: data.name,
+        type: data.type as ContentType,
+        parentId: data.parentId,
+        ownerId: data.ownerId,
+        body: this.bodyFromNested(data.body),
+        createdAt: data.createdAt.toDate(),
+        updatedAt: data.updatedAt.toDate(),
+      };
+    }
 
     return {
       id,
@@ -138,9 +190,7 @@ export class ContentRepository {
       type: data.type as ContentType,
       parentId: data.parentId,
       ownerId: data.ownerId,
-      bodyUri,
-      size: data.size,
-      bodyMimeType,
+      body: null,
       createdAt: data.createdAt.toDate(),
       updatedAt: data.updatedAt.toDate(),
     };

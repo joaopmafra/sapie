@@ -36,22 +36,39 @@ export class ContentService {
 
   private mapContentResponseToContent(dto: ContentResponse): Content {
     const dtoRecord = dto as unknown as Record<string, unknown>;
-    const bodyMimeType =
-      'bodyMimeType' in dtoRecord
-        ? ((dtoRecord.bodyMimeType as string | null | undefined) ?? null)
-        : null;
-
-    return {
+    const base = {
       id: dto.id,
       name: dto.name,
       ownerId: dto.ownerId,
       type: dto.type as ContentType,
       parentId: dto.parentId as string | null,
-      size: dto.size as number | undefined,
-      bodyMimeType,
       createdAt: new Date(dto.createdAt),
       updatedAt: new Date(dto.updatedAt),
     };
+
+    if (dto.type === ContentType.DIRECTORY) {
+      return base;
+    }
+
+    const rawBody = dtoRecord.body;
+    if (rawBody != null && typeof rawBody === 'object' && rawBody !== null) {
+      const b = rawBody as Record<string, unknown>;
+      return {
+        ...base,
+        body: {
+          mimeType: String(b.mimeType ?? ''),
+          size: Number(b.size),
+          createdAt: new Date(String(b.createdAt)),
+          updatedAt: new Date(String(b.updatedAt)),
+        },
+      };
+    }
+
+    if (rawBody === null) {
+      return { ...base, body: null };
+    }
+
+    return { ...base, body: null };
   }
 
   /**
@@ -171,14 +188,16 @@ export class ContentService {
   }
 
   /**
-   * Fetches markdown (or other) bytes using a signed Storage URL (no Firebase bearer; auth is in the URL).
+   * Fetches note body text using a signed Storage URL (no Firebase bearer; auth is in the URL).
    */
-  async fetchNoteMarkdown(signedUrl: string): Promise<string> {
+  async fetchNoteBodyText(signedUrl: string): Promise<string> {
     const response = await fetch(signedUrl);
     if (!response.ok) {
-      throw new Error(
+      const err = new Error(
         `Failed to download note body: HTTP ${response.status} ${response.statusText}`
       );
+      Object.assign(err, { status: response.status });
+      throw err;
     }
     return response.text();
   }

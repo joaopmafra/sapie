@@ -14,7 +14,7 @@ import type { User } from 'firebase/auth';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import { AuthContext } from '../contexts/AuthContext';
-import type { Content } from '../lib/content';
+import type { Content, ContentBodySummary } from '../lib/content';
 import { ContentType, contentService, contentQueryKeys } from '../lib/content';
 
 import { NOTE_BODY_AUTOSAVE_DEBOUNCE_MS } from './note-editor-save-status';
@@ -24,7 +24,7 @@ jest.mock('../lib/content/content-service', () => ({
   contentService: {
     getContentById: jest.fn(),
     getContentBody: jest.fn(),
-    fetchNoteMarkdown: jest.fn(),
+    fetchNoteBodyText: jest.fn(),
     putContentBody: jest.fn(),
     getRootDirectory: jest.fn(),
     getContentByParentId: jest.fn(),
@@ -43,14 +43,38 @@ const mockUser = {
   getIdToken: jest.fn().mockResolvedValue('test-token'),
 } as unknown as User;
 
+const BASE_BODY_UPDATED = new Date('2024-01-03T00:00:00.000Z');
+
+function makeNoteBody(
+  overrides: Partial<ContentBodySummary> = {}
+): ContentBodySummary {
+  return {
+    mimeType: 'text/markdown',
+    size: 12,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: BASE_BODY_UPDATED,
+    ...overrides,
+  };
+}
+
+function noteWithBody(
+  note: Content,
+  bodyPatch: Partial<ContentBodySummary>
+): Content {
+  return {
+    ...note,
+    body: { ...note.body!, ...bodyPatch },
+    updatedAt: bodyPatch.updatedAt ?? note.updatedAt,
+  };
+}
+
 const baseNote: Content = {
   id: 'note-1',
   name: 'My note',
   type: ContentType.NOTE,
   parentId: 'parent-1',
   ownerId: 'owner-1',
-  size: 12,
-  bodyMimeType: 'text/markdown',
+  body: makeNoteBody(),
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-02'),
 };
@@ -116,13 +140,13 @@ describe('NoteEditorPage', () => {
     jest.useRealTimers();
   });
 
-  it('loads note metadata and markdown from signed URL', async () => {
+  it('loads note metadata and body from signed URL', async () => {
     mockedContentService.getContentById.mockResolvedValue(baseNote);
     mockedContentService.getContentBody.mockResolvedValue({
       signedUrl: 'https://storage.example/blob',
       expiresAt: new Date().toISOString(),
     });
-    mockedContentService.fetchNoteMarkdown.mockResolvedValue('# Hello');
+    mockedContentService.fetchNoteBodyText.mockResolvedValue('# Hello');
 
     renderNoteEditor();
 
@@ -135,7 +159,7 @@ describe('NoteEditorPage', () => {
       expect(body).toHaveValue('# Hello');
     });
 
-    expect(mockedContentService.fetchNoteMarkdown).toHaveBeenCalledWith(
+    expect(mockedContentService.fetchNoteBodyText).toHaveBeenCalledWith(
       'https://storage.example/blob'
     );
   });
@@ -143,7 +167,7 @@ describe('NoteEditorPage', () => {
   it('treats missing body (404) as empty editor without page error', async () => {
     mockedContentService.getContentById.mockResolvedValue({
       ...baseNote,
-      size: undefined,
+      body: null,
     });
     mockedContentService.getContentBody.mockResolvedValue(null);
 
@@ -156,19 +180,21 @@ describe('NoteEditorPage', () => {
     const body = await screen.findByRole('textbox', { name: 'Note body' });
     expect(body).toHaveValue('');
     expect(mockedContentService.getContentBody).not.toHaveBeenCalled();
-    expect(mockedContentService.fetchNoteMarkdown).not.toHaveBeenCalled();
+    expect(mockedContentService.fetchNoteBodyText).not.toHaveBeenCalled();
   });
 
   it('does not request a signed URL after the first body save on an empty note', async () => {
     jest.useFakeTimers();
     const emptyNote: Content = {
       ...baseNote,
-      size: undefined,
+      body: null,
     };
     const afterFirstSave: Content = {
       ...emptyNote,
-      size: 8,
-      bodyMimeType: 'text/markdown',
+      body: makeNoteBody({
+        size: 8,
+        updatedAt: new Date('2025-06-02'),
+      }),
       updatedAt: new Date('2025-06-02'),
     };
     mockedContentService.getContentById.mockResolvedValue(emptyNote);
@@ -198,12 +224,13 @@ describe('NoteEditorPage', () => {
       signedUrl: 'https://storage.example/blob',
       expiresAt: new Date().toISOString(),
     });
-    mockedContentService.fetchNoteMarkdown.mockResolvedValue('# Hello');
-    mockedContentService.putContentBody.mockResolvedValue({
-      ...baseNote,
-      size: 20,
-      updatedAt: new Date('2025-06-01'),
-    });
+    mockedContentService.fetchNoteBodyText.mockResolvedValue('# Hello');
+    mockedContentService.putContentBody.mockResolvedValue(
+      noteWithBody(baseNote, {
+        size: 20,
+        updatedAt: new Date('2025-06-01'),
+      })
+    );
 
     renderNoteEditor();
 
@@ -243,11 +270,10 @@ describe('NoteEditorPage', () => {
       signedUrl: 'https://storage.example/blob',
       expiresAt: new Date().toISOString(),
     });
-    mockedContentService.fetchNoteMarkdown.mockResolvedValue('# Hello');
-    mockedContentService.putContentBody.mockResolvedValue({
-      ...baseNote,
-      size: 9,
-    });
+    mockedContentService.fetchNoteBodyText.mockResolvedValue('# Hello');
+    mockedContentService.putContentBody.mockResolvedValue(
+      noteWithBody(baseNote, { size: 9 })
+    );
 
     renderNoteEditor();
 
@@ -271,7 +297,7 @@ describe('NoteEditorPage', () => {
       signedUrl: 'https://storage.example/blob',
       expiresAt: new Date().toISOString(),
     });
-    mockedContentService.fetchNoteMarkdown.mockResolvedValue('# Hello');
+    mockedContentService.fetchNoteBodyText.mockResolvedValue('# Hello');
 
     let releaseFirst: (c: Content) => void;
     const firstPut = new Promise<Content>(resolve => {
@@ -279,11 +305,12 @@ describe('NoteEditorPage', () => {
     });
     mockedContentService.putContentBody
       .mockImplementationOnce(() => firstPut)
-      .mockResolvedValueOnce({
-        ...baseNote,
-        size: 2,
-        updatedAt: new Date('2025-07-01'),
-      });
+      .mockResolvedValueOnce(
+        noteWithBody(baseNote, {
+          size: 2,
+          updatedAt: new Date('2025-07-01'),
+        })
+      );
 
     renderNoteEditor();
 
@@ -311,11 +338,12 @@ describe('NoteEditorPage', () => {
     expect(mockedContentService.putContentBody).toHaveBeenCalledTimes(1);
 
     await act(async () => {
-      releaseFirst!({
-        ...baseNote,
-        size: 2,
-        updatedAt: new Date('2025-06-30'),
-      });
+      releaseFirst!(
+        noteWithBody(baseNote, {
+          size: 2,
+          updatedAt: new Date('2025-06-30'),
+        })
+      );
       for (let i = 0; i < 80; i += 1) {
         await Promise.resolve();
       }
@@ -345,7 +373,7 @@ describe('NoteEditorPage', () => {
       signedUrl: 'https://storage.example/blob',
       expiresAt: new Date().toISOString(),
     });
-    mockedContentService.fetchNoteMarkdown.mockResolvedValue('# Hello');
+    mockedContentService.fetchNoteBodyText.mockResolvedValue('# Hello');
 
     let releaseFirst: (c: Content) => void;
     const firstPut = new Promise<Content>(resolve => {
@@ -353,11 +381,12 @@ describe('NoteEditorPage', () => {
     });
     mockedContentService.putContentBody
       .mockImplementationOnce(() => firstPut)
-      .mockResolvedValueOnce({
-        ...baseNote,
-        size: 3,
-        updatedAt: new Date('2025-08-01'),
-      });
+      .mockResolvedValueOnce(
+        noteWithBody(baseNote, {
+          size: 3,
+          updatedAt: new Date('2025-08-01'),
+        })
+      );
 
     renderNoteEditor();
 
@@ -373,11 +402,12 @@ describe('NoteEditorPage', () => {
     expect(mockedContentService.putContentBody).toHaveBeenCalledTimes(1);
 
     await act(async () => {
-      releaseFirst!({
-        ...baseNote,
-        size: 2,
-        updatedAt: new Date('2025-06-30'),
-      });
+      releaseFirst!(
+        noteWithBody(baseNote, {
+          size: 2,
+          updatedAt: new Date('2025-06-30'),
+        })
+      );
       for (let i = 0; i < 80; i += 1) {
         await Promise.resolve();
       }
@@ -401,7 +431,7 @@ describe('NoteEditorPage', () => {
       signedUrl: 'https://storage.example/blob',
       expiresAt: new Date().toISOString(),
     });
-    mockedContentService.fetchNoteMarkdown.mockResolvedValue('# Hello');
+    mockedContentService.fetchNoteBodyText.mockResolvedValue('# Hello');
 
     let releaseFirst: (c: Content) => void;
     const firstPut = new Promise<Content>(resolve => {
@@ -409,11 +439,12 @@ describe('NoteEditorPage', () => {
     });
     mockedContentService.putContentBody
       .mockImplementationOnce(() => firstPut)
-      .mockResolvedValueOnce({
-        ...baseNote,
-        size: 3,
-        updatedAt: new Date('2025-09-01'),
-      });
+      .mockResolvedValueOnce(
+        noteWithBody(baseNote, {
+          size: 3,
+          updatedAt: new Date('2025-09-01'),
+        })
+      );
 
     const { unmount } = renderNoteEditor();
 
@@ -429,11 +460,12 @@ describe('NoteEditorPage', () => {
     unmount();
 
     await act(async () => {
-      releaseFirst!({
-        ...baseNote,
-        size: 2,
-        updatedAt: new Date('2025-06-30'),
-      });
+      releaseFirst!(
+        noteWithBody(baseNote, {
+          size: 2,
+          updatedAt: new Date('2025-06-30'),
+        })
+      );
       for (let i = 0; i < 120; i += 1) {
         await Promise.resolve();
       }
@@ -465,7 +497,7 @@ describe('NoteEditorPage', () => {
       signedUrl: 'https://storage.example/blob',
       expiresAt: new Date().toISOString(),
     });
-    mockedContentService.fetchNoteMarkdown.mockResolvedValue('# Hello');
+    mockedContentService.fetchNoteBodyText.mockResolvedValue('# Hello');
 
     let releaseRetry: (c: Content) => void;
     const retryPut = new Promise<Content>(resolve => {
@@ -475,11 +507,12 @@ describe('NoteEditorPage', () => {
     mockedContentService.putContentBody
       .mockRejectedValueOnce(new Error('Network down'))
       .mockImplementationOnce(() => retryPut)
-      .mockResolvedValueOnce({
-        ...baseNote,
-        size: 6,
-        updatedAt: new Date('2025-10-01'),
-      });
+      .mockResolvedValueOnce(
+        noteWithBody(baseNote, {
+          size: 6,
+          updatedAt: new Date('2025-10-01'),
+        })
+      );
 
     renderNoteEditor();
 
@@ -508,11 +541,12 @@ describe('NoteEditorPage', () => {
     expect(mockedContentService.putContentBody).toHaveBeenCalledTimes(2);
 
     await act(async () => {
-      releaseRetry!({
-        ...baseNote,
-        size: 4,
-        updatedAt: new Date('2025-09-15'),
-      });
+      releaseRetry!(
+        noteWithBody(baseNote, {
+          size: 4,
+          updatedAt: new Date('2025-09-15'),
+        })
+      );
       for (let i = 0; i < 100; i += 1) {
         await Promise.resolve();
       }
@@ -544,11 +578,10 @@ describe('NoteEditorPage', () => {
       signedUrl: 'https://storage.example/blob',
       expiresAt: new Date().toISOString(),
     });
-    mockedContentService.fetchNoteMarkdown.mockResolvedValue('# Hello');
-    mockedContentService.putContentBody.mockResolvedValue({
-      ...baseNote,
-      size: 20,
-    });
+    mockedContentService.fetchNoteBodyText.mockResolvedValue('# Hello');
+    mockedContentService.putContentBody.mockResolvedValue(
+      noteWithBody(baseNote, { size: 20 })
+    );
 
     const { unmount } = renderNoteEditor();
 
@@ -579,7 +612,7 @@ describe('NoteEditorPage', () => {
       signedUrl: 'https://storage.example/blob',
       expiresAt: new Date().toISOString(),
     });
-    mockedContentService.fetchNoteMarkdown.mockResolvedValue('# Hello');
+    mockedContentService.fetchNoteBodyText.mockResolvedValue('# Hello');
     mockedContentService.putContentBody.mockRejectedValueOnce(
       new Error('Network down')
     );
@@ -593,10 +626,9 @@ describe('NoteEditorPage', () => {
 
     expect(await screen.findByText('Error saving')).toBeInTheDocument();
 
-    mockedContentService.putContentBody.mockResolvedValue({
-      ...baseNote,
-      size: 4,
-    });
+    mockedContentService.putContentBody.mockResolvedValue(
+      noteWithBody(baseNote, { size: 4 })
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     await flushOpenMutationMicrotasks();
@@ -613,18 +645,16 @@ describe('NoteEditorPage', () => {
 
   it('updates the content item query cache after a successful save', async () => {
     jest.useFakeTimers();
-    const updated: Content = {
-      ...baseNote,
+    const updated: Content = noteWithBody(baseNote, {
       size: 99,
-      bodyMimeType: 'text/markdown',
       updatedAt: new Date('2025-12-15'),
-    };
+    });
     mockedContentService.getContentById.mockResolvedValue(baseNote);
     mockedContentService.getContentBody.mockResolvedValue({
       signedUrl: 'https://storage.example/blob',
       expiresAt: new Date().toISOString(),
     });
-    mockedContentService.fetchNoteMarkdown.mockResolvedValue('# Hello');
+    mockedContentService.fetchNoteBodyText.mockResolvedValue('# Hello');
     mockedContentService.putContentBody.mockResolvedValue(updated);
 
     const { queryClient } = renderNoteEditor();
@@ -640,9 +670,9 @@ describe('NoteEditorPage', () => {
       const cached = queryClient.getQueryData<Content>(
         contentQueryKeys.item('note-1')
       );
-      expect(cached?.size).toBe(99);
+      expect(cached?.body?.size).toBe(99);
       expect(cached?.updatedAt).toEqual(updated.updatedAt);
-      expect(cached?.bodyMimeType).toBe('text/markdown');
+      expect(cached?.body?.mimeType).toBe('text/markdown');
     });
 
     await waitFor(() => {

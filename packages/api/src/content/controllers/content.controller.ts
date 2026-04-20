@@ -111,7 +111,7 @@ export class ContentController {
       'Partially updates content metadata. Today this supports renaming (`name`). ' +
       'Moving an item to another folder (`parentId`) will use the same route; that behavior is **not implemented yet** ' +
       'and returns `400 Bad Request` if `parentId` is sent. ' +
-      'Content body bytes and storage-derived fields (`bodyUri`, `size`, `bodyMimeType`) are changed only via `PUT …/body`. ' +
+      'Body bytes and the nested `body` summary are changed only via `PUT …/body`. ' +
       'When renaming, names must stay unique among siblings under the same parent.',
   })
   @ApiParam({
@@ -177,7 +177,7 @@ export class ContentController {
     summary: "List a parent's children",
     description:
       'Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. ' +
-      'Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).',
+      'Directory items omit `body`; notes include `body: null` until the first `PUT …/body`, then a public summary (no storage URI).',
   })
   @ApiParam({
     name: 'id',
@@ -268,7 +268,7 @@ export class ContentController {
   @ApiOperation({
     summary: 'Upload or replace content body',
     description:
-      'Single endpoint for any raw body type the client declares via `Content-Type`. Updates Cloud Storage object metadata and Firestore (`bodyUri`, `size`, `bodyMimeType`).',
+      'Single endpoint for any raw body type the client declares via `Content-Type`. Updates Cloud Storage and nested Firestore `body` (incl. `body.updatedAt`).',
   })
   @ApiParam({
     name: 'id',
@@ -384,7 +384,7 @@ export class ContentController {
     summary: 'Get content by ID',
     description:
       'Returns Firestore metadata for the content (e.g. directory or note). Does not include the content body; use `GET …/body/signed-url` for a signed read URL. ' +
-      'Directory items omit `bodyUri`, `size`, and `bodyMimeType`; notes include those fields (null until the first `PUT …/body`).',
+      'Directory items omit `body`; notes include `body: null` until the first `PUT …/body`, then a public summary (no storage URI).',
   })
   @ApiParam({
     name: 'id',

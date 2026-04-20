@@ -3,11 +3,13 @@
 When writing API text, code comments, ADRs, and UI copy, use this vocabulary so **Firestore metadata** and **Storage
 bytes** are not conflated.
 
-- **Content** — The metadata record for something in the tree: name, `type`, `parentId`, `ownerId`, timestamps,
-  `bodyUri`, `size`, `bodyMimeType`, and related fields. Persisted in the Firestore **`content`** collection.
-- **Content body** — The payload stored separately from that record (markdown, image bytes, audio, …), addressed by
-  `bodyUri` after the first successful `PUT /api/content/:id/body`. Persisted in **Firebase Cloud Storage** (default
-  bucket).
+- **Content** — The metadata record for something in the tree: name, `type`, `parentId`, `ownerId`, top-level
+  timestamps, and (for notes) a nested **`body`** object (`uri`, `size`, `mimeType`, `createdAt`, **`updatedAt`**) in
+  Firestore. The HTTP metadata DTO exposes a **public `body` summary** (no storage URI). Persisted in the Firestore
+  **`content`** collection.
+- **Content body** — The payload stored separately from that record (markdown, image bytes, audio, …), addressed by the
+  internal **`body.uri`** object path after the first successful `PUT /api/content/:id/body`. Persisted in **Firebase
+  Cloud Storage** (default bucket).
 
 **Do not** use **“content item”** for the Firestore side; say **content** (or **content metadata** when you need to
 stress that it is not the body).

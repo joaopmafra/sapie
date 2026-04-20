@@ -7,9 +7,12 @@
 // Types and interfaces
 export type {
   Content,
+  ContentBodySummary,
   ContentCreationInput,
   UpdateContentRequest,
 } from './types';
+
+export { noteBodyVersionKey } from './content-body-cache-policy';
 
 export type { CreateContentRequest } from '../api-client';
 

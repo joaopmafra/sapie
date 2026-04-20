@@ -69,9 +69,7 @@ export class RootDirectoryService {
         type: ContentType.DIRECTORY,
         parentId: null,
         ownerId: userId,
-        bodyUri: null,
-        size: null,
-        // Firestore will convert Date to Timestamp
+        body: null,
         createdAt: now,
         updatedAt: now,
       };
@@ -88,8 +86,7 @@ export class RootDirectoryService {
         type: rootDirectoryData.type,
         parentId: rootDirectoryData.parentId,
         ownerId: rootDirectoryData.ownerId,
-        bodyUri: rootDirectoryData.bodyUri,
-        size: rootDirectoryData.size,
+        body: null,
         createdAt: now,
         updatedAt: now,
       };

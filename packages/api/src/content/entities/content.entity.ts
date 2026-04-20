@@ -11,6 +11,30 @@ export enum ContentType {
 }
 
 /**
+ * Stored body metadata (Firestore + domain). **`uri` is server-only** — never exposed on HTTP.
+ */
+export interface ContentBody {
+  /** Object path in the default bucket (`ownerId/content/contentId`), no `gs://` prefix. */
+  uri: string;
+  size: number;
+  mimeType: string;
+  createdAt: Date;
+  /** Canonical “body bytes changed” timestamp (rename must not advance this). */
+  updatedAt: Date;
+}
+
+/**
+ * Firestore shape for {@link ContentBody} (nested under document field `body`).
+ */
+export interface ContentBodyDocument {
+  uri: string;
+  size: number;
+  mimeType: string;
+  createdAt: admin.firestore.Timestamp;
+  updatedAt: admin.firestore.Timestamp;
+}
+
+/**
  * Content Entity Interface
  *
  * Content metadata for something in the tree (directory or note). See `docs/dev/content_naming.md`
@@ -33,24 +57,15 @@ export interface Content {
   ownerId: string;
 
   /**
-   * Object path for the content body in the configured default bucket (`ownerId/content/contentId`),
-   * provider-agnostic (no `gs://` prefix). Null until the first body save.
+   * Storage-backed body for notes; **null** until first `PUT …/body` or for directories.
+   * The HTTP metadata DTO exposes a public summary under `body` without `uri`.
    */
-  bodyUri?: string | null;
-
-  /** Size of the content in bytes (only for files, not directories) */
-  size?: number | null;
-
-  /**
-   * IANA media type of the stored body object (from the last successful `PUT …/body` `Content-Type`),
-   * e.g. `text/plain`, `image/png`. Null until the first body save.
-   */
-  bodyMimeType?: string | null;
+  body: ContentBody | null;
 
   /** Timestamp when the content was created */
   createdAt: Date;
 
-  /** Timestamp when the content was last updated */
+  /** Timestamp when content metadata last changed (e.g. rename); not the stored body version signal (`body.updatedAt`). */
   updatedAt: Date;
 }
 
@@ -74,14 +89,8 @@ export interface ContentDocument {
   /** ID of the user who owns this content */
   ownerId: string;
 
-  /** Object path for content body (see {@link Content.bodyUri}). */
-  bodyUri?: string;
-
-  /** Size of the content in bytes (only for files, not directories) */
-  size?: number;
-
-  /** Media type of the stored body (see {@link Content.bodyMimeType}). */
-  bodyMimeType?: string | null;
+  /** Nested body storage metadata; `null` until first body save (notes) or absent for directories. */
+  body?: ContentBodyDocument | null;
 
   /** Firestore timestamp when the content was created */
   createdAt: admin.firestore.Timestamp;
@@ -104,10 +113,4 @@ export interface ContentCreationInput {
 
   /** ID of the parent directory, null for root directory */
   parentId: string | null;
-
-  /** Object path for content body (see {@link Content.bodyUri}). */
-  bodyUri?: string;
-
-  /** Size of the content in bytes (only for files, not directories) */
-  size?: number;
 }
