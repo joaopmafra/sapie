@@ -1,3 +1,4 @@
+import type { MDXEditorMethods } from '@mdxeditor/editor';
 import {
   Box,
   Typography,
@@ -31,6 +32,8 @@ import {
 } from '../lib/content';
 import { PROBLEM_DETAILS_POINTERS } from '../lib/problemDetailsPointers.ts';
 
+import type { NoteBodyMarkdownChangeOptions } from './note-body-editor/note-body-editor-props';
+import { NoteBodyEditor } from './note-body-editor/NoteBodyEditor';
 import {
   NOTE_BODY_AUTOSAVE_DEBOUNCE_MS,
   NOTE_BODY_SAVED_HEADER_MS,
@@ -70,6 +73,7 @@ const NoteEditorPage = () => {
   const [savePhase, setSavePhase] = useState<NoteEditorSavePhase>('idle');
   const nameInputRef = useRef<HTMLInputElement>(null);
   const renameInProgressRef = useRef(false);
+  const richBodyEditorRef = useRef<MDXEditorMethods | null>(null);
 
   const draftBodyRef = useRef(draftBody);
   draftBodyRef.current = draftBody;
@@ -225,6 +229,9 @@ const NoteEditorPage = () => {
       clearAutosaveDebounce();
       clearSavedHeaderTimer();
       safeSetSavePhase('idle');
+      queueMicrotask(() => {
+        richBodyEditorRef.current?.setMarkdown(incoming);
+      });
     }
   }, [
     resolvedServerBody,
@@ -323,6 +330,36 @@ const NoteEditorPage = () => {
     setIsEditing(false);
   };
 
+  const handleDraftBodyUpdate = useCallback(
+    (value: string, options?: NoteBodyMarkdownChangeOptions) => {
+      setDraftBody(value);
+      if (options?.fromInitialNormalize) {
+        baselineBodyRef.current = value;
+        clearAutosaveDebounce();
+        clearSavedHeaderTimer();
+        safeSetSavePhase('idle');
+        return;
+      }
+
+      clearSavedHeaderTimer();
+
+      if (value === baselineBodyRef.current) {
+        clearAutosaveDebounce();
+        safeSetSavePhase('idle');
+        return;
+      }
+
+      safeSetSavePhase('pending');
+      scheduleDebouncedAutosave();
+    },
+    [
+      clearAutosaveDebounce,
+      clearSavedHeaderTimer,
+      safeSetSavePhase,
+      scheduleDebouncedAutosave,
+    ]
+  );
+
   const createError = (errorMessage: string) => {
     return (
       <Box sx={{ maxWidth: 800, mx: 'auto' }}>
@@ -382,20 +419,6 @@ const NoteEditorPage = () => {
   const bodyLoadErrorDetail =
     (waitForBodySignedUrlQuery ? bodySignedUrlQuery.error : null) ??
     (signedUrl ? noteBodyQuery.error : null);
-
-  const handleDraftChange = (value: string) => {
-    setDraftBody(value);
-    clearSavedHeaderTimer();
-
-    if (value === baselineBodyRef.current) {
-      clearAutosaveDebounce();
-      safeSetSavePhase('idle');
-      return;
-    }
-
-    safeSetSavePhase('pending');
-    scheduleDebouncedAutosave();
-  };
 
   const handleRetrySave = () => {
     clearAutosaveDebounce();
@@ -529,20 +552,14 @@ const NoteEditorPage = () => {
               <CircularProgress size={32} />
             </Box>
           ) : (
-            <>
-              <TextField
-                multiline
-                fullWidth
-                minRows={16}
-                value={draftBody}
-                onChange={e => handleDraftChange(e.target.value)}
-                placeholder='Start writing your note…'
-                disabled={!currentUser || bodyLoadPending}
-                inputProps={{
-                  'aria-label': 'Note body',
-                }}
-              />
-            </>
+            <NoteBodyEditor
+              richEditorRef={richBodyEditorRef}
+              value={draftBody}
+              onChange={handleDraftBodyUpdate}
+              placeholder='Start writing your note…'
+              disabled={!currentUser || bodyLoadPending}
+              aria-label='Note body'
+            />
           )}
         </Box>
       </Paper>
