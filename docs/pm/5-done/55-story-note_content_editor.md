@@ -19,7 +19,7 @@ focus on my study material without worrying about losing changes.
 
 - **Plain multiline note body** below the title (e.g. `<textarea>` or equivalent) with autosave and the save-status
   behavior described below — **not** a rich-text/visual markdown editor. That ships in
-  [Story 67: Rich note content editor (MDXEditor)](../3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md).
+  [Story 67: Rich note content editor (MDXEditor)](../3-stories/1-ready/67-story-rich_note_content_editor_mdx.md).
 - Auto-save after the user stops typing (**debounce: 5 seconds**).
 - Save status in the note editor header (bundled from [Story 54](../3-stories/2-to-refine/54-story-save_status_display.md); no
   separate story).
@@ -46,7 +46,7 @@ focus on my study material without worrying about losing changes.
 - E2E tests for this story (**deferred for MVP**; see [Testing](#testing)).
 - **Concurrent editing** across multiple browser windows or devices (detect stale version, reload vs overwrite):
   [Story 65: Note Body Concurrency and Conflict Resolution](../3-stories/2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md).
-- **Rich MDXEditor UI** — [Story 67](../3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md).
+- **Rich MDXEditor UI** — [Story 67](../3-stories/1-ready/67-story-rich_note_content_editor_mdx.md).
 - **Nested `body` subdocument + client cache policy** — [Story 66](66-story-content_body_subdocument_and_client_cache.md).
 
 ## Dependencies (satisfied)
@@ -59,9 +59,9 @@ focus on my study material without worrying about losing changes.
 **Ordering (follow-on stories)**
 
 - [Story 66](66-story-content_body_subdocument_and_client_cache.md) — body model + TanStack cache;
-  scheduled **after** Story 55 (Phases 0–5) and **before** [Story 67](../3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md)
+  scheduled **after** Story 55 (Phases 0–5) and **before** [Story 67](../3-stories/1-ready/67-story-rich_note_content_editor_mdx.md)
   (preferred).
-- [Story 67](../3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md) — rich editor; depends on Story 55
+- [Story 67](../3-stories/1-ready/67-story-rich_note_content_editor_mdx.md) — rich editor; depends on Story 55
   (Phases 0–5) and is **scheduled after** Story 66 when possible.
 
 **Already delivered (do not re-implement as part of this story)**
@@ -77,7 +77,7 @@ focus on my study material without worrying about losing changes.
 ### Editor
 
 - **Story 55:** plain **textarea** (or equivalent) for wiring, autosave, and save status — **not** `@mdxeditor/editor`
-  (that is [Story 67](../3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md)).
+  (that is [Story 67](../3-stories/1-ready/67-story-rich_note_content_editor_mdx.md)).
 - New or never-saved notes: **`size` is null** (no body in Storage yet; Firestore still has `bodyUri` null server-side
   until the first save). The UI shows an **empty editor** with a sensible placeholder. The first successful save creates
   the Storage object and sets **`bodyUri` (persisted only server-side)**, **`size`**, and **`updatedAt`** on the
@@ -201,7 +201,7 @@ the boundary). Use **UI drivers / component objects** to reduce brittle selector
 ### Deferred / superseded
 
 - **Rich editor (`@mdxeditor/editor`)** — moved to
-  [Story 67: Rich note content editor (MDXEditor)](../3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md)
+  [Story 67: Rich note content editor (MDXEditor)](../3-stories/1-ready/67-story-rich_note_content_editor_mdx.md)
   (former “Phase 6” in this file).
 - **Nested `body` metadata + TanStack cache policy** —
   [Story 66: Content body subdocument and client cache policy](66-story-content_body_subdocument_and_client_cache.md).
@@ -223,7 +223,7 @@ the boundary). Use **UI drivers / component objects** to reduce brittle selector
 - [ ] On unmount/navigation away, pending changes are flushed as specified (no silent drop of dirty state).
 
 **Rich-text editing** (headings, toolbar, code highlighting in the editor UI, etc.) — see
-[Story 67](../3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md).
+[Story 67](../3-stories/1-ready/67-story-rich_note_content_editor_mdx.md).
 
 ## Technical Requirements
 
@@ -281,4 +281,4 @@ Frontend implementation is broken down by **phase** under [Implementation approa
   `docs/research/client_state_management/phase_1_tanstack_query.md`](../../research/client_state_management/phase_1_tanstack_query.md)
 - MVP ordering: [`docs/research/mvp_objective.md`](../../plans/mvp_objective.md)
 - [Story 66 — body subdocument + cache](66-story-content_body_subdocument_and_client_cache.md) ·
-  [Story 67 — Rich editor (MDXEditor)](../3-stories/2-to-refine/67-story-rich_note_content_editor_mdx.md)
+  [Story 67 — Rich editor (MDXEditor)](../3-stories/1-ready/67-story-rich_note_content_editor_mdx.md)
