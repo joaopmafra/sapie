@@ -1,5 +1,5 @@
 /** Debounce after last body edit before auto-save (Story 55 Phase 3). */
-export const NOTE_BODY_AUTOSAVE_DEBOUNCE_MS = 5000;
+export const NOTE_BODY_AUTOSAVE_DEBOUNCE_MS = import.meta.env.DEV ? 2000 : 5000;
 
 /** How long the header shows “Saved” before returning to idle. */
 export const NOTE_BODY_SAVED_HEADER_MS = 3000;

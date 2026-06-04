@@ -21,14 +21,9 @@ import '@mdxeditor/editor/style.css';
 import { Box } from '@mui/material';
 import { forwardRef, useMemo } from 'react';
 
+import { noteBodyToolbarTranslation } from './mdxEditorTranslation';
 import type { NoteBodyEditorProps } from './note-body-editor-props';
-
-function noteBodyToolbarTranslation(key: string, defaultValue: string): string {
-  if (key === 'contentArea.editableMarkdown') {
-    return 'Note body';
-  }
-  return defaultValue;
-}
+import './rich-note-body-content.css';
 
 export const RichNoteBodyEditor = forwardRef<
   MDXEditorMethods | null,
@@ -80,23 +75,7 @@ export const RichNoteBodyEditor = forwardRef<
   );
 
   return (
-    <Box
-      className='sapie-rich-note-body'
-      sx={{
-        minHeight: 360,
-        '& .mdxeditor': {
-          border: 1,
-          borderColor: 'divider',
-          borderRadius: 1,
-          bgcolor: 'background.paper',
-        },
-        '& .mdxeditor-toolbar': {
-          borderBottom: 1,
-          borderColor: 'divider',
-          bgcolor: 'action.hover',
-        },
-      }}
-    >
+    <Box className='sapie-rich-note-body' sx={{ minHeight: 360 }}>
       <MDXEditor
         ref={ref}
         markdown={value}
