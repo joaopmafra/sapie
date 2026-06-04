@@ -13,8 +13,8 @@ export function getNoteBodyEditorVariant(): 'rich' | 'plain' {
     return 'plain';
   }
 
-  const explicit = (globalThis as { __SAPie_VITE_NOTE_EDITOR__?: string })
-    .__SAPie_VITE_NOTE_EDITOR__;
+  const explicit = (globalThis as { __SAPIE_VITE_NOTE_EDITOR__?: string })
+    .__SAPIE_VITE_NOTE_EDITOR__;
   if (explicit === 'plain') {
     return 'plain';
   }

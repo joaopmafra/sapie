@@ -34,13 +34,7 @@ export const RichNoteBodyEditor = forwardRef<
   MDXEditorMethods | null,
   NoteBodyEditorProps
 >(function RichNoteBodyEditor(
-  {
-    value,
-    onChange,
-    placeholder,
-    disabled,
-    'aria-label': _ariaLabel,
-  },
+  { value, onChange, placeholder, disabled, 'aria-label': _ariaLabel },
   ref
 ) {
   const plugins = useMemo(

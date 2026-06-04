@@ -1,5 +1,5 @@
 type SapieNoteEditorGlobal = typeof globalThis & {
-  __SAPie_VITE_NOTE_EDITOR__?: string;
+  __SAPIE_VITE_NOTE_EDITOR__?: string;
 };
 
 /**
@@ -12,8 +12,8 @@ export function installViteNoteEditorEnvShim(
   const g = globalThis as SapieNoteEditorGlobal;
   const v = env?.VITE_NOTE_EDITOR;
   if (v === 'plain' || v === 'rich') {
-    g.__SAPie_VITE_NOTE_EDITOR__ = v;
+    g.__SAPIE_VITE_NOTE_EDITOR__ = v;
   } else {
-    delete g.__SAPie_VITE_NOTE_EDITOR__;
+    delete g.__SAPIE_VITE_NOTE_EDITOR__;
   }
 }
