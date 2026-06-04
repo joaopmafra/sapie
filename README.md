@@ -60,10 +60,17 @@ introduce a root-only PNPM workspace + single `pnpm-lock.yaml` for the whole rep
 without a dedicated bundling or deploy workaround.
 
 For **why** Firebase emulators run in Docker and how profiles differ, see
-**[ADR 0001 — Firebase Emulator Suite in Docker](docs/adr/0001-firebase-emulators-docker-compose.md)**. For **commands**,
-use [Quick Start](#quick-start), the E2E section below, and [`docs/dev/ai_agent_guidelines.md`](docs/dev/ai_agent_guidelines.md).
+**[ADR 0001 — Firebase Emulator Suite in Docker](docs/adr/0001-firebase-emulators-docker-compose.md)**. For **commands
+**,
+use [Quick Start](#quick-start), the E2E section below, and [
+`docs/dev/ai_agent_guidelines.md`](docs/dev/ai_agent_guidelines.md).
 
 ## Quick Start
+
+This section is likely outdated. Please refer to the 
+[Ubuntu Development Environment Setup](docs/dev/ubuntu_dev_env_setup.md) for detailed instructions.
+
+**TODO:** update this section and/or move it to a dedicated document.
 
 ### Prerequisites
 
@@ -267,7 +274,8 @@ After deployment, your application will be available at [https://sapie-b09be.web
 
 **Default local flows use Docker Compose** (see [Quick Start](#quick-start), E2E section above, and
 [`docs/dev/ai_agent_guidelines.md`](docs/dev/ai_agent_guidelines.md); rationale:
-[`docs/adr/0001-firebase-emulators-docker-compose.md`](docs/adr/0001-firebase-emulators-docker-compose.md)). Use the Firebase CLI
+[`docs/adr/0001-firebase-emulators-docker-compose.md`](docs/adr/0001-firebase-emulators-docker-compose.md)). Use the
+Firebase CLI
 on the host mainly for **deploy** or **advanced** debugging.
 
 ```bash
