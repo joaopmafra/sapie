@@ -4,10 +4,11 @@ This file is used to track the PBI (product backlog item), which is the number o
 
 ## Current Last PBI Number
 
-67
+68
 
 ## Recent PBIs Created (limited to 10)
 
+- **68**: Story - Preserve extra blank lines in rich note editor (markdown round-trip)
 - **67**: Story - Rich note content editor (MDXEditor)
 - **66**: Story - Content body subdocument and client cache policy
 - **65**: Story - Note Body Concurrency and Conflict Resolution
