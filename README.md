@@ -61,64 +61,15 @@ without a dedicated bundling or deploy workaround.
 
 For **why** Firebase emulators run in Docker and how profiles differ, see
 **[ADR 0001 — Firebase Emulator Suite in Docker](docs/adr/0001-firebase-emulators-docker-compose.md)**. For **commands
-**,
-use [Quick Start](#quick-start), the E2E section below, and [
+**, use **[Development environment setup](docs/dev/development_environment_setup.md)**, the E2E section below, and [
 `docs/dev/ai_agent_guidelines.md`](docs/dev/ai_agent_guidelines.md).
 
 ## Quick Start
 
-This section is likely outdated. Please refer to the 
-[Ubuntu Development Environment Setup](docs/dev/ubuntu_dev_env_setup.md) for detailed instructions.
+**[Development environment setup](docs/dev/development_environment_setup.md)** — clone, Docker, Node/pnpm, package
+install, verify, and run (`pnpm dev` or `pnpm run emulator`).
 
-**TODO:** update this section and/or move it to a dedicated document.
-
-### Prerequisites
-
-- **Node.js**: 22.x (see `.nvmrc` and `.npmrc`)
-- **Package Manager**: [pnpm](https://pnpm.io/installation) (required)
-- **Docker** and Docker Compose v2: required for **`pnpm run emulator`** (full Hosting + Functions emulator in Compose)
-- **Firebase CLI**: required for **deployment**; optional if you only use Compose-based emulators
-
-Install NestJS CLI globally:
-
-```bash
-pnpm add -g @nestjs/cli
-```
-
-### Install Dependencies
-
-Each package must be installed separately:
-
-```bash
-# Install API dependencies
-cd packages/api
-pnpm install
-
-# Install web dependencies
-cd ../web
-pnpm install
-
-# Install test-e2e dependencies
-cd ../test-e2e
-pnpm install
-```
-
-### Start Development
-
-```bash
-# Build all packages
-pnpm run build
-
-# Build for `emulator` and start full Firebase emulator stack (Docker Compose)
-pnpm run emulator
-```
-
-Uses [`scripts/build-run-on-emulator.sh`](scripts/build-run-on-emulator.sh) (`compose.emulator.yml`). This provides:
-
-- **Web App**: http://localhost:5000
-- **API**: http://localhost:5001/demo-emulator/us-central1/api
-- **Emulator UI**: http://localhost:4000
-- **Firebase Auth Emulator**: http://localhost:9099
+Optional: **[agentmemory setup](docs/dev/agentmemory_setup.md)** for persistent memory in Cursor and other agents.
 
 ## Package Documentation
 
@@ -146,17 +97,8 @@ For detailed authentication setup, configuration, and usage instructions, see th
 
 ## Development
 
-### Firebase Emulator (full stack, recommended)
-
-Run the full emulator (Hosting + Functions + Auth + Firestore) via Docker:
-
-```bash
-pnpm run emulator
-```
-
-Advanced: from the repo root, after `scripts/build-all.sh emulator`, you can run *
-*`firebase emulators:start --project emulator`** on the host if you prefer not to use Compose (you must have Firebase
-CLI and compatible `node_modules` for Functions).
+Day-to-day commands, hybrid local dev, and emulator stacks:
+**[development_environment_setup.md](docs/dev/development_environment_setup.md)**.
 
 ### E2E tests (Playwright + Compose)
 
@@ -171,23 +113,6 @@ cd packages/test-e2e && pnpm test
 
 Uses [`compose.test-e2e.yml`](compose.test-e2e.yml). **Do not** run this alongside `pnpm run emulator` — the published
 ports overlap. Full steps: **[packages/test-e2e/README.md](./packages/test-e2e/README.md)**.
-
-### Development Servers (Alternative)
-
-For faster development iteration, run services separately:
-
-```bash
-# Terminal 1: Start API in development mode
-cd packages/api && pnpm run dev
-
-# Terminal 2: Start web app in development mode  
-cd packages/web && pnpm run dev
-```
-
-This starts:
-
-- **API**: http://localhost:3000
-- **Web App**: http://localhost:5173 (with API proxy configured)
 
 ## Project-level Scripts
 
@@ -272,31 +197,12 @@ After deployment, your application will be available at [https://sapie-b09be.web
 
 ## Firebase Commands
 
-**Default local flows use Docker Compose** (see [Quick Start](#quick-start), E2E section above, and
-[`docs/dev/ai_agent_guidelines.md`](docs/dev/ai_agent_guidelines.md); rationale:
-[`docs/adr/0001-firebase-emulators-docker-compose.md`](docs/adr/0001-firebase-emulators-docker-compose.md)). Use the
-Firebase CLI
-on the host mainly for **deploy** or **advanced** debugging.
-
-```bash
-# Optional: stop stuck host-started emulator processes (not needed when using Compose)
-pkill -f "firebase.*emulator"
-
-# Host-only: start all emulators (requires Firebase CLI + local config)
-firebase emulators:start
-
-# Host-only: subset of emulators
-firebase emulators:start --only=auth,functions,firestore
-
-# Clear the current Firebase CLI project selection
-firebase use --clear
-```
+**Default local flows use Docker Compose** (see [development_environment_setup.md](docs/dev/development_environment_setup.md),
+E2E section above, and [`docs/dev/ai_agent_guidelines.md`](docs/dev/ai_agent_guidelines.md); rationale:
+[`docs/adr/0001-firebase-emulators-docker-compose.md`](docs/adr/0001-firebase-emulators-docker-compose.md)).
 
 ## Environment Requirements
 
-- **Node.js**: 22.x (see `.nvmrc`)
-- **Package Manager**: pnpm (see `packageManager` in root and package `package.json` files)
-- **Docker + Compose**: Required for **`pnpm run emulator`**
-- **Firebase CLI**: Required for deployment; optional for local emulator if using Compose only
-- **Layout**: Independent installs per package — required for Firebase;
-  see [Firebase and monorepo tooling](#firebase-and-monorepo-tooling)
+See **[development_environment_setup.md](docs/dev/development_environment_setup.md)** (prerequisites, checklist, Firebase
+layout). Independent per-package installs are required for Firebase;
+see [Firebase and monorepo tooling](#firebase-and-monorepo-tooling).

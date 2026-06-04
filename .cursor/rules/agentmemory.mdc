@@ -1,0 +1,25 @@
+---
+description: Use agentmemory MCP for cross-session recall and durable project knowledge
+alwaysApply: true
+---
+
+# agentmemory (MCP)
+
+Persistent memory is provided by the **agentmemory** MCP server (`memory_recall`, `memory_save`, etc.). The daemon runs locally at `http://127.0.0.1:3111`.
+
+## Session start (non-trivial work)
+
+Before planning or implementing, call **`memory_recall`** with a short query (project name, feature area, files, or keywords from the user message). Use returned context; do not re-ask for preferences or decisions already stored.
+
+## During work
+
+When you learn something durable (architecture choice, convention, command to run, user preference, gotcha), call **`memory_save`** with a concise title and content. Prefer facts the next session would need without re-reading the repo.
+
+## Session end
+
+If the session produced new durable knowledge not yet saved, call **`memory_save`** once more before finishing.
+
+## Scope
+
+- Project: **sapie** (knowledge-management monorepo).
+- Do not store secrets (API keys, tokens, passwords).
