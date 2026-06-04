@@ -7,16 +7,18 @@ type SapieViteEnvGlobal = typeof globalThis & {
  * Copies selected Vite `import.meta.env` fields into `globalThis` so modules that must
  * not use `import.meta` (Jest-transpiled tests pull those in) can read them at runtime.
  */
-export function installViteNoteEditorEnvShim(
+export function bridgeViteEnvToGlobal(
   env: { VITE_NOTE_EDITOR?: string; DEV?: boolean } | undefined
 ): void {
   const g = globalThis as SapieViteEnvGlobal;
-  const v = env?.VITE_NOTE_EDITOR;
-  if (v === 'plain' || v === 'rich') {
-    g.__SAPIE_VITE_NOTE_EDITOR__ = v;
+
+  const viteNoteEditor = env?.VITE_NOTE_EDITOR;
+  if (viteNoteEditor === 'plain' || viteNoteEditor === 'rich') {
+    g.__SAPIE_VITE_NOTE_EDITOR__ = viteNoteEditor;
   } else {
     delete g.__SAPIE_VITE_NOTE_EDITOR__;
   }
+
   if (env?.DEV === true) {
     g.__SAPIE_VITE_DEV__ = true;
   } else {

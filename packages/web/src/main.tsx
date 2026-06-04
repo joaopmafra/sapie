@@ -3,9 +3,9 @@ import { createRoot } from 'react-dom/client';
 
 import './index.css';
 import App from './App.tsx';
-import { installViteNoteEditorEnvShim } from './config/viteNoteEditorEnvShim';
+import { bridgeViteEnvToGlobal } from './config/viteEnvBridge.ts';
 
-installViteNoteEditorEnvShim(import.meta.env);
+bridgeViteEnvToGlobal(import.meta.env);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

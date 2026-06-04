@@ -1,5 +1,5 @@
 /**
- * Rich MDXEditor is the default in the browser (after `installViteNoteEditorEnvShim()` in `main.tsx`).
+ * Rich MDXEditor is the default in the browser (after `bridgeViteEnvToGlobal()` in `main.tsx`).
  * Jest defaults to plain unless `VITE_NOTE_EDITOR=rich` is set for focused MDXEditor tests.
  */
 export function getNoteBodyEditorVariant(): 'rich' | 'plain' {
