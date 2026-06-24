@@ -217,10 +217,7 @@ const NoteEditorPage = () => {
     clearAutosaveDebounce();
 
     await waitForSaveIdle();
-    if (
-      draftBodyRef.current === baselineBodyRef.current &&
-      !isSaveError()
-    ) {
+    if (draftBodyRef.current === baselineBodyRef.current && !isSaveError()) {
       return true;
     }
 
