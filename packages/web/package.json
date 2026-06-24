@@ -22,7 +22,7 @@
     "lint:check": "eslint .",
     "test": "NODE_OPTIONS='--disable-warning=DEP0040' jest",
     "test:watch": "NODE_OPTIONS='--disable-warning=DEP0040' jest --watch",
-    "verify:types": "tsc --noEmit",
+    "verify:types": "tsc -b --noEmit",
     "verify:all": "pnpm verify:types && pnpm lint:check && pnpm format:check"
   },
   "dependencies": {

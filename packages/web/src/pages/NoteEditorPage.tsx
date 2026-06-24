@@ -212,18 +212,20 @@ const NoteEditorPage = () => {
   }, []);
 
   const flushSaveForNavigation = useCallback(async (): Promise<boolean> => {
+    const isSaveError = () => savePhaseRef.current === 'error';
+
     clearAutosaveDebounce();
 
     await waitForSaveIdle();
     if (
       draftBodyRef.current === baselineBodyRef.current &&
-      savePhaseRef.current !== 'error'
+      !isSaveError()
     ) {
       return true;
     }
 
     for (;;) {
-      if (savePhaseRef.current === 'error') {
+      if (isSaveError()) {
         return false;
       }
 
@@ -234,7 +236,7 @@ const NoteEditorPage = () => {
       await runSaveRef.current();
       await waitForSaveIdle();
 
-      if (savePhaseRef.current === 'error') {
+      if (isSaveError()) {
         return false;
       }
 

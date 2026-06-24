@@ -6,7 +6,7 @@ export function applyMdxEditorInterpolations(
   let value = defaultValue;
   if (interpolations) {
     for (const [k, v] of Object.entries(interpolations)) {
-      value = value.replaceAll(`{{${k}}}`, String(v));
+      value = value.split(`{{${k}}}`).join(String(v));
     }
   }
   return value;
