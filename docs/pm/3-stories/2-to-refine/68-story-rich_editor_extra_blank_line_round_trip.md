@@ -28,7 +28,7 @@ after auto-save and when I reopen the note, so spacing in my notes matches what 
 
 - [Story 55: Note Content Editor](../../5-done/55-story-note_content_editor.md) — body load/save, autosave, `PUT` / signed URL fetch.
 - [Story 66: Content body subdocument and client cache policy](../../5-done/66-story-content_body_subdocument_and_client_cache.md) — stable body load path and cache keys.
-- [Story 67: Rich note content editor (MDXEditor)](../../4-in-progress/67-story-rich_note_content_editor_mdx.md) — rich editor is where the bug appears; **complete or near-complete** before implementing this story.
+- [Story 67: Rich note content editor (MDXEditor)](../../5-done/67-story-rich_note_content_editor_mdx.md) — rich editor is where the bug appears; **complete or near-complete** before implementing this story.
 
 **Related (do not duplicate):**
 
@@ -178,4 +178,4 @@ empty paragraphs that mdast **retains**, using a **contentful** spacer line:
 - [MDXEditor — Content styling](https://mdxeditor.dev/editor/docs/content-styling)
 - [MDXEditor issue #920 — blockquote empty lines](https://github.com/mdx-editor/editor/issues/920) (related class of bug, fixed in 3.54+)
 - Vendor repos (local): `~/dev/vendor/mdx-editor` — `editor/src/plugins/core/MdastParagraphVisitor.ts`, `MDXEditor.tsx` `defaultTranslation` / export `trim()`.
-- [Story 67: Rich note content editor (MDXEditor)](../../4-in-progress/67-story-rich_note_content_editor_mdx.md)
+- [Story 67: Rich note content editor (MDXEditor)](../../5-done/67-story-rich_note_content_editor_mdx.md)

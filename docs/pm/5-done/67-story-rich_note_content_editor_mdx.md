@@ -4,7 +4,7 @@
 
 Ship a **rich markdown editor** using **`@mdxeditor/editor`** as the **default** note body surface: visual editing with
 the markdown features listed below. **Keep** the existing **plain multiline editor (textarea)** from
-[Story 55](../5-done/55-story-note_content_editor.md) as a **second implementation** behind the same contract (see
+[Story 55](55-story-note_content_editor.md) as a **second implementation** behind the same contract (see
 **Dual implementation** below) for **fast, stable frontend unit tests** and for **local debugging** when isolating issues
 between app wiring and MDXEditor.
 
@@ -25,9 +25,9 @@ Reuse existing hooks, query keys, autosave, save status, unmount flush, and `PUT
 
 ## Dependencies
 
-- [Story 55](../5-done/55-story-note_content_editor.md) — Phases **0–5** complete (load path, save, autosave,
+- [Story 55](55-story-note_content_editor.md) — Phases **0–5** complete (load path, save, autosave,
   in-flight save behavior, auth/cache boundaries as defined there).
-- [Story 66](../5-done/66-story-content_body_subdocument_and_client_cache.md) — **strongly preferred** complete first so
+- [Story 66](66-story-content_body_subdocument_and_client_cache.md) — **strongly preferred** complete first so
   the content DTO and TanStack cache policy are stable before MDXEditor integration.
 
 ## Dual implementation (plain textarea + MDXEditor)
@@ -97,7 +97,7 @@ Reuse existing hooks, query keys, autosave, save status, unmount flush, and `PUT
 
 ## Risks and decisions
 
-- **DTO churn:** Prefer completing [Story 66](../5-done/66-story-content_body_subdocument_and_client_cache.md) before heavy
+- **DTO churn:** Prefer completing [Story 66](66-story-content_body_subdocument_and_client_cache.md) before heavy
   MDXEditor integration so the public metadata shape and cache invalidation rules are stable. If schedule forces overlap,
   branch carefully and coordinate OpenAPI/client regeneration.
 - **Raw markdown:** Do not ship a user-facing “source” or raw-markdown mode; product stance is visual editing only for
