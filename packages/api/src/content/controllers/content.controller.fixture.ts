@@ -42,7 +42,7 @@ export class ContentControllerFixture extends AppFixture {
 
   async callApiCreateNoteExpectingCreated(
     testUserId: string,
-    payload: { name: string; parentId: string }
+    payload: { name: string; parentId: string; type?: 'note' | 'directory' }
   ): Promise<supertest.Response> {
     return this.callApiCreateNote(testUserId, payload).expect(HttpStatus.CREATED);
   }
@@ -54,7 +54,7 @@ export class ContentControllerFixture extends AppFixture {
 
   callApiCreateNote(
     testUserId: string,
-    payload: { name: string; parentId: string }
+    payload: { name: string; parentId: string; type?: 'note' | 'directory' }
   ): supertest.Test {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return supertest(this.getHttpServer())

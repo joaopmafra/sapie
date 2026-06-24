@@ -65,6 +65,52 @@ describe('ContentController', () => {
     expect(response.body).toHaveProperty('ownerId', fixture.TEST_USER_ID);
   });
 
+  it(`POST ${fixture.API_CONTENT} creates a directory when type is directory`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+
+    const response = await fixture.callApiCreateNoteExpectingCreated(fixture.TEST_USER_ID, {
+      name: 'My Folder',
+      parentId: root.id,
+      type: 'directory',
+    });
+
+    expect(response.body).toHaveProperty('id');
+    expect(response.body).toHaveProperty('name', 'My Folder');
+    expect(response.body).toHaveProperty('type', 'directory');
+    expect(response.body).toHaveProperty('parentId', root.id);
+    expect(response.body).not.toHaveProperty('body');
+  });
+
+  it(`POST ${fixture.API_CONTENT} rejects directory under a note parent with 400`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Leaf', root.id);
+
+    await fixture
+      .callApiCreateNote(fixture.TEST_USER_ID, {
+        name: 'Bad Folder',
+        parentId: note.id,
+        type: 'directory',
+      })
+      .expect(HttpStatus.BAD_REQUEST);
+  });
+
+  it(`POST ${fixture.API_CONTENT} rejects duplicate directory name in same parent with 409`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    await fixture.callApiCreateNoteExpectingCreated(fixture.TEST_USER_ID, {
+      name: 'Dup',
+      parentId: root.id,
+      type: 'directory',
+    });
+
+    await fixture
+      .callApiCreateNote(fixture.TEST_USER_ID, {
+        name: 'Dup',
+        parentId: root.id,
+        type: 'directory',
+      })
+      .expect(HttpStatus.CONFLICT);
+  });
+
   it(`POST ${fixture.API_CONTENT} rejects duplicate name in same parent with 409`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
     await fixture.seedNote(fixture.TEST_USER_ID, 'My Note', root.id);

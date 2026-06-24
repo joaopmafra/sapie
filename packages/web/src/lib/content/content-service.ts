@@ -155,6 +155,32 @@ export class ContentService {
     }
   }
 
+  async createFolder(
+    currentUser: User,
+    name: string,
+    parentId: string
+  ): Promise<Content> {
+    try {
+      const options = await getApiAuthRequestOptions(currentUser);
+
+      const createContentRequest: CreateContentRequest = {
+        name,
+        parentId,
+        type: 'directory',
+      };
+
+      const response = await this.contentApi.contentControllerCreateContent(
+        { createContentRequest },
+        options
+      );
+
+      return this.mapContentResponseToContent(response.data);
+    } catch (error) {
+      console.error('Failed to create folder:', error);
+      throw error;
+    }
+  }
+
   /**
    * `GET /api/content/:id/body/signed-url` — signed read URL. Returns `null` when the note has no body yet (HTTP 404).
    */

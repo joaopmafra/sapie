@@ -30,6 +30,7 @@ export {
   useBodySignedUrlFetchSuppressedAfterSave,
   useContentBody,
   useContentItem,
+  useCreateFolder,
   useCreateNote,
   useNoteBody,
   useRenameContent,

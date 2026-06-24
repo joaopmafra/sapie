@@ -18,13 +18,13 @@ As a user, I want to create folders in my content tree so that I can organise my
 
 ## Epic Reference
 
-- [Epic 45: Content Management Foundation](../../1-epics/2-to-refine/45-epic-content_management_foundation.md)
+- [Epic 45: Content Management Foundation](../1-epics/2-to-refine/45-epic-content_management_foundation.md)
 
 ## Dependencies
 
-- [ ] [Story 53](../../5-done/53-story-create_notes.md) — Must be complete. The "New" menu and
+- [ ] [Story 53](../5-done/53-story-create_notes.md) — Must be complete. The "New" menu and
   `CreateNoteModal` pattern are reused here.
-- [ ] [Story 62](../../5-done/62-story-tanstack_query_refactor.md) — TanStack Query must be in place so folder creation
+- [ ] [Story 62](../5-done/62-story-tanstack_query_refactor.md) — TanStack Query must be in place so folder creation
   invalidates only the affected parent's children query.
 
 ## Acceptance Criteria

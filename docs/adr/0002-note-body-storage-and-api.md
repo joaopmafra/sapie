@@ -26,7 +26,8 @@ can refetch cheap metadata often while **skipping** redundant Storage downloads 
 ### 1. Split create vs body write (two API steps)
 
 - **`POST /api/content`** (and existing create flows) persist **metadata only**; notes start with **`body: null`** until
-  the first save.
+  the first save. The request accepts optional **`type`** (`note` \| `directory`, default `note`); **folders** are
+  created only under another **directory** (HTTP 400 if the parent is a note).
 - **`PUT /api/content/:id/body`** accepts a **raw body** and writes the object, then updates Firestore **`body`** (nested
   object) including **`body.updatedAt`**, and updates top-level **`updatedAt`** for general “content touched” semantics.
 

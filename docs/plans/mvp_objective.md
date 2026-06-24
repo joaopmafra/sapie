@@ -40,7 +40,7 @@ Essential for organizing notes across 4 study domains (AI, DSA, System Design, D
 Without folders, all content lands in the root directory and becomes unmanageable immediately.
 
 **Nested folders:** The content tree already supports nesting ([Story 50](../pm/5-done/50-story-nested_folders_support.md)).
-Folder **creation** (including nested) is tracked in [Story 63](../pm/3-stories/1-ready/63-story-folder_creation.md); treat that
+Folder **creation** (including nested) is tracked in [Story 63](../pm/4-in-progress/63-story-folder_creation.md); treat that
 as the primary backlog item rather than duplicating a “nested directories” story unless a new product gap appears.
 
 **Scope for MVP:**

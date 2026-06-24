@@ -50,7 +50,12 @@ export class ContentService {
     return existing;
   }
 
-  async create(name: string, parentId: string, ownerId: string): Promise<Content> {
+  async create(
+    name: string,
+    parentId: string,
+    ownerId: string,
+    contentType: ContentType = ContentType.NOTE
+  ): Promise<Content> {
     const parent = await this.contentRepository.findById(parentId);
 
     if (!parent) {
@@ -61,12 +66,26 @@ export class ContentService {
       throw new ForbiddenException('User is not the owner of the parent folder');
     }
 
+    if (contentType === ContentType.DIRECTORY && parent.type !== ContentType.DIRECTORY) {
+      throw new BadRequestException('A folder can only be created inside another folder');
+    }
+
     const nameCollision = await this.contentRepository.findFirstByParentIdAndName(parentId, name);
     if (nameCollision) {
       throw new ConflictException(`Content with name "${name}" already exists in this location`);
     }
 
     const now = new Date();
+    if (contentType === ContentType.DIRECTORY) {
+      return this.contentRepository.addDirectory({
+        name,
+        parentId,
+        ownerId,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
     return this.contentRepository.addNote({
       name,
       parentId,
