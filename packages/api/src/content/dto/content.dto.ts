@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, Length, ValidateIf } from 'class-validator';
+import { IsEnum, IsOptional, IsString, Length, ValidateIf } from 'class-validator';
 import { Content, ContentType } from '../entities/content.entity';
 import {
   CONTENT_NAME_MAX_LENGTH,
@@ -130,7 +130,7 @@ export function toContentResponse(content: Content): ContentResponse {
   return response;
 }
 
-/** HTTP command body: create note (metadata) via `POST /api/content`. */
+/** HTTP command body: create note or directory (metadata) via `POST /api/content`. */
 export class CreateContentRequest {
   @ApiProperty({
     description:
@@ -151,6 +151,18 @@ export class CreateContentRequest {
   })
   @IsString()
   parentId: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Kind of content to create. Omit or `note` for a note; `directory` for a folder. ' +
+      'Directories may only be created under another directory.',
+    enum: ContentType,
+    default: ContentType.NOTE,
+    example: ContentType.NOTE,
+  })
+  @IsOptional()
+  @IsEnum(ContentType)
+  type?: ContentType;
 }
 
 /** HTTP response body: signed read URL for a content body. */

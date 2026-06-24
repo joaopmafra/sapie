@@ -34,6 +34,7 @@ import { Auth } from '../../auth';
 import { AuthenticatedRequest } from '../../auth';
 import { RootDirectoryService } from '../services/root-directory.service';
 import { ContentService } from '../services/content.service';
+import { ContentType } from '../entities/content.entity';
 import {
   ContentBodyUrlResponse,
   ContentResponse,
@@ -61,10 +62,10 @@ export class ContentController {
   @Post()
   @Auth()
   @ApiOperation({
-    summary: 'Create content (note)',
+    summary: 'Create content (note or folder)',
     description:
-      'Creates leaf content under the given parent. MVP only creates items of type `note`; ' +
-      'other kinds may reuse or extend this contract later.',
+      'Creates metadata under the given parent directory. Default `type` is `note` (backwards compatible). ' +
+      'Send `type: directory` to create a folder; folders must be created under another directory.',
   })
   @ApiCreatedResponse({
     description: 'Content (metadata) created successfully.',
@@ -95,11 +96,12 @@ export class ContentController {
     @Body() createContentRequest: CreateContentRequest
   ): Promise<ContentResponse> {
     const { user } = request;
-    const { name, parentId } = createContentRequest;
+    const { name, parentId, type } = createContentRequest;
+    const contentType = type ?? ContentType.NOTE;
     this.logger.debug(
-      `Creating content for user: ${user.uid} with name: ${name} and parentId: ${parentId}`
+      `Creating content for user: ${user.uid} with name: ${name}, parentId: ${parentId}, type: ${contentType}`
     );
-    const created = await this.contentService.create(name, parentId, user.uid);
+    const created = await this.contentService.create(name, parentId, user.uid, contentType);
     return toContentResponse(created);
   }
 

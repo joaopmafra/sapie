@@ -28,6 +28,7 @@ import {
 } from '../lib/content';
 
 import ContentExplorer from './ContentExplorer';
+import CreateFolderModal from './CreateFolderModal';
 import CreateNoteModal from './CreateNoteModal';
 
 export const mobileDrawerWidth = 260;
@@ -59,8 +60,10 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [menuWidth, setMenuWidth] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
+  const [folderModalOpen, setFolderModalOpen] = useState(false);
   const snackbar = useAppSnackbar();
-  const { selectedNodeId } = useContent();
+  const { selectedNodeId, setSelectedNodeId, setExpandedNodeIds } =
+    useContent();
   const { data: root } = useRootDirectory();
   const { data: selectedContent } = useContentItem(selectedNodeId ?? undefined);
 
@@ -97,6 +100,32 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   const handleCreateSuccess = (newNote: Content) => {
     handleModalClose();
     navigate(`/notes/${newNote.id}`);
+  };
+
+  const handleCreateFolderClick = () => {
+    handleMenuClose();
+    if (!currentNode) {
+      snackbar.showError('No folder selected');
+      return;
+    }
+    setFolderModalOpen(true);
+  };
+
+  const handleFolderModalClose = () => {
+    setFolderModalOpen(false);
+  };
+
+  const handleFolderCreateSuccess = (newFolder: Content) => {
+    handleFolderModalClose();
+    setSelectedNodeId(newFolder.id);
+    setExpandedNodeIds(prev => {
+      const next = new Set(prev);
+      if (newFolder.parentId) {
+        next.add(newFolder.parentId);
+      }
+      next.add(newFolder.id);
+      return Array.from(next);
+    });
   };
 
   function getNewContentParentId() {
@@ -151,9 +180,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
           }}
         >
           <MenuItem onClick={handleCreateNoteClick}>Create Note</MenuItem>
-          <MenuItem onClick={handleMenuClose} disabled>
-            Create Folder
-          </MenuItem>
+          <MenuItem onClick={handleCreateFolderClick}>Create Folder</MenuItem>
         </Menu>
       </Box>
       <Box sx={{ p: paddingRL }}>
@@ -163,6 +190,12 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
         open={modalOpen}
         onClose={handleModalClose}
         onSuccess={handleCreateSuccess}
+        parentId={newContentParentId}
+      />
+      <CreateFolderModal
+        open={folderModalOpen}
+        onClose={handleFolderModalClose}
+        onSuccess={handleFolderCreateSuccess}
         parentId={newContentParentId}
       />
     </>

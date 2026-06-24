@@ -109,6 +109,37 @@ export class ContentRepository {
     };
   }
 
+  async addDirectory(params: {
+    name: string;
+    parentId: string;
+    ownerId: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }): Promise<Content> {
+    const newContentData = {
+      name: params.name,
+      type: ContentType.DIRECTORY,
+      parentId: params.parentId,
+      ownerId: params.ownerId,
+      body: null,
+      createdAt: params.createdAt,
+      updatedAt: params.updatedAt,
+    };
+
+    const docRef = await this.firestore.collection(this.contentCollection).add(newContentData);
+
+    return {
+      id: docRef.id,
+      name: newContentData.name,
+      type: newContentData.type,
+      parentId: newContentData.parentId,
+      ownerId: newContentData.ownerId,
+      body: null,
+      createdAt: params.createdAt,
+      updatedAt: params.updatedAt,
+    };
+  }
+
   async updateContentName(id: string, name: string, updatedAt: Date): Promise<void> {
     await this.firestore.collection(this.contentCollection).doc(id).update({
       name,

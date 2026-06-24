@@ -210,6 +210,13 @@ export const ContentResponseTypeEnum = {
 
 export type ContentResponseTypeEnum = typeof ContentResponseTypeEnum[keyof typeof ContentResponseTypeEnum];
 
+export const CreateContentRequestTypeEnum = {
+    Directory: 'directory',
+    Note: 'note'
+} as const;
+
+export type CreateContentRequestTypeEnum = typeof CreateContentRequestTypeEnum[keyof typeof CreateContentRequestTypeEnum];
+
 /**
  * 
  * @export
@@ -228,6 +235,12 @@ export interface CreateContentRequest {
      * @memberof CreateContentRequest
      */
     'parentId': string;
+    /**
+     * Kind of content to create. Omit or `note` for a note; `directory` for a folder.
+     * @type {string}
+     * @memberof CreateContentRequest
+     */
+    'type'?: CreateContentRequestTypeEnum;
 }
 /**
  * 

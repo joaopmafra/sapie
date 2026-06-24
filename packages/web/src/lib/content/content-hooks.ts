@@ -255,6 +255,21 @@ export function useCreateNote() {
   });
 }
 
+export function useCreateFolder() {
+  const { currentUser } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ name, parentId }: { name: string; parentId: string }) =>
+      contentService.createFolder(currentUser!, name, parentId),
+    onSuccess: (_newFolder, { parentId }) => {
+      void queryClient.invalidateQueries({
+        queryKey: contentQueryKeys.children(parentId),
+      });
+    },
+  });
+}
+
 export function useRenameContent() {
   const { currentUser } = useAuth();
   const queryClient = useQueryClient();
