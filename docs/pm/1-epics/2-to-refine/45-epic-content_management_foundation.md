@@ -23,7 +23,7 @@ supporting intuitive navigation, editing, and contextual actions.
 [Story 65](../../3-stories/2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md) (after 67 unless reprioritized).
 
 **Nested folders:** Tree behaviour is covered by [Story 50](../../5-done/50-story-nested_folders_support.md). **Creating**
-folders (including nested) is [Story 63](../../4-in-progress/63-story-folder_creation.md). Open a **new** story only if a
+folders (including nested) is [Story 63](../../5-done/63-story-folder_creation.md). Open a **new** story only if a
 gap remains (e.g. max depth, UX, validation rules). **Moving** items to another parent is backlog until folder APIs and
 permissions are settled (see MVP objective).
 
