@@ -386,6 +386,11 @@ The main application component featuring:
 - `App.css`: Component-specific styles
 - `index.css`: Global styles and CSS reset
 
+## Testing (Jest)
+
+- Most tests use the **`unit`** Jest project (default `node_modules` transform ignore).
+- `RichNoteBodyEditor.test.tsx` runs in the **`mdxeditor`** project, which transpiles the ESM tree for `@mdxeditor/editor` (slower, isolated).
+
 ## Code Quality
 
 ### Linting and Formatting
@@ -463,6 +468,7 @@ The web app uses environment variables to configure the API base URL for differe
 ### Environment Variables
 
 - `VITE_API_BASE_URL` - Base URL for API calls
+- `VITE_NOTE_EDITOR` — Optional. Set to `plain` to use the multiline **textarea** for the note body instead of the default **MDXEditor** rich surface. Intended for **automated tests** (Jest defaults to plain when unset) and for **local debugging** when isolating app wiring from MDXEditor. Omit or set to `rich` for the normal product experience.
 
 ### Configuration Examples
 

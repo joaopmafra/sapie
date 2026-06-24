@@ -9,11 +9,16 @@ Suggested reading order:
 
 1. [MVP objective](../plans/mvp_objective.md)
 2. [Development principles](development_principles.md)
-3. [Contributing guidelines](contributing_guidelines.md) — workflow, verify scripts, testing expectations
-4. [Iterative development](iterative_development.md) — vertical slices, Gall’s law, Kniberg MVP diagram
-5. [Documentation guidelines](documentation_guidelines.md) — where to put docs
+3. [Development environment setup](development_environment_setup.md) — machine setup, run Sapie, verify
+4. [Contributing guidelines](contributing_guidelines.md) — workflow, verify scripts, testing expectations
+5. [Iterative development](iterative_development.md) — vertical slices, Gall’s law, Kniberg MVP diagram
+6. [Documentation guidelines](documentation_guidelines.md) — where to put docs
 
 Assistants: [ai_agent_guidelines.md](ai_agent_guidelines.md)
+
+Environment and agents:
+
+- [agentmemory setup](agentmemory_setup.md) — persistent memory (Cursor documented; OpenCode, pi, Claude Code TBD)
 
 Firebase Emulator Suite for dev and tests is started via **Docker Compose** at the repo root
 (`compose.local-dev.yml`, `compose.test-unit.yml`, `compose.emulator.yml`, `compose.test-e2e.yml`). Rationale:

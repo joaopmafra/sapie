@@ -11,7 +11,7 @@ import {
   waitFor,
 } from '@testing-library/react';
 import type { User } from 'firebase/auth';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Link, createMemoryRouter, RouterProvider } from 'react-router-dom';
 
 import { AuthContext } from '../contexts/AuthContext';
 import type { Content, ContentBodySummary } from '../lib/content';
@@ -108,8 +108,28 @@ function renderNoteEditor(initialPath = '/notes/note-1') {
     },
   });
 
+  const router = createMemoryRouter(
+    [
+      {
+        path: '/notes/:noteId',
+        element: (
+          <>
+            <Link to='/home'>Go home</Link>
+            <NoteEditorPage />
+          </>
+        ),
+      },
+      {
+        path: '/home',
+        element: <div>Home page</div>,
+      },
+    ],
+    { initialEntries: [initialPath] }
+  );
+
   return {
     queryClient,
+    router,
     ...render(
       <QueryClientProvider client={queryClient}>
         <AuthContext.Provider
@@ -119,11 +139,7 @@ function renderNoteEditor(initialPath = '/notes/note-1') {
             logout: jest.fn(),
           }}
         >
-          <MemoryRouter initialEntries={[initialPath]}>
-            <Routes>
-              <Route path='/notes/:noteId' element={<NoteEditorPage />} />
-            </Routes>
-          </MemoryRouter>
+          <RouterProvider router={router} />
         </AuthContext.Provider>
       </QueryClientProvider>
     ),
@@ -569,6 +585,186 @@ describe('NoteEditorPage', () => {
       'oops2',
       'text/markdown'
     );
+  });
+
+  it('warns on beforeunload while debounced edits are unsaved', async () => {
+    jest.useFakeTimers();
+    mockedContentService.getContentById.mockResolvedValue(baseNote);
+    mockedContentService.getContentBody.mockResolvedValue({
+      signedUrl: 'https://storage.example/blob',
+      expiresAt: new Date().toISOString(),
+    });
+    mockedContentService.fetchNoteBodyText.mockResolvedValue('# Hello');
+
+    renderNoteEditor();
+
+    const body = await screen.findByRole('textbox', { name: 'Note body' });
+    fireEvent.change(body, { target: { value: '# Pending reload' } });
+
+    const event = new Event('beforeunload', {
+      cancelable: true,
+    }) as BeforeUnloadEvent;
+    const preventDefault = jest.spyOn(event, 'preventDefault');
+    window.dispatchEvent(event);
+
+    expect(preventDefault).toHaveBeenCalled();
+  });
+
+  it('flushes pending edits when beforeunload is dismissed and the user stays', async () => {
+    jest.useFakeTimers();
+    mockedContentService.getContentById.mockResolvedValue(baseNote);
+    mockedContentService.getContentBody.mockResolvedValue({
+      signedUrl: 'https://storage.example/blob',
+      expiresAt: new Date().toISOString(),
+    });
+    mockedContentService.fetchNoteBodyText.mockResolvedValue('# Hello');
+    mockedContentService.putContentBody.mockResolvedValue(
+      noteWithBody(baseNote, { size: 20 })
+    );
+
+    renderNoteEditor();
+
+    const body = await screen.findByRole('textbox', { name: 'Note body' });
+    fireEvent.change(body, { target: { value: '# Stay and save' } });
+
+    window.dispatchEvent(
+      new Event('beforeunload', { cancelable: true }) as BeforeUnloadEvent
+    );
+
+    await act(async () => {
+      jest.runAllTimers();
+      for (let i = 0; i < 60; i += 1) {
+        await Promise.resolve();
+      }
+    });
+
+    await waitFor(() => {
+      expect(mockedContentService.putContentBody).toHaveBeenCalledWith(
+        mockUser,
+        'note-1',
+        '# Stay and save',
+        'text/markdown'
+      );
+    });
+  });
+
+  it('does not warn on beforeunload after a successful save', async () => {
+    jest.useFakeTimers();
+    mockedContentService.getContentById.mockResolvedValue(baseNote);
+    mockedContentService.getContentBody.mockResolvedValue({
+      signedUrl: 'https://storage.example/blob',
+      expiresAt: new Date().toISOString(),
+    });
+    mockedContentService.fetchNoteBodyText.mockResolvedValue('# Hello');
+    mockedContentService.putContentBody.mockResolvedValue(
+      noteWithBody(baseNote, { size: 20 })
+    );
+
+    renderNoteEditor();
+
+    const body = await screen.findByRole('textbox', { name: 'Note body' });
+    fireEvent.change(body, { target: { value: '# Saved' } });
+    await advanceAutosaveDebounce();
+
+    await waitFor(() => {
+      expect(mockedContentService.putContentBody).toHaveBeenCalled();
+    });
+
+    const event = new Event('beforeunload', {
+      cancelable: true,
+    }) as BeforeUnloadEvent;
+    const preventDefault = jest.spyOn(event, 'preventDefault');
+    window.dispatchEvent(event);
+
+    expect(preventDefault).not.toHaveBeenCalled();
+  });
+
+  it('saves immediately and navigates when leaving with pending debounced edits', async () => {
+    jest.useFakeTimers();
+    mockedContentService.getContentById.mockResolvedValue(baseNote);
+    mockedContentService.getContentBody.mockResolvedValue({
+      signedUrl: 'https://storage.example/blob',
+      expiresAt: new Date().toISOString(),
+    });
+    mockedContentService.fetchNoteBodyText.mockResolvedValue('# Hello');
+    mockedContentService.putContentBody.mockResolvedValue(
+      noteWithBody(baseNote, { size: 20 })
+    );
+
+    renderNoteEditor();
+
+    const body = await screen.findByRole('textbox', { name: 'Note body' });
+    fireEvent.change(body, { target: { value: '# Pending nav' } });
+
+    fireEvent.click(screen.getByRole('link', { name: 'Go home' }));
+
+    await waitFor(() => {
+      expect(mockedContentService.putContentBody).toHaveBeenCalledWith(
+        mockUser,
+        'note-1',
+        '# Pending nav',
+        'text/markdown'
+      );
+      expect(screen.getByText('Home page')).toBeInTheDocument();
+    });
+  });
+
+  it('stays on the note with Retry when navigation flush save fails', async () => {
+    jest.useFakeTimers();
+    mockedContentService.getContentById.mockResolvedValue(baseNote);
+    mockedContentService.getContentBody.mockResolvedValue({
+      signedUrl: 'https://storage.example/blob',
+      expiresAt: new Date().toISOString(),
+    });
+    mockedContentService.fetchNoteBodyText.mockResolvedValue('# Hello');
+    mockedContentService.putContentBody.mockRejectedValueOnce(
+      new Error('Network down')
+    );
+
+    renderNoteEditor();
+
+    const body = await screen.findByRole('textbox', { name: 'Note body' });
+    fireEvent.change(body, { target: { value: '# Pending nav' } });
+
+    fireEvent.click(screen.getByRole('link', { name: 'Go home' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Error saving')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+    });
+    expect(screen.getByRole('textbox', { name: 'Note body' })).toHaveValue(
+      '# Pending nav'
+    );
+    expect(screen.queryByText('Home page')).not.toBeInTheDocument();
+  });
+
+  it('does not block in-app navigation after a successful save', async () => {
+    jest.useFakeTimers();
+    mockedContentService.getContentById.mockResolvedValue(baseNote);
+    mockedContentService.getContentBody.mockResolvedValue({
+      signedUrl: 'https://storage.example/blob',
+      expiresAt: new Date().toISOString(),
+    });
+    mockedContentService.fetchNoteBodyText.mockResolvedValue('# Hello');
+    mockedContentService.putContentBody.mockResolvedValue(
+      noteWithBody(baseNote, { size: 20 })
+    );
+
+    renderNoteEditor();
+
+    const body = await screen.findByRole('textbox', { name: 'Note body' });
+    fireEvent.change(body, { target: { value: '# Saved' } });
+    await advanceAutosaveDebounce();
+
+    await waitFor(() => {
+      expect(mockedContentService.putContentBody).toHaveBeenCalled();
+    });
+
+    fireEvent.click(screen.getByRole('link', { name: 'Go home' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Home page')).toBeInTheDocument();
+    });
   });
 
   it('flushes pending edits on unmount without waiting for debounce', async () => {

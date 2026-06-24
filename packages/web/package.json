@@ -22,12 +22,13 @@
     "lint:check": "eslint .",
     "test": "NODE_OPTIONS='--disable-warning=DEP0040' jest",
     "test:watch": "NODE_OPTIONS='--disable-warning=DEP0040' jest --watch",
-    "verify:types": "tsc --noEmit",
+    "verify:types": "tsc -b --noEmit",
     "verify:all": "pnpm verify:types && pnpm lint:check && pnpm format:check"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
+    "@mdxeditor/editor": "^3.55.0",
     "@mui/icons-material": "^7.1.1",
     "@mui/material": "^7.1.1",
     "@mui/x-tree-view": "^8.7.0",

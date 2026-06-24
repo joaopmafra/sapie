@@ -4,10 +4,12 @@ This file is used to track the PBI (product backlog item), which is the number o
 
 ## Current Last PBI Number
 
-67
+69
 
 ## Recent PBIs Created (limited to 10)
 
+- **69**: Story - Replace Jest with Vitest (api, web, monorepo tooling)
+- **68**: Story - Preserve extra blank lines in rich note editor (markdown round-trip)
 - **67**: Story - Rich note content editor (MDXEditor)
 - **66**: Story - Content body subdocument and client cache policy
 - **65**: Story - Note Body Concurrency and Conflict Resolution

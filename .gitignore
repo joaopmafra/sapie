@@ -90,3 +90,6 @@ exec
 .playwright-mcp
 
 .private
+
+# agentmemory
+data/
