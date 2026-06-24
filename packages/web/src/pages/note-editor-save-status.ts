@@ -48,3 +48,17 @@ export function noteEditorSaveHeaderText(
       return 'Error saving';
   }
 }
+
+/** Whether the browser should show the native “leave site?” dialog (Story 55 follow-up). */
+export function noteEditorShouldWarnBeforeUnload(input: {
+  draftBody: string;
+  baselineBody: string;
+  debounceScheduled: boolean;
+  saveInFlight: boolean;
+}): boolean {
+  return (
+    input.draftBody !== input.baselineBody ||
+    input.debounceScheduled ||
+    input.saveInFlight
+  );
+}

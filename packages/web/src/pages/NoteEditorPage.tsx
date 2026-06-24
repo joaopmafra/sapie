@@ -16,7 +16,7 @@ import React, {
   useMemo,
   useCallback,
 } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useBlocker, type BlockerFunction } from 'react-router-dom';
 
 import { ClientErrorAlert } from '../components/ClientErrorAlert';
 import { useAuth } from '../contexts/AuthContext';
@@ -38,6 +38,7 @@ import {
   NOTE_BODY_AUTOSAVE_DEBOUNCE_MS,
   NOTE_BODY_SAVED_HEADER_MS,
   noteEditorSaveHeaderText,
+  noteEditorShouldWarnBeforeUnload,
   type NoteEditorSavePhase,
 } from './note-editor-save-status';
 
@@ -71,6 +72,7 @@ const NoteEditorPage = () => {
   const [renameError, setRenameError] = useState<unknown | null>(null);
   const [draftBody, setDraftBody] = useState('');
   const [savePhase, setSavePhase] = useState<NoteEditorSavePhase>('idle');
+  const savePhaseRef = useRef<NoteEditorSavePhase>('idle');
   const nameInputRef = useRef<HTMLInputElement>(null);
   const renameInProgressRef = useRef(false);
   const richBodyEditorRef = useRef<MDXEditorMethods | null>(null);
@@ -93,10 +95,15 @@ const NoteEditorPage = () => {
   const saveInFlightRef = useRef(false);
   /** Another `runSave` was requested while a save was already running — drain after the current PUT. */
   const queuedRunSaveRef = useRef(false);
+  const navigationFlushInProgressRef = useRef(false);
+  const beforeUnloadStayFlushTimerRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
 
   /** Avoid `setSavePhase` after unmount while async save chains still finish (flush / overlap). */
   const isMountedRef = useRef(true);
   const safeSetSavePhase = useCallback((phase: NoteEditorSavePhase) => {
+    savePhaseRef.current = phase;
     if (isMountedRef.current) {
       setSavePhase(phase);
     }
@@ -185,6 +192,61 @@ const NoteEditorPage = () => {
 
   runSaveRef.current = runSave;
 
+  const shouldBlockNavigation = useCallback<BlockerFunction>(() => {
+    return noteEditorShouldWarnBeforeUnload({
+      draftBody: draftBodyRef.current,
+      baselineBody: baselineBodyRef.current,
+      debounceScheduled: autosaveDebounceRef.current !== null,
+      saveInFlight: saveInFlightRef.current,
+    });
+  }, []);
+
+  const navigationBlocker = useBlocker(shouldBlockNavigation);
+  const navigationBlockerRef = useRef(navigationBlocker);
+  navigationBlockerRef.current = navigationBlocker;
+
+  const waitForSaveIdle = useCallback(async () => {
+    while (saveInFlightRef.current) {
+      await Promise.resolve();
+    }
+  }, []);
+
+  const flushSaveForNavigation = useCallback(async (): Promise<boolean> => {
+    clearAutosaveDebounce();
+
+    await waitForSaveIdle();
+    if (
+      draftBodyRef.current === baselineBodyRef.current &&
+      savePhaseRef.current !== 'error'
+    ) {
+      return true;
+    }
+
+    for (;;) {
+      if (savePhaseRef.current === 'error') {
+        return false;
+      }
+
+      if (draftBodyRef.current === baselineBodyRef.current) {
+        return true;
+      }
+
+      await runSaveRef.current();
+      await waitForSaveIdle();
+
+      if (savePhaseRef.current === 'error') {
+        return false;
+      }
+
+      if (draftBodyRef.current === baselineBodyRef.current) {
+        return true;
+      }
+    }
+  }, [clearAutosaveDebounce, waitForSaveIdle]);
+
+  const flushSaveForNavigationRef = useRef(flushSaveForNavigation);
+  flushSaveForNavigationRef.current = flushSaveForNavigation;
+
   const resolvedServerBody = useMemo(() => {
     if (!noteId || !note) {
       return undefined;
@@ -270,6 +332,72 @@ const NoteEditorPage = () => {
       isMountedRef.current = false;
     };
   }, []);
+
+  useEffect(() => {
+    const clearBeforeUnloadStayFlushTimer = () => {
+      if (beforeUnloadStayFlushTimerRef.current) {
+        clearTimeout(beforeUnloadStayFlushTimerRef.current);
+        beforeUnloadStayFlushTimerRef.current = null;
+      }
+    };
+
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (
+        !noteEditorShouldWarnBeforeUnload({
+          draftBody: draftBodyRef.current,
+          baselineBody: baselineBodyRef.current,
+          debounceScheduled: autosaveDebounceRef.current !== null,
+          saveInFlight: saveInFlightRef.current,
+        })
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      event.returnValue = '';
+
+      // If the user dismisses the native dialog and stays on the page, flush immediately.
+      clearBeforeUnloadStayFlushTimer();
+      beforeUnloadStayFlushTimerRef.current = setTimeout(() => {
+        beforeUnloadStayFlushTimerRef.current = null;
+        void flushSaveForNavigationRef.current();
+      }, 0);
+    };
+
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      clearBeforeUnloadStayFlushTimer();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (navigationBlocker.state !== 'blocked') {
+      return;
+    }
+    if (navigationFlushInProgressRef.current) {
+      return;
+    }
+
+    navigationFlushInProgressRef.current = true;
+
+    void (async () => {
+      try {
+        const saved = await flushSaveForNavigationRef.current();
+        const blocker = navigationBlockerRef.current;
+        if (blocker.state !== 'blocked') {
+          return;
+        }
+        if (saved) {
+          blocker.proceed();
+        } else {
+          blocker.reset();
+        }
+      } finally {
+        navigationFlushInProgressRef.current = false;
+      }
+    })();
+  }, [navigationBlocker.state]);
 
   const handleNameKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter') {
