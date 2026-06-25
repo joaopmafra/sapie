@@ -7,6 +7,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { ProtectedRoute, AuthErrorBoundary } from './components/auth';
 import { AuthProvider } from './contexts/AuthContext';
 import { queryClient } from './lib/queryClient';
+import FolderPage from './pages/FolderPage';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import NoteEditorPage from './pages/NoteEditorPage';
@@ -38,6 +39,14 @@ function AppRoutes() {
           element: (
             <ProtectedRoute>
               <NoteEditorPage />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: '/folders/:folderId',
+          element: (
+            <ProtectedRoute>
+              <FolderPage />
             </ProtectedRoute>
           ),
         },

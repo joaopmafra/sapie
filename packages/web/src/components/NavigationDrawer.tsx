@@ -18,14 +18,9 @@ import { styled } from '@mui/material/styles';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { useContent } from '../contexts/ContentContext';
 import { useAppSnackbar } from '../hooks/useAppSnackbar';
-import {
-  type Content,
-  ContentType,
-  useContentItem,
-  useRootDirectory,
-} from '../lib/content';
+import { useNewContentParentId } from '../hooks/useNewContentParentId';
+import { type Content } from '../lib/content';
 
 import ContentExplorer from './ContentExplorer';
 import CreateFolderModal from './CreateFolderModal';
@@ -62,18 +57,9 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [folderModalOpen, setFolderModalOpen] = useState(false);
   const snackbar = useAppSnackbar();
-  const { selectedNodeId, setSelectedNodeId, setExpandedNodeIds } =
-    useContent();
-  const { data: root } = useRootDirectory();
-  const { data: selectedContent } = useContentItem(selectedNodeId ?? undefined);
-
-  const currentNode =
-    selectedNodeId === null || selectedNodeId === undefined
-      ? root
-      : selectedContent;
+  const newContentParentId = useNewContentParentId();
 
   const menuOpen = Boolean(anchorEl);
-  const newContentParentId = getNewContentParentId();
 
   const handleNewButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -86,7 +72,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
 
   const handleCreateNoteClick = () => {
     handleMenuClose();
-    if (!currentNode) {
+    if (!newContentParentId) {
       snackbar.showError('No folder selected');
       return;
     }
@@ -104,7 +90,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
 
   const handleCreateFolderClick = () => {
     handleMenuClose();
-    if (!currentNode) {
+    if (!newContentParentId) {
       snackbar.showError('No folder selected');
       return;
     }
@@ -117,23 +103,8 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
 
   const handleFolderCreateSuccess = (newFolder: Content) => {
     handleFolderModalClose();
-    setSelectedNodeId(newFolder.id);
-    setExpandedNodeIds(prev => {
-      const next = new Set(prev);
-      if (newFolder.parentId) {
-        next.add(newFolder.parentId);
-      }
-      next.add(newFolder.id);
-      return Array.from(next);
-    });
+    navigate(`/folders/${newFolder.id}`);
   };
-
-  function getNewContentParentId() {
-    if (currentNode?.type === ContentType.DIRECTORY) return currentNode.id;
-    if (currentNode?.type === ContentType.NOTE)
-      return currentNode.parentId ?? '';
-    return '';
-  }
 
   const drawerContent = (
     <>

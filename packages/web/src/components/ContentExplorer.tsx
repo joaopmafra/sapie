@@ -3,7 +3,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FolderIcon from '@mui/icons-material/Folder';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
-import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
+import { RichTreeView, useTreeViewApiRef } from '@mui/x-tree-view';
 import { TreeItem, type TreeItemProps } from '@mui/x-tree-view/TreeItem';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import React, { useEffect, useMemo, useRef } from 'react';
@@ -11,6 +11,8 @@ import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../contexts/AuthContext';
 import { useContent } from '../contexts/ContentContext';
+import { useActiveContentRoute } from '../hooks/useActiveContentRoute';
+import { useExpandContentAncestors } from '../hooks/useExpandContentAncestors';
 import {
   contentQueryKeys,
   contentService,
@@ -110,15 +112,14 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
 
 const ContentExplorer: React.FC = () => {
   const { currentUser, loading: authLoading } = useAuth();
-  const {
-    selectedNodeId,
-    setSelectedNodeId,
-    expandedNodeIds,
-    setExpandedNodeIds,
-  } = useContent();
+  const { expandedNodeIds, setExpandedNodeIds } = useContent();
+  const { activeNodeId } = useActiveContentRoute();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const apiRef = useTreeViewApiRef();
   const expandSeededRef = useRef(false);
+
+  useExpandContentAncestors(activeNodeId);
 
   const rootQuery = useRootDirectory();
   const root = rootQuery.data;
@@ -179,6 +180,21 @@ const ContentExplorer: React.FC = () => {
     const builtTree = [rootNode];
     return { tree: builtTree, nodeMap: flattenNodeMap(builtTree) };
   }, [root, expandedNodeIds, idsForChildQueries, childQueries]);
+
+  // MUI TreeView tracks focus separately from selection; sync focus when the URL changes
+  // (e.g. after creating a note while a folder was previously clicked).
+  useEffect(() => {
+    if (!activeNodeId || !nodeMap.has(activeNodeId)) return;
+
+    const frameId = requestAnimationFrame(() => {
+      apiRef.current?.focusItem(
+        null as unknown as React.SyntheticEvent,
+        activeNodeId
+      );
+    });
+
+    return () => cancelAnimationFrame(frameId);
+  }, [activeNodeId, tree, nodeMap, apiRef]);
 
   const treeError = useMemo(() => {
     if (rootQuery.error) return rootQuery.error;
@@ -244,6 +260,7 @@ const ContentExplorer: React.FC = () => {
       }}
     >
       <RichTreeView
+        apiRef={apiRef}
         items={tree}
         getItemLabel={item => nodeMap.get(item.id)?.name ?? item.name}
         slots={{
@@ -251,21 +268,21 @@ const ContentExplorer: React.FC = () => {
           expandIcon: ChevronRightIcon,
           item: props => <CustomTreeItem {...props} nodeMap={nodeMap} />,
         }}
-        selectedItems={selectedNodeId}
+        selectedItems={activeNodeId}
         onSelectedItemsChange={(_event, ids) => {
           const rawId = Array.isArray(ids) ? ids[0] : ids;
           const nodeId = rawId != null ? String(rawId) : null;
-          if (nodeId?.startsWith('dummy_')) {
-            setSelectedNodeId(null);
+          if (!nodeId || nodeId.startsWith('dummy_')) {
             return;
           }
-          setSelectedNodeId(nodeId);
 
-          if (nodeId) {
-            const selectedNode = nodeMap.get(nodeId);
-            if (selectedNode && selectedNode.type === ContentType.NOTE) {
-              navigate(`/notes/${nodeId}`);
-            }
+          const selectedNode = nodeMap.get(nodeId);
+          if (!selectedNode) return;
+
+          if (selectedNode.type === ContentType.NOTE) {
+            navigate(`/notes/${nodeId}`);
+          } else if (selectedNode.type === ContentType.DIRECTORY) {
+            navigate(`/folders/${nodeId}`);
           }
         }}
         expandedItems={expandedNodeIds}
