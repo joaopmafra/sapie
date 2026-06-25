@@ -172,6 +172,19 @@ describe('ContentExplorer URL-driven selection', () => {
     expect(router.state.location.pathname).toBe('/folders/folder-a');
   });
 
+  it('does not expand a folder when its label is clicked', async () => {
+    const user = userEvent.setup();
+    renderExplorer('/');
+
+    await waitFor(() => {
+      expect(screen.getByText('Folder A')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Folder A'));
+
+    expect(screen.queryByText('Note B')).not.toBeInTheDocument();
+  });
+
   it('navigates to /notes/:id when a note is clicked', async () => {
     const user = userEvent.setup();
     const { router } = renderExplorer('/');

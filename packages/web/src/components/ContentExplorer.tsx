@@ -77,6 +77,20 @@ const treeViewSlots = {
   item: CustomTreeItem,
 };
 
+/** Expand/collapse on chevron only; label selects/navigates. Pointer on chevron + label only. */
+const contentExplorerTreeSx = {
+  flexGrow: 1,
+  '& .MuiTreeItem-content, & .MuiRichTreeView-itemContent': {
+    cursor: 'default',
+  },
+  '& .MuiTreeItem-iconContainer, & .MuiRichTreeView-itemIconContainer': {
+    cursor: 'pointer',
+  },
+  '& .MuiTreeItem-label, & .MuiRichTreeView-itemLabel': {
+    cursor: 'pointer',
+  },
+} as const;
+
 function collectChildrenByParentId(
   queryClient: ReturnType<typeof useQueryClient>,
   idsForChildQueries: string[],
@@ -331,11 +345,12 @@ const ContentExplorer: React.FC = () => {
           items={tree}
           getItemLabel={getItemLabel}
           slots={treeViewSlots}
+          expansionTrigger='iconContainer'
           selectedItems={activeNodeId}
           onSelectedItemsChange={handleSelectedItemsChange}
           expandedItems={expandedNodeIds}
           onExpandedItemsChange={handleExpandedItemsChange}
-          sx={{ flexGrow: 1 }}
+          sx={contentExplorerTreeSx}
         />
       </TreeNodeMetaContext.Provider>
     </Box>
