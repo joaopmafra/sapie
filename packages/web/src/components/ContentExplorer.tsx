@@ -20,6 +20,7 @@ import {
   useRootDirectory,
   type Content,
 } from '../lib/content';
+import { sortTreeChildren } from '../lib/content/sort-tree-children';
 
 interface EnrichedTreeNode extends Omit<Content, 'type'> {
   type: ContentType | 'dummy';
@@ -57,7 +58,7 @@ function mapContentToEnriched(
     return { ...c, children: [dummyPlaceholder(c)] };
   }
 
-  const kids = childrenByParentId.get(c.id) ?? [];
+  const kids = sortTreeChildren(childrenByParentId.get(c.id) ?? []);
   const childNodes = kids.map(ch =>
     mapContentToEnriched(ch, expanded, childrenByParentId, loadingParentIds)
   );

@@ -198,4 +198,60 @@ describe('ContentExplorer URL-driven selection', () => {
 
     expect(router.state.location.pathname).toBe('/notes/note-b');
   });
+
+  it('renders folders before notes, each group alphabetically', async () => {
+    const folderZ: Content = {
+      ...folderA,
+      id: 'folder-z',
+      name: 'Zeta Folder',
+    };
+    const folderM: Content = {
+      ...folderA,
+      id: 'folder-m',
+      name: 'Middle Folder',
+    };
+    const noteA: Content = {
+      ...noteB,
+      id: 'note-a',
+      name: 'Alpha Note',
+      parentId: 'root-1',
+    };
+    const noteZ: Content = {
+      ...noteB,
+      id: 'note-z',
+      name: 'Zulu Note',
+      parentId: 'root-1',
+    };
+
+    mockedContentService.getContentByParentId.mockImplementation(
+      async (_user, parentId) => {
+        if (parentId === 'root-1') {
+          return [noteZ, folderZ, noteA, folderM, folderA];
+        }
+        return [];
+      }
+    );
+
+    renderExplorer('/');
+
+    await waitFor(() => {
+      expect(screen.getByText('Alpha Note')).toBeInTheDocument();
+    });
+
+    const orderedLabels = [
+      'Folder A',
+      'Middle Folder',
+      'Zeta Folder',
+      'Alpha Note',
+      'Zulu Note',
+    ];
+
+    for (let i = 0; i < orderedLabels.length - 1; i += 1) {
+      const current = screen.getByText(orderedLabels[i]);
+      const next = screen.getByText(orderedLabels[i + 1]);
+      expect(
+        current.compareDocumentPosition(next) & Node.DOCUMENT_POSITION_FOLLOWING
+      ).toBeTruthy();
+    }
+  });
 });
