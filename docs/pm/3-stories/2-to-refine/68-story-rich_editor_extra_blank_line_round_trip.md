@@ -33,6 +33,7 @@ after auto-save and when I reopen the note, so spacing in my notes matches what 
 **Related (do not duplicate):**
 
 - [Story 65: Note Body Concurrency and Conflict Resolution](../2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md) — orthogonal; coordinate if conflict reload also calls `setMarkdown`.
+- [Save loop after note switch (observed once, staging)](../../../research/note_editor/save_loop_after_note_switch_observation.md) — unreproduced autosave `PUT` loop when leaving and returning to a note; likely overlaps with this story’s normalization / autosave risks.
 
 ## Problem statement (observed behavior)
 
@@ -166,6 +167,9 @@ empty paragraphs that mdast **retains**, using a **contentful** spacer line:
   feasible in `mdxeditor` Jest project.
 - **initialMarkdownNormalize** may fire after load; ensure baseline/autosave in `NoteEditorPage` uses **prepared** string
   consistently so autosave does not treat spacer insertion as user edit storm.
+- **Save loop after note switch** — observed once in staging (not reproduced); see
+  [research note](../../../research/note_editor/save_loop_after_note_switch_observation.md). Implementing load-time
+  preparation here should include a manual smoke: edit → switch note → return → confirm no repeated `PUT`s.
 
 **Verification**
 
