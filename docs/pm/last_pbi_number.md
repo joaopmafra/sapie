@@ -4,10 +4,13 @@ This file is used to track the PBI (product backlog item), which is the number o
 
 ## Current Last PBI Number
 
-70
+73
 
 ## Recent PBIs Created (limited to 10)
 
+- **73**: Story - Uniform body reads and image orphan cleanup
+- **72**: Story - Content body read via Service Worker
+- **71**: Story - Inline images in notes
 - **70**: Story - URL-driven sidebar selection and folder view
 - **69**: Story - Replace Jest with Vitest (api, web, monorepo tooling)
 - **68**: Story - Preserve extra blank lines in rich note editor (markdown round-trip)
@@ -15,9 +18,3 @@ This file is used to track the PBI (product backlog item), which is the number o
 - **66**: Story - Content body subdocument and client cache policy
 - **65**: Story - Note Body Concurrency and Conflict Resolution
 - **64**: Story - Content Deletion
-- **63**: Story - Folder Creation
-- **62**: Story - TanStack Query Refactor
-- **61**: Story - Refactor Root Directory Creation
-- **60**: Story - Denormalize Folder Data for Frontend Optimization
-- **59**: Story - Toggle Information Pane
-- **58**: Story - Note Information Pane
