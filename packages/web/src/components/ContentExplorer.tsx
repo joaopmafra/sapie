@@ -3,14 +3,22 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FolderIcon from '@mui/icons-material/Folder';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
-import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
+import { RichTreeView, useTreeViewApiRef } from '@mui/x-tree-view';
 import { TreeItem, type TreeItemProps } from '@mui/x-tree-view/TreeItem';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../contexts/AuthContext';
 import { useContent } from '../contexts/ContentContext';
+import { useActiveContentRoute } from '../hooks/useActiveContentRoute';
+import { useExpandContentAncestors } from '../hooks/useExpandContentAncestors';
 import {
   contentQueryKeys,
   contentService,
@@ -18,67 +26,22 @@ import {
   useRootDirectory,
   type Content,
 } from '../lib/content';
+import {
+  buildContentTree,
+  isTreePlaceholderId,
+  type EnrichedTreeNode,
+} from '../lib/content/build-content-tree';
 
-interface EnrichedTreeNode extends Omit<Content, 'type'> {
-  type: ContentType | 'dummy';
-  children?: EnrichedTreeNode[];
-}
-
-function dummyPlaceholder(parent: Content): EnrichedTreeNode {
-  return {
-    id: `dummy_${parent.id}`,
-    name: 'Loading...',
-    type: 'dummy',
-    parentId: parent.id,
-    ownerId: parent.ownerId,
-    createdAt: parent.createdAt,
-    updatedAt: parent.updatedAt,
-  };
-}
-
-function mapContentToEnriched(
-  c: Content,
-  expanded: Set<string>,
-  childrenByParentId: Map<string, Content[]>,
-  loadingParentIds: Set<string>
-): EnrichedTreeNode {
-  if (c.type !== ContentType.DIRECTORY) {
-    return { ...c, children: undefined };
-  }
-
-  if (!expanded.has(c.id)) {
-    const dummy = dummyPlaceholder(c);
-    return { ...c, children: [dummy] };
-  }
-
-  if (loadingParentIds.has(c.id) || !childrenByParentId.has(c.id)) {
-    return { ...c, children: [dummyPlaceholder(c)] };
-  }
-
-  const kids = childrenByParentId.get(c.id) ?? [];
-  const childNodes = kids.map(ch =>
-    mapContentToEnriched(ch, expanded, childrenByParentId, loadingParentIds)
-  );
-  return { ...c, children: childNodes };
-}
-
-function flattenNodeMap(
-  nodes: EnrichedTreeNode[]
-): Map<string, EnrichedTreeNode> {
-  const map = new Map<string, EnrichedTreeNode>();
-  const walk = (n: EnrichedTreeNode) => {
-    map.set(n.id, n);
-    n.children?.forEach(walk);
-  };
-  nodes.forEach(walk);
-  return map;
-}
+const TreeNodeMetaContext = React.createContext<Map<string, EnrichedTreeNode>>(
+  new Map()
+);
 
 const CustomTreeItem = React.forwardRef(function CustomTreeItem(
-  props: TreeItemProps & { nodeMap: Map<string, EnrichedTreeNode> },
+  props: TreeItemProps,
   ref: React.Ref<HTMLLIElement>
 ) {
-  const { itemId, label, nodeMap, ...other } = props;
+  const { itemId, label, ...other } = props;
+  const nodeMap = useContext(TreeNodeMetaContext);
   const node = nodeMap.get(itemId);
 
   const icon =
@@ -108,17 +71,98 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
   );
 });
 
+const treeViewSlots = {
+  collapseIcon: ExpandMoreIcon,
+  expandIcon: ChevronRightIcon,
+  item: CustomTreeItem,
+};
+
+/** Expand/collapse on chevron only; label selects/navigates. Pointer on chevron + label only. */
+const contentExplorerTreeSx = {
+  flexGrow: 1,
+  '& .MuiTreeItem-content, & .MuiRichTreeView-itemContent': {
+    cursor: 'default',
+  },
+  '& .MuiTreeItem-iconContainer, & .MuiRichTreeView-itemIconContainer': {
+    cursor: 'pointer',
+  },
+  '& .MuiTreeItem-label, & .MuiRichTreeView-itemLabel': {
+    cursor: 'pointer',
+  },
+} as const;
+
+function collectChildrenByParentId(
+  queryClient: ReturnType<typeof useQueryClient>,
+  idsForChildQueries: string[],
+  childQueries: Array<{
+    data?: Content[];
+    isPending?: boolean;
+  }>,
+  expandedNodeIds: string[]
+): {
+  childrenByParentId: Map<string, Content[]>;
+  loadingParentIds: Set<string>;
+} {
+  const expanded = new Set(expandedNodeIds);
+  const childrenByParentId = new Map<string, Content[]>();
+  const loadingParentIds = new Set<string>();
+
+  idsForChildQueries.forEach((id, index) => {
+    const query = childQueries[index];
+    if (query?.data) {
+      childrenByParentId.set(id, query.data);
+    }
+    if (query?.isPending && !query.data && expanded.has(id)) {
+      loadingParentIds.add(id);
+    }
+  });
+
+  queryClient
+    .getQueriesData<Content[]>({ queryKey: contentQueryKeys.allChildren() })
+    .forEach(([queryKey, data]) => {
+      if (!Array.isArray(data)) return;
+      const parentId = queryKey[2];
+      if (typeof parentId === 'string') {
+        childrenByParentId.set(parentId, data);
+      }
+    });
+
+  return { childrenByParentId, loadingParentIds };
+}
+
+function buildChildQueriesRevision(
+  idsForChildQueries: string[],
+  childQueries: Array<{
+    dataUpdatedAt?: number;
+    status?: string;
+    fetchStatus?: string;
+  }>
+): string {
+  return idsForChildQueries
+    .map((id, index) => {
+      const query = childQueries[index];
+      return [
+        id,
+        query?.dataUpdatedAt ?? 0,
+        query?.status ?? 'idle',
+        query?.fetchStatus ?? 'idle',
+      ].join(':');
+    })
+    .join('|');
+}
+
 const ContentExplorer: React.FC = () => {
   const { currentUser, loading: authLoading } = useAuth();
-  const {
-    selectedNodeId,
-    setSelectedNodeId,
-    expandedNodeIds,
-    setExpandedNodeIds,
-  } = useContent();
+  const { expandedNodeIds, setExpandedNodeIds } = useContent();
+  const { activeNodeId } = useActiveContentRoute();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const apiRef = useTreeViewApiRef();
   const expandSeededRef = useRef(false);
+  const nodeCacheRef = useRef(new Map<string, EnrichedTreeNode>());
+  const nodeMapRef = useRef(new Map<string, EnrichedTreeNode>());
+
+  useExpandContentAncestors(activeNodeId);
 
   const rootQuery = useRootDirectory();
   const root = rootQuery.data;
@@ -141,6 +185,11 @@ const ContentExplorer: React.FC = () => {
     })),
   });
 
+  const childQueriesRevision = useMemo(
+    () => buildChildQueriesRevision(idsForChildQueries, childQueries),
+    [idsForChildQueries, childQueries]
+  );
+
   useEffect(() => {
     if (root?.id && !expandSeededRef.current) {
       expandSeededRef.current = true;
@@ -156,63 +205,110 @@ const ContentExplorer: React.FC = () => {
       };
     }
 
-    const expanded = new Set(expandedNodeIds);
-    const childrenByParentId = new Map<string, Content[]>();
-    const loadingParentIds = new Set<string>();
+    const { childrenByParentId, loadingParentIds } = collectChildrenByParentId(
+      queryClient,
+      idsForChildQueries,
+      childQueries,
+      expandedNodeIds
+    );
 
-    idsForChildQueries.forEach((id, i) => {
-      const q = childQueries[i];
-      if (q?.data) {
-        childrenByParentId.set(id, q.data);
-      }
-      if (q?.isPending && !q.data) {
-        loadingParentIds.add(id);
-      }
+    const built = buildContentTree(
+      root,
+      expandedNodeIds,
+      childrenByParentId,
+      loadingParentIds,
+      nodeCacheRef.current
+    );
+    nodeCacheRef.current = built.nodeCache;
+    nodeMapRef.current = built.nodeMap;
+
+    return { tree: built.tree, nodeMap: built.nodeMap };
+  }, [
+    root,
+    expandedNodeIds,
+    idsForChildQueries,
+    childQueriesRevision,
+    queryClient,
+    childQueries,
+  ]);
+
+  useEffect(() => {
+    if (!activeNodeId) return;
+
+    const frameId = requestAnimationFrame(() => {
+      apiRef.current?.focusItem(
+        null as unknown as React.SyntheticEvent,
+        activeNodeId
+      );
     });
 
-    const rootNode = mapContentToEnriched(
-      root,
-      expanded,
-      childrenByParentId,
-      loadingParentIds
-    );
-    const builtTree = [rootNode];
-    return { tree: builtTree, nodeMap: flattenNodeMap(builtTree) };
-  }, [root, expandedNodeIds, idsForChildQueries, childQueries]);
+    return () => cancelAnimationFrame(frameId);
+  }, [activeNodeId, apiRef]);
 
   const treeError = useMemo(() => {
     if (rootQuery.error) return rootQuery.error;
-    const qe = childQueries.find(q => q.error);
-    return qe?.error ?? null;
+    const queryError = childQueries.find(query => query.error);
+    return queryError?.error ?? null;
   }, [rootQuery.error, childQueries]);
 
-  const loading =
+  const hasCachedRootChildren = Boolean(
+    root?.id &&
+      queryClient.getQueryData<Content[]>(contentQueryKeys.children(root.id))
+  );
+
+  const initialLoading =
     authLoading ||
-    rootQuery.isPending ||
-    (!!root &&
+    (rootQuery.isPending && !rootQuery.data) ||
+    (Boolean(root?.id) &&
+      !hasCachedRootChildren &&
       childQueries.some(
-        (q, i) => idsForChildQueries[i] === root.id && q.isPending && !q.data
+        (query, index) =>
+          idsForChildQueries[index] === root?.id &&
+          query.isPending &&
+          !query.data
       ));
 
-  const handleExpandedItemsChange = async (
-    _event: React.SyntheticEvent | null,
-    expandedIds: string[]
-  ) => {
-    const prev = expandedNodeIds;
-    const newlyExpanded = expandedIds.filter(id => !prev.includes(id));
-    setExpandedNodeIds(expandedIds);
+  const handleExpandedItemsChange = useCallback(
+    async (_event: React.SyntheticEvent | null, expandedIds: string[]) => {
+      const prev = expandedNodeIds;
+      const newlyExpanded = expandedIds.filter(id => !prev.includes(id));
+      setExpandedNodeIds(expandedIds);
 
-    if (!currentUser) return;
+      if (!currentUser) return;
 
-    for (const id of newlyExpanded) {
-      await queryClient.prefetchQuery({
-        queryKey: contentQueryKeys.children(id),
-        queryFn: () => contentService.getContentByParentId(currentUser, id),
-      });
-    }
-  };
+      for (const id of newlyExpanded) {
+        await queryClient.prefetchQuery({
+          queryKey: contentQueryKeys.children(id),
+          queryFn: () => contentService.getContentByParentId(currentUser, id),
+        });
+      }
+    },
+    [currentUser, expandedNodeIds, queryClient, setExpandedNodeIds]
+  );
 
-  if (authLoading || loading) {
+  const handleSelectedItemsChange = useCallback(
+    (_event: React.SyntheticEvent | null, ids: string | string[] | null) => {
+      const rawId = Array.isArray(ids) ? ids[0] : ids;
+      const nodeId = rawId != null ? String(rawId) : null;
+      if (!nodeId || isTreePlaceholderId(nodeId)) {
+        return;
+      }
+
+      const selectedNode = nodeMapRef.current.get(nodeId);
+      if (!selectedNode) return;
+
+      if (selectedNode.type === ContentType.NOTE) {
+        navigate(`/notes/${nodeId}`);
+      } else if (selectedNode.type === ContentType.DIRECTORY) {
+        navigate(`/folders/${nodeId}`);
+      }
+    },
+    [navigate]
+  );
+
+  const getItemLabel = useCallback((item: EnrichedTreeNode) => item.name, []);
+
+  if (initialLoading) {
     return (
       <Box
         display='flex'
@@ -243,35 +339,20 @@ const ContentExplorer: React.FC = () => {
         overflowY: 'auto',
       }}
     >
-      <RichTreeView
-        items={tree}
-        getItemLabel={item => nodeMap.get(item.id)?.name ?? item.name}
-        slots={{
-          collapseIcon: ExpandMoreIcon,
-          expandIcon: ChevronRightIcon,
-          item: props => <CustomTreeItem {...props} nodeMap={nodeMap} />,
-        }}
-        selectedItems={selectedNodeId}
-        onSelectedItemsChange={(_event, ids) => {
-          const rawId = Array.isArray(ids) ? ids[0] : ids;
-          const nodeId = rawId != null ? String(rawId) : null;
-          if (nodeId?.startsWith('dummy_')) {
-            setSelectedNodeId(null);
-            return;
-          }
-          setSelectedNodeId(nodeId);
-
-          if (nodeId) {
-            const selectedNode = nodeMap.get(nodeId);
-            if (selectedNode && selectedNode.type === ContentType.NOTE) {
-              navigate(`/notes/${nodeId}`);
-            }
-          }
-        }}
-        expandedItems={expandedNodeIds}
-        onExpandedItemsChange={handleExpandedItemsChange}
-        sx={{ flexGrow: 1 }}
-      />
+      <TreeNodeMetaContext.Provider value={nodeMap}>
+        <RichTreeView
+          apiRef={apiRef}
+          items={tree}
+          getItemLabel={getItemLabel}
+          slots={treeViewSlots}
+          expansionTrigger='iconContainer'
+          selectedItems={activeNodeId}
+          onSelectedItemsChange={handleSelectedItemsChange}
+          expandedItems={expandedNodeIds}
+          onExpandedItemsChange={handleExpandedItemsChange}
+          sx={contentExplorerTreeSx}
+        />
+      </TreeNodeMetaContext.Provider>
     </Box>
   );
 };

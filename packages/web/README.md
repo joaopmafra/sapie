@@ -7,7 +7,7 @@ React-based frontend for the Sapie knowledge management application.
 - **Framework**: React 19 with TypeScript
 - **Build Tool**: Vite
 - **UI Library**: Material-UI (MUI)
-- **State Management**: React Hooks for local UI state; **TanStack Query (React Query v5)** for server state (content tree, single items, mutations with targeted invalidation)
+- **State Management**: React Hooks for local UI state; **TanStack Query (React Query v5)** for server state (content tree, single items, mutations with targeted invalidation). **React Router** owns navigation state — the URL is canonical for the active note or folder; sidebar selection is derived from route params, not a separate selection store.
 - **HTTP Client**: Fetch API
 - **Deployment**: Firebase Hosting
 - **Package Management**: PNPM (defined in packageManager field)
