@@ -8,6 +8,7 @@ import {
   Paper,
   Button,
 } from '@mui/material';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import React, {
   useState,
@@ -23,6 +24,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   ContentType,
   noteBodyVersionKey,
+  contentQueryKeys,
   useBodySignedUrlFetchSuppressedAfterSave,
   useContentBody,
   useContentItem,
@@ -48,6 +50,7 @@ const NoteEditorPage = () => {
     () => `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
   );
   const { currentUser } = useAuth();
+  const queryClient = useQueryClient();
   const { data: note, isLoading, isError, error } = useContentItem(noteId);
   const suppressBodySignedUrlFetchAfterSave =
     useBodySignedUrlFetchSuppressedAfterSave(noteId, editorSessionId);
@@ -64,6 +67,28 @@ const NoteEditorPage = () => {
   const signedUrl = bodySignedUrlQuery.data?.signedUrl ?? null;
   const bodyVersionKey = note ? noteBodyVersionKey(note) : null;
   const noteBodyQuery = useNoteBody(noteId, signedUrl, bodyVersionKey);
+  const cachedNoteBodyFromPut = useQuery({
+    queryKey:
+      noteId != null && bodyVersionKey != null
+        ? contentQueryKeys.noteBodyText(noteId, bodyVersionKey)
+        : (['content', 'note-body-text', '__disabled__'] as const),
+    queryFn: async () => {
+      if (noteId == null || bodyVersionKey == null) {
+        return '';
+      }
+      return (
+        queryClient.getQueryData<string>(
+          contentQueryKeys.noteBodyText(noteId, bodyVersionKey)
+        ) ?? ''
+      );
+    },
+    enabled:
+      Boolean(noteId) &&
+      bodyVersionKey != null &&
+      fetchBodySignedUrl &&
+      suppressSignedUrlFetch,
+    staleTime: Infinity,
+  });
   const saveNoteBody = useSaveNoteBody();
   const renameContent = useRenameContent();
 
@@ -71,6 +96,7 @@ const NoteEditorPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [renameError, setRenameError] = useState<unknown | null>(null);
   const [draftBody, setDraftBody] = useState('');
+  const [bodyReady, setBodyReady] = useState(false);
   const [savePhase, setSavePhase] = useState<NoteEditorSavePhase>('idle');
   const savePhaseRef = useRef<NoteEditorSavePhase>('idle');
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -131,64 +157,69 @@ const NoteEditorPage = () => {
     }, NOTE_BODY_AUTOSAVE_DEBOUNCE_MS);
   }, [clearAutosaveDebounce]);
 
-  const runSaveRef = useRef<() => Promise<void>>(async () => {});
+  const runSaveRef = useRef<(targetNoteId?: string) => Promise<void>>(
+    async () => {}
+  );
 
-  const runSave = useCallback(async () => {
-    if (saveInFlightRef.current) {
-      queuedRunSaveRef.current = true;
-      return;
-    }
-    saveInFlightRef.current = true;
-    try {
-      for (;;) {
-        const id = noteId;
-        if (!id) {
-          break;
-        }
-
-        const draft = draftBodyRef.current;
-        const base = baselineBodyRef.current;
-        if (draft === base) {
-          queuedRunSaveRef.current = false;
-          safeSetSavePhase('idle');
-          break;
-        }
-
-        safeSetSavePhase('saving');
-        const sent = draft;
-        try {
-          await saveMutateAsyncRef.current({
-            id,
-            bodyText: sent,
-            editorSessionId: editorSessionIdRef.current,
-          });
-        } catch {
-          queuedRunSaveRef.current = false;
-          safeSetSavePhase('error');
-          break;
-        }
-
-        baselineBodyRef.current = sent;
-        const hadQueued = queuedRunSaveRef.current;
-        queuedRunSaveRef.current = false;
-
-        if (draftBodyRef.current !== baselineBodyRef.current || hadQueued) {
-          safeSetSavePhase('pending');
-          continue;
-        }
-
-        safeSetSavePhase('saved');
-        clearSavedHeaderTimer();
-        savedHeaderTimerRef.current = setTimeout(() => {
-          savedHeaderTimerRef.current = null;
-          safeSetSavePhase('idle');
-        }, NOTE_BODY_SAVED_HEADER_MS);
-        break;
+  const runSave = useCallback(
+    async (targetNoteId?: string) => {
+      if (saveInFlightRef.current) {
+        queuedRunSaveRef.current = true;
+        return;
       }
-    } finally {
-      saveInFlightRef.current = false;
-    }
-  }, [clearSavedHeaderTimer, noteId, safeSetSavePhase]);
+      saveInFlightRef.current = true;
+      try {
+        for (;;) {
+          const id = targetNoteId ?? noteId;
+          if (!id) {
+            break;
+          }
+
+          const draft = draftBodyRef.current;
+          const base = baselineBodyRef.current;
+          if (draft === base) {
+            queuedRunSaveRef.current = false;
+            safeSetSavePhase('idle');
+            break;
+          }
+
+          safeSetSavePhase('saving');
+          const sent = draft;
+          try {
+            await saveMutateAsyncRef.current({
+              id,
+              bodyText: sent,
+              editorSessionId: editorSessionIdRef.current,
+            });
+          } catch {
+            queuedRunSaveRef.current = false;
+            safeSetSavePhase('error');
+            break;
+          }
+
+          baselineBodyRef.current = sent;
+          const hadQueued = queuedRunSaveRef.current;
+          queuedRunSaveRef.current = false;
+
+          if (draftBodyRef.current !== baselineBodyRef.current || hadQueued) {
+            safeSetSavePhase('pending');
+            continue;
+          }
+
+          safeSetSavePhase('saved');
+          clearSavedHeaderTimer();
+          savedHeaderTimerRef.current = setTimeout(() => {
+            savedHeaderTimerRef.current = null;
+            safeSetSavePhase('idle');
+          }, NOTE_BODY_SAVED_HEADER_MS);
+          break;
+        }
+      } finally {
+        saveInFlightRef.current = false;
+      }
+    },
+    [clearSavedHeaderTimer, noteId, safeSetSavePhase]
+  );
 
   runSaveRef.current = runSave;
 
@@ -253,6 +284,15 @@ const NoteEditorPage = () => {
     if (!fetchBodySignedUrl) {
       return '';
     }
+    if (suppressSignedUrlFetch) {
+      if (
+        !cachedNoteBodyFromPut.isFetched &&
+        cachedNoteBodyFromPut.data === undefined
+      ) {
+        return undefined;
+      }
+      return cachedNoteBodyFromPut.data ?? '';
+    }
     if (!bodySignedUrlQuery.isSuccess) {
       return undefined;
     }
@@ -267,11 +307,34 @@ const NoteEditorPage = () => {
     noteId,
     note,
     fetchBodySignedUrl,
+    suppressSignedUrlFetch,
+    cachedNoteBodyFromPut.isFetched,
+    cachedNoteBodyFromPut.data,
     bodySignedUrlQuery.isSuccess,
     bodySignedUrlQuery.data,
     noteBodyQuery.isSuccess,
     noteBodyQuery.data,
   ]);
+
+  useEffect(() => {
+    const idForSession = noteId;
+    return () => {
+      clearAutosaveDebounce();
+      clearSavedHeaderTimer();
+      if (idForSession && draftBodyRef.current !== baselineBodyRef.current) {
+        void runSaveRef.current(idForSession);
+      }
+    };
+  }, [noteId, clearAutosaveDebounce, clearSavedHeaderTimer]);
+
+  useEffect(() => {
+    setBodyReady(false);
+    setDraftBody('');
+    baselineBodyRef.current = '';
+    clearAutosaveDebounce();
+    clearSavedHeaderTimer();
+    safeSetSavePhase('idle');
+  }, [noteId, clearAutosaveDebounce, clearSavedHeaderTimer, safeSetSavePhase]);
 
   useEffect(() => {
     if (resolvedServerBody === undefined) {
@@ -283,6 +346,7 @@ const NoteEditorPage = () => {
 
     setDraftBody(incoming);
     baselineBodyRef.current = incoming;
+    setBodyReady(true);
 
     // Post-save TanStack cache sync often refreshes body text with the same bytes; do not
     // reset save phase or cancel the “Saved” header timer in that case (Story 55 Phase 3).
@@ -301,17 +365,6 @@ const NoteEditorPage = () => {
     clearSavedHeaderTimer,
     safeSetSavePhase,
   ]);
-
-  useEffect(() => {
-    const idForSession = noteId;
-    return () => {
-      clearAutosaveDebounce();
-      clearSavedHeaderTimer();
-      if (idForSession && draftBodyRef.current !== baselineBodyRef.current) {
-        void runSaveRef.current();
-      }
-    };
-  }, [noteId, clearAutosaveDebounce, clearSavedHeaderTimer]);
 
   useEffect(() => {
     if (note) {
@@ -459,8 +512,11 @@ const NoteEditorPage = () => {
 
   const handleDraftBodyUpdate = useCallback(
     (value: string, options?: NoteBodyMarkdownChangeOptions) => {
-      setDraftBody(value);
       if (options?.fromInitialNormalize) {
+        if (value !== baselineBodyRef.current) {
+          return;
+        }
+        setDraftBody(value);
         baselineBodyRef.current = value;
         clearAutosaveDebounce();
         clearSavedHeaderTimer();
@@ -468,6 +524,7 @@ const NoteEditorPage = () => {
         return;
       }
 
+      setDraftBody(value);
       clearSavedHeaderTimer();
 
       if (value === baselineBodyRef.current) {
@@ -536,6 +593,7 @@ const NoteEditorPage = () => {
   }
 
   const bodyLoadPending =
+    !bodyReady ||
     (waitForBodySignedUrlQuery && bodySignedUrlQuery.isPending) ||
     (Boolean(signedUrl) && noteBodyQuery.isPending);
 
@@ -680,6 +738,7 @@ const NoteEditorPage = () => {
             </Box>
           ) : (
             <NoteBodyEditor
+              key={noteId}
               richEditorRef={richBodyEditorRef}
               value={draftBody}
               onChange={handleDraftBodyUpdate}

@@ -880,4 +880,113 @@ describe('NoteEditorPage', () => {
     expect(url?.signedUrl).toBe('https://storage.example/blob');
     expect(mockedContentService.getContentBody.mock.calls.length).toBe(1);
   });
+
+  it('does not show the previous note body after switching away from an unsaved note', async () => {
+    const noteA: Content = {
+      ...baseNote,
+      id: 'note-a',
+      name: 'a',
+    };
+    const noteB: Content = {
+      ...baseNote,
+      id: 'note-b',
+      name: 'b',
+      body: null,
+    };
+    const noteBWithBody = noteWithBody(noteB, {
+      size: 3,
+      updatedAt: new Date('2025-06-02'),
+    });
+    let noteBSaved = false;
+
+    mockedContentService.getContentById.mockImplementation((_user, id) => {
+      if (id === 'note-a') {
+        return Promise.resolve(noteA);
+      }
+      if (id === 'note-b') {
+        return Promise.resolve(noteBSaved ? noteBWithBody : noteB);
+      }
+      return Promise.reject(new Error(`Unknown note: ${id}`));
+    });
+    mockedContentService.getContentBody.mockImplementation((_user, id) => {
+      if (id === 'note-a') {
+        return Promise.resolve({
+          signedUrl: 'https://storage.example/note-a',
+          expiresAt: new Date().toISOString(),
+        });
+      }
+      return Promise.resolve(null);
+    });
+    mockedContentService.fetchNoteBodyText.mockImplementation(url => {
+      if (url === 'https://storage.example/note-a') {
+        return Promise.resolve('aaa');
+      }
+      return Promise.resolve('');
+    });
+    mockedContentService.putContentBody.mockImplementation((_user, id, _) => {
+      if (id === 'note-b') {
+        noteBSaved = true;
+        return Promise.resolve(noteBWithBody);
+      }
+      return Promise.reject(new Error(`Unexpected PUT for note: ${id}`));
+    });
+
+    const { router } = renderNoteEditor('/notes/note-a');
+
+    let body = await screen.findByRole('textbox', { name: 'Note body' });
+    await waitFor(() => {
+      expect(body).toHaveValue('aaa');
+    });
+
+    await act(async () => {
+      await router.navigate('/notes/note-b');
+    });
+    expect(
+      await screen.findByRole('heading', { name: 'b' })
+    ).toBeInTheDocument();
+    body = await screen.findByRole('textbox', { name: 'Note body' });
+    await waitFor(() => {
+      expect(body).toHaveValue('');
+    });
+
+    fireEvent.change(body, { target: { value: 'bbb' } });
+    expect(body).toHaveValue('bbb');
+
+    await act(async () => {
+      await router.navigate('/notes/note-a');
+    });
+    expect(
+      await screen.findByRole('heading', { name: 'a' })
+    ).toBeInTheDocument();
+    body = await screen.findByRole('textbox', { name: 'Note body' });
+    await waitFor(() => {
+      expect(body).toHaveValue('aaa');
+    });
+
+    await waitFor(() => {
+      expect(mockedContentService.putContentBody).toHaveBeenCalledWith(
+        mockUser,
+        'note-b',
+        'bbb',
+        'text/markdown'
+      );
+    });
+    expect(mockedContentService.putContentBody).not.toHaveBeenCalledWith(
+      mockUser,
+      'note-a',
+      'bbb',
+      'text/markdown'
+    );
+
+    await act(async () => {
+      await router.navigate('/notes/note-b');
+    });
+    expect(
+      await screen.findByRole('heading', { name: 'b' })
+    ).toBeInTheDocument();
+    body = await screen.findByRole('textbox', { name: 'Note body' });
+    await waitFor(() => {
+      expect(body).not.toHaveValue('aaa');
+    });
+  });
 });
