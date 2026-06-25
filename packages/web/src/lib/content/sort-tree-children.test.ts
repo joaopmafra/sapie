@@ -1,11 +1,7 @@
-import { ContentType, type Content } from './types';
 import { sortTreeChildren } from './sort-tree-children';
+import { ContentType, type Content } from './types';
 
-function makeContent(
-  id: string,
-  name: string,
-  type: ContentType
-): Content {
+function makeContent(id: string, name: string, type: ContentType): Content {
   return {
     id,
     name,

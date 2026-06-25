@@ -199,6 +199,43 @@ describe('ContentExplorer URL-driven selection', () => {
     expect(router.state.location.pathname).toBe('/notes/note-b');
   });
 
+  it('does not show Loading when collapsing an already loaded folder', async () => {
+    const user = userEvent.setup();
+    renderExplorer('/');
+
+    await waitFor(() => {
+      expect(screen.getByText('Folder A')).toBeInTheDocument();
+    });
+
+    const folderItem = screen
+      .getByText('Folder A')
+      .closest('[role="treeitem"]');
+    const expandIcon = folderItem?.querySelector(
+      '[data-testid="ChevronRightIcon"]'
+    );
+    if (expandIcon) {
+      await user.click(expandIcon);
+    }
+
+    await waitFor(() => {
+      expect(screen.getByText('Note B')).toBeInTheDocument();
+    });
+
+    const collapseIcon = screen
+      .getByText('Folder A')
+      .closest('[role="treeitem"]')
+      ?.querySelector('[data-testid="ExpandMoreIcon"]');
+    if (collapseIcon) {
+      await user.click(collapseIcon);
+    }
+
+    await waitFor(() => {
+      expect(screen.queryByText('Note B')).not.toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+  });
+
   it('renders folders before notes, each group alphabetically', async () => {
     const folderZ: Content = {
       ...folderA,

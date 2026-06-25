@@ -27,9 +27,21 @@ interface EnrichedTreeNode extends Omit<Content, 'type'> {
   children?: EnrichedTreeNode[];
 }
 
-function dummyPlaceholder(parent: Content): EnrichedTreeNode {
+function branchPlaceholder(parent: Content): EnrichedTreeNode {
   return {
-    id: `dummy_${parent.id}`,
+    id: `branch_${parent.id}`,
+    name: '',
+    type: 'dummy',
+    parentId: parent.id,
+    ownerId: parent.ownerId,
+    createdAt: parent.createdAt,
+    updatedAt: parent.updatedAt,
+  };
+}
+
+function loadingPlaceholder(parent: Content): EnrichedTreeNode {
+  return {
+    id: `loading_${parent.id}`,
     name: 'Loading...',
     type: 'dummy',
     parentId: parent.id,
@@ -37,6 +49,14 @@ function dummyPlaceholder(parent: Content): EnrichedTreeNode {
     createdAt: parent.createdAt,
     updatedAt: parent.updatedAt,
   };
+}
+
+function isTreePlaceholderId(id: string): boolean {
+  return (
+    id.startsWith('branch_') ||
+    id.startsWith('loading_') ||
+    id.startsWith('dummy_')
+  );
 }
 
 function mapContentToEnriched(
@@ -49,20 +69,26 @@ function mapContentToEnriched(
     return { ...c, children: undefined };
   }
 
-  if (!expanded.has(c.id)) {
-    const dummy = dummyPlaceholder(c);
-    return { ...c, children: [dummy] };
+  const cached = childrenByParentId.get(c.id);
+  const isExpanded = expanded.has(c.id);
+
+  if (cached !== undefined) {
+    const childNodes = sortTreeChildren(cached).map(ch =>
+      mapContentToEnriched(ch, expanded, childrenByParentId, loadingParentIds)
+    );
+    return { ...c, children: childNodes };
   }
 
-  if (loadingParentIds.has(c.id) || !childrenByParentId.has(c.id)) {
-    return { ...c, children: [dummyPlaceholder(c)] };
+  if (isExpanded && loadingParentIds.has(c.id)) {
+    return { ...c, children: [loadingPlaceholder(c)] };
   }
 
-  const kids = sortTreeChildren(childrenByParentId.get(c.id) ?? []);
-  const childNodes = kids.map(ch =>
-    mapContentToEnriched(ch, expanded, childrenByParentId, loadingParentIds)
-  );
-  return { ...c, children: childNodes };
+  if (isExpanded) {
+    return { ...c, children: [] };
+  }
+
+  // Collapsed and never loaded: invisible branch stub so the expand chevron renders.
+  return { ...c, children: [branchPlaceholder(c)] };
 }
 
 function flattenNodeMap(
@@ -167,10 +193,21 @@ const ContentExplorer: React.FC = () => {
       if (q?.data) {
         childrenByParentId.set(id, q.data);
       }
-      if (q?.isPending && !q.data) {
+      if (q?.isPending && !q.data && expanded.has(id)) {
         loadingParentIds.add(id);
       }
     });
+
+    // Keep cached children available after collapse (queries are disabled when collapsed).
+    queryClient
+      .getQueriesData<Content[]>({ queryKey: contentQueryKeys.allChildren() })
+      .forEach(([queryKey, data]) => {
+        if (!Array.isArray(data)) return;
+        const parentId = queryKey[2];
+        if (typeof parentId === 'string') {
+          childrenByParentId.set(parentId, data);
+        }
+      });
 
     const rootNode = mapContentToEnriched(
       root,
@@ -180,7 +217,7 @@ const ContentExplorer: React.FC = () => {
     );
     const builtTree = [rootNode];
     return { tree: builtTree, nodeMap: flattenNodeMap(builtTree) };
-  }, [root, expandedNodeIds, idsForChildQueries, childQueries]);
+  }, [root, expandedNodeIds, idsForChildQueries, childQueries, queryClient]);
 
   // MUI TreeView tracks focus separately from selection; sync focus when the URL changes
   // (e.g. after creating a note while a folder was previously clicked).
@@ -273,7 +310,7 @@ const ContentExplorer: React.FC = () => {
         onSelectedItemsChange={(_event, ids) => {
           const rawId = Array.isArray(ids) ? ids[0] : ids;
           const nodeId = rawId != null ? String(rawId) : null;
-          if (!nodeId || nodeId.startsWith('dummy_')) {
+          if (!nodeId || isTreePlaceholderId(nodeId)) {
             return;
           }
 
