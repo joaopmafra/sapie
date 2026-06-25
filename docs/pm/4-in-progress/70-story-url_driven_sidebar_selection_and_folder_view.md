@@ -38,24 +38,24 @@ global state library for this — TanStack Query already owns server data; React
 
 ## Epic Reference
 
-- [Epic 45: Content Management Foundation](../../1-epics/2-to-refine/45-epic-content_management_foundation.md)
+- [Epic 45: Content Management Foundation](../1-epics/2-to-refine/45-epic-content_management_foundation.md)
 
 ## Feature Reference
 
-- [Feature 46: Content Navigation & Organization](../../5-done/46-feature-content_navigation_and_organization.md)
+- [Feature 46: Content Navigation & Organization](../5-done/46-feature-content_navigation_and_organization.md)
 
 ## Dependencies
 
-- [x] [Story 62](../../5-done/62-story-tanstack_query_refactor.md) — TanStack Query and `useContentItem` must be in
+- [x] [Story 62](../5-done/62-story-tanstack_query_refactor.md) — TanStack Query and `useContentItem` must be in
   place so note and folder pages fetch independently of the tree.
-- [x] [Story 63](../../5-done/63-story-folder_creation.md) — Folder creation flow exists; this story wires it to the
+- [x] [Story 63](../5-done/63-story-folder_creation.md) — Folder creation flow exists; this story wires it to the
   new folder route and view.
 
 ## Related
 
-- [Story 51](../../5-done/51-story-highlight_selected_node.md) — Original highlight behaviour; superseded in practice
+- [Story 51](../5-done/51-story-highlight_selected_node.md) — Original highlight behaviour; superseded in practice
   by URL-driven selection in this story.
-- [Client state management — Phase 1: TanStack Query](../../../research/client_state_management/phase_1_tanstack_query.md)
+- [Client state management — Phase 1: TanStack Query](../../research/client_state_management/phase_1_tanstack_query.md)
   — Documents the server-state vs UI-state split and why Zustand is not needed here.
 
 ## Acceptance Criteria
