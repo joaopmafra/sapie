@@ -19,6 +19,24 @@ async function fetchContentItem(
   });
 }
 
+function getCachedRoot(
+  queryClient: ReturnType<typeof useQueryClient>
+): Content | undefined {
+  return queryClient.getQueryData<Content>(contentQueryKeys.root());
+}
+
+function mergeExpandedIds(prev: string[], toAdd: Iterable<string>): string[] {
+  let changed = false;
+  const next = new Set(prev);
+  for (const id of toAdd) {
+    if (!next.has(id)) {
+      next.add(id);
+      changed = true;
+    }
+  }
+  return changed ? Array.from(next) : prev;
+}
+
 /**
  * Expands ancestor folders (and root) so the node matching `contentId` is visible in the tree.
  */
@@ -34,6 +52,12 @@ export function useExpandContentAncestors(contentId: string | null) {
     const activeId = contentId;
     let cancelled = false;
 
+    const cachedRoot = getCachedRoot(queryClient);
+    if (cachedRoot && activeId === cachedRoot.id) {
+      setExpandedNodeIds(prev => mergeExpandedIds(prev, [cachedRoot.id]));
+      return;
+    }
+
     async function expandAncestors() {
       const ancestorIds: string[] = [];
 
@@ -48,10 +72,7 @@ export function useExpandContentAncestors(contentId: string | null) {
         parentId = parent.parentId;
       }
 
-      const root = await queryClient.fetchQuery({
-        queryKey: contentQueryKeys.root(),
-        queryFn: () => contentService.getRootDirectory(user),
-      });
+      const root = getCachedRoot(queryClient);
       if (cancelled) return;
 
       const idsToExpand = new Set(ancestorIds);
@@ -59,10 +80,7 @@ export function useExpandContentAncestors(contentId: string | null) {
         idsToExpand.add(root.id);
       }
 
-      setExpandedNodeIds(prev => {
-        const next = new Set([...prev, ...idsToExpand]);
-        return Array.from(next);
-      });
+      setExpandedNodeIds(prev => mergeExpandedIds(prev, idsToExpand));
     }
 
     void expandAncestors();
