@@ -13,22 +13,22 @@ screenshots and diagrams inline with text.
 - This story delivers **research Phase A** only: images work end-to-end **without** a Service Worker, without 304/ETag,
   without orphan cleanup on save, and **without** changing how note markdown bodies are loaded (signed URLs unchanged).
 
-**Research:** [note_image_embedding.md — Phase A](../../../research/note_editor/note_image_embedding.md#phase-a--images-work-without-service-worker-skateboard)
+**Research:** [note_image_embedding.md — Phase A](../../research/note_editor/note_image_embedding.md#phase-a--images-work-without-service-worker-skateboard)
 
 ## Epic Reference
 
-- [Epic 45: Content Management Foundation](../../1-epics/2-to-refine/45-epic-content_management_foundation.md)
+- [Epic 45: Content Management Foundation](../1-epics/2-to-refine/45-epic-content_management_foundation.md)
 
 ## Feature Reference
 
-- [Feature 47: Note Editing & Management](../../2-features/1-ready/47-feature-note_editing_and_management.md)
+- [Feature 47: Note Editing & Management](../2-features/1-ready/47-feature-note_editing_and_management.md)
 
 ## Dependencies
 
-- [ ] [Story 67](../../5-done/67-story-rich_note_content_editor_mdx.md) — MDXEditor is the note body surface.
-- [ ] [Story 66](../../5-done/66-story-content_body_subdocument_and_client_cache.md) — stable nested `body` metadata and
+- [ ] [Story 67](../5-done/67-story-rich_note_content_editor_mdx.md) — MDXEditor is the note body surface.
+- [ ] [Story 66](../5-done/66-story-content_body_subdocument_and_client_cache.md) — stable nested `body` metadata and
   TanStack cache policy.
-- [ ] [Story 62](../../5-done/62-story-tanstack_query_refactor.md) — targeted query invalidation patterns.
+- [ ] [Story 62](../5-done/62-story-tanstack_query_refactor.md) — targeted query invalidation patterns.
 
 ## Acceptance Criteria
 
@@ -44,9 +44,9 @@ screenshots and diagrams inline with text.
 
 ## Out of scope (later stories)
 
-- Service Worker, IndexedDB metadata registry, ETag/304 ([Story 72](72-story-content_body_read_via_service_worker.md))
-- Uniform note body reads; deprecating client signed URLs ([Story 73](73-story-uniform_body_reads_and_image_orphan_cleanup.md))
-- Orphan image cleanup when removed from markdown ([Story 73](73-story-uniform_body_reads_and_image_orphan_cleanup.md))
+- Service Worker, IndexedDB metadata registry, ETag/304 ([Story 72](../3-stories/2-to-refine/72-story-content_body_read_via_service_worker.md))
+- Uniform note body reads; deprecating client signed URLs ([Story 73](../3-stories/2-to-refine/73-story-uniform_body_reads_and_image_orphan_cleanup.md))
+- Orphan image cleanup when removed from markdown ([Story 73](../3-stories/2-to-refine/73-story-uniform_body_reads_and_image_orphan_cleanup.md))
 - Workbox, content versioning, MCP
 
 ## Technical Requirements
@@ -62,9 +62,9 @@ screenshots and diagrams inline with text.
 
 ## Risks
 
-- Upload succeeds but note save fails → orphan `image` content until [Story 73](73-story-uniform_body_reads_and_image_orphan_cleanup.md)
+- Upload succeeds but note save fails → orphan `image` content until [Story 73](../3-stories/2-to-refine/73-story-uniform_body_reads_and_image_orphan_cleanup.md)
   (accepted for Phase A).
-- Image markdown syntax may interact with autosave normalization ([save loop observation](../../../research/note_editor/save_loop_after_note_switch_observation.md)).
+- Image markdown syntax may interact with autosave normalization ([save loop observation](../../research/note_editor/save_loop_after_note_switch_observation.md)).
 
 ## Tasks
 
@@ -100,11 +100,11 @@ screenshots and diagrams inline with text.
 ### Documentation
 
 - [ ] **[DOCS]** OpenAPI / generated client for `image` type and `GET …/body`.
-- [ ] **[DOCS]** Cross-link [note_image_embedding.md](../../../research/note_editor/note_image_embedding.md) Phase A as implemented.
+- [ ] **[DOCS]** Cross-link [note_image_embedding.md](../../research/note_editor/note_image_embedding.md) Phase A as implemented.
 
 ## References
 
-- [note_image_embedding.md](../../../research/note_editor/note_image_embedding.md)
-- [MVP objective — attachment model](../../../plans/mvp_objective.md)
-- [Content naming](../../../dev/content_naming.md)
-- [Iterative development](../../../dev/iterative_development.md)
+- [note_image_embedding.md](../../research/note_editor/note_image_embedding.md)
+- [MVP objective — attachment model](../../plans/mvp_objective.md)
+- [Content naming](../../dev/content_naming.md)
+- [Iterative development](../../dev/iterative_development.md)

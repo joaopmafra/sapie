@@ -2,7 +2,7 @@
 
 **Status:** **Agreed** for implementation via [iterative phases A–G](#iterative-phases-simple--final). **Phase A** scope confirmed (2026-06-25).
 
-**Stories:** [71 — Inline images in notes](../../pm/3-stories/2-to-refine/71-story-inline_images_in_notes.md) (Phase A) · [72 — Content body read via SW](../../pm/3-stories/2-to-refine/72-story-content_body_read_via_service_worker.md) (Phases B–E) · [73 — Uniform reads and orphan cleanup](../../pm/3-stories/2-to-refine/73-story-uniform_body_reads_and_image_orphan_cleanup.md) (Phase F)
+**Stories:** [71 — Inline images in notes](../../pm/4-in-progress/71-story-inline_images_in_notes.md) (Phase A) · [72 — Content body read via SW](../../pm/3-stories/2-to-refine/72-story-content_body_read_via_service_worker.md) (Phases B–E) · [73 — Uniform reads and orphan cleanup](../../pm/3-stories/2-to-refine/73-story-uniform_body_reads_and_image_orphan_cleanup.md) (Phase F)
 
 **Related**
 
@@ -271,4 +271,4 @@ Summary of work items; **phase column** is the first phase that needs each item.
 - **2026-06-25:** Initial research; hierarchy rules; cross-cutting decisions.
 - **2026-06-25:** Stable `/api/content/:id/body` in markdown; uniform read path with SW + versioned cache + 304; IndexedDB registry; iterative phases A–G; Phase A confirmed (blob display, notes on signed URLs, no SW).
 - **2026-06-25:** Doc consolidation — removed duplicate sections, fixed deck hierarchy, aligned all sections with phased delivery.
-- **2026-06-25:** Stories [71](../../pm/3-stories/2-to-refine/71-story-inline_images_in_notes.md), [72](../../pm/3-stories/2-to-refine/72-story-content_body_read_via_service_worker.md), [73](../../pm/3-stories/2-to-refine/73-story-uniform_body_reads_and_image_orphan_cleanup.md) created.
+- **2026-06-25:** Stories [71](../../pm/4-in-progress/71-story-inline_images_in_notes.md), [72](../../pm/3-stories/2-to-refine/72-story-content_body_read_via_service_worker.md), [73](../../pm/3-stories/2-to-refine/73-story-uniform_body_reads_and_image_orphan_cleanup.md) created.
