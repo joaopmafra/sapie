@@ -36,6 +36,7 @@ import { PROBLEM_DETAILS_POINTERS } from '../lib/problemDetailsPointers.ts';
 
 import type { NoteBodyMarkdownChangeOptions } from './note-body-editor/note-body-editor-props';
 import { NoteBodyEditor } from './note-body-editor/NoteBodyEditor';
+import { useNoteImageHandlers } from './note-body-editor/use-note-image-handlers';
 import {
   NOTE_BODY_AUTOSAVE_DEBOUNCE_MS,
   NOTE_BODY_SAVED_HEADER_MS,
@@ -52,6 +53,10 @@ const NoteEditorPage = () => {
   const { currentUser } = useAuth();
   const queryClient = useQueryClient();
   const { data: note, isLoading, isError, error } = useContentItem(noteId);
+  const { imageUploadHandler, imagePreviewHandler } = useNoteImageHandlers(
+    currentUser,
+    noteId
+  );
   const suppressBodySignedUrlFetchAfterSave =
     useBodySignedUrlFetchSuppressedAfterSave(noteId, editorSessionId);
   const suppressSignedUrlFetch = Boolean(
@@ -745,6 +750,8 @@ const NoteEditorPage = () => {
               placeholder='Start writing your note…'
               disabled={!currentUser || bodyLoadPending}
               aria-label='Note body'
+              imageUploadHandler={imageUploadHandler}
+              imagePreviewHandler={imagePreviewHandler}
             />
           )}
         </Box>

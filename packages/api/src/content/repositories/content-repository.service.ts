@@ -85,9 +85,30 @@ export class ContentRepository {
     createdAt: Date;
     updatedAt: Date;
   }): Promise<Content> {
+    return this.addContentWithType({ ...params, type: ContentType.NOTE });
+  }
+
+  async addImage(params: {
+    name: string;
+    parentId: string;
+    ownerId: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }): Promise<Content> {
+    return this.addContentWithType({ ...params, type: ContentType.IMAGE });
+  }
+
+  private async addContentWithType(params: {
+    name: string;
+    parentId: string;
+    ownerId: string;
+    createdAt: Date;
+    updatedAt: Date;
+    type: ContentType.NOTE | ContentType.IMAGE;
+  }): Promise<Content> {
     const newContentData = {
       name: params.name,
-      type: ContentType.NOTE,
+      type: params.type,
       parentId: params.parentId,
       ownerId: params.ownerId,
       body: null,

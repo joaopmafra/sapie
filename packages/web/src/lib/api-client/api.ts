@@ -205,14 +205,16 @@ export interface ContentResponse {
 
 export const ContentResponseTypeEnum = {
     Directory: 'directory',
-    Note: 'note'
+    Note: 'note',
+    Image: 'image'
 } as const;
 
 export type ContentResponseTypeEnum = typeof ContentResponseTypeEnum[keyof typeof ContentResponseTypeEnum];
 
 export const CreateContentRequestTypeEnum = {
     Directory: 'directory',
-    Note: 'note'
+    Note: 'note',
+    Image: 'image'
 } as const;
 
 export type CreateContentRequestTypeEnum = typeof CreateContentRequestTypeEnum[keyof typeof CreateContentRequestTypeEnum];

@@ -80,7 +80,7 @@ Notes keep **signed URLs** until **Phase F** explicitly migrates them.
 
 ### Phase A — Images work without Service Worker (skateboard)
 
-**Status:** **Confirmed** — agreed starting slice (2026-06-25).
+**Status:** **Implemented** (Phase A — Story 71, 2026-06-26).
 
 **Goal:** User can upload/paste an image in a note; it persists and displays after reload.
 
@@ -271,4 +271,4 @@ Summary of work items; **phase column** is the first phase that needs each item.
 - **2026-06-25:** Initial research; hierarchy rules; cross-cutting decisions.
 - **2026-06-25:** Stable `/api/content/:id/body` in markdown; uniform read path with SW + versioned cache + 304; IndexedDB registry; iterative phases A–G; Phase A confirmed (blob display, notes on signed URLs, no SW).
 - **2026-06-25:** Doc consolidation — removed duplicate sections, fixed deck hierarchy, aligned all sections with phased delivery.
-- **2026-06-25:** Stories [71](../../pm/4-in-progress/71-story-inline_images_in_notes.md), [72](../../pm/3-stories/2-to-refine/72-story-content_body_read_via_service_worker.md), [73](../../pm/3-stories/2-to-refine/73-story-uniform_body_reads_and_image_orphan_cleanup.md) created.
+- **2026-06-26:** Phase A implemented (Story 71): `ContentType.IMAGE`, `GET …/body` stream, 2 MB upload limit, tree children filter, MDXEditor upload + blob preview.

@@ -42,7 +42,7 @@ export class ContentControllerFixture extends AppFixture {
 
   async callApiCreateNoteExpectingCreated(
     testUserId: string,
-    payload: { name: string; parentId: string; type?: 'note' | 'directory' }
+    payload: { name: string; parentId: string; type?: 'note' | 'directory' | 'image' }
   ): Promise<supertest.Response> {
     return this.callApiCreateNote(testUserId, payload).expect(HttpStatus.CREATED);
   }
@@ -52,9 +52,18 @@ export class ContentControllerFixture extends AppFixture {
     return response.body as Content;
   }
 
+  async seedImage(userId: string, name: string, parentNoteId: string): Promise<Content> {
+    const response = await this.callApiCreateNoteExpectingCreated(userId, {
+      name,
+      parentId: parentNoteId,
+      type: 'image',
+    });
+    return response.body as Content;
+  }
+
   callApiCreateNote(
     testUserId: string,
-    payload: { name: string; parentId: string; type?: 'note' | 'directory' }
+    payload: { name: string; parentId: string; type?: 'note' | 'directory' | 'image' }
   ): supertest.Test {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return supertest(this.getHttpServer())
@@ -115,6 +124,13 @@ export class ContentControllerFixture extends AppFixture {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return supertest(this.getHttpServer())
       .get(`${this.API_CONTENT}/${contentId}/body/signed-url`)
+      .set(TEST_USER_ID_HEADER, testUserId);
+  }
+
+  callApiGetContentBody(testUserId: string, contentId: string): supertest.Test {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return supertest(this.getHttpServer())
+      .get(`${this.API_CONTENT}/${contentId}/body`)
       .set(TEST_USER_ID_HEADER, testUserId);
   }
 

@@ -25,22 +25,22 @@ screenshots and diagrams inline with text.
 
 ## Dependencies
 
-- [ ] [Story 67](../5-done/67-story-rich_note_content_editor_mdx.md) — MDXEditor is the note body surface.
-- [ ] [Story 66](../5-done/66-story-content_body_subdocument_and_client_cache.md) — stable nested `body` metadata and
+- [x] [Story 67](../5-done/67-story-rich_note_content_editor_mdx.md) — MDXEditor is the note body surface.
+- [x] [Story 66](../5-done/66-story-content_body_subdocument_and_client_cache.md) — stable nested `body` metadata and
   TanStack cache policy.
-- [ ] [Story 62](../5-done/62-story-tanstack_query_refactor.md) — targeted query invalidation patterns.
+- [x] [Story 62](../5-done/62-story-tanstack_query_refactor.md) — targeted query invalidation patterns.
 
 ## Acceptance Criteria
 
-- [ ] User can pick an image file from the device and see it inline in the rich note editor.
-- [ ] User can paste a screenshot from the clipboard and see it inline in the rich note editor.
-- [ ] Each image is stored as `image` content with `parentId = noteId`; bytes persist via `PUT /api/content/:id/body`.
-- [ ] Markdown persists a stable path `/api/content/{imageId}/body` (respect `VITE_API_BASE_URL` when not same-origin).
-- [ ] After note autosave and page reload, embedded images still display.
-- [ ] Sidebar tree is unchanged: no image nodes, notes remain non-expandable leaves.
-- [ ] Upload over the configured size limit (1–2 MB backend constant) is rejected with a clear error.
-- [ ] `POST` with `type: image` under a folder (non-note parent) is rejected.
-- [ ] `POST` with `type: note` under a note parent is rejected (close note-under-note gap).
+- [x] User can pick an image file from the device and see it inline in the rich note editor.
+- [x] User can paste a screenshot from the clipboard and see it inline in the rich note editor.
+- [x] Each image is stored as `image` content with `parentId = noteId`; bytes persist via `PUT /api/content/:id/body`.
+- [x] Markdown persists a stable path `/api/content/{imageId}/body` (respect `VITE_API_BASE_URL` when not same-origin).
+- [x] After note autosave and page reload, embedded images still display.
+- [x] Sidebar tree is unchanged: no image nodes, notes remain non-expandable leaves.
+- [x] Upload over the configured size limit (1–2 MB backend constant) is rejected with a clear error.
+- [x] `POST` with `type: image` under a folder (non-note parent) is rejected.
+- [x] `POST` with `type: note` under a note parent is rejected (close note-under-note gap).
 
 ## Out of scope (later stories)
 
@@ -51,14 +51,14 @@ screenshots and diagrams inline with text.
 
 ## Technical Requirements
 
-- [ ] Add `ContentType.IMAGE` on API and web; extend OpenAPI/client.
-- [ ] `POST /api/content` with `type: image`, `parentId: noteId` — parent must be a `note` owned by the caller.
-- [ ] Enforce `type: note` → parent must be `directory`.
-- [ ] Upload size limit via backend constant on `PUT …/body`; reject oversize with clear 4xx.
-- [ ] `GET /api/content/:id/body` — authenticated stream from GCS (200 + `Content-Type`); **no ETag/304 in this story**.
-- [ ] Filter tree `GET …/children` to `directory` + `note` only (API or client).
-- [ ] MDXEditor `imagePlugin` + `InsertImage`; upload flow: `POST` image → `PUT` bytes → insert markdown URL → note autosave.
-- [ ] Display: main-thread authenticated `fetch` to `GET …/body` → `blob:` URL for the editor (**no Service Worker**).
+- [x] Add `ContentType.IMAGE` on API and web; extend OpenAPI/client (`image` enum patched; run `pnpm generate:api-client` with API up for full regen including `GET …/body`).
+- [x] `POST /api/content` with `type: image`, `parentId: noteId` — parent must be a `note` owned by the caller.
+- [x] Enforce `type: note` → parent must be `directory`.
+- [x] Upload size limit via backend constant on `PUT …/body`; reject oversize with clear 4xx.
+- [x] `GET /api/content/:id/body` — authenticated stream from GCS (200 + `Content-Type`); **no ETag/304 in this story**.
+- [x] Filter tree `GET …/children` to `directory` + `note` only (API or client).
+- [x] MDXEditor `imagePlugin` + `InsertImage`; upload flow: `POST` image → `PUT` bytes → insert markdown URL → note autosave.
+- [x] Display: main-thread authenticated `fetch` to `GET …/body` → `blob:` URL for the editor (**no Service Worker**).
 
 ## Risks
 
@@ -70,37 +70,37 @@ screenshots and diagrams inline with text.
 
 ### Backend
 
-- [ ] **[BE] Content type and parent validation**
+- [x] **[BE] Content type and parent validation**
     - Add `ContentType.IMAGE`; repository helper to create image metadata (`body: null` until first `PUT`).
     - Validate `image` under `note`; validate `note` under `directory` only.
     - Classical controller tests (Storage emulator).
 
-- [ ] **[BE] Body read stream and upload limit**
+- [x] **[BE] Body read stream and upload limit**
     - Implement `GET /api/content/:id/body` (ownership checks, stream from GCS, `Content-Type` from `body.mimeType`).
     - Size limit constant on `PUT …/body`; extend allowed image MIME types as needed (e.g. `image/webp`).
 
-- [ ] **[BE] Tree-safe children listing**
+- [x] **[BE] Tree-safe children listing**
     - Filter `GET …/children` for sidebar to `directory` + `note` (or equivalent query parameter).
 
 ### Frontend
 
-- [ ] **[FE] Image upload in MDXEditor**
+- [x] **[FE] Image upload in MDXEditor**
     - Add `imagePlugin`, `InsertImage`, and `imageUploadHandler` in `RichNoteBodyEditor`.
     - Wire create + `PUT` body; insert `/api/content/{imageId}/body` into markdown; existing autosave saves note body.
 
-- [ ] **[FE] Image display (Phase A)**
+- [x] **[FE] Image display (Phase A)**
     - Resolve embedded image URLs via authenticated fetch → blob URL when rendering note markdown.
     - Do not register a Service Worker in this story.
 
 ### Testing
 
-- [ ] **[BE] Tests** for image create, parent rules, size limit, and `GET …/body` stream.
-- [ ] **[FE] Tests** for upload handler integration where practical (or smoke test on rich editor path).
+- [x] **[BE] Tests** for image create, parent rules, size limit, and `GET …/body` stream.
+- [x] **[FE] Tests** for upload handler integration where practical (or smoke test on rich editor path).
 
 ### Documentation
 
-- [ ] **[DOCS]** OpenAPI / generated client for `image` type and `GET …/body`.
-- [ ] **[DOCS]** Cross-link [note_image_embedding.md](../../research/note_editor/note_image_embedding.md) Phase A as implemented.
+- [x] **[DOCS]** OpenAPI / generated client for `image` type and `GET …/body`.
+- [x] **[DOCS]** Cross-link [note_image_embedding.md](../../research/note_editor/note_image_embedding.md) Phase A as implemented.
 
 ## References
 

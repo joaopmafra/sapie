@@ -3,6 +3,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { FirebaseAdminService } from '../../firebase';
 import { resolveFirebaseStorageBucketName } from '../../firebase/resolve-storage-bucket-name';
 
+import type { Readable } from 'stream';
+
 const CLIENT_CACHE_TTL_S = 60 * 60;
 
 @Injectable()
@@ -45,5 +47,28 @@ export class ContentBodyStorageService {
 
     this.logger.debug(`Uploaded content body for ${contentId} (${body.length} bytes, ${mimeType})`);
     return { objectPath: path, size: body.length };
+  }
+
+  /**
+   * Opens a read stream for an existing object. Returns `null` when the object is missing.
+   */
+  async openBodyReadStream(
+    objectPath: string
+  ): Promise<{ stream: Readable; contentType: string } | null> {
+    const bucket = this.defaultBucket();
+    const file = bucket.file(objectPath);
+    const [exists] = await file.exists();
+    if (!exists) {
+      return null;
+    }
+
+    const [metadata] = await file.getMetadata();
+    const contentType = metadata.contentType ?? 'application/octet-stream';
+    const stream = file.createReadStream();
+    stream.on('error', err => {
+      this.logger.warn(`Stream error for ${objectPath}: ${String(err)}`);
+    });
+
+    return { stream, contentType };
   }
 }
