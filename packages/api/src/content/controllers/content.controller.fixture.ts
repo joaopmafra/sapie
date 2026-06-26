@@ -92,6 +92,20 @@ export class ContentControllerFixture extends AppFixture {
     return this.callApiPatchContent(testUserId, contentId, payload).expect(HttpStatus.OK);
   }
 
+  callApiGetContentByParentId(
+    testUserId: string,
+    parentId: string,
+    query?: { attachments?: boolean }
+  ): supertest.Test {
+    let req = supertest(this.getHttpServer())
+      .get(this.API_CONTENT_CHILDREN.replace(':id', parentId))
+      .set(TEST_USER_ID_HEADER, testUserId);
+    if (query?.attachments) {
+      req = req.query({ attachments: 'true' });
+    }
+    return req;
+  }
+
   async callApiGetContentByParentIdExpectingOkAsContentArray(
     testUserId: string,
     parentId: string

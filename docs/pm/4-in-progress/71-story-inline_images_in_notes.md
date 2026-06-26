@@ -47,6 +47,11 @@ screenshots and diagrams inline with text.
 - Service Worker, IndexedDB metadata registry, ETag/304 ([Story 72](../3-stories/2-to-refine/72-story-content_body_read_via_service_worker.md))
 - Uniform note body reads; deprecating client signed URLs ([Story 73](../3-stories/2-to-refine/73-story-uniform_body_reads_and_image_orphan_cleanup.md))
 - Orphan image cleanup when removed from markdown ([Story 73](../3-stories/2-to-refine/73-story-uniform_body_reads_and_image_orphan_cleanup.md))
+- MIME/type pairing validation on `PUT …/body` (e.g. reject `Content-Type: image/png` with non-PNG bytes)
+- Separate upload size limits for note markdown vs inline images (today one backend constant applies to all bodies)
+- `GET /api/config` exposing client-visible limits (size, allowed MIME types) instead of duplicated constants
+- Deck attachment listing via `GET …/children?attachments=true` when flashcard decks ship
+- Dedicated attachment collection/subcollection ([Story 74](../3-stories/2-to-refine/74-story-dedicated_attachment_storage_model.md))
 - Workbox, content versioning, MCP
 
 ## Technical Requirements
@@ -57,7 +62,10 @@ screenshots and diagrams inline with text.
 - [x] Upload size limit via backend constant on `PUT …/body`; reject oversize with clear 4xx.
 - [x] `GET /api/content/:id/body` — authenticated stream from GCS (200 + `Content-Type`); **no ETag/304 in this story**.
 - [x] Filter tree `GET …/children` to `directory` + `note` only (API or client).
+- [x] `GET …/children?attachments=true` lists inline `image` children under a note (orphan cleanup / listing).
 - [x] MDXEditor `imagePlugin` + `InsertImage`; upload flow: `POST` image → `PUT` bytes → insert markdown URL → note autosave.
+- [x] Opaque auto-generated attachment `name` (`image-{random}.ext`); no user-facing name field; 409 retry with new random suffix.
+- [x] Upload errors (paste, drag, dialog) surface via global snackbar above the insert dialog.
 - [x] Display: main-thread authenticated `fetch` to `GET …/body` → `blob:` URL for the editor (**no Service Worker**).
 
 ## Risks
@@ -81,6 +89,10 @@ screenshots and diagrams inline with text.
 
 - [x] **[BE] Tree-safe children listing**
     - Filter `GET …/children` for sidebar to `directory` + `note` (or equivalent query parameter).
+    - `GET …/children?attachments=true` returns `image` children only under a note.
+
+- [x] **[FE] Opaque attachment naming**
+    - Client generates `image-{random}.ext`; no insert-dialog name field; retry on 409.
 
 ### Frontend
 

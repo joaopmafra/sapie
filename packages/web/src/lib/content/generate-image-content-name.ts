@@ -1,5 +1,4 @@
 import { CONTENT_NAME_MAX_LENGTH } from './content-name-limits';
-import { sanitizeImageContentName } from './sanitize-image-content-name';
 
 function randomSuffix(): string {
   if (
@@ -11,38 +10,34 @@ function randomSuffix(): string {
   return Math.random().toString(36).slice(2, 10);
 }
 
-function splitStemAndExt(sanitized: string): { stem: string; ext: string } {
-  const dotIndex = sanitized.lastIndexOf('.');
-  const hasExt =
-    dotIndex > 0 &&
-    dotIndex < sanitized.length - 1 &&
-    dotIndex >= sanitized.length - 6;
-  if (hasExt) {
-    return {
-      stem: sanitized.slice(0, dotIndex),
-      ext: sanitized.slice(dotIndex + 1),
-    };
+export function extensionFromImageFile(file: File): string {
+  const fromName = file.name
+    .split(/[/\\]/)
+    .pop()
+    ?.split('.')
+    .pop()
+    ?.toLowerCase();
+  if (fromName && /^(png|jpe?g|gif|webp)$/.test(fromName)) {
+    return fromName === 'jpeg' ? 'jpg' : fromName;
   }
-  return { stem: sanitized, ext: 'png' };
+  const fromType = file.type.split('/')[1]?.toLowerCase();
+  if (fromType === 'jpeg') {
+    return 'jpg';
+  }
+  if (fromType && ['png', 'gif', 'webp', 'jpg'].includes(fromType)) {
+    return fromType;
+  }
+  return 'png';
 }
 
 /**
- * Builds a unique Firestore content name for an inline image attachment.
- * Always appends a random suffix so repeated uploads (e.g. clipboard `image.png`) do not 409.
+ * Opaque Firestore content name for an inline image attachment.
+ * User-facing identity is the content id in markdown, not this name.
  */
-export function generateUniqueImageContentName(
-  fileName: string,
-  nameStemOverride?: string
-): string {
-  const sanitizedOverride = nameStemOverride?.trim()
-    ? sanitizeImageContentName(nameStemOverride.trim())
-    : '';
-  const sanitizedFile = sanitizeImageContentName(fileName);
-  const { ext } = splitStemAndExt(sanitizedFile);
-  const rawStem =
-    sanitizedOverride || splitStemAndExt(sanitizedFile).stem || 'image';
-  const stem = rawStem.replace(/\.[^.]+$/, '') || 'image';
+export function generateUniqueImageContentName(file: File): string {
+  const ext = extensionFromImageFile(file);
   const suffix = randomSuffix();
+  const stem = 'image';
   const maxStemLength =
     CONTENT_NAME_MAX_LENGTH - ext.length - suffix.length - 2;
   const trimmedStem =

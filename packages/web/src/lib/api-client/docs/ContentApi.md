@@ -9,7 +9,7 @@ All URIs are relative to *http://localhost*
 |[**contentControllerGetContentBodySignedUrl**](#contentcontrollergetcontentbodysignedurl) | **GET** /api/content/{id}/body/signed-url | Get signed URL to read content body|
 |[**contentControllerGetContentById**](#contentcontrollergetcontentbyid) | **GET** /api/content/{id} | Get content by ID|
 |[**contentControllerGetRootDirectory**](#contentcontrollergetrootdirectory) | **GET** /api/content/root | Get or create user\&#39;s root directory|
-|[**contentControllerListContents**](#contentcontrollerlistcontents) | **GET** /api/content/{id}/children | List a parent\&#39;s tree children|
+|[**contentControllerListContents**](#contentcontrollerlistcontents) | **GET** /api/content/{id}/children | List a parent\&#39;s children|
 |[**contentControllerPatchContent**](#contentcontrollerpatchcontent) | **PATCH** /api/content/{id} | Patch content metadata|
 |[**contentControllerPutContentBody**](#contentcontrollerputcontentbody) | **PUT** /api/content/{id}/body | Upload or replace content body|
 
@@ -282,7 +282,7 @@ This endpoint does not have any parameters.
 # **contentControllerListContents**
 > Array<ContentResponse> contentControllerListContents()
 
-Returns child content (metadata only) for the given parent ID, limited to **folders and notes** for sidebar tree use. Attachment children (e.g. inline images under a note) are omitted. Does not load content bodies or signed read URLs.
+Returns child content (metadata only) for the given parent ID. By default returns **folders and notes** for sidebar tree use (attachment children omitted). Pass `attachments=true` to list **inline image** attachments under a note (for sequential naming and attachment management). Does not load content bodies or signed read URLs.
 
 ### Example
 
@@ -296,9 +296,11 @@ const configuration = new Configuration();
 const apiInstance = new ContentApi(configuration);
 
 let id: string; //The ID of the parent content. (default to undefined)
+let attachments: boolean; //When `true`, return attachment children (`image` only in Phase A) instead of tree children. (optional) (default to undefined)
 
 const { status, data } = await apiInstance.contentControllerListContents(
-    id
+    id,
+    attachments
 );
 ```
 
@@ -307,6 +309,7 @@ const { status, data } = await apiInstance.contentControllerListContents(
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
 | **id** | [**string**] | The ID of the parent content. | defaults to undefined|
+| **attachments** | [**boolean**] | When &#x60;true&#x60;, return attachment children (&#x60;image&#x60; only in Phase A) instead of tree children. | (optional) defaults to undefined|
 
 
 ### Return type

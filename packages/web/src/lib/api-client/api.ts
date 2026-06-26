@@ -800,13 +800,14 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Returns child content (metadata only) for the given parent ID, limited to **folders and notes** for sidebar tree use. Attachment children (e.g. inline images under a note) are omitted. Does not load content bodies or signed read URLs.
-         * @summary List a parent\'s tree children
+         * Returns child content (metadata only) for the given parent ID. By default returns **folders and notes** for sidebar tree use (attachment children omitted). Pass `attachments=true` to list **inline image** attachments under a note (for sequential naming and attachment management). Does not load content bodies or signed read URLs.
+         * @summary List a parent\'s children
          * @param {string} id The ID of the parent content.
+         * @param {boolean} [attachments] When &#x60;true&#x60;, return attachment children (&#x60;image&#x60; only in Phase A) instead of tree children.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        contentControllerListContents: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        contentControllerListContents: async (id: string, attachments?: boolean, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('contentControllerListContents', 'id', id)
             const localVarPath = `/api/content/{id}/children`
@@ -825,6 +826,10 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             // authentication bearer required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (attachments !== undefined) {
+                localVarQueryParameter['attachments'] = attachments;
+            }
 
 
     
@@ -1006,14 +1011,15 @@ export const ContentApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Returns child content (metadata only) for the given parent ID, limited to **folders and notes** for sidebar tree use. Attachment children (e.g. inline images under a note) are omitted. Does not load content bodies or signed read URLs.
-         * @summary List a parent\'s tree children
+         * Returns child content (metadata only) for the given parent ID. By default returns **folders and notes** for sidebar tree use (attachment children omitted). Pass `attachments=true` to list **inline image** attachments under a note (for sequential naming and attachment management). Does not load content bodies or signed read URLs.
+         * @summary List a parent\'s children
          * @param {string} id The ID of the parent content.
+         * @param {boolean} [attachments] When &#x60;true&#x60;, return attachment children (&#x60;image&#x60; only in Phase A) instead of tree children.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async contentControllerListContents(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ContentResponse>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerListContents(id, options);
+        async contentControllerListContents(id: string, attachments?: boolean, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ContentResponse>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerListContents(id, attachments, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerListContents']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -1107,14 +1113,14 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.contentControllerGetRootDirectory(options).then((request) => request(axios, basePath));
         },
         /**
-         * Returns child content (metadata only) for the given parent ID, limited to **folders and notes** for sidebar tree use. Attachment children (e.g. inline images under a note) are omitted. Does not load content bodies or signed read URLs.
-         * @summary List a parent\'s tree children
+         * Returns child content (metadata only) for the given parent ID. By default returns **folders and notes** for sidebar tree use (attachment children omitted). Pass `attachments=true` to list **inline image** attachments under a note (for sequential naming and attachment management). Does not load content bodies or signed read URLs.
+         * @summary List a parent\'s children
          * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         contentControllerListContents(requestParameters: ContentApiContentControllerListContentsRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ContentResponse>> {
-            return localVarFp.contentControllerListContents(requestParameters.id, options).then((request) => request(axios, basePath));
+            return localVarFp.contentControllerListContents(requestParameters.id, requestParameters.attachments, options).then((request) => request(axios, basePath));
         },
         /**
          * Partially updates content metadata. Today this supports renaming (`name`). Moving an item to another folder (`parentId`) will use the same route; that behavior is **not implemented yet** and returns `400 Bad Request` if `parentId` is sent. Body bytes and the nested `body` summary are changed only via `PUT …/body`. When renaming, names must stay unique among siblings under the same parent.
@@ -1195,8 +1201,8 @@ export interface ContentApiInterface {
     contentControllerGetRootDirectory(options?: RawAxiosRequestConfig): AxiosPromise<ContentResponse>;
 
     /**
-     * Returns child content (metadata only) for the given parent ID, limited to **folders and notes** for sidebar tree use. Attachment children (e.g. inline images under a note) are omitted. Does not load content bodies or signed read URLs.
-     * @summary List a parent\'s tree children
+     * Returns child content (metadata only) for the given parent ID. By default returns **folders and notes** for sidebar tree use (attachment children omitted). Pass `attachments=true` to list **inline image** attachments under a note (for sequential naming and attachment management). Does not load content bodies or signed read URLs.
+     * @summary List a parent\'s children
      * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -1294,6 +1300,13 @@ export interface ContentApiContentControllerListContentsRequest {
      * @memberof ContentApiContentControllerListContents
      */
     readonly id: string
+
+    /**
+     * When &#x60;true&#x60;, return attachment children (&#x60;image&#x60; only in Phase A) instead of tree children.
+     * @type {boolean}
+     * @memberof ContentApiContentControllerListContents
+     */
+    readonly attachments?: boolean
 }
 
 /**
@@ -1412,15 +1425,15 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
     }
 
     /**
-     * Returns child content (metadata only) for the given parent ID, limited to **folders and notes** for sidebar tree use. Attachment children (e.g. inline images under a note) are omitted. Does not load content bodies or signed read URLs.
-     * @summary List a parent\'s tree children
+     * Returns child content (metadata only) for the given parent ID. By default returns **folders and notes** for sidebar tree use (attachment children omitted). Pass `attachments=true` to list **inline image** attachments under a note (for sequential naming and attachment management). Does not load content bodies or signed read URLs.
+     * @summary List a parent\'s children
      * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ContentApi
      */
     public contentControllerListContents(requestParameters: ContentApiContentControllerListContentsRequest, options?: RawAxiosRequestConfig) {
-        return ContentApiFp(this.configuration).contentControllerListContents(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
+        return ContentApiFp(this.configuration).contentControllerListContents(requestParameters.id, requestParameters.attachments, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

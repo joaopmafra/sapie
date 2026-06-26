@@ -36,8 +36,15 @@ export class ContentService {
     private readonly contentBodyReadService: ContentBodyReadService
   ) {}
 
-  async findByParentIdAndOwnerId(parentId: string, ownerId: string): Promise<Content[]> {
+  async findByParentIdAndOwnerId(
+    parentId: string,
+    ownerId: string,
+    options?: { attachmentsOnly?: boolean }
+  ): Promise<Content[]> {
     const children = await this.contentRepository.findByParentIdAndOwnerId(parentId, ownerId);
+    if (options?.attachmentsOnly) {
+      return children.filter(child => child.type === ContentType.IMAGE);
+    }
     return children.filter(
       child => child.type === ContentType.DIRECTORY || child.type === ContentType.NOTE
     );

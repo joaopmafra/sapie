@@ -2,6 +2,7 @@ import type {
   ImagePreviewHandler,
   ImageUploadHandler,
 } from '@mdxeditor/editor';
+import { isAxiosError } from 'axios';
 import type { User } from 'firebase/auth';
 import { useCallback, useEffect, useRef } from 'react';
 
@@ -21,14 +22,21 @@ const UNAVAILABLE_IMAGE_PREVIEW =
     '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" fill="#f5f5f5"/><text x="32" y="36" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#999">Unavailable</text></svg>'
   );
 
+const MAX_NAME_COLLISION_RETRIES = 5;
+
+function isNameConflictError(error: unknown): boolean {
+  return isAxiosError(error) && error.response?.status === 409;
+}
+
 export function useNoteImageHandlers(
   currentUser: User | null | undefined,
   noteId: string | undefined,
-  onImageInserted?: () => void
+  onImageInserted?: () => void,
+  onUploadError?: (error: unknown) => void
 ): {
   imageUploadHandler: ImageUploadHandler;
   imagePreviewHandler: ImagePreviewHandler;
-  uploadImageAttachment: (file: File, nameStem?: string) => Promise<string>;
+  uploadImageAttachment: (file: File) => Promise<string>;
 } {
   const blobUrlCacheRef = useRef(new Map<string, string>());
   const inflightPreviewRef = useRef(new Map<string, Promise<string>>());
@@ -54,39 +62,55 @@ export function useNoteImageHandlers(
   }, []);
 
   const uploadImageAttachment = useCallback(
-    async (file: File, nameStem?: string): Promise<string> => {
+    async (file: File): Promise<string> => {
       if (!currentUser || !noteId) {
         throw new Error('Sign in and open a note before inserting images.');
       }
 
       assertImageUploadWithinSizeLimit(file);
 
-      const contentName = generateUniqueImageContentName(file.name, nameStem);
-      const image = await contentService.createImage(
-        currentUser,
-        contentName,
-        noteId
-      );
-      await contentService.putContentBodyFile(
-        currentUser,
-        image.id,
-        file,
-        file.type || 'application/octet-stream'
-      );
-      const markdownUrl = contentBodyMarkdownUrl(image.id);
-      seedPreviewCache(markdownUrl, file);
-      return markdownUrl;
+      for (let attempt = 0; attempt < MAX_NAME_COLLISION_RETRIES; attempt++) {
+        const contentName = generateUniqueImageContentName(file);
+        try {
+          const image = await contentService.createImage(
+            currentUser,
+            contentName,
+            noteId
+          );
+          await contentService.putContentBodyFile(
+            currentUser,
+            image.id,
+            file,
+            file.type || 'application/octet-stream'
+          );
+          const markdownUrl = contentBodyMarkdownUrl(image.id);
+          seedPreviewCache(markdownUrl, file);
+          return markdownUrl;
+        } catch (error) {
+          if (isNameConflictError(error)) {
+            continue;
+          }
+          throw error;
+        }
+      }
+
+      throw new Error('Could not create image attachment. Try again.');
     },
     [currentUser, noteId, seedPreviewCache]
   );
 
   const imageUploadHandler = useCallback(
     async (file: File) => {
-      const url = await uploadImageAttachment(file);
-      onImageInserted?.();
-      return url;
+      try {
+        const url = await uploadImageAttachment(file);
+        onImageInserted?.();
+        return url;
+      } catch (error) {
+        onUploadError?.(error);
+        throw error;
+      }
     },
-    [uploadImageAttachment, onImageInserted]
+    [uploadImageAttachment, onImageInserted, onUploadError]
   );
 
   const imagePreviewHandler = useCallback(

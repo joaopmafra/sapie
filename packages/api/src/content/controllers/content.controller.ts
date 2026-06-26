@@ -12,6 +12,7 @@ import {
   Header,
   BadRequestException,
   StreamableFile,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -29,6 +30,7 @@ import {
   ApiParam,
   ApiConsumes,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { apiProblemDetailsSchema } from '../../common/dto/problem-details.dto';
 import { Auth } from '../../auth';
@@ -178,10 +180,19 @@ export class ContentController {
   @Get(':id/children')
   @Auth()
   @ApiOperation({
-    summary: "List a parent's tree children",
+    summary: "List a parent's children",
     description:
-      'Returns child content (metadata only) for the given parent ID, limited to **folders and notes** for sidebar tree use. ' +
-      'Attachment children (e.g. inline images under a note) are omitted. Does not load content bodies or signed read URLs.',
+      'Returns child content (metadata only) for the given parent ID. ' +
+      'By default returns **folders and notes** for sidebar tree use (attachment children omitted). ' +
+      'Pass `attachments=true` to list **inline image** attachments under a note (for sequential naming and attachment management). ' +
+      'Does not load content bodies or signed read URLs.',
+  })
+  @ApiQuery({
+    name: 'attachments',
+    required: false,
+    type: Boolean,
+    description:
+      'When `true`, return attachment children (`image` only in Phase A) instead of tree children.',
   })
   @ApiParam({
     name: 'id',
@@ -199,15 +210,18 @@ export class ContentController {
   })
   async listContents(
     @Request() request: AuthenticatedRequest,
-    @Param('id') id: string
+    @Param('id') id: string,
+    @Query('attachments') attachments?: string
   ): Promise<ContentResponse[]> {
     const { user } = request;
-    this.logger.debug(`Getting content for user: ${user.uid} with parent content ID: ${id}`);
+    const attachmentsOnly = attachments === 'true' || attachments === '1';
+    this.logger.debug(
+      `Getting content for user: ${user.uid} with parent content ID: ${id} (attachmentsOnly=${attachmentsOnly})`
+    );
 
-    // uncomment to test the loading indicator
-    // await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const children = await this.contentService.findByParentIdAndOwnerId(id, request.user.uid);
+    const children = await this.contentService.findByParentIdAndOwnerId(id, request.user.uid, {
+      attachmentsOnly,
+    });
     return children.map(toContentResponse);
   }
 

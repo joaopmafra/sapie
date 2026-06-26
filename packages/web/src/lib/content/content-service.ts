@@ -131,6 +131,28 @@ export class ContentService {
     }
   }
 
+  async getAttachmentChildren(
+    currentUser: User,
+    noteId: string
+  ): Promise<Content[]> {
+    try {
+      const options = await getApiAuthRequestOptions(currentUser);
+
+      const response = await this.contentApi.contentControllerListContents(
+        { id: noteId },
+        {
+          ...options,
+          params: { attachments: 'true' },
+        }
+      );
+
+      return response.data.map(item => this.mapContentResponseToContent(item));
+    } catch (error) {
+      console.error('Failed to get attachment children:', error);
+      throw error;
+    }
+  }
+
   async createNote(
     currentUser: User,
     name: string,

@@ -21,6 +21,7 @@ import { useParams, useBlocker, type BlockerFunction } from 'react-router-dom';
 
 import { ClientErrorAlert } from '../components/ClientErrorAlert';
 import { useAuth } from '../contexts/AuthContext';
+import { useAppSnackbar } from '../hooks/useAppSnackbar';
 import {
   ContentType,
   noteBodyVersionKey,
@@ -32,6 +33,7 @@ import {
   useRenameContent,
   useSaveNoteBody,
 } from '../lib/content';
+import { getErrorMessageOr } from '../lib/error-messages-utils';
 import { PROBLEM_DETAILS_POINTERS } from '../lib/problemDetailsPointers.ts';
 
 import type { NoteBodyMarkdownChangeOptions } from './note-body-editor/note-body-editor-props';
@@ -52,6 +54,7 @@ const NoteEditorPage = () => {
     () => `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
   );
   const { currentUser } = useAuth();
+  const { showError } = useAppSnackbar();
   const queryClient = useQueryClient();
   const { data: note, isLoading, isError, error } = useContentItem(noteId);
   const suppressBodySignedUrlFetchAfterSave =
@@ -234,15 +237,30 @@ const NoteEditorPage = () => {
     });
   }, [clearAutosaveDebounce]);
 
+  const handleImageUploadError = useCallback(
+    (uploadError: unknown) => {
+      showError(
+        getErrorMessageOr(uploadError, 'Could not upload image. Try again.')
+      );
+    },
+    [showError]
+  );
+
   const { imageUploadHandler, imagePreviewHandler, uploadImageAttachment } =
-    useNoteImageHandlers(currentUser, noteId, flushSaveAfterImageInsert);
+    useNoteImageHandlers(
+      currentUser,
+      noteId,
+      flushSaveAfterImageInsert,
+      handleImageUploadError
+    );
 
   const noteImageUploadContextValue = useMemo(
     () => ({
       uploadImageAttachment,
       onImageInserted: flushSaveAfterImageInsert,
+      onUploadError: handleImageUploadError,
     }),
-    [uploadImageAttachment, flushSaveAfterImageInsert]
+    [uploadImageAttachment, flushSaveAfterImageInsert, handleImageUploadError]
   );
 
   const shouldBlockNavigation = useCallback<BlockerFunction>(() => {

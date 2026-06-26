@@ -558,6 +558,22 @@ describe('ContentController', () => {
     expect(children).toHaveLength(0);
   });
 
+  it(`GET ${fixture.API_CONTENT}/:id/children?attachments=true lists image attachments under a note`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'With images', root.id);
+    const image = await fixture.seedImage(fixture.TEST_USER_ID, 'image1.png', note.id);
+
+    const response = await fixture
+      .callApiGetContentByParentId(fixture.TEST_USER_ID, note.id, { attachments: true })
+      .expect(HttpStatus.OK);
+
+    const attachments = response.body as Array<{ id: string; type: string; name: string }>;
+    expect(attachments).toHaveLength(1);
+    expect(attachments[0].id).toBe(image.id);
+    expect(attachments[0].type).toBe('image');
+    expect(attachments[0].name).toBe('image1.png');
+  });
+
   it(`GET ${fixture.API_CONTENT}/:id/body streams image bytes with Content-Type`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
     const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Doc', root.id);

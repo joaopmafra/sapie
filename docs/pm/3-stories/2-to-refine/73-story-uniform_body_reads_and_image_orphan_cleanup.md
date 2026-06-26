@@ -8,8 +8,10 @@ body read path for notes and attachments with consistent caching behaviour.
 ## Details
 
 This story implements **research Phase F**: migrate **note markdown** loads off client signed URLs to `GET …/body`
-through the Service Worker + IndexedDB registry + versioned cache ([Story 72](72-story-content_body_read_via_service_worker.md)),
-soft-delete **orphan image** attachments when no longer referenced in note markdown, and extend note deletion cascade for
+through the Service Worker + IndexedDB registry + versioned
+cache ([Story 72](72-story-content_body_read_via_service_worker.md)),
+soft-delete **orphan image** attachments when no longer referenced in note markdown, and extend note deletion cascade
+for
 image children (building on [Story 64](../1-ready/64-story-content_deletion.md)).
 
 **Research:**
@@ -34,7 +36,8 @@ image children (building on [Story 64](../1-ready/64-story-content_deletion.md))
 ## Acceptance Criteria
 
 - [ ] Opening a note loads markdown via `GET …/body` through the SW (not `GET …/body/signed-url` + direct GCS fetch).
-- [ ] Rename-only metadata refetch does not force redundant note body download (same `body.updatedAt` → cache hit or 304).
+- [ ] Rename-only metadata refetch does not force redundant note body download (same `body.updatedAt` → cache hit or
+  304).
 - [ ] Removing an embedded image from the editor and autosaving soft-deletes the orphaned `image` content record.
 - [ ] Deleting a note soft-deletes its `image` attachment children (when Story 64 is complete).
 - [ ] Client no longer calls `GET …/body/signed-url` for note body loads.
@@ -45,6 +48,9 @@ image children (building on [Story 64](../1-ready/64-story-content_deletion.md))
 - Content versioning / Trash UI ([content_versioning.md](../../../research/content_versioning.md))
 - Permanent Cloud Storage deletion of soft-deleted bodies
 - Workbox migration (optional follow-up from Story 72 Phase G)
+- MIME/type pairing validation on image uploads (deferred from Story 71)
+- Separate upload size limits for note bodies vs inline images (deferred from Story 71)
+- `GET /api/config` for client-visible limits (deferred from Story 71)
 
 ## Technical Requirements
 
@@ -73,6 +79,12 @@ image children (building on [Story 64](../1-ready/64-story-content_deletion.md))
 - [ ] **[BE] Extend note/folder deletion cascade**
     - Soft-delete `image` attachment children when a note is deleted (Story 64 integration).
 
+- [ ] **[BE] Revisit the "attachments" option of the content API**
+    - When implementing story 71, we implemented a new `attachments` option on the content API. Later on we decided to
+      change the implementation in a way that the option would no longer be needed, but we decided to keep it because it
+      could be useful in this story.
+    - Remove the `attachments` option from the content API if it is not useful for this story.
+
 ### Frontend
 
 - [ ] **[FE] Migrate note body load to uniform path**
@@ -91,7 +103,8 @@ image children (building on [Story 64](../1-ready/64-story-content_deletion.md))
 
 - [ ] **[DOCS]** ADR 0002 amendment.
 - [ ] **[DOCS]** OpenAPI update for orphan cleanup contract.
-- [ ] **[DOCS]** Mark Phase F complete in [note_image_embedding.md](../../../research/note_editor/note_image_embedding.md).
+- [ ] **[DOCS]** Mark Phase F complete
+  in [note_image_embedding.md](../../../research/note_editor/note_image_embedding.md).
 
 ## References
 

@@ -1,8 +1,9 @@
 import { createContext, useContext } from 'react';
 
 export type NoteImageUploadActions = {
-  uploadImageAttachment: (file: File, nameStem?: string) => Promise<string>;
+  uploadImageAttachment: (file: File) => Promise<string>;
   onImageInserted: () => void;
+  onUploadError: (error: unknown) => void;
 };
 
 export const NoteImageUploadContext =
