@@ -1,17 +1,19 @@
 # Note image embedding (research)
 
-**Status:** **Agreed** for implementation via [iterative phases A–G](#iterative-phases-simple--final). **Phase A** scope confirmed (2026-06-25).
+**Status:** **Agreed** — domain model and API shape settled (2026-06-26). Implementation via [iterative phases A–G](#iterative-phases-simple--final).
 
-**Stories:** 
-- [71 — Inline images in notes](../../pm/5-done/71-story-inline_images_in_notes.md) (Phase A)
+**Stories:**
+
+- [71 — Inline images in notes](../../pm/5-done/71-story-inline_images_in_notes.md) — Phase A skateboard (interim `ContentType.IMAGE`; superseded by Story 74)
+- [74 — Dedicated attachment storage model](../../pm/3-stories/1-ready/74-story-dedicated_attachment_storage_model.md) — refactor to subcollection + note-scoped API (**next**)
 - [72 — Content body read via SW](../../pm/3-stories/2-to-refine/72-story-content_body_read_via_service_worker.md) (Phases B–E)
 - [73 — Uniform reads and orphan cleanup](../../pm/3-stories/2-to-refine/73-story-uniform_body_reads_and_image_orphan_cleanup.md) (Phase F)
-- [74 - Dedicated attachment storage model](../../pm/3-stories/2-to-refine/74-story-dedicated_attachment_storage_model.md) (Phase G)
+- [65 — Note body concurrency](../../pm/3-stories/2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md) — full conflict UX (may overlap revision token with Story 74)
 
 **Related**
 
-- [MVP objective — attachment model](../../plans/mvp_objective.md) (decks/images as children of notes; sidebar folders + notes only)
-- [Content naming](../../dev/content_naming.md) (metadata vs content body)
+- [MVP objective — attachment model](../../plans/mvp_objective.md) (decks as content children; images as note attachments)
+- [Content naming](../../dev/content_naming.md) (content vs attachment vs body)
 - [ADR 0002 — note body storage and API](../../adr/0002-note-body-storage-and-api.md) (two-step create, signed read URLs, Storage layout)
 - [Story 64 — content deletion](../../pm/3-stories/1-ready/64-story-content_deletion.md) (soft-delete, cascade)
 - [Iterative development](../../dev/iterative_development.md)
@@ -22,286 +24,244 @@ Support **inline images** in the note editor (MDXEditor):
 
 - Pick an image from the device (file picker)
 - Paste from clipboard (e.g. screenshots)
-- Store each image as its own **content** record in Firestore, with **`parentId = noteId`**
+- Store each image as a **note attachment** (whole–part with the note), not as tree **content**
 - Keep the **sidebar tree unchanged** — note nodes stay leaves (no expand chevron)
 
-## Feasibility
+## Domain model: composition vs aggregation
 
-**Yes.** The existing content model (`parentId`, `PUT …/body` for binary payloads, Cloud Storage at `{ownerId}/content/{contentId}`) already supports this. The sidebar already treats notes as leaves regardless of Firestore children. Main work: new `image` content type, parent-type rules, editor upload/render plumbing, upload limits, and (later) orphan cleanup on save.
+Notes relate to two different kinds of children:
+
+| Child | Relationship | User edits? | Versioning | On note delete |
+|-------|-------------|-------------|------------|----------------|
+| **Image attachment** | **Composition** (whole–part) | No — immutable blob | None | Cascade silently (no extra prompt) |
+| **Deck (content child)** | **Aggregation** (container) | Yes — cards change constantly | Note versions do **not** version decks | Block until no deck children, **or** user confirms cascade in delete dialog |
+
+Inline images are **non-editable parts** of the note aggregate. Flashcard decks are **named content children** the user maintains independently. Do not model both the same way.
+
+**Deferred (out of scope for attachment refactor):** trash UI, content versioning snapshots, MCP write paths, physical GCS delete. “Delete” below means whatever mechanism we implement later (soft-delete, trash, or hard delete).
 
 ## Content hierarchy rules
 
-Only some types may have children. This extends the current rule that **folders cannot be created under notes**.
+Only some types may have **content** children (tree / named children). **Attachments** are a separate Firestore subcollection under notes.
 
-### Who can be a parent
+### Who can be a parent (content tree)
 
-| Parent type | Allowed child types | Notes |
-|-------------|---------------------|-------|
+| Parent type | Allowed **content** child types | Notes |
+|-------------|--------------------------------|-------|
 | `directory` | `directory`, `note` | Tree navigation only |
-| `note` | `image` (now); `deck` and others later | Attachments — **not** shown in sidebar tree |
+| `note` | `deck` (future), other named types | **Content** children — Attachments section in note editor, not sidebar |
 | `deck` (future) | `card` (future) | Attachment subtree; not in sidebar tree |
+
+### Attachments (not content)
+
+- **Inline images** — Firestore subcollection `content/{noteId}/attachments/{attachmentId}`; bytes in Cloud Storage.
+- **Not** `ContentType.IMAGE` in the `content` collection.
+- **Not** listed via `GET …/children`.
 
 ### Who cannot be a parent
 
-- `image` — leaf; body is image bytes only
 - `card` (future) — leaf
+- Attachment records — leaf (body is image bytes only)
 
-### Tree vs attachment children
+### Tree vs attachment vs content children
 
-- **Tree children** (sidebar): `directory`, `note` only — queried when building the explorer.
-- **Attachment children** (note-owned): `image`, future `deck`, etc. — loaded by the note editor, not the sidebar.
+- **Tree children** (sidebar): `directory`, `note` only — `GET /api/content/:id/children`.
+- **Content children** (note-owned, named): e.g. `deck` — `GET /api/content/:id/children` when deck ships (same query, filtered by type).
+- **Attachments** (note-owned, immutable blobs): subcollection; loaded by note editor / reconcile on save — **not** the children API.
 
 ### Explicit non-goals for tree shape
 
-- **No note-under-note** in the folder tree. Notes are created only under `directory` parents (enforce on `POST` when `type: note`).
+- **No note-under-note** in the folder tree (`POST type: note` → parent must be `directory`).
 - **No folder-under-note** (already enforced).
 
-## What already exists in the codebase
+## Attachment storage (settled)
 
-- **Storage:** `PUT /api/content/:id/body` accepts raw bytes; OpenAPI lists `image/png`, `image/jpeg`; object path `{ownerId}/content/{contentId}` ([`ContentBodyStorageService`](../../../packages/api/src/content/services/content-body-storage.service.ts)).
-- **Children query:** `GET /api/content/:id/children` — tree listing filtered to `directory` + `note`; `?attachments=true` returns `image` children under a note.
-- **Sidebar:** [`build-content-tree.ts`](../../../packages/web/src/lib/content/build-content-tree.ts) sets `children: undefined` for non-directories; [`ContentExplorer`](../../../packages/web/src/components/ContentExplorer.tsx) only fetches children for expanded **directory** IDs.
-- **Editor:** [`RichNoteBodyEditor`](../../../packages/web/src/pages/note-body-editor/RichNoteBodyEditor.tsx) uses MDXEditor without `imagePlugin` yet. `@mdxeditor/editor` supports `imagePlugin` + `imageUploadHandler` for file pick, paste, and drag-and-drop.
+### Firestore
 
-## Cross-cutting decisions
+Subcollection under the note document:
 
-- **Deletion:** When [Story 64](../../pm/3-stories/1-ready/64-story-content_deletion.md) lands, deleting a note must soft-delete its attachment children; folder cascade must include descendants’ attachments. Cloud Storage cleanup remains deferred with versioning.
-- **MIME types:** Extend server allow-list (e.g. `image/webp`) and/or normalize on client.
-- **Size limits:** 1–2 MB via backend constant (same limit for note markdown and images in Phase A); expose to client via a config endpoint when the UI needs to validate before upload — **deferred** (Story 71 duplicates limit in client pre-check).
-- **MIME validation:** Allow-list on `Content-Type` only; byte/MIME pairing validation deferred.
-- **Orphans:** Do **not** soft-delete removed images on every keystroke. On **note body save**, the client sends child IDs to remove; the server soft-deletes them in the same operation (see [Orphan cleanup](#orphan-cleanup)). **Deferred to Phase F** (with Story 64); Phase A may leave orphan image records if upload succeeds but note save fails.
-- **Sidebar safety:** Keep notes as non-expandable leaves in `build-content-tree`; do not add note IDs to `expandedNodeIds`; filter tree child queries to `directory` + `note` (API or client). Can land with Phase A backend work.
-- **Attachment names (Phase A interim):** Inline images are `type: image` **content** records for reuse of `PUT …/body` and GCS layout. **`content.name` is an opaque implementation detail** (`image-{random}.ext`) — not shown in the UI. User identity for an embedded image is **`contentId` in markdown**, not the name. See [Attachment storage model (future)](#attachment-storage-model-future).
+```text
+content/{noteId}/attachments/{attachmentId}
+```
 
-### Out of scope
+**Attachment document fields (draft):**
 
-- **Content versioning** / trash UI ([content_versioning.md](../content_versioning.md)) — design should not block it, but no implementation now.
-- **MCP** — attachment model aligns with future `createImage(parentId: noteId)`; details later.
+- `mimeType`, `size`, `createdAt`, `updatedAt`
+- `uri` — internal GCS object key (not exposed on HTTP metadata DTO)
 
-## Attachment storage model (future)
+**Attachment id:** globally unique UUID (within owner scope). Markdown references `{noteId}` + `{attachmentId}`.
 
-**Status:** **Open** — tracked as [Story 74](../../pm/3-stories/2-to-refine/74-story-dedicated_attachment_storage_model.md).
+### Cloud Storage
 
-Phase A stores inline images as **`type: image` content** children of the note (`parentId = noteId`). That reuses the existing body pipeline (`POST` metadata → `PUT …/body` → `GET …/body`) and keeps per-blob metadata (`body.size`, `mimeType`, `updatedAt`) on a first-class record — useful for caching, orphan cleanup, and future storage accounting.
+Object path (draft, amend in Story 74 if needed):
 
-**Problem:** Tree **content names** exist for user navigation. Inline images are not in the sidebar; forcing them through sibling **name uniqueness** produced meaningless names and UX friction. The likely long-term model is **not** tree content:
+```text
+{ownerId}/content/{noteId}/attachments/{attachmentId}
+```
 
-- **Firestore subcollection** under the note (e.g. `content/{noteId}/attachments/{attachmentId}`), or
-- A **top-level attachments collection** keyed by note + attachment id, or
-- An **`attachments[]` array** on the note document (simpler, but doc-size and concurrent-write limits).
+Same default bucket as note bodies; provider-agnostic `uri` in Firestore.
 
-**Why deferred:** A dedicated attachment store would duplicate cross-cutting behaviour already planned for **content** — especially [content versioning](../content_versioning.md) (snapshots, soft-delete), MCP write paths, and cascade delete ([Story 64](../../pm/3-stories/1-ready/64-story-content_deletion.md)). Reusing `content` for Phase A avoids building that twice before requirements settle (e.g. whether **decks** are tree children vs note attachments).
+### Why subcollection (not embedded array)
 
-**Not a migration blocker:** The app is pre-production (no production environment yet). When Story 74 lands, existing dev/staging image records can be reshaped or dropped without a user migration programme.
+- Avoids Firestore 1 MB document limit as attachment count grows.
+- Slightly more work than an embedded array, but no migration if metadata grows (dimensions, alt text, future types).
+- Pre-production — no migration programme; Story 71 interim `ContentType.IMAGE` records can be dropped.
 
-**Decision inputs for Story 74:**
+## API (settled)
 
-- Split **body-inline attachments** (`image`) from **named note children** (future `deck`?) clearly.
-- Keep a uniform **`GET …/body`** read URL shape where possible (markdown already stores `/api/content/{id}/body`).
-- Prefer subcollection over parent-doc array if notes may have many images.
-- Align with versioning + orphan cleanup ([Story 73](../../pm/3-stories/2-to-refine/73-story-uniform_body_reads_and_image_orphan_cleanup.md)) in one design pass.
+All routes live under the **`/api/content`** namespace.
 
-## Iterative phases (simple → final)
+| Method | Route | Purpose |
+|--------|-------|---------|
+| `POST` | `/api/content/:noteId/attachments` | Create attachment metadata (`:noteId` must be type `note`, owned by caller) |
+| `PUT` | `/api/content/:noteId/attachments/:attachmentId/body` | Upload image bytes; size/MIME limits |
+| `GET` | `/api/content/:noteId/attachments/:attachmentId/body` | Authenticated stream (200 + `Content-Type`; ETag/304 in Phase B) |
+| `PUT` | `/api/content/:noteId/body` | Save note markdown + **revision check** + **attachment reconcile** (same request) |
 
-Delivery follows [iterative_development.md](../../dev/iterative_development.md) and the [note editor phased example](../../dev/iterative_development_example_note_editor.md): **each phase is a vertical slice**, not a layer that sits unused until the end.
-
-Notes keep **signed URLs** until **Phase F** explicitly migrates them.
-
-### Phase A — Images work without Service Worker (skateboard)
-
-**Status:** **Implemented** (Phase A — Story 71, 2026-06-26).
-
-**Goal:** User can upload/paste an image in a note; it persists and displays after reload.
-
-**Backend**
-
-- `ContentType.IMAGE`; parent validation (`image` under `note`; `note` under `directory` only).
-- Upload size limit constant on `PUT …/body`.
-- `POST` image metadata + `PUT` image bytes.
-- `GET /api/content/:id/body` — **stream only** (200 + `Content-Type`; **no ETag / 304 yet**).
-- Tree `GET …/children` returns folders + notes only; `?attachments=true` lists inline `image` children (listing / orphan cleanup).
-
-**Frontend**
-
-- `imagePlugin` + upload handler; persist `/api/content/{imageId}/body` in markdown (respect `VITE_API_BASE_URL` when not same-origin).
-- **Display:** main-thread authenticated `fetch` to `GET …/body` → **`blob:` URL** for MDXEditor. **No Service Worker.**
-- **Naming:** opaque auto-generated `content.name` (`image-{random}.ext`); no user-facing name field; retry on 409.
-- **Errors:** global snackbar for paste/drag/dialog upload failures (visible above insert dialog).
-- **Notes:** unchanged (signed URL load path).
-
-**Not in Phase A:** Service Worker, IndexedDB registry, 304, orphan cleanup, Workbox, migrating note body off signed URLs, MIME byte validation, separate note vs image size limits, `GET /api/config` for limits.
-
-**Demonstrable:** paste screenshot, save note, reload, image visible; sidebar tree unchanged.
-
-### Phase B — Cheap revalidation on the server
-
-- Add **`ETag`** from `body.updatedAt` and **`If-None-Match` → 304** on `GET …/body` (no GCS read on 304).
-- Image display still via main-thread fetch (send `If-None-Match` from TanStack metadata when opening the note).
-
-**Demonstrable:** reload note with images; network tab shows 304s instead of full body streams.
-
-### Phase C — Service Worker auth proxy only
-
-- Minimal SW: intercept `GET …/body`, inject Bearer token, **network-only** (no Cache API).
-- Switch MDXEditor to bare markdown URLs (remove blob resolver).
-- **Notes:** still signed URLs.
-
-**Demonstrable:** images load via `<img src>` with SW.
-
-### Phase D — Versioned body cache in Cache Storage
-
-- Cache API key: **`{contentId}:{bodyUpdatedAt}`** (from response `ETag`).
-- On `PUT …/body` success: **`postMessage` `EVICT_BODY`** + update TanStack metadata.
-- Optional: migrate note body load from signed URL to `GET …/body` through SW.
-
-**Demonstrable:** reopen note/images; cache hits for unchanged `body.updatedAt`.
-
-### Phase E — Metadata registry in IndexedDB
-
-- SW reads **`body.updatedAt`** from IDB before body fetch (for bare `<img src>` without `If-None-Match`).
-- See [Metadata registry](#metadata-registry-indexeddb).
-
-**Demonstrable:** bare image URLs hit cache using registry without an extra body round-trip.
-
-### Phase F — Uniform body reads; deprecate client signed URLs
-
-- Notes and images use one read path through SW + registry + versioned cache.
-- Remove signed-url client flow from `useNoteBody` / `NoteEditorPage`; amend [ADR 0002](../../adr/0002-note-body-storage-and-api.md).
-- Orphan cleanup on note save (Story 64 soft-delete when available).
-
-### Phase G — Workbox (optional hardening)
-
-Introduce [Workbox](https://developer.chrome.com/docs/workbox) **only when** Phase C–D logic outgrows a maintainable hand-written SW. See [Workbox vs hand-written SW](#workbox-vs-hand-written-sw).
-
-**Tests:** backend classical tests per phase; frontend tests when SW/cache behaviour is non-trivial.
-
-## Target architecture (Phases B–F)
-
-Phase A uses a subset of this. The sections below describe the **end state** after later phases.
+**Remove** (Story 74): `ContentType.IMAGE`, `POST /api/content` with `type: image`, `GET …/children?attachments=true`.
 
 ### Persisted markdown
 
-After image upload, `imageUploadHandler` returns a stable URL embedded in markdown:
+After upload, `imageUploadHandler` returns a stable URL embedded in markdown:
 
 ```markdown
-![alt text](/api/content/{imageId}/body)
+![alt text](/api/content/{noteId}/attachments/{attachmentId}/body)
 ```
 
-Never persist signed URLs in markdown.
+Respect `VITE_API_BASE_URL` when not same-origin. Never persist signed URLs in markdown.
 
-### `GET /api/content/:id/body`
+### Upload-before-save
 
-Authenticated read for **any** content body (note markdown or image bytes).
+1. Client `POST …/attachments` then `PUT …/attachments/:id/body` → receives `attachmentId`; user sees preview via blob URL (Phase A) or bare URL (Phase C+).
+2. Client autosaves note markdown (references attachment URL) via `PUT …/body` with **`expectedRevision`**.
+3. Server atomically: verify revision, write markdown to GCS, update note `body` metadata, **reconcile** attachment subcollection (delete docs — and eventually GCS — not referenced in markdown).
 
-| Phase | Behaviour |
-|-------|-----------|
-| A | Stream from GCS (200) |
-| B+ | **`ETag`** from `body.updatedAt`; **`If-None-Match` → 304** without GCS read; **`Cache-Control: private, no-cache`** (SW owns caching) |
+If step 3 returns **409** (stale revision), client deletes the attachment it just uploaded (GCS + subcollection doc). No server `pending` / orphan flag for MVP; add only if production failures warrant it.
 
-Eventually replaces client **`GET …/body/signed-url`** for all body loads (Phase F). Signed URLs may remain a **server-internal** optimization.
+### Optimistic locking (`PUT …/body`)
+
+- Client sends **`expectedRevision`** — the `body.updatedAt` ISO string from metadata at load time or last successful save (exact header/body field shape decided in Story 74; align with [Story 65](../../pm/3-stories/2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md) for full conflict UX).
+- Server rejects with **409** when stored `body.updatedAt` differs.
+- Attachment reconcile runs in the **same** operation as markdown save so body and attachment set stay consistent.
+
+**MVP on conflict:** short autosave debounce limits lost work; surface a snackbar that save failed (full reload/overwrite UX deferred to Story 65).
+
+### Orphan cleanup on save
+
+Server parses markdown for `/api/content/{noteId}/attachments/{attachmentId}/body` (and same-origin absolute variants). Deletes attachment subcollection documents under that note that are **not** referenced. Runs inside the conditional `PUT …/body` — client does **not** send explicit `deleteChildIds` lists.
+
+Idempotent on autosave retry. Unreferenced attachments from failed saves (409) are primarily cleaned by **client** after conflict; reconcile on next successful save catches stragglers.
+
+## Delete semantics (settled)
+
+| Action | Attachments (images) | Content children (e.g. decks) |
+|--------|---------------------|------------------------------|
+| Delete **note** | Cascade with note (no extra prompt) | Block if deck children exist, **or** confirm cascade in dialog |
+| Delete **folder** | Cascade with all descendant notes | Cascade entire subtree after user confirms folder delete (includes notes, decks, attachments) |
+
+Cloud Storage cleanup timing follows Story 64 / versioning (soft-delete first; permanent delete deferred).
+
+## Cross-cutting decisions
+
+- **MIME types:** Allow-list on `Content-Type`; byte/MIME pairing validation deferred.
+- **Size limits:** 1–2 MB via backend constant on attachment `PUT …/body`; expose via `GET /api/config` deferred.
+- **Sidebar safety:** Notes remain non-expandable leaves; tree `GET …/children` returns `directory` + `note` only (and later named content types like `deck` — **not** attachments).
+- **Story 71 interim:** Phase A used `ContentType.IMAGE` and `/api/content/{imageId}/body` — replace in Story 74.
+
+### Out of scope
+
+- Content versioning / trash UI ([content_versioning.md](../content_versioning.md))
+- MCP attachment write paths
+- Server-side orphan TTL sweeper (`pending` flag)
+
+## What Story 71 shipped (interim — to remove in Story 74)
+
+Story 71 proved the editor flow using **`type: image` content** children (`parentId = noteId`), opaque `content.name`, `GET …/children?attachments=true`, and `/api/content/{imageId}/body`. That implementation is **technical debt**; Story 74 refactors to this document’s model. Dev/staging data may be dropped.
+
+## Iterative phases (simple → final)
+
+Notes keep **signed URLs** until **Phase F** (Story 73) migrates note markdown off them.
+
+### Phase A — Images work without Service Worker (skateboard)
+
+**Status:** **Implemented** with interim content model (Story 71, 2026-06-26). **Refactor** to subcollection model: Story 74.
+
+**Goal:** User can upload/paste an image; it persists and displays after reload.
+
+**Target behaviour after Story 74:**
+
+- Attachment subcollection + routes above; no `ContentType.IMAGE`.
+- `PUT …/body` with `expectedRevision` + attachment reconcile.
+- Display: main-thread authenticated `fetch` → **`blob:` URL** for MDXEditor (no Service Worker).
+- Upload errors: global snackbar above insert dialog.
+
+**Not in Phase A / 74:** Service Worker, IndexedDB registry, 304, full conflict UX (Story 65), Workbox, versioning, MCP.
+
+### Phase B — Cheap revalidation on the server
+
+- **`ETag`** from `body.updatedAt` and **`If-None-Match` → 304** on `GET …/body` (note bodies and attachment bodies).
+
+### Phase C — Service Worker auth proxy only
+
+- Minimal SW: intercept `GET …/body` and `GET …/attachments/…/body`, inject Bearer token, network-only.
+
+### Phase D — Versioned body cache in Cache Storage
+
+- Cache key `{resourceId}:{bodyUpdatedAt}`; `EVICT_BODY` on successful `PUT`.
+
+### Phase E — Metadata registry in IndexedDB
+
+- Registry keys for note `contentId` and attachment ids (or note-scoped attachment metadata fetch on open).
+
+### Phase F — Uniform body reads; deprecate client signed URLs (Story 73)
+
+- Notes and attachments use one read path through SW + registry + versioned cache.
+- Orphan cleanup already on save (Story 74); Story 73 adds uniform **read** path and note-delete attachment cascade with Story 64.
+
+### Phase G — Workbox (optional hardening)
+
+Introduce Workbox only when Phase C–D logic outgrows a maintainable hand-written SW.
+
+## Target architecture (Phases B–F)
 
 ### Uniform read path and cost
 
-One route serves note markdown and images — the SW cannot know the type before fetch. **Do not** use separate “image-only” interception.
-
-Repeat reads must hit the SW cache or return **304**; otherwise streaming every body through Firebase Functions is costlier than today’s note path (signed-url API call + direct GCS fetch). Cache key: **`{contentId}:{bodyUpdatedAt}`**.
+One route pattern family serves note markdown and attachment bytes. Repeat reads must hit SW cache or **304**. Cache key: **`{id}:{body.updatedAt}`**.
 
 ### Service Worker (Phase C+)
 
-- Intercept all **`GET /api/content/:id/body`**; inject **`Authorization`** from token via `postMessage` (on login, refresh, and SW `activate`).
-- Phase C: network-only. Phase D+: versioned Cache API. Phase E+: IDB lookup before fetch.
-- `<img src>` subresource requests do not send Bearer tokens — that is why the SW exists ([intercept-network-call-replace.md](../intercept-network-call-replace.md) `fetch` patching is **not** sufficient).
+Intercept **`GET /api/content/:id/body`** and **`GET /api/content/:noteId/attachments/:attachmentId/body`**; inject **`Authorization`** via `postMessage`.
 
-**Token / cache flow (Phase E+):**
+### Metadata registry (IndexedDB) — Phase E
 
-```text
-Main thread                          Service Worker / IDB
-───────────                          ───────────────────
-metadata fetch / PUT success  ──►    IDB bodyVersions upsert
-onAuthStateChanged            ──►    postMessage SET_TOKEN
-PUT …/body success            ──►    postMessage EVICT_BODY + IDB update
-GET …/body                    ──►    IDB lookup → cache[id:etag] or fetch+Authorization
-```
-
-No Service Worker exists in the project today — net-new, scoped to `GET …/body`.
-
-**Post-MVP:** server or SW may switch upstream to signed GCS URLs without changing markdown or client URL paths.
-
-## Metadata registry (IndexedDB)
-
-Phase E. Minimal records for SW cache resolution — not a full duplicate of TanStack.
-
-```text
-Database: sapie-content-registry (IndexedDB)
-Store:    bodyVersions
-Key:      contentId
-Value:    { bodyUpdatedAt: string | null, mimeType?: string }
-```
-
-**Writers (main thread):** write-through from content hooks on metadata fetch/update; when a note opens, parse markdown for `/api/content/{id}/body` and ensure those ids are registered (batch metadata fetch if missing).
-
-**Reader (SW):**
-
-1. Read `bodyUpdatedAt` from IDB for `contentId`.
-2. Cache hit on `{contentId}:{bodyUpdatedAt}` → return body.
-3. Else fetch with `If-None-Match`; store on 200.
-4. **Registry miss:** `GET /api/content/:id` (metadata only) to populate IDB, then retry.
-
-Use **[`idb`](https://github.com/jakearchibald/idb)**; share one module between app and ES-module SW (Vite). Clear IDB on logout (same auth boundary as Story 55 cache invalidation).
-
-## Workbox vs hand-written SW
-
-Use the browser **Cache API** in all cases; Workbox wraps it.
-
-- **Phase A–B:** no SW
-- **Phase C:** hand-written SW (~30–50 lines: route match, token, `fetch`)
-- **Phase D–E:** evaluate Workbox if cache + IDB logic is hard to test
-- **Phase G:** Workbox with custom strategy/plugins **if** the hand-written SW becomes a maintenance burden
-
-[Workbox](https://developer.chrome.com/docs/workbox) helps with routing, strategy plugins, quota, and logging — but auth injection and IDB-backed cache keys still need custom code. Do **not** use precaching or app-shell defaults.
-
-## Orphan cleanup
-
-Deferred to **Phase F** (depends on Story 64 soft-delete).
-
-On note body save, parse markdown for `/api/content/{id}/body` references. Soft-delete attachment child IDs no longer referenced. API shape TBD:
-
-- Extend **`PUT /api/content/:noteId/body`** with optional `deleteChildIds` / `retainedChildIds`, **or**
-- Dedicated route (e.g. `PATCH …/attachments`) in the same autosave turn.
-
-Requirements: only ids that are **children of the note** and **owned by the user**; idempotent on autosave retry; align with Story 64 fields (`deleted`, `deletedAt`, `deletedBy`).
+Extend registry to attachment `body.updatedAt` values. When a note opens, parse markdown for attachment URLs and ensure registry entries exist.
 
 ## Backend and frontend work (reference)
 
-Summary of work items; **phase column** is the first phase that needs each item.
-
-| Item | Phase |
-|------|-------|
-| `ContentType.IMAGE`, parent validation, repository | A |
-| Size limit constant on `PUT …/body` | A |
-| `GET …/body` stream | A |
-| `GET …/body` ETag + 304 | B |
-| Sidebar `GET …/children` filter (`directory` + `note`) | A |
-| MDXEditor `imagePlugin` + upload handler | A |
-| Service Worker auth proxy | C |
-| Versioned Cache API | D |
-| IndexedDB metadata registry | E |
-| Uniform reads; deprecate client signed URLs | F |
-| Orphan cleanup API | F |
+| Item | Phase / Story |
+|------|----------------|
+| Attachment subcollection + API; remove `ContentType.IMAGE` | 74 |
+| `PUT …/body` revision + attachment reconcile | 74 |
+| Size limit on attachment body upload | 74 |
+| `GET …/body` ETag + 304 | B / 72 |
+| MDXEditor `imagePlugin` + upload handler | 71 (rewire in 74) |
+| Service Worker auth proxy | C / 72 |
+| Versioned Cache API | D / 72 |
+| IndexedDB metadata registry | E / 72 |
+| Uniform note reads; deprecate signed URLs | F / 73 |
+| Note/folder delete cascade (attachments + content children rules) | 64 |
 | Workbox (optional) | G |
 
 ## Risks
 
-- **Phase A without orphan cleanup:** upload succeeds but note save fails → orphan image record until Phase F.
-- **Function + GCS cost on cache miss (Phase D+):** each new `body.updatedAt` streams once; mitigated by TanStack in-session note cache.
-- **Auth + SW:** token must stay in sync with Firebase refresh; fallback needed if SW inactive.
-- **304:** server must compare `If-None-Match` to Firestore `body.updatedAt` without reading GCS on match.
-- **MDXEditor normalization:** image syntax may interact with save-loop concerns ([save_loop observation](./save_loop_after_note_switch_observation.md)).
+- **409 on autosave:** user may lose last edit window; mitigated by short debounce; Story 65 adds explicit recovery UX.
+- **Upload succeeds, save conflicts:** client must delete staged attachment; reconcile on next save catches orphans.
+- **Function + GCS cost on cache miss (Phase D+):** mitigated by TanStack in-session cache.
+- **MDXEditor normalization:** may interact with save-loop concerns ([save_loop observation](./save_loop_after_note_switch_observation.md)).
 
 ## Change log
 
 - **2026-06-25:** Initial research; hierarchy rules; cross-cutting decisions.
-- **2026-06-25:** Stable `/api/content/:id/body` in markdown; uniform read path with SW + versioned cache + 304; IndexedDB registry; iterative phases A–G; Phase A confirmed (blob display, notes on signed URLs, no SW).
-- **2026-06-25:** Doc consolidation — removed duplicate sections, fixed deck hierarchy, aligned all sections with phased delivery.
-- **2026-06-26:** Phase A implemented (Story 71): `ContentType.IMAGE`, `GET …/body` stream, 2 MB upload limit, tree children filter, `?attachments=true`, opaque attachment naming, MDXEditor upload + blob preview, upload error snackbar.
-- **2026-06-26:** Documented future [attachment storage model](#attachment-storage-model-future) (Story 74) — likely subcollection/collection vs interim `type: image` content; pre-production, no migration programme required.
+- **2026-06-25:** Stable body URLs in markdown; uniform read path with SW + versioned cache + 304; iterative phases A–G.
+- **2026-06-26:** Phase A implemented (Story 71) with interim `ContentType.IMAGE` model.
+- **2026-06-26:** **Domain model settled:** attachments as Firestore subcollection (composition); decks as content children (aggregation); `/api/content/:noteId/attachments` API; `PUT …/body` with revision + reconcile; delete rules; Story 74 is the refactor; Story 71 interim superseded.

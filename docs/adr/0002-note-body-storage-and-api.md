@@ -96,7 +96,18 @@ and clients can still `fetch(signedUrl)`. Production continues to use real **V4 
 
 - `docs/pm/4-in-progress/55-story-note_content_editor.md` — product scope and acceptance criteria
 - `docs/pm/4-in-progress/66-story-content_body_subdocument_and_client_cache.md` — nested `body`, cache policy
+- `docs/research/note_editor/note_image_embedding.md` — inline images, attachment subcollection, body read phases
+- `docs/pm/3-stories/1-ready/74-story-dedicated_attachment_storage_model.md` — attachment API + `expectedRevision` on note body PUT
 - `docs/dev/unit_testing_sapie.md` — test-unit ports, Storage emulator, optional fake
 - `docs/dev/unit_testing_strategy.md` — Classical vs mockist, layered Nest testing
 - `docs/adr/0001-firebase-emulators-docker-compose.md` — Compose profiles and port discipline
 - `packages/api/README.md` — `FIREBASE_STORAGE_*` env vars and test behavior
+
+## Planned amendments (not yet accepted)
+
+- **Story 74:** Note **attachments** use subcollection storage and
+  `GET/PUT /api/content/:noteId/attachments/:attachmentId/body` — separate from tree `content` body routes.
+- **Story 74:** `PUT /api/content/:noteId/body` gains **`expectedRevision`** (optimistic lock on `body.updatedAt`) and
+  attachment reconcile in the same request.
+- **Story 72–73:** Client read path migrates from signed URLs to authenticated `GET …/body` via Service Worker for
+  notes and attachments; amend this ADR when Story 73 closes.

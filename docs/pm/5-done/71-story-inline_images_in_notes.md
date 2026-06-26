@@ -1,5 +1,11 @@
 # Story 71: Inline images in notes
 
+> **Historical note (2026-06-26):** This story shipped Phase A using an **interim** model (`ContentType.IMAGE` content
+> children). Domain review concluded inline images should be **note attachments** (subcollection), not tree content.
+> [Story 74](../3-stories/1-ready/74-story-dedicated_attachment_storage_model.md) refactors to the settled model in
+> [note_image_embedding.md](../../research/note_editor/note_image_embedding.md). Acceptance criteria below describe what
+> was delivered; do not extend the interim model in new work.
+
 ## Description
 
 As a user, I want to insert images into my notes (from a file or clipboard paste) so that my study material can include
@@ -46,12 +52,12 @@ screenshots and diagrams inline with text.
 
 - Service Worker, IndexedDB metadata registry, ETag/304 ([Story 72](../3-stories/2-to-refine/72-story-content_body_read_via_service_worker.md))
 - Uniform note body reads; deprecating client signed URLs ([Story 73](../3-stories/2-to-refine/73-story-uniform_body_reads_and_image_orphan_cleanup.md))
-- Orphan image cleanup when removed from markdown ([Story 73](../3-stories/2-to-refine/73-story-uniform_body_reads_and_image_orphan_cleanup.md))
+- Orphan image cleanup when removed from markdown ([Story 74](../3-stories/1-ready/74-story-dedicated_attachment_storage_model.md) reconcile on save)
 - MIME/type pairing validation on `PUT …/body` (e.g. reject `Content-Type: image/png` with non-PNG bytes)
 - Separate upload size limits for note markdown vs inline images (today one backend constant applies to all bodies)
 - `GET /api/config` exposing client-visible limits (size, allowed MIME types) instead of duplicated constants
 - Deck attachment listing via `GET …/children?attachments=true` when flashcard decks ship
-- Dedicated attachment collection/subcollection ([Story 74](../3-stories/2-to-refine/74-story-dedicated_attachment_storage_model.md))
+- Dedicated attachment subcollection ([Story 74](../3-stories/1-ready/74-story-dedicated_attachment_storage_model.md)) — **follow-up refactor** (was out of scope at ship time)
 - Workbox, content versioning, MCP
 
 ## Technical Requirements

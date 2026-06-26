@@ -11,7 +11,12 @@ workspace clean.
 - The user can delete a folder from a context menu on the folder node in the content tree.
 - Deleting a note or folder requires a confirmation dialog before proceeding.
 - Deleting a folder deletes all content inside it recursively (with a warning in the confirmation dialog
-  indicating how many items will be deleted).
+  indicating how many items will be deleted). This includes descendant notes, their **attachment** subcollection
+  documents, and **content** children (e.g. decks) after the user confirms.
+- Deleting a **note** that has **content children** (e.g. flashcard decks) is **blocked** until those children are
+  removed, **or** the user explicitly confirms cascade delete of children in the confirmation dialog.
+- Deleting a **note** always cascades to its **image attachments** (subcollection under the note) silently — no separate
+  prompt for attachments. See [note_image_embedding.md — delete semantics](../../../research/note_editor/note_image_embedding.md#delete-semantics-settled).
 - After deleting a note, the user is navigated away from the editor (to the parent folder or root).
 - Deleted content is **soft-deleted** (marked as `deleted: true` with a `deletedAt` timestamp) rather than
   permanently removed from the database. This is intentional:
@@ -34,6 +39,8 @@ workspace clean.
   `useDeleteContent`; a **TODO** in `packages/web/src/lib/content/content-hooks.ts` marks where to add it.)
 - [ ] [Story 55](../../5-done/55-story-note_content_editor.md) — The note editor must exist before
   a delete action can be placed within it.
+- [ ] [Story 74](../../3-stories/1-ready/74-story-dedicated_attachment_storage_model.md) — attachment subcollection
+  (cascade delete of attachments on note delete builds on this shape).
 
 ## Acceptance Criteria
 
@@ -45,6 +52,8 @@ workspace clean.
 - [ ] After confirming deletion of a note, the user is navigated to the parent folder.
 - [ ] Deleted items no longer appear in the content tree or any content queries.
 - [ ] Deleting a folder removes all descendant notes and folders from the tree.
+- [ ] Deleting a note with **content children** (e.g. decks) is blocked or requires explicit cascade confirmation in the dialog.
+- [ ] Deleting a note cascades to its **attachment** subcollection documents (when [Story 74](../../1-ready/74-story-dedicated_attachment_storage_model.md) is complete).
 - [ ] Soft-deleted items have `deleted: true` and `deletedAt` set in Firestore; they are excluded from
   all `GET /api/content` queries.
 
@@ -84,9 +93,10 @@ For **folder** deletion with a deep subtree, invalidate **`children`** for the f
 
 - [ ] **[BE] Add `DELETE /api/content/:id` endpoint**
     - Returns 404 if not found or already deleted; 403 if not the owner.
-    - For a note: sets `deleted: true`, `deletedAt`, `deletedBy` on the single Firestore document.
-    - For a directory: fetches all descendants recursively, soft-deletes all in a Firestore batch write,
-      then soft-deletes the directory itself.
+    - For a note: if **content children** exist (e.g. decks), return **409** with child count unless request includes
+      explicit cascade flag; always soft-delete **attachment** subcollection docs under the note.
+    - For a directory: fetches all descendants recursively, soft-deletes all in a Firestore batch write (notes,
+      attachments under those notes, content children), then soft-deletes the directory itself.
     - Returns 204 No Content on success.
 
 ### Frontend

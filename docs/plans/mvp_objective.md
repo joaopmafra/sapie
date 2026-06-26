@@ -50,21 +50,29 @@ as the primary backlog item rather than duplicating a “nested directories” s
 
 ### 3. Flashcard Decks and Cards
 
-**Attachment Model (settled design decision):**
-Flashcard decks are children of notes in the content hierarchy (`parentId = noteId`). They are not siblings in the
-folder tree. This was chosen because:
+**Two kinds of note-related data (settled 2026-06-26):**
+
+- **Image attachments** — **composition** (whole–part with the note). Stored in a Firestore **subcollection** under the
+  note (`content/{noteId}/attachments/{attachmentId}`), not as tree **content**. Immutable blobs referenced by id in
+  markdown; no separate versioning. Deleting a note cascades to its attachments silently.
+- **Flashcard decks** — **aggregation** (container). **`content`** children with `parentId = noteId`, named and edited
+  independently. Note versions do not version decks. Deleting a note is blocked while deck children exist, unless the
+  user explicitly confirms cascade delete in the dialog.
+
+**Why decks are content children:**
 
 - Keeps decks linked to the source material that generated them (chapter exercises vs. end-of-book exercises analogy)
 - Enables folder-level study: "study everything under this folder" collects decks from all notes in the hierarchy
-- Notes will have other attachment types in the future (images, AI-generated audio, short videos) — the attachment
-  concept is first-class, not incidental
 - Cleaner MCP server interface: `createDeck(parentId: noteId)` is unambiguous
 
 **UI design:**
 
-- Sidebar tree shows **folders and notes only** — decks are not shown in the tree (would create noise)
-- Note editor has an **Attachments section** showing the note's decks (and future attachment types)
+- Sidebar tree shows **folders and notes only** — decks and image attachments are not shown in the tree
+- Note editor has an **Attachments section** showing the note's decks (flashcards); inline images live in the note body
 - Deck view shows the deck's cards and a Study button
+
+**Inline images:** See [note_image_embedding.md](../research/note_editor/note_image_embedding.md) and
+[Story 74](../pm/3-stories/1-ready/74-story-dedicated_attachment_storage_model.md).
 
 **Folder-level study query:**
 Decks store a denormalized `folderId` field (the folder containing their parent note) to enable efficient

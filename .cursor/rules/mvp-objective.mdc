@@ -26,8 +26,9 @@ Full details: `docs/research/mvp_objective.md`
 
 ## Settled Design Decisions
 
-- **Flashcard decks are children of notes** (`parentId = noteId`), not siblings in the folder tree.
-  Decks are shown in the note editor's Attachments section, not in the sidebar tree.
+- **Flashcard decks are content children of notes** (`parentId = noteId`), not siblings in the folder tree.
+  **Inline images** are note **attachments** (Firestore subcollection), not content — whole–part with the note.
+  Decks are shown in the note editor's Attachments section; images are embedded in the note body.
 - **Sidebar tree shows folders and notes only.** Decks and cards are not shown in the tree.
 - **Decks store a denormalized `folderId`** (the folder of their parent note) for efficient folder-level study queries.
 - **Study data model is designed for FSRS upgrade** even though UI uses 2 buttons for now.

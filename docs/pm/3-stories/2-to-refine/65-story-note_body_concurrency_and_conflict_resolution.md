@@ -19,14 +19,14 @@ overwrite it intentionally instead of silently losing work.
 | Dependency | Status |
 |------------|--------|
 | [Story 55: Note Content Editor](../../5-done/55-story-note_content_editor.md) — persisted body, `PUT` / `GET` body, editor | Prerequisite |
+| [Story 74: Dedicated attachment storage model](../../1-ready/74-story-dedicated_attachment_storage_model.md) — introduces **`expectedRevision`** on `PUT …/body` and 409 on stale save | Prerequisite for revision contract |
 
 ## Scope
 
 **In scope**
 
-- **Optimistic concurrency** on `PUT /api/content/:id/body` using a version the client already has (e.g. **`updatedAt`**
-  from metadata at load time or last successful save, or an `If-Match` / equivalent header—exact shape to be decided
-  during implementation).
+- **Optimistic concurrency** on `PUT /api/content/:id/body` using **`expectedRevision`** (`body.updatedAt` ISO string)
+  introduced in Story 74 — extend with full conflict UX here.
 - **Conflict response** when the server’s stored version is newer than the version the client sent (e.g. **409** or **412**
   with enough information for the client to offer “reload latest” vs “overwrite anyway”).
 - **Client UX** when a save fails due to conflict: prompt the user to **load the most recent version** (refresh editor
