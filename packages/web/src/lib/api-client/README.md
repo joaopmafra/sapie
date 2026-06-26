@@ -53,11 +53,12 @@ Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 *AppApi* | [**appControllerGetHello**](docs/AppApi.md#appcontrollergethello) | **GET** /api | Get API status
 *AuthenticationApi* | [**authControllerGetCurrentUser**](docs/AuthenticationApi.md#authcontrollergetcurrentuser) | **GET** /api/auth | Get current user information
-*ContentApi* | [**contentControllerCreateContent**](docs/ContentApi.md#contentcontrollercreatecontent) | **POST** /api/content | Create content (note)
+*ContentApi* | [**contentControllerCreateContent**](docs/ContentApi.md#contentcontrollercreatecontent) | **POST** /api/content | Create content (note, folder, or image)
+*ContentApi* | [**contentControllerGetContentBody**](docs/ContentApi.md#contentcontrollergetcontentbody) | **GET** /api/content/{id}/body | Stream content body bytes
 *ContentApi* | [**contentControllerGetContentBodySignedUrl**](docs/ContentApi.md#contentcontrollergetcontentbodysignedurl) | **GET** /api/content/{id}/body/signed-url | Get signed URL to read content body
 *ContentApi* | [**contentControllerGetContentById**](docs/ContentApi.md#contentcontrollergetcontentbyid) | **GET** /api/content/{id} | Get content by ID
 *ContentApi* | [**contentControllerGetRootDirectory**](docs/ContentApi.md#contentcontrollergetrootdirectory) | **GET** /api/content/root | Get or create user\&#39;s root directory
-*ContentApi* | [**contentControllerListContents**](docs/ContentApi.md#contentcontrollerlistcontents) | **GET** /api/content/{id}/children | List a parent\&#39;s children
+*ContentApi* | [**contentControllerListContents**](docs/ContentApi.md#contentcontrollerlistcontents) | **GET** /api/content/{id}/children | List a parent\&#39;s tree children
 *ContentApi* | [**contentControllerPatchContent**](docs/ContentApi.md#contentcontrollerpatchcontent) | **PATCH** /api/content/{id} | Patch content metadata
 *ContentApi* | [**contentControllerPutContentBody**](docs/ContentApi.md#contentcontrollerputcontentbody) | **PUT** /api/content/{id}/body | Upload or replace content body
 *FakeStorageReadApi* | [**fakeStorageReadControllerRead**](docs/FakeStorageReadApi.md#fakestoragereadcontrollerread) | **GET** /api/fake-storage/read | 

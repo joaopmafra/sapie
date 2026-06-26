@@ -586,6 +586,19 @@ describe('ContentController', () => {
       .expect(HttpStatus.NOT_FOUND);
   });
 
+  it(`GET ${fixture.API_CONTENT}/:id/body returns 403 when caller does not own the content`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Private', root.id);
+    const image = await fixture.seedImage(fixture.TEST_USER_ID, 'pic.png', note.id);
+    await fixture
+      .callApiPutContentBody(fixture.TEST_USER_ID, image.id, Buffer.from([1, 2, 3]), 'image/png')
+      .expect(HttpStatus.OK);
+
+    await fixture
+      .callApiGetContentBody(fixture.OTHER_USER_ID, image.id)
+      .expect(HttpStatus.FORBIDDEN);
+  });
+
   it(`PUT ${fixture.API_CONTENT}/:id/body returns 413 when body exceeds size limit`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
     const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Doc', root.id);

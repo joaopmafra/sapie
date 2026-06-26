@@ -4,18 +4,19 @@ All URIs are relative to *http://localhost*
 
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|
-|[**contentControllerCreateContent**](#contentcontrollercreatecontent) | **POST** /api/content | Create content (note)|
+|[**contentControllerCreateContent**](#contentcontrollercreatecontent) | **POST** /api/content | Create content (note, folder, or image)|
+|[**contentControllerGetContentBody**](#contentcontrollergetcontentbody) | **GET** /api/content/{id}/body | Stream content body bytes|
 |[**contentControllerGetContentBodySignedUrl**](#contentcontrollergetcontentbodysignedurl) | **GET** /api/content/{id}/body/signed-url | Get signed URL to read content body|
 |[**contentControllerGetContentById**](#contentcontrollergetcontentbyid) | **GET** /api/content/{id} | Get content by ID|
 |[**contentControllerGetRootDirectory**](#contentcontrollergetrootdirectory) | **GET** /api/content/root | Get or create user\&#39;s root directory|
-|[**contentControllerListContents**](#contentcontrollerlistcontents) | **GET** /api/content/{id}/children | List a parent\&#39;s children|
+|[**contentControllerListContents**](#contentcontrollerlistcontents) | **GET** /api/content/{id}/children | List a parent\&#39;s tree children|
 |[**contentControllerPatchContent**](#contentcontrollerpatchcontent) | **PATCH** /api/content/{id} | Patch content metadata|
 |[**contentControllerPutContentBody**](#contentcontrollerputcontentbody) | **PUT** /api/content/{id}/body | Upload or replace content body|
 
 # **contentControllerCreateContent**
 > ContentResponse contentControllerCreateContent(createContentRequest)
 
-Creates leaf content under the given parent. MVP only creates items of type `note`; other kinds may reuse or extend this contract later.
+Creates metadata under the given parent. Default `type` is `note`. Send `type: directory` to create a folder (parent must be a folder). Send `type: image` to create an inline image attachment (parent must be a note).
 
 ### Example
 
@@ -66,6 +67,61 @@ const { status, data } = await apiInstance.contentControllerCreateContent(
 |**403** | User is not the owner of the parent folder. |  -  |
 |**409** | Content with the same name already exists in the target location. |  -  |
 |**422** | Semantic validation failed (e.g. name length or disallowed characters). |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **contentControllerGetContentBody**
+> File contentControllerGetContentBody()
+
+Authenticated read of stored body bytes (note markdown or image). Returns 200 with `Content-Type` from stored metadata. 404 when the content has no body yet. No ETag / 304 in this release.
+
+### Example
+
+```typescript
+import {
+    ContentApi,
+    Configuration
+} from 'api-client';
+
+const configuration = new Configuration();
+const apiInstance = new ContentApi(configuration);
+
+let id: string; //The ID of the content whose body is read. (default to undefined)
+
+const { status, data } = await apiInstance.contentControllerGetContentBody(
+    id
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **id** | [**string**] | The ID of the content whose body is read. | defaults to undefined|
+
+
+### Return type
+
+**File**
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Body bytes streamed successfully. |  -  |
+|**400** | Body storage is not applicable (e.g. directory). |  -  |
+|**401** | Unauthorized - Valid Firebase ID token required |  -  |
+|**403** | Authenticated user does not own this content. |  -  |
+|**404** | Content not found, no body yet, or storage object missing. |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -226,7 +282,7 @@ This endpoint does not have any parameters.
 # **contentControllerListContents**
 > Array<ContentResponse> contentControllerListContents()
 
-Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `body`; notes include `body: null` until the first `PUT …/body`, then a public summary (no storage URI).
+Returns child content (metadata only) for the given parent ID, limited to **folders and notes** for sidebar tree use. Attachment children (e.g. inline images under a note) are omitted. Does not load content bodies or signed read URLs.
 
 ### Example
 
@@ -381,7 +437,7 @@ const { status, data } = await apiInstance.contentControllerPutContentBody(
 
 ### HTTP request headers
 
- - **Content-Type**: application/octet-stream, text/plain, text/markdown, image/png, image/jpeg
+ - **Content-Type**: application/octet-stream, text/plain, text/markdown, image/png, image/jpeg, image/webp
  - **Accept**: application/json
 
 
@@ -393,6 +449,7 @@ const { status, data } = await apiInstance.contentControllerPutContentBody(
 |**401** | Unauthorized - Valid Firebase ID token required |  -  |
 |**403** | Authenticated user does not own this content. |  -  |
 |**404** | Content not found. |  -  |
+|**413** | Request body exceeds the configured maximum size. |  -  |
 |**415** | Unsupported media type (e.g. multipart body on this route). |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)

@@ -4,6 +4,7 @@ import type { User } from 'firebase/auth';
 import {
   Configuration,
   ContentApi,
+  CreateContentRequestTypeEnum,
   type ContentBodyUrlResponse,
   type ContentResponse,
   type CreateContentRequest,
@@ -11,7 +12,6 @@ import {
 import { getApiBaseUrl } from '../apiBaseUrl.ts';
 import { getApiAuthRequestOptions } from '../auth-utils';
 
-import { contentBodyApiPath } from './content-body-url';
 import type { Content, UpdateContentRequest } from './types';
 import { ContentType } from './types';
 
@@ -193,7 +193,7 @@ export class ContentService {
       const createContentRequest: CreateContentRequest = {
         name,
         parentId: parentNoteId,
-        type: 'image',
+        type: CreateContentRequestTypeEnum.Image,
       };
 
       const response = await this.contentApi.contentControllerCreateContent(
@@ -259,20 +259,12 @@ export class ContentService {
    * `GET /api/content/:id/body` — authenticated body bytes (notes or inline images).
    */
   async fetchContentBodyBlob(currentUser: User, id: string): Promise<Blob> {
-    const basePath = getApiBaseUrl().replace(/\/$/, '');
     const options = await getApiAuthRequestOptions(currentUser);
-    const headers =
-      (options.headers as Record<string, string> | undefined) ?? {};
-    const url = `${basePath}${contentBodyApiPath(id)}`;
-    const response = await fetch(url, { headers });
-    if (!response.ok) {
-      const err = new Error(
-        `Failed to download content body: HTTP ${response.status} ${response.statusText}`
-      );
-      Object.assign(err, { status: response.status });
-      throw err;
-    }
-    return response.blob();
+    const response = await this.contentApi.contentControllerGetContentBody(
+      { id },
+      { ...options, responseType: 'blob' }
+    );
+    return response.data;
   }
 
   /**

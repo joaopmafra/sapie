@@ -184,7 +184,7 @@ export interface ContentResponse {
      */
     'ownerId': string;
     /**
-     * **Notes only.** Public summary of the stored body. Omitted for directories. `null` before the first `PUT …/body`.
+     * **Notes and images.** Public summary of the stored body. Omitted for directories. `null` before the first `PUT …/body`.
      * @type {ContentBodySummaryResponse}
      * @memberof ContentResponse
      */
@@ -211,14 +211,6 @@ export const ContentResponseTypeEnum = {
 
 export type ContentResponseTypeEnum = typeof ContentResponseTypeEnum[keyof typeof ContentResponseTypeEnum];
 
-export const CreateContentRequestTypeEnum = {
-    Directory: 'directory',
-    Note: 'note',
-    Image: 'image'
-} as const;
-
-export type CreateContentRequestTypeEnum = typeof CreateContentRequestTypeEnum[keyof typeof CreateContentRequestTypeEnum];
-
 /**
  * 
  * @export
@@ -238,12 +230,21 @@ export interface CreateContentRequest {
      */
     'parentId': string;
     /**
-     * Kind of content to create. Omit or `note` for a note; `directory` for a folder.
+     * Kind of content to create. Omit or `note` for a note under a folder; `directory` for a folder under a folder; `image` for an inline image attachment under a note.
      * @type {string}
      * @memberof CreateContentRequest
      */
     'type'?: CreateContentRequestTypeEnum;
 }
+
+export const CreateContentRequestTypeEnum = {
+    Directory: 'directory',
+    Note: 'note',
+    Image: 'image'
+} as const;
+
+export type CreateContentRequestTypeEnum = typeof CreateContentRequestTypeEnum[keyof typeof CreateContentRequestTypeEnum];
+
 /**
  * 
  * @export
@@ -611,8 +612,8 @@ export class AuthenticationApi extends BaseAPI implements AuthenticationApiInter
 export const ContentApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
         /**
-         * Creates leaf content under the given parent. MVP only creates items of type `note`; other kinds may reuse or extend this contract later.
-         * @summary Create content (note)
+         * Creates metadata under the given parent. Default `type` is `note`. Send `type: directory` to create a folder (parent must be a folder). Send `type: image` to create an inline image attachment (parent must be a note).
+         * @summary Create content (note, folder, or image)
          * @param {CreateContentRequest} createContentRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -644,6 +645,44 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(createContentRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Authenticated read of stored body bytes (note markdown or image). Returns 200 with `Content-Type` from stored metadata. 404 when the content has no body yet. No ETag / 304 in this release.
+         * @summary Stream content body bytes
+         * @param {string} id The ID of the content whose body is read.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        contentControllerGetContentBody: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('contentControllerGetContentBody', 'id', id)
+            const localVarPath = `/api/content/{id}/body`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -761,8 +800,8 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `body`; notes include `body: null` until the first `PUT …/body`, then a public summary (no storage URI).
-         * @summary List a parent\'s children
+         * Returns child content (metadata only) for the given parent ID, limited to **folders and notes** for sidebar tree use. Attachment children (e.g. inline images under a note) are omitted. Does not load content bodies or signed read URLs.
+         * @summary List a parent\'s tree children
          * @param {string} id The ID of the parent content.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -903,8 +942,8 @@ export const ContentApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = ContentApiAxiosParamCreator(configuration)
     return {
         /**
-         * Creates leaf content under the given parent. MVP only creates items of type `note`; other kinds may reuse or extend this contract later.
-         * @summary Create content (note)
+         * Creates metadata under the given parent. Default `type` is `note`. Send `type: directory` to create a folder (parent must be a folder). Send `type: image` to create an inline image attachment (parent must be a note).
+         * @summary Create content (note, folder, or image)
          * @param {CreateContentRequest} createContentRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -913,6 +952,19 @@ export const ContentApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerCreateContent(createContentRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerCreateContent']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Authenticated read of stored body bytes (note markdown or image). Returns 200 with `Content-Type` from stored metadata. 404 when the content has no body yet. No ETag / 304 in this release.
+         * @summary Stream content body bytes
+         * @param {string} id The ID of the content whose body is read.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async contentControllerGetContentBody(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerGetContentBody(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerGetContentBody']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -954,8 +1006,8 @@ export const ContentApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `body`; notes include `body: null` until the first `PUT …/body`, then a public summary (no storage URI).
-         * @summary List a parent\'s children
+         * Returns child content (metadata only) for the given parent ID, limited to **folders and notes** for sidebar tree use. Attachment children (e.g. inline images under a note) are omitted. Does not load content bodies or signed read URLs.
+         * @summary List a parent\'s tree children
          * @param {string} id The ID of the parent content.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -1006,14 +1058,24 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
     const localVarFp = ContentApiFp(configuration)
     return {
         /**
-         * Creates leaf content under the given parent. MVP only creates items of type `note`; other kinds may reuse or extend this contract later.
-         * @summary Create content (note)
+         * Creates metadata under the given parent. Default `type` is `note`. Send `type: directory` to create a folder (parent must be a folder). Send `type: image` to create an inline image attachment (parent must be a note).
+         * @summary Create content (note, folder, or image)
          * @param {ContentApiContentControllerCreateContentRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         contentControllerCreateContent(requestParameters: ContentApiContentControllerCreateContentRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentResponse> {
             return localVarFp.contentControllerCreateContent(requestParameters.createContentRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Authenticated read of stored body bytes (note markdown or image). Returns 200 with `Content-Type` from stored metadata. 404 when the content has no body yet. No ETag / 304 in this release.
+         * @summary Stream content body bytes
+         * @param {ContentApiContentControllerGetContentBodyRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        contentControllerGetContentBody(requestParameters: ContentApiContentControllerGetContentBodyRequest, options?: RawAxiosRequestConfig): AxiosPromise<File> {
+            return localVarFp.contentControllerGetContentBody(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
          * Returns a short-lived signed URL for downloading the content body from Cloud Storage (valid 10 minutes). 404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes. 
@@ -1045,8 +1107,8 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.contentControllerGetRootDirectory(options).then((request) => request(axios, basePath));
         },
         /**
-         * Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `body`; notes include `body: null` until the first `PUT …/body`, then a public summary (no storage URI).
-         * @summary List a parent\'s children
+         * Returns child content (metadata only) for the given parent ID, limited to **folders and notes** for sidebar tree use. Attachment children (e.g. inline images under a note) are omitted. Does not load content bodies or signed read URLs.
+         * @summary List a parent\'s tree children
          * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -1084,14 +1146,24 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
  */
 export interface ContentApiInterface {
     /**
-     * Creates leaf content under the given parent. MVP only creates items of type `note`; other kinds may reuse or extend this contract later.
-     * @summary Create content (note)
+     * Creates metadata under the given parent. Default `type` is `note`. Send `type: directory` to create a folder (parent must be a folder). Send `type: image` to create an inline image attachment (parent must be a note).
+     * @summary Create content (note, folder, or image)
      * @param {ContentApiContentControllerCreateContentRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ContentApiInterface
      */
     contentControllerCreateContent(requestParameters: ContentApiContentControllerCreateContentRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentResponse>;
+
+    /**
+     * Authenticated read of stored body bytes (note markdown or image). Returns 200 with `Content-Type` from stored metadata. 404 when the content has no body yet. No ETag / 304 in this release.
+     * @summary Stream content body bytes
+     * @param {ContentApiContentControllerGetContentBodyRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ContentApiInterface
+     */
+    contentControllerGetContentBody(requestParameters: ContentApiContentControllerGetContentBodyRequest, options?: RawAxiosRequestConfig): AxiosPromise<File>;
 
     /**
      * Returns a short-lived signed URL for downloading the content body from Cloud Storage (valid 10 minutes). 404 when the content has no content body yet (client may treat as empty). `GET /:id` returns metadata only and never includes body bytes. 
@@ -1123,8 +1195,8 @@ export interface ContentApiInterface {
     contentControllerGetRootDirectory(options?: RawAxiosRequestConfig): AxiosPromise<ContentResponse>;
 
     /**
-     * Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `body`; notes include `body: null` until the first `PUT …/body`, then a public summary (no storage URI).
-     * @summary List a parent\'s children
+     * Returns child content (metadata only) for the given parent ID, limited to **folders and notes** for sidebar tree use. Attachment children (e.g. inline images under a note) are omitted. Does not load content bodies or signed read URLs.
+     * @summary List a parent\'s tree children
      * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -1166,6 +1238,20 @@ export interface ContentApiContentControllerCreateContentRequest {
      * @memberof ContentApiContentControllerCreateContent
      */
     readonly createContentRequest: CreateContentRequest
+}
+
+/**
+ * Request parameters for contentControllerGetContentBody operation in ContentApi.
+ * @export
+ * @interface ContentApiContentControllerGetContentBodyRequest
+ */
+export interface ContentApiContentControllerGetContentBodyRequest {
+    /**
+     * The ID of the content whose body is read.
+     * @type {string}
+     * @memberof ContentApiContentControllerGetContentBody
+     */
+    readonly id: string
 }
 
 /**
@@ -1267,8 +1353,8 @@ export interface ContentApiContentControllerPutContentBodyRequest {
  */
 export class ContentApi extends BaseAPI implements ContentApiInterface {
     /**
-     * Creates leaf content under the given parent. MVP only creates items of type `note`; other kinds may reuse or extend this contract later.
-     * @summary Create content (note)
+     * Creates metadata under the given parent. Default `type` is `note`. Send `type: directory` to create a folder (parent must be a folder). Send `type: image` to create an inline image attachment (parent must be a note).
+     * @summary Create content (note, folder, or image)
      * @param {ContentApiContentControllerCreateContentRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -1276,6 +1362,18 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
      */
     public contentControllerCreateContent(requestParameters: ContentApiContentControllerCreateContentRequest, options?: RawAxiosRequestConfig) {
         return ContentApiFp(this.configuration).contentControllerCreateContent(requestParameters.createContentRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Authenticated read of stored body bytes (note markdown or image). Returns 200 with `Content-Type` from stored metadata. 404 when the content has no body yet. No ETag / 304 in this release.
+     * @summary Stream content body bytes
+     * @param {ContentApiContentControllerGetContentBodyRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ContentApi
+     */
+    public contentControllerGetContentBody(requestParameters: ContentApiContentControllerGetContentBodyRequest, options?: RawAxiosRequestConfig) {
+        return ContentApiFp(this.configuration).contentControllerGetContentBody(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -1314,8 +1412,8 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
     }
 
     /**
-     * Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. Directory items omit `body`; notes include `body: null` until the first `PUT …/body`, then a public summary (no storage URI).
-     * @summary List a parent\'s children
+     * Returns child content (metadata only) for the given parent ID, limited to **folders and notes** for sidebar tree use. Attachment children (e.g. inline images under a note) are omitted. Does not load content bodies or signed read URLs.
+     * @summary List a parent\'s tree children
      * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}

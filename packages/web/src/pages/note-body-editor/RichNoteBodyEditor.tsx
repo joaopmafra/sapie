@@ -25,6 +25,7 @@ import { forwardRef, useMemo } from 'react';
 
 import { noteBodyToolbarTranslation } from './mdxEditorTranslation';
 import type { NoteBodyEditorProps } from './note-body-editor-props';
+import { NoteImageInsertDialog } from './NoteImageInsertDialog';
 import './rich-note-body-content.css';
 
 export const RichNoteBodyEditor = forwardRef<
@@ -53,6 +54,7 @@ export const RichNoteBodyEditor = forwardRef<
             imagePlugin({
               imageUploadHandler,
               imagePreviewHandler: imagePreviewHandler ?? undefined,
+              ImageDialog: NoteImageInsertDialog,
             }),
           ]
         : []),

@@ -35,6 +35,7 @@ import {
 import { PROBLEM_DETAILS_POINTERS } from '../lib/problemDetailsPointers.ts';
 
 import type { NoteBodyMarkdownChangeOptions } from './note-body-editor/note-body-editor-props';
+import { NoteImageUploadContext } from './note-body-editor/note-image-upload-context';
 import { NoteBodyEditor } from './note-body-editor/NoteBodyEditor';
 import { useNoteImageHandlers } from './note-body-editor/use-note-image-handlers';
 import {
@@ -53,10 +54,6 @@ const NoteEditorPage = () => {
   const { currentUser } = useAuth();
   const queryClient = useQueryClient();
   const { data: note, isLoading, isError, error } = useContentItem(noteId);
-  const { imageUploadHandler, imagePreviewHandler } = useNoteImageHandlers(
-    currentUser,
-    noteId
-  );
   const suppressBodySignedUrlFetchAfterSave =
     useBodySignedUrlFetchSuppressedAfterSave(noteId, editorSessionId);
   const suppressSignedUrlFetch = Boolean(
@@ -227,6 +224,26 @@ const NoteEditorPage = () => {
   );
 
   runSaveRef.current = runSave;
+
+  const flushSaveAfterImageInsert = useCallback(() => {
+    clearAutosaveDebounce();
+    queueMicrotask(() => {
+      requestAnimationFrame(() => {
+        void runSaveRef.current();
+      });
+    });
+  }, [clearAutosaveDebounce]);
+
+  const { imageUploadHandler, imagePreviewHandler, uploadImageAttachment } =
+    useNoteImageHandlers(currentUser, noteId, flushSaveAfterImageInsert);
+
+  const noteImageUploadContextValue = useMemo(
+    () => ({
+      uploadImageAttachment,
+      onImageInserted: flushSaveAfterImageInsert,
+    }),
+    [uploadImageAttachment, flushSaveAfterImageInsert]
+  );
 
   const shouldBlockNavigation = useCallback<BlockerFunction>(() => {
     return noteEditorShouldWarnBeforeUnload({
@@ -742,17 +759,21 @@ const NoteEditorPage = () => {
               <CircularProgress size={32} />
             </Box>
           ) : (
-            <NoteBodyEditor
-              key={noteId}
-              richEditorRef={richBodyEditorRef}
-              value={draftBody}
-              onChange={handleDraftBodyUpdate}
-              placeholder='Start writing your note…'
-              disabled={!currentUser || bodyLoadPending}
-              aria-label='Note body'
-              imageUploadHandler={imageUploadHandler}
-              imagePreviewHandler={imagePreviewHandler}
-            />
+            <NoteImageUploadContext.Provider
+              value={noteImageUploadContextValue}
+            >
+              <NoteBodyEditor
+                key={noteId}
+                richEditorRef={richBodyEditorRef}
+                value={draftBody}
+                onChange={handleDraftBodyUpdate}
+                placeholder='Start writing your note…'
+                disabled={!currentUser || bodyLoadPending}
+                aria-label='Note body'
+                imageUploadHandler={imageUploadHandler}
+                imagePreviewHandler={imagePreviewHandler}
+              />
+            </NoteImageUploadContext.Provider>
           )}
         </Box>
       </Paper>
