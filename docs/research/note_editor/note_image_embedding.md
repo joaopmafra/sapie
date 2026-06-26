@@ -3,7 +3,7 @@
 **Status:** **Agreed** for implementation via [iterative phases A–G](#iterative-phases-simple--final). **Phase A** scope confirmed (2026-06-25).
 
 **Stories:** 
-- [71 — Inline images in notes](../../pm/4-in-progress/71-story-inline_images_in_notes.md) (Phase A)
+- [71 — Inline images in notes](../../pm/5-done/71-story-inline_images_in_notes.md) (Phase A)
 - [72 — Content body read via SW](../../pm/3-stories/2-to-refine/72-story-content_body_read_via_service_worker.md) (Phases B–E)
 - [73 — Uniform reads and orphan cleanup](../../pm/3-stories/2-to-refine/73-story-uniform_body_reads_and_image_orphan_cleanup.md) (Phase F)
 - [74 - Dedicated attachment storage model](../../pm/3-stories/2-to-refine/74-story-dedicated_attachment_storage_model.md) (Phase G)

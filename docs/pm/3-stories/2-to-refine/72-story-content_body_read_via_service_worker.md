@@ -27,7 +27,7 @@ Phase D; full deprecation of client signed URLs is **[Story 73](73-story-uniform
 
 ## Dependencies
 
-- [ ] [Story 71](../../4-in-progress/71-story-inline_images_in_notes.md) — images already use `GET …/body` and stable markdown URLs.
+- [ ] [Story 71](../../5-done/71-story-inline_images_in_notes.md) — images already use `GET …/body` and stable markdown URLs.
 
 ## Implementation approach (phased)
 

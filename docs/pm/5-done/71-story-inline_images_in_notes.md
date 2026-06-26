@@ -25,10 +25,10 @@ screenshots and diagrams inline with text.
 
 ## Dependencies
 
-- [x] [Story 67](../5-done/67-story-rich_note_content_editor_mdx.md) — MDXEditor is the note body surface.
-- [x] [Story 66](../5-done/66-story-content_body_subdocument_and_client_cache.md) — stable nested `body` metadata and
+- [x] [Story 67](67-story-rich_note_content_editor_mdx.md) — MDXEditor is the note body surface.
+- [x] [Story 66](66-story-content_body_subdocument_and_client_cache.md) — stable nested `body` metadata and
   TanStack cache policy.
-- [x] [Story 62](../5-done/62-story-tanstack_query_refactor.md) — targeted query invalidation patterns.
+- [x] [Story 62](62-story-tanstack_query_refactor.md) — targeted query invalidation patterns.
 
 ## Acceptance Criteria
 
