@@ -4,6 +4,7 @@ import type { User } from 'firebase/auth';
 import {
   Configuration,
   ContentApi,
+  CreateContentRequestTypeEnum,
   type ContentBodyUrlResponse,
   type ContentResponse,
   type CreateContentRequest,
@@ -130,6 +131,28 @@ export class ContentService {
     }
   }
 
+  async getAttachmentChildren(
+    currentUser: User,
+    noteId: string
+  ): Promise<Content[]> {
+    try {
+      const options = await getApiAuthRequestOptions(currentUser);
+
+      const response = await this.contentApi.contentControllerListContents(
+        { id: noteId },
+        {
+          ...options,
+          params: { attachments: 'true' },
+        }
+      );
+
+      return response.data.map(item => this.mapContentResponseToContent(item));
+    } catch (error) {
+      console.error('Failed to get attachment children:', error);
+      throw error;
+    }
+  }
+
   async createNote(
     currentUser: User,
     name: string,
@@ -177,6 +200,32 @@ export class ContentService {
       return this.mapContentResponseToContent(response.data);
     } catch (error) {
       console.error('Failed to create folder:', error);
+      throw error;
+    }
+  }
+
+  async createImage(
+    currentUser: User,
+    name: string,
+    parentNoteId: string
+  ): Promise<Content> {
+    try {
+      const options = await getApiAuthRequestOptions(currentUser);
+
+      const createContentRequest: CreateContentRequest = {
+        name,
+        parentId: parentNoteId,
+        type: CreateContentRequestTypeEnum.Image,
+      };
+
+      const response = await this.contentApi.contentControllerCreateContent(
+        { createContentRequest },
+        options
+      );
+
+      return this.mapContentResponseToContent(response.data);
+    } catch (error) {
+      console.error('Failed to create image:', error);
       throw error;
     }
   }
@@ -229,6 +278,18 @@ export class ContentService {
   }
 
   /**
+   * `GET /api/content/:id/body` — authenticated body bytes (notes or inline images).
+   */
+  async fetchContentBodyBlob(currentUser: User, id: string): Promise<Blob> {
+    const options = await getApiAuthRequestOptions(currentUser);
+    const response = await this.contentApi.contentControllerGetContentBody(
+      { id },
+      { ...options, responseType: 'blob' }
+    );
+    return response.data;
+  }
+
+  /**
    * `PUT /api/content/:id/body` — raw body; `contentType` is stored with the object (e.g. `text/markdown`).
    */
   async putContentBody(
@@ -237,10 +298,24 @@ export class ContentService {
     bodyText: string,
     contentType: string
   ): Promise<Content> {
+    const file = new File([bodyText], 'note-body', { type: contentType });
+    return this.putContentBodyFile(currentUser, id, file, contentType);
+  }
+
+  /** `PUT /api/content/:id/body` — upload a File/Blob (e.g. inline image). */
+  async putContentBodyFile(
+    currentUser: User,
+    id: string,
+    body: Blob,
+    contentType: string
+  ): Promise<Content> {
     try {
       const options = await getApiAuthRequestOptions(currentUser);
 
-      const file = new File([bodyText], 'note-body', { type: contentType });
+      const file =
+        body instanceof File
+          ? body
+          : new File([body], 'content-body', { type: contentType });
 
       const response = await this.contentApi.contentControllerPutContentBody(
         { id, contentType, body: file },

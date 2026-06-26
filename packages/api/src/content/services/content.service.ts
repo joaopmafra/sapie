@@ -6,10 +6,12 @@ import {
   NotFoundException,
   BadRequestException,
   UnsupportedMediaTypeException,
+  PayloadTooLargeException,
   Logger,
 } from '@nestjs/common';
 import { Content, ContentType } from '../entities/content.entity';
 import { ContentRepository } from '../repositories/content-repository.service';
+import { CONTENT_BODY_MAX_BYTES } from '../constants/content-body-limits';
 import {
   isMediaTypeTooLong,
   isMultipartMediaType,
@@ -20,6 +22,8 @@ import {
   type ContentBodyReadService,
 } from './content-body-read.service';
 import { ContentBodyStorageService } from './content-body-storage.service';
+
+import type { Readable } from 'stream';
 
 @Injectable()
 export class ContentService {
@@ -32,8 +36,18 @@ export class ContentService {
     private readonly contentBodyReadService: ContentBodyReadService
   ) {}
 
-  async findByParentIdAndOwnerId(parentId: string, ownerId: string): Promise<Content[]> {
-    return this.contentRepository.findByParentIdAndOwnerId(parentId, ownerId);
+  async findByParentIdAndOwnerId(
+    parentId: string,
+    ownerId: string,
+    options?: { attachmentsOnly?: boolean }
+  ): Promise<Content[]> {
+    const children = await this.contentRepository.findByParentIdAndOwnerId(parentId, ownerId);
+    if (options?.attachmentsOnly) {
+      return children.filter(child => child.type === ContentType.IMAGE);
+    }
+    return children.filter(
+      child => child.type === ContentType.DIRECTORY || child.type === ContentType.NOTE
+    );
   }
 
   /**
@@ -70,6 +84,14 @@ export class ContentService {
       throw new BadRequestException('A folder can only be created inside another folder');
     }
 
+    if (contentType === ContentType.NOTE && parent.type !== ContentType.DIRECTORY) {
+      throw new BadRequestException('A note can only be created inside a folder');
+    }
+
+    if (contentType === ContentType.IMAGE && parent.type !== ContentType.NOTE) {
+      throw new BadRequestException('An image can only be created inside a note');
+    }
+
     const nameCollision = await this.contentRepository.findFirstByParentIdAndName(parentId, name);
     if (nameCollision) {
       throw new ConflictException(`Content with name "${name}" already exists in this location`);
@@ -78,6 +100,16 @@ export class ContentService {
     const now = new Date();
     if (contentType === ContentType.DIRECTORY) {
       return this.contentRepository.addDirectory({
+        name,
+        parentId,
+        ownerId,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    if (contentType === ContentType.IMAGE) {
+      return this.contentRepository.addImage({
         name,
         parentId,
         ownerId,
@@ -162,6 +194,42 @@ export class ContentService {
   }
 
   /**
+   * Streams stored body bytes for authenticated read (`GET …/body`).
+   */
+  async getContentBodyStream(
+    id: string,
+    ownerId: string
+  ): Promise<{ stream: Readable; contentType: string }> {
+    const existing = await this.contentRepository.findById(id);
+
+    if (!existing) {
+      throw new NotFoundException(`Content with ID ${id} not found`);
+    }
+
+    if (existing.ownerId !== ownerId) {
+      throw new ForbiddenException('User does not own this content');
+    }
+
+    if (existing.type === ContentType.DIRECTORY) {
+      throw new BadRequestException('Body storage is not applicable for directories');
+    }
+
+    if (!existing.body?.uri || existing.body.size == null) {
+      throw new NotFoundException('Content has no stored body yet');
+    }
+
+    const opened = await this.contentBodyStorage.openBodyReadStream(existing.body.uri);
+    if (!opened) {
+      throw new NotFoundException('Content body object not found in storage');
+    }
+
+    return {
+      stream: opened.stream,
+      contentType: existing.body.mimeType || opened.contentType,
+    };
+  }
+
+  /**
    * Uploads raw bytes for a content body and updates nested Firestore `body` (incl. `body.updatedAt`) + top-level `updatedAt`.
    */
   async putContentBody(
@@ -182,6 +250,12 @@ export class ContentService {
 
     if (existing.type === ContentType.DIRECTORY) {
       throw new BadRequestException('Body storage is not applicable for directories');
+    }
+
+    if (body.length > CONTENT_BODY_MAX_BYTES) {
+      throw new PayloadTooLargeException(
+        `Content body exceeds the maximum size of ${CONTENT_BODY_MAX_BYTES} bytes`
+      );
     }
 
     const mimeType = normalizeBodyMimeType(contentTypeHeader);

@@ -4,12 +4,14 @@ import {
   BoldItalicUnderlineToggles,
   CreateLink,
   InsertCodeBlock,
+  InsertImage,
   ListsToggle,
   Separator,
   UndoRedo,
   codeBlockPlugin,
   codeMirrorPlugin,
   headingsPlugin,
+  imagePlugin,
   linkDialogPlugin,
   linkPlugin,
   listsPlugin,
@@ -23,13 +25,22 @@ import { forwardRef, useMemo } from 'react';
 
 import { noteBodyToolbarTranslation } from './mdxEditorTranslation';
 import type { NoteBodyEditorProps } from './note-body-editor-props';
+import { NoteImageInsertDialog } from './NoteImageInsertDialog';
 import './rich-note-body-content.css';
 
 export const RichNoteBodyEditor = forwardRef<
   MDXEditorMethods | null,
   NoteBodyEditorProps
 >(function RichNoteBodyEditor(
-  { value, onChange, placeholder, disabled, 'aria-label': _ariaLabel },
+  {
+    value,
+    onChange,
+    placeholder,
+    disabled,
+    'aria-label': _ariaLabel,
+    imageUploadHandler,
+    imagePreviewHandler,
+  },
   ref
 ) {
   const plugins = useMemo(
@@ -38,6 +49,15 @@ export const RichNoteBodyEditor = forwardRef<
       listsPlugin(),
       linkPlugin(),
       linkDialogPlugin(),
+      ...(imageUploadHandler != null
+        ? [
+            imagePlugin({
+              imageUploadHandler,
+              imagePreviewHandler: imagePreviewHandler ?? undefined,
+              ImageDialog: NoteImageInsertDialog,
+            }),
+          ]
+        : []),
       codeBlockPlugin(),
       codeMirrorPlugin({
         codeBlockLanguages: {
@@ -66,12 +86,18 @@ export const RichNoteBodyEditor = forwardRef<
             <Separator />
             <CreateLink />
             <Separator />
+            {imageUploadHandler != null ? (
+              <>
+                <InsertImage />
+                <Separator />
+              </>
+            ) : null}
             <InsertCodeBlock />
           </>
         ),
       }),
     ],
-    []
+    [imageUploadHandler, imagePreviewHandler]
   );
 
   return (

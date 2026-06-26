@@ -11,6 +11,8 @@ import {
   Headers,
   Header,
   BadRequestException,
+  StreamableFile,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -28,6 +30,7 @@ import {
   ApiParam,
   ApiConsumes,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { apiProblemDetailsSchema } from '../../common/dto/problem-details.dto';
 import { Auth } from '../../auth';
@@ -62,10 +65,11 @@ export class ContentController {
   @Post()
   @Auth()
   @ApiOperation({
-    summary: 'Create content (note or folder)',
+    summary: 'Create content (note, folder, or image)',
     description:
-      'Creates metadata under the given parent directory. Default `type` is `note` (backwards compatible). ' +
-      'Send `type: directory` to create a folder; folders must be created under another directory.',
+      'Creates metadata under the given parent. Default `type` is `note`. ' +
+      'Send `type: directory` to create a folder (parent must be a folder). ' +
+      'Send `type: image` to create an inline image attachment (parent must be a note).',
   })
   @ApiCreatedResponse({
     description: 'Content (metadata) created successfully.',
@@ -178,8 +182,17 @@ export class ContentController {
   @ApiOperation({
     summary: "List a parent's children",
     description:
-      'Returns child content (metadata only) for the given parent ID. Does not load content bodies or signed read URLs. ' +
-      'Directory items omit `body`; notes include `body: null` until the first `PUT …/body`, then a public summary (no storage URI).',
+      'Returns child content (metadata only) for the given parent ID. ' +
+      'By default returns **folders and notes** for sidebar tree use (attachment children omitted). ' +
+      'Pass `attachments=true` to list **inline image** attachments under a note (for sequential naming and attachment management). ' +
+      'Does not load content bodies or signed read URLs.',
+  })
+  @ApiQuery({
+    name: 'attachments',
+    required: false,
+    type: Boolean,
+    description:
+      'When `true`, return attachment children (`image` only in Phase A) instead of tree children.',
   })
   @ApiParam({
     name: 'id',
@@ -197,15 +210,18 @@ export class ContentController {
   })
   async listContents(
     @Request() request: AuthenticatedRequest,
-    @Param('id') id: string
+    @Param('id') id: string,
+    @Query('attachments') attachments?: string
   ): Promise<ContentResponse[]> {
     const { user } = request;
-    this.logger.debug(`Getting content for user: ${user.uid} with parent content ID: ${id}`);
+    const attachmentsOnly = attachments === 'true' || attachments === '1';
+    this.logger.debug(
+      `Getting content for user: ${user.uid} with parent content ID: ${id} (attachmentsOnly=${attachmentsOnly})`
+    );
 
-    // uncomment to test the loading indicator
-    // await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const children = await this.contentService.findByParentIdAndOwnerId(id, request.user.uid);
+    const children = await this.contentService.findByParentIdAndOwnerId(id, request.user.uid, {
+      attachmentsOnly,
+    });
     return children.map(toContentResponse);
   }
 
@@ -258,9 +274,61 @@ export class ContentController {
     return this.contentService.getContentBodySignedUrl(id, user.uid);
   }
 
+  @Get(':id/body')
+  @Auth()
+  @ApiOperation({
+    summary: 'Stream content body bytes',
+    description:
+      'Authenticated read of stored body bytes (note markdown or image). Returns 200 with `Content-Type` from stored metadata. ' +
+      '404 when the content has no body yet. No ETag / 304 in this release.',
+  })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The ID of the content whose body is read.',
+    type: String,
+  })
+  @ApiOkResponse({
+    description: 'Body bytes streamed successfully.',
+    schema: { type: 'string', format: 'binary' },
+  })
+  @ApiNotFoundResponse({
+    description: 'Content not found, no body yet, or storage object missing.',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiForbiddenResponse({
+    description: 'Authenticated user does not own this content.',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiBadRequestResponse({
+    description: 'Body storage is not applicable (e.g. directory).',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Valid Firebase ID token required',
+    ...apiProblemDetailsSchema,
+  })
+  @Header('Cache-Control', 'private, no-cache')
+  async getContentBody(
+    @Request() request: AuthenticatedRequest,
+    @Param('id') id: string
+  ): Promise<StreamableFile> {
+    const { user } = request;
+    this.logger.debug(`Streaming body for content ${id}, user ${user.uid}`);
+    const { stream, contentType } = await this.contentService.getContentBodyStream(id, user.uid);
+    return new StreamableFile(stream, { type: contentType });
+  }
+
   @Put(':id/body')
   @Auth()
-  @ApiConsumes('application/octet-stream', 'text/plain', 'text/markdown', 'image/png', 'image/jpeg')
+  @ApiConsumes(
+    'application/octet-stream',
+    'text/plain',
+    'text/markdown',
+    'image/png',
+    'image/jpeg',
+    'image/webp'
+  )
   @ApiBody({
     description:
       'Raw bytes of the content body. The `Content-Type` header sets the stored media type (e.g. markdown as `text/plain` or `text/markdown`, images as `image/*`). ' +
@@ -293,6 +361,11 @@ export class ContentController {
   })
   @ApiBadRequestResponse({
     description: 'Body storage is not applicable (e.g. directory) or malformed request.',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiResponse({
+    status: 413,
+    description: 'Request body exceeds the configured maximum size.',
     ...apiProblemDetailsSchema,
   })
   @ApiResponse({

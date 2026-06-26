@@ -2,7 +2,11 @@
 
 **Status:** **Agreed** for implementation via [iterative phases A–G](#iterative-phases-simple--final). **Phase A** scope confirmed (2026-06-25).
 
-**Stories:** [71 — Inline images in notes](../../pm/3-stories/2-to-refine/71-story-inline_images_in_notes.md) (Phase A) · [72 — Content body read via SW](../../pm/3-stories/2-to-refine/72-story-content_body_read_via_service_worker.md) (Phases B–E) · [73 — Uniform reads and orphan cleanup](../../pm/3-stories/2-to-refine/73-story-uniform_body_reads_and_image_orphan_cleanup.md) (Phase F)
+**Stories:** 
+- [71 — Inline images in notes](../../pm/5-done/71-story-inline_images_in_notes.md) (Phase A)
+- [72 — Content body read via SW](../../pm/3-stories/2-to-refine/72-story-content_body_read_via_service_worker.md) (Phases B–E)
+- [73 — Uniform reads and orphan cleanup](../../pm/3-stories/2-to-refine/73-story-uniform_body_reads_and_image_orphan_cleanup.md) (Phase F)
+- [74 - Dedicated attachment storage model](../../pm/3-stories/2-to-refine/74-story-dedicated_attachment_storage_model.md) (Phase G)
 
 **Related**
 
@@ -55,7 +59,7 @@ Only some types may have children. This extends the current rule that **folders 
 ## What already exists in the codebase
 
 - **Storage:** `PUT /api/content/:id/body` accepts raw bytes; OpenAPI lists `image/png`, `image/jpeg`; object path `{ownerId}/content/{contentId}` ([`ContentBodyStorageService`](../../../packages/api/src/content/services/content-body-storage.service.ts)).
-- **Children query:** `GET /api/content/:id/children` returns all children by `parentId` — no type filter yet.
+- **Children query:** `GET /api/content/:id/children` — tree listing filtered to `directory` + `note`; `?attachments=true` returns `image` children under a note.
 - **Sidebar:** [`build-content-tree.ts`](../../../packages/web/src/lib/content/build-content-tree.ts) sets `children: undefined` for non-directories; [`ContentExplorer`](../../../packages/web/src/components/ContentExplorer.tsx) only fetches children for expanded **directory** IDs.
 - **Editor:** [`RichNoteBodyEditor`](../../../packages/web/src/pages/note-body-editor/RichNoteBodyEditor.tsx) uses MDXEditor without `imagePlugin` yet. `@mdxeditor/editor` supports `imagePlugin` + `imageUploadHandler` for file pick, paste, and drag-and-drop.
 
@@ -63,14 +67,39 @@ Only some types may have children. This extends the current rule that **folders 
 
 - **Deletion:** When [Story 64](../../pm/3-stories/1-ready/64-story-content_deletion.md) lands, deleting a note must soft-delete its attachment children; folder cascade must include descendants’ attachments. Cloud Storage cleanup remains deferred with versioning.
 - **MIME types:** Extend server allow-list (e.g. `image/webp`) and/or normalize on client.
-- **Size limits:** 1–2 MB via backend constant; expose to client via a config endpoint when the UI needs to validate before upload.
+- **Size limits:** 1–2 MB via backend constant (same limit for note markdown and images in Phase A); expose to client via a config endpoint when the UI needs to validate before upload — **deferred** (Story 71 duplicates limit in client pre-check).
+- **MIME validation:** Allow-list on `Content-Type` only; byte/MIME pairing validation deferred.
 - **Orphans:** Do **not** soft-delete removed images on every keystroke. On **note body save**, the client sends child IDs to remove; the server soft-deletes them in the same operation (see [Orphan cleanup](#orphan-cleanup)). **Deferred to Phase F** (with Story 64); Phase A may leave orphan image records if upload succeeds but note save fails.
 - **Sidebar safety:** Keep notes as non-expandable leaves in `build-content-tree`; do not add note IDs to `expandedNodeIds`; filter tree child queries to `directory` + `note` (API or client). Can land with Phase A backend work.
+- **Attachment names (Phase A interim):** Inline images are `type: image` **content** records for reuse of `PUT …/body` and GCS layout. **`content.name` is an opaque implementation detail** (`image-{random}.ext`) — not shown in the UI. User identity for an embedded image is **`contentId` in markdown**, not the name. See [Attachment storage model (future)](#attachment-storage-model-future).
 
 ### Out of scope
 
 - **Content versioning** / trash UI ([content_versioning.md](../content_versioning.md)) — design should not block it, but no implementation now.
 - **MCP** — attachment model aligns with future `createImage(parentId: noteId)`; details later.
+
+## Attachment storage model (future)
+
+**Status:** **Open** — tracked as [Story 74](../../pm/3-stories/2-to-refine/74-story-dedicated_attachment_storage_model.md).
+
+Phase A stores inline images as **`type: image` content** children of the note (`parentId = noteId`). That reuses the existing body pipeline (`POST` metadata → `PUT …/body` → `GET …/body`) and keeps per-blob metadata (`body.size`, `mimeType`, `updatedAt`) on a first-class record — useful for caching, orphan cleanup, and future storage accounting.
+
+**Problem:** Tree **content names** exist for user navigation. Inline images are not in the sidebar; forcing them through sibling **name uniqueness** produced meaningless names and UX friction. The likely long-term model is **not** tree content:
+
+- **Firestore subcollection** under the note (e.g. `content/{noteId}/attachments/{attachmentId}`), or
+- A **top-level attachments collection** keyed by note + attachment id, or
+- An **`attachments[]` array** on the note document (simpler, but doc-size and concurrent-write limits).
+
+**Why deferred:** A dedicated attachment store would duplicate cross-cutting behaviour already planned for **content** — especially [content versioning](../content_versioning.md) (snapshots, soft-delete), MCP write paths, and cascade delete ([Story 64](../../pm/3-stories/1-ready/64-story-content_deletion.md)). Reusing `content` for Phase A avoids building that twice before requirements settle (e.g. whether **decks** are tree children vs note attachments).
+
+**Not a migration blocker:** The app is pre-production (no production environment yet). When Story 74 lands, existing dev/staging image records can be reshaped or dropped without a user migration programme.
+
+**Decision inputs for Story 74:**
+
+- Split **body-inline attachments** (`image`) from **named note children** (future `deck`?) clearly.
+- Keep a uniform **`GET …/body`** read URL shape where possible (markdown already stores `/api/content/{id}/body`).
+- Prefer subcollection over parent-doc array if notes may have many images.
+- Align with versioning + orphan cleanup ([Story 73](../../pm/3-stories/2-to-refine/73-story-uniform_body_reads_and_image_orphan_cleanup.md)) in one design pass.
 
 ## Iterative phases (simple → final)
 
@@ -80,7 +109,7 @@ Notes keep **signed URLs** until **Phase F** explicitly migrates them.
 
 ### Phase A — Images work without Service Worker (skateboard)
 
-**Status:** **Confirmed** — agreed starting slice (2026-06-25).
+**Status:** **Implemented** (Phase A — Story 71, 2026-06-26).
 
 **Goal:** User can upload/paste an image in a note; it persists and displays after reload.
 
@@ -90,14 +119,17 @@ Notes keep **signed URLs** until **Phase F** explicitly migrates them.
 - Upload size limit constant on `PUT …/body`.
 - `POST` image metadata + `PUT` image bytes.
 - `GET /api/content/:id/body` — **stream only** (200 + `Content-Type`; **no ETag / 304 yet**).
+- Tree `GET …/children` returns folders + notes only; `?attachments=true` lists inline `image` children (listing / orphan cleanup).
 
 **Frontend**
 
 - `imagePlugin` + upload handler; persist `/api/content/{imageId}/body` in markdown (respect `VITE_API_BASE_URL` when not same-origin).
 - **Display:** main-thread authenticated `fetch` to `GET …/body` → **`blob:` URL** for MDXEditor. **No Service Worker.**
+- **Naming:** opaque auto-generated `content.name` (`image-{random}.ext`); no user-facing name field; retry on 409.
+- **Errors:** global snackbar for paste/drag/dialog upload failures (visible above insert dialog).
 - **Notes:** unchanged (signed URL load path).
 
-**Not in Phase A:** Service Worker, IndexedDB registry, 304, orphan cleanup, Workbox, migrating note body off signed URLs.
+**Not in Phase A:** Service Worker, IndexedDB registry, 304, orphan cleanup, Workbox, migrating note body off signed URLs, MIME byte validation, separate note vs image size limits, `GET /api/config` for limits.
 
 **Demonstrable:** paste screenshot, save note, reload, image visible; sidebar tree unchanged.
 
@@ -271,4 +303,5 @@ Summary of work items; **phase column** is the first phase that needs each item.
 - **2026-06-25:** Initial research; hierarchy rules; cross-cutting decisions.
 - **2026-06-25:** Stable `/api/content/:id/body` in markdown; uniform read path with SW + versioned cache + 304; IndexedDB registry; iterative phases A–G; Phase A confirmed (blob display, notes on signed URLs, no SW).
 - **2026-06-25:** Doc consolidation — removed duplicate sections, fixed deck hierarchy, aligned all sections with phased delivery.
-- **2026-06-25:** Stories [71](../../pm/3-stories/2-to-refine/71-story-inline_images_in_notes.md), [72](../../pm/3-stories/2-to-refine/72-story-content_body_read_via_service_worker.md), [73](../../pm/3-stories/2-to-refine/73-story-uniform_body_reads_and_image_orphan_cleanup.md) created.
+- **2026-06-26:** Phase A implemented (Story 71): `ContentType.IMAGE`, `GET …/body` stream, 2 MB upload limit, tree children filter, `?attachments=true`, opaque attachment naming, MDXEditor upload + blob preview, upload error snackbar.
+- **2026-06-26:** Documented future [attachment storage model](#attachment-storage-model-future) (Story 74) — likely subcollection/collection vs interim `type: image` content; pre-production, no migration programme required.

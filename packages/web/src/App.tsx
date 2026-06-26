@@ -74,6 +74,7 @@ function App() {
           horizontal: 'right',
         }}
         maxSnack={3}
+        style={{ zIndex: 1600 }}
       >
         <AuthErrorBoundary>
           <AuthProvider>

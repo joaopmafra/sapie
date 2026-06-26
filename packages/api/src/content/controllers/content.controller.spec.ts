@@ -1,6 +1,7 @@
 import { HttpStatus } from '@nestjs/common';
 
 import type { ProblemDetailsBody } from '../../common/dto/problem-details.dto';
+import { CONTENT_BODY_MAX_BYTES } from '../constants/content-body-limits';
 import { ContentRepository } from '../repositories/content-repository.service';
 import { CONTENT_NAME_MAX_LENGTH } from '../validation/content-name.validation';
 import { ContentControllerFixture } from './content.controller.fixture';
@@ -499,5 +500,133 @@ describe('ContentController', () => {
     await fixture
       .callApiPutContentBody(fixture.TEST_USER_ID, root.id, 'x')
       .expect(HttpStatus.BAD_REQUEST);
+  });
+
+  it(`POST ${fixture.API_CONTENT} creates an image under a note (happy path)`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Host', root.id);
+
+    const response = await fixture.callApiCreateNoteExpectingCreated(fixture.TEST_USER_ID, {
+      name: 'diagram.png',
+      parentId: note.id,
+      type: 'image',
+    });
+
+    expect(response.body).toMatchObject({
+      name: 'diagram.png',
+      type: 'image',
+      parentId: note.id,
+      ownerId: fixture.TEST_USER_ID,
+      body: null,
+    });
+  });
+
+  it(`POST ${fixture.API_CONTENT} rejects image under a folder with 400`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+
+    await fixture
+      .callApiCreateNote(fixture.TEST_USER_ID, {
+        name: 'bad.png',
+        parentId: root.id,
+        type: 'image',
+      })
+      .expect(HttpStatus.BAD_REQUEST);
+  });
+
+  it(`POST ${fixture.API_CONTENT} rejects note under a note with 400`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Parent', root.id);
+
+    await fixture
+      .callApiCreateNote(fixture.TEST_USER_ID, {
+        name: 'Nested',
+        parentId: note.id,
+      })
+      .expect(HttpStatus.BAD_REQUEST);
+  });
+
+  it(`GET ${fixture.API_CONTENT}/:id/children omits image attachments under a note`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'With image', root.id);
+    await fixture.seedImage(fixture.TEST_USER_ID, 'shot.png', note.id);
+
+    const children = await fixture.callApiGetContentByParentIdExpectingOkAsContentArray(
+      fixture.TEST_USER_ID,
+      note.id
+    );
+
+    expect(children).toHaveLength(0);
+  });
+
+  it(`GET ${fixture.API_CONTENT}/:id/children?attachments=true lists image attachments under a note`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'With images', root.id);
+    const image = await fixture.seedImage(fixture.TEST_USER_ID, 'image1.png', note.id);
+
+    const response = await fixture
+      .callApiGetContentByParentId(fixture.TEST_USER_ID, note.id, { attachments: true })
+      .expect(HttpStatus.OK);
+
+    const attachments = response.body as Array<{ id: string; type: string; name: string }>;
+    expect(attachments).toHaveLength(1);
+    expect(attachments[0].id).toBe(image.id);
+    expect(attachments[0].type).toBe('image');
+    expect(attachments[0].name).toBe('image1.png');
+  });
+
+  it(`GET ${fixture.API_CONTENT}/:id/body streams image bytes with Content-Type`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Doc', root.id);
+    const image = await fixture.seedImage(fixture.TEST_USER_ID, 'pic.png', note.id);
+    const pngBytes = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+    await fixture
+      .callApiPutContentBody(fixture.TEST_USER_ID, image.id, pngBytes, 'image/png')
+      .expect(HttpStatus.OK);
+
+    const response = await fixture
+      .callApiGetContentBody(fixture.TEST_USER_ID, image.id)
+      .expect(HttpStatus.OK);
+
+    expect(response.headers['content-type']).toMatch(/image\/png/);
+    expect(Buffer.from(response.body as Buffer)).toEqual(pngBytes);
+  });
+
+  it(`GET ${fixture.API_CONTENT}/:id/body returns 404 when content has no body yet`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Empty', root.id);
+    const image = await fixture.seedImage(fixture.TEST_USER_ID, 'empty.png', note.id);
+
+    await fixture
+      .callApiGetContentBody(fixture.TEST_USER_ID, image.id)
+      .expect(HttpStatus.NOT_FOUND);
+  });
+
+  it(`GET ${fixture.API_CONTENT}/:id/body returns 403 when caller does not own the content`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Private', root.id);
+    const image = await fixture.seedImage(fixture.TEST_USER_ID, 'pic.png', note.id);
+    await fixture
+      .callApiPutContentBody(fixture.TEST_USER_ID, image.id, Buffer.from([1, 2, 3]), 'image/png')
+      .expect(HttpStatus.OK);
+
+    await fixture
+      .callApiGetContentBody(fixture.OTHER_USER_ID, image.id)
+      .expect(HttpStatus.FORBIDDEN);
+  });
+
+  it(`PUT ${fixture.API_CONTENT}/:id/body returns 413 when body exceeds size limit`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Doc', root.id);
+    const image = await fixture.seedImage(fixture.TEST_USER_ID, 'big.png', note.id);
+    const tooLarge = Buffer.alloc(CONTENT_BODY_MAX_BYTES + 1, 0xab);
+
+    const response = await fixture
+      .callApiPutContentBody(fixture.TEST_USER_ID, image.id, tooLarge, 'image/png')
+      .expect(HttpStatus.PAYLOAD_TOO_LARGE);
+
+    const body = response.body as unknown as ProblemDetailsBody;
+    expect(body.status).toBe(HttpStatus.PAYLOAD_TOO_LARGE);
+    expect(String(body.detail ?? '')).toMatch(/maximum size/i);
   });
 });

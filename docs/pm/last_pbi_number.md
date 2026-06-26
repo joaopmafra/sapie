@@ -4,10 +4,11 @@ This file is used to track the PBI (product backlog item), which is the number o
 
 ## Current Last PBI Number
 
-73
+74
 
 ## Recent PBIs Created (limited to 10)
 
+- **74**: Story - Dedicated attachment storage model
 - **73**: Story - Uniform body reads and image orphan cleanup
 - **72**: Story - Content body read via Service Worker
 - **71**: Story - Inline images in notes
@@ -17,4 +18,3 @@ This file is used to track the PBI (product backlog item), which is the number o
 - **67**: Story - Rich note content editor (MDXEditor)
 - **66**: Story - Content body subdocument and client cache policy
 - **65**: Story - Note Body Concurrency and Conflict Resolution
-- **64**: Story - Content Deletion

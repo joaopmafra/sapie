@@ -21,6 +21,7 @@ import { useParams, useBlocker, type BlockerFunction } from 'react-router-dom';
 
 import { ClientErrorAlert } from '../components/ClientErrorAlert';
 import { useAuth } from '../contexts/AuthContext';
+import { useAppSnackbar } from '../hooks/useAppSnackbar';
 import {
   ContentType,
   noteBodyVersionKey,
@@ -32,10 +33,13 @@ import {
   useRenameContent,
   useSaveNoteBody,
 } from '../lib/content';
+import { getErrorMessageOr } from '../lib/error-messages-utils';
 import { PROBLEM_DETAILS_POINTERS } from '../lib/problemDetailsPointers.ts';
 
 import type { NoteBodyMarkdownChangeOptions } from './note-body-editor/note-body-editor-props';
+import { NoteImageUploadContext } from './note-body-editor/note-image-upload-context';
 import { NoteBodyEditor } from './note-body-editor/NoteBodyEditor';
+import { useNoteImageHandlers } from './note-body-editor/use-note-image-handlers';
 import {
   NOTE_BODY_AUTOSAVE_DEBOUNCE_MS,
   NOTE_BODY_SAVED_HEADER_MS,
@@ -50,6 +54,7 @@ const NoteEditorPage = () => {
     () => `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
   );
   const { currentUser } = useAuth();
+  const { showError } = useAppSnackbar();
   const queryClient = useQueryClient();
   const { data: note, isLoading, isError, error } = useContentItem(noteId);
   const suppressBodySignedUrlFetchAfterSave =
@@ -222,6 +227,41 @@ const NoteEditorPage = () => {
   );
 
   runSaveRef.current = runSave;
+
+  const flushSaveAfterImageInsert = useCallback(() => {
+    clearAutosaveDebounce();
+    queueMicrotask(() => {
+      requestAnimationFrame(() => {
+        void runSaveRef.current();
+      });
+    });
+  }, [clearAutosaveDebounce]);
+
+  const handleImageUploadError = useCallback(
+    (uploadError: unknown) => {
+      showError(
+        getErrorMessageOr(uploadError, 'Could not upload image. Try again.')
+      );
+    },
+    [showError]
+  );
+
+  const { imageUploadHandler, imagePreviewHandler, uploadImageAttachment } =
+    useNoteImageHandlers(
+      currentUser,
+      noteId,
+      flushSaveAfterImageInsert,
+      handleImageUploadError
+    );
+
+  const noteImageUploadContextValue = useMemo(
+    () => ({
+      uploadImageAttachment,
+      onImageInserted: flushSaveAfterImageInsert,
+      onUploadError: handleImageUploadError,
+    }),
+    [uploadImageAttachment, flushSaveAfterImageInsert, handleImageUploadError]
+  );
 
   const shouldBlockNavigation = useCallback<BlockerFunction>(() => {
     return noteEditorShouldWarnBeforeUnload({
@@ -737,15 +777,21 @@ const NoteEditorPage = () => {
               <CircularProgress size={32} />
             </Box>
           ) : (
-            <NoteBodyEditor
-              key={noteId}
-              richEditorRef={richBodyEditorRef}
-              value={draftBody}
-              onChange={handleDraftBodyUpdate}
-              placeholder='Start writing your note…'
-              disabled={!currentUser || bodyLoadPending}
-              aria-label='Note body'
-            />
+            <NoteImageUploadContext.Provider
+              value={noteImageUploadContextValue}
+            >
+              <NoteBodyEditor
+                key={noteId}
+                richEditorRef={richBodyEditorRef}
+                value={draftBody}
+                onChange={handleDraftBodyUpdate}
+                placeholder='Start writing your note…'
+                disabled={!currentUser || bodyLoadPending}
+                aria-label='Note body'
+                imageUploadHandler={imageUploadHandler}
+                imagePreviewHandler={imagePreviewHandler}
+              />
+            </NoteImageUploadContext.Provider>
           )}
         </Box>
       </Paper>

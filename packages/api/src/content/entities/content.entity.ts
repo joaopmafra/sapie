@@ -8,6 +8,7 @@ import * as admin from 'firebase-admin';
 export enum ContentType {
   DIRECTORY = 'directory',
   NOTE = 'note',
+  IMAGE = 'image',
 }
 
 /**
