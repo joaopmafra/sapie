@@ -1,42 +1,37 @@
 import { getApiBaseUrl } from '../apiBaseUrl.ts';
 
-const ATTACHMENT_BODY_PATH_RE =
-  /^(?:(?:https?:\/\/[^/]+)?)(\/api\/content\/([^/?#]+)\/attachments\/([^/?#]+)\/body)(?:[?#].*)?$/;
+const BLOB_PATH_RE =
+  /^(?:(?:https?:\/\/[^/]+)?)(\/api\/content\/([^/?#]+)\/blobs\/([^/?#]+))(?:[?#].*)?$/;
 
-/** Stable markdown/API path for a note attachment body. */
-export function attachmentBodyApiPath(
-  noteId: string,
-  attachmentId: string
-): string {
-  return `/api/content/${noteId}/attachments/${attachmentId}/body`;
+/** Stable API path for a note blob. */
+export function blobApiPath(contentId: string, blobId: string): string {
+  return `/api/content/${contentId}/blobs/${blobId}`;
 }
 
 /**
  * URL to embed in note markdown. Uses `VITE_API_BASE_URL` when set (cross-origin dev).
  */
-export function attachmentBodyMarkdownUrl(
-  noteId: string,
-  attachmentId: string
-): string {
+export function blobMarkdownUrl(contentId: string, blobId: string): string {
   const base = getApiBaseUrl().replace(/\/$/, '');
-  const path = attachmentBodyApiPath(noteId, attachmentId);
+  const path = blobApiPath(contentId, blobId);
   return base ? `${base}${path}` : path;
 }
 
-export function parseAttachmentBodyUrl(
+/** Parses a blob URL/path and returns the content + blob ids, or null. */
+export function parseBlobUrl(
   src: string
-): { noteId: string; attachmentId: string } | null {
+): { contentId: string; blobId: string } | null {
   const trimmed = src.trim();
-  const match = ATTACHMENT_BODY_PATH_RE.exec(trimmed);
+  const match = BLOB_PATH_RE.exec(trimmed);
   if (!match?.[2] || !match?.[3]) {
     return null;
   }
-  return { noteId: match[2], attachmentId: match[3] };
+  return { contentId: match[2], blobId: match[3] };
 }
 
-export function isAttachmentBodyUrl(src: string): boolean {
-  return parseAttachmentBodyUrl(src) != null;
+export function isBlobUrl(src: string): boolean {
+  return parseBlobUrl(src) != null;
 }
 
-/** @deprecated Legacy Story 71 content-body URLs; kept for preview fallback during migration. */
+// Legacy re-exports for migration compatibility — used by preview fallback during transition.
 export { isContentBodyUrl, parseContentBodyUrl } from './content-body-url';

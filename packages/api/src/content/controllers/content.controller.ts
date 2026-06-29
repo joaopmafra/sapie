@@ -38,7 +38,6 @@ import { Auth } from '../../auth';
 import { AuthenticatedRequest } from '../../auth';
 import { RootDirectoryService } from '../services/root-directory.service';
 import { ContentService } from '../services/content.service';
-import { AttachmentService } from '../services/attachment.service';
 import { ContentType } from '../entities/content.entity';
 import {
   ContentBodyUrlResponse,
@@ -47,7 +46,6 @@ import {
   toContentResponse,
   UpdateContentRequest,
 } from '../dto/content.dto';
-import { AttachmentResponse, toAttachmentResponse } from '../dto/attachment.dto';
 
 /**
  * Content Controller
@@ -62,8 +60,7 @@ export class ContentController {
 
   constructor(
     private readonly rootDirectoryService: RootDirectoryService,
-    private readonly contentService: ContentService,
-    private readonly attachmentService: AttachmentService
+    private readonly contentService: ContentService
   ) {}
 
   @Post()
@@ -329,7 +326,7 @@ export class ContentController {
     description:
       'Single endpoint for note markdown body bytes. Updates Cloud Storage and nested Firestore `body` (incl. `body.updatedAt`). ' +
       '**Notes** require `expectedRevision` query parameter (`body.updatedAt` ISO string from metadata, or empty string before first save). ' +
-      'Returns **409** when revision is stale. Reconciles note attachment subcollection from markdown references on success.',
+      'Returns **409** when revision is stale.',
   })
   @ApiQuery({
     name: 'expectedRevision',
@@ -398,119 +395,106 @@ export class ContentController {
     return toContentResponse(updated);
   }
 
-  @Post(':noteId/attachments')
+  @Post(':contentId/blobs')
   @Auth()
-  @ApiOperation({
-    summary: 'Create note attachment metadata',
-    description:
-      'Creates an attachment record under `content/{noteId}/attachments/{attachmentId}`. ' +
-      'Upload bytes via `PUT …/attachments/:attachmentId/body`. Parent `:noteId` must be type `note`.',
-  })
-  @ApiParam({ name: 'noteId', required: true, type: String })
-  @ApiCreatedResponse({ description: 'Attachment metadata created.', type: AttachmentResponse })
-  @ApiNotFoundResponse({ description: 'Note not found.', ...apiProblemDetailsSchema })
-  @ApiBadRequestResponse({ description: 'Parent is not a note.', ...apiProblemDetailsSchema })
-  @ApiUnauthorizedResponse({
-    description: 'Unauthorized - Valid Firebase ID token required',
-    ...apiProblemDetailsSchema,
-  })
-  async createAttachment(
-    @Request() request: AuthenticatedRequest,
-    @Param('noteId') noteId: string
-  ): Promise<AttachmentResponse> {
-    const { user } = request;
-    const attachment = await this.attachmentService.createAttachment(noteId, user.uid);
-    return toAttachmentResponse(attachment);
-  }
-
-  @Put(':noteId/attachments/:attachmentId/body')
-  @Auth()
-  @ApiConsumes('application/octet-stream', 'image/png', 'image/jpeg', 'image/webp', 'image/gif')
+  @ApiConsumes('image/png', 'image/jpeg', 'image/webp', 'image/gif', 'application/octet-stream')
   @ApiBody({
-    description: 'Raw image bytes. `Content-Type` sets stored media type.',
+    description:
+      'Raw bytes of the blob (inline image). The `Content-Type` header sets the stored media type.',
     schema: { type: 'string', format: 'binary' },
   })
-  @ApiOperation({ summary: 'Upload or replace attachment body bytes' })
-  @ApiParam({ name: 'noteId', required: true, type: String })
-  @ApiParam({ name: 'attachmentId', required: true, type: String })
-  @ApiOkResponse({ description: 'Updated attachment metadata.', type: AttachmentResponse })
-  @ApiNotFoundResponse({ description: 'Note or attachment not found.', ...apiProblemDetailsSchema })
+  @ApiOperation({
+    summary: 'Upload a blob (inline image) for a note',
+    description:
+      'Stores raw bytes as a blob under the note. Returns the generated blob ID and its read URL.',
+  })
+  @ApiParam({ name: 'contentId', required: true, type: String, description: 'Parent note ID' })
+  @ApiCreatedResponse({
+    description: 'Blob stored successfully.',
+    schema: {
+      type: 'object',
+      properties: { blobId: { type: 'string' }, url: { type: 'string' } },
+    },
+  })
+  @ApiNotFoundResponse({ description: 'Note not found.', ...apiProblemDetailsSchema })
+  @ApiForbiddenResponse({ description: 'Not the note owner.', ...apiProblemDetailsSchema })
+  @ApiBadRequestResponse({ description: 'Parent is not a note.', ...apiProblemDetailsSchema })
   @ApiResponse({ status: 413, description: 'Body exceeds size limit.', ...apiProblemDetailsSchema })
+  @ApiResponse({
+    status: 415,
+    description: 'Multipart is not supported.',
+    ...apiProblemDetailsSchema,
+  })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Valid Firebase ID token required',
     ...apiProblemDetailsSchema,
   })
-  async putAttachmentBody(
+  async postBlob(
     @Request() request: AuthenticatedRequest & { body: unknown },
-    @Param('noteId') noteId: string,
-    @Param('attachmentId') attachmentId: string,
+    @Param('contentId') contentId: string,
     @Headers('content-type') contentType?: string
-  ): Promise<AttachmentResponse> {
+  ): Promise<{ blobId: string; url: string }> {
     const { user } = request;
     const buffer = this.readRawPutBody(request.body);
-    const updated = await this.attachmentService.putAttachmentBody(
-      noteId,
-      attachmentId,
-      user.uid,
-      buffer,
-      contentType
+    this.logger.debug(
+      `Uploading blob for content ${contentId}, user ${user.uid} (${buffer.length} bytes)`
     );
-    return toAttachmentResponse(updated);
+    return this.contentService.uploadBlob(contentId, user.uid, buffer, contentType);
   }
 
-  @Get(':noteId/attachments/:attachmentId/body')
+  @Get(':contentId/blobs/:blobId')
   @Auth()
-  @ApiOperation({ summary: 'Stream attachment body bytes' })
-  @ApiParam({ name: 'noteId', required: true, type: String })
-  @ApiParam({ name: 'attachmentId', required: true, type: String })
+  @ApiOperation({ summary: 'Stream blob bytes' })
+  @ApiParam({ name: 'contentId', required: true, type: String, description: 'Parent note ID' })
+  @ApiParam({ name: 'blobId', required: true, type: String, description: 'Blob ID' })
   @ApiOkResponse({
-    description: 'Attachment bytes streamed successfully.',
+    description: 'Blob bytes streamed successfully.',
     schema: { type: 'string', format: 'binary' },
   })
-  @ApiNotFoundResponse({
-    description: 'Note, attachment, or body not found.',
-    ...apiProblemDetailsSchema,
-  })
+  @ApiNotFoundResponse({ description: 'Note or blob not found.', ...apiProblemDetailsSchema })
+  @ApiForbiddenResponse({ description: 'Not the note owner.', ...apiProblemDetailsSchema })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Valid Firebase ID token required',
     ...apiProblemDetailsSchema,
   })
-  @Header('Cache-Control', 'private, no-cache')
-  async getAttachmentBody(
+  @Header('Cache-Control', 'private, max-age=31536000, immutable')
+  async getBlob(
     @Request() request: AuthenticatedRequest,
-    @Param('noteId') noteId: string,
-    @Param('attachmentId') attachmentId: string
+    @Param('contentId') contentId: string,
+    @Param('blobId') blobId: string
   ): Promise<StreamableFile> {
     const { user } = request;
-    const { stream, contentType } = await this.attachmentService.getAttachmentBodyStream(
-      noteId,
-      attachmentId,
+    this.logger.debug(`Streaming blob ${blobId} for content ${contentId}, user ${user.uid}`);
+    const { stream, contentType } = await this.contentService.getBlobStream(
+      contentId,
+      blobId,
       user.uid
     );
     return new StreamableFile(stream, { type: contentType });
   }
 
-  @Delete(':noteId/attachments/:attachmentId')
+  @Delete(':id')
   @Auth()
   @ApiOperation({
-    summary: 'Delete note attachment',
-    description: 'Removes attachment metadata and storage object (e.g. after failed note save).',
+    summary: 'Delete content (note or directory)',
+    description:
+      'Soft-deletes content and cascades blob deletion for notes. Folders must be empty to delete.',
   })
-  @ApiParam({ name: 'noteId', required: true, type: String })
-  @ApiParam({ name: 'attachmentId', required: true, type: String })
-  @ApiOkResponse({ description: 'Attachment deleted.' })
-  @ApiNotFoundResponse({ description: 'Note or attachment not found.', ...apiProblemDetailsSchema })
+  @ApiParam({ name: 'id', required: true, type: String })
+  @ApiOkResponse({ description: 'Content deleted.' })
+  @ApiNotFoundResponse({ description: 'Content not found.', ...apiProblemDetailsSchema })
+  @ApiForbiddenResponse({ description: 'Not the content owner.', ...apiProblemDetailsSchema })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Valid Firebase ID token required',
     ...apiProblemDetailsSchema,
   })
-  async deleteAttachment(
+  async deleteContent(
     @Request() request: AuthenticatedRequest,
-    @Param('noteId') noteId: string,
-    @Param('attachmentId') attachmentId: string
+    @Param('id') id: string
   ): Promise<void> {
     const { user } = request;
-    await this.attachmentService.deleteAttachment(noteId, attachmentId, user.uid);
+    this.logger.debug(`Deleting content ${id} for user ${user.uid}`);
+    await this.contentService.deleteContent(id, user.uid);
   }
 
   private readRawPutBody(body: unknown): Buffer {

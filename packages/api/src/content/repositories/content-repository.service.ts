@@ -158,6 +158,10 @@ export class ContentRepository {
     });
   }
 
+  async deleteContent(id: string): Promise<void> {
+    await this.firestore.collection(this.contentCollection).doc(id).delete();
+  }
+
   async updateContentBodyMetadata(
     id: string,
     objectPath: string,

@@ -1,6 +1,6 @@
 # Blob storage model — review and road ahead
 
-**Status:** Draft — decision requested.
+**Status:** Resolved — implemented as Story 75 (2026-06-29). The blob refactor was done ahead of the review's "defer" recommendation because the user wanted clean image URLs before creating real notes. 155 tests pass, types clean.
 
 **Related**
 

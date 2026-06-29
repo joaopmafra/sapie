@@ -9,6 +9,7 @@ import {
   PayloadTooLargeException,
   Logger,
 } from '@nestjs/common';
+import { nanoid } from 'nanoid';
 import { Content, ContentType } from '../entities/content.entity';
 import { ContentRepository } from '../repositories/content-repository.service';
 import { CONTENT_BODY_MAX_BYTES } from '../constants/content-body-limits';
@@ -22,9 +23,10 @@ import {
   type ContentBodyReadService,
 } from './content-body-read.service';
 import { ContentBodyStorageService } from './content-body-storage.service';
-import { AttachmentService } from './attachment.service';
 
 import type { Readable } from 'stream';
+
+const BLOB_ID_LENGTH = 12;
 
 @Injectable()
 export class ContentService {
@@ -33,7 +35,6 @@ export class ContentService {
   constructor(
     private readonly contentRepository: ContentRepository,
     private readonly contentBodyStorage: ContentBodyStorageService,
-    private readonly attachmentService: AttachmentService,
     @Inject(CONTENT_BODY_READ_SERVICE)
     private readonly contentBodyReadService: ContentBodyReadService
   ) {}
@@ -263,11 +264,6 @@ export class ContentService {
     const now = new Date();
     await this.contentRepository.updateContentBodyMetadata(id, objectPath, size, now, mimeType);
 
-    if (existing.type === ContentType.NOTE) {
-      const markdown = body.toString('utf8');
-      await this.attachmentService.reconcileAttachmentsFromMarkdown(id, ownerId, markdown);
-    }
-
     const updated = await this.contentRepository.findById(id);
     if (!updated) {
       throw new Error(`Content with ID ${id} disappeared after body update`);
@@ -286,5 +282,96 @@ export class ContentService {
     if (expectedRevision !== storedRevision) {
       throw new ConflictException('Note body revision mismatch; reload the note and try again.');
     }
+  }
+
+  /**
+   * Validates the content is a note owned by the caller, returns it (or throws).
+   */
+  private async assertNoteOwnedByUser(contentId: string, ownerId: string): Promise<Content> {
+    const content = await this.contentRepository.findById(contentId);
+    if (!content) {
+      throw new NotFoundException(`Content with ID ${contentId} not found`);
+    }
+    if (content.ownerId !== ownerId) {
+      throw new ForbiddenException('User does not own this content');
+    }
+    if (content.type !== ContentType.NOTE) {
+      throw new BadRequestException('Blobs can only be attached to note-type content');
+    }
+    return content;
+  }
+
+  /**
+   * Uploads a blob (inline image / attachment) for a note.
+   */
+  async uploadBlob(
+    contentId: string,
+    ownerId: string,
+    body: Buffer,
+    contentTypeHeader: string | undefined
+  ): Promise<{ blobId: string; url: string }> {
+    await this.assertNoteOwnedByUser(contentId, ownerId);
+
+    if (body.length > CONTENT_BODY_MAX_BYTES) {
+      throw new PayloadTooLargeException(
+        `Blob body exceeds the maximum size of ${CONTENT_BODY_MAX_BYTES} bytes`
+      );
+    }
+
+    const mimeType = normalizeBodyMimeType(contentTypeHeader);
+    if (isMultipartMediaType(mimeType)) {
+      throw new UnsupportedMediaTypeException(
+        'Multipart is not supported on this endpoint; send a raw body with a concrete Content-Type (e.g. image/png).'
+      );
+    }
+    if (isMediaTypeTooLong(mimeType)) {
+      throw new BadRequestException('Content-Type media type is too long');
+    }
+
+    const blobId = nanoid(BLOB_ID_LENGTH);
+    await this.contentBodyStorage.uploadBlob(ownerId, contentId, blobId, body, mimeType);
+
+    const url = `/api/content/${contentId}/blobs/${blobId}`;
+    return { blobId, url };
+  }
+
+  /**
+   * Streams a blob from GCS. Validates note ownership first.
+   */
+  async getBlobStream(
+    contentId: string,
+    blobId: string,
+    ownerId: string
+  ): Promise<{ stream: Readable; contentType: string }> {
+    await this.assertNoteOwnedByUser(contentId, ownerId);
+
+    const objectPath = this.contentBodyStorage.blobObjectPath(ownerId, contentId, blobId);
+    const opened = await this.contentBodyStorage.openBlobReadStream(objectPath);
+    if (!opened) {
+      throw new NotFoundException(`Blob ${blobId} not found for content ${contentId}`);
+    }
+
+    return opened;
+  }
+
+  /**
+   * Deletes content (note or directory) and cascades blob deletion for notes.
+   */
+  async deleteContent(contentId: string, ownerId: string): Promise<void> {
+    const content = await this.contentRepository.findById(contentId);
+    if (!content) {
+      throw new NotFoundException(`Content with ID ${contentId} not found`);
+    }
+    if (content.ownerId !== ownerId) {
+      throw new ForbiddenException('User does not own this content');
+    }
+
+    // Cascade-delete all blobs for notes first
+    if (content.type === ContentType.NOTE) {
+      await this.contentBodyStorage.deleteBlobsByPrefix(ownerId, contentId);
+    }
+
+    // Delete the content document
+    await this.contentRepository.deleteContent(contentId);
   }
 }

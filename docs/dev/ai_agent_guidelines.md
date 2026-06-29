@@ -78,3 +78,60 @@ scope.
 For test philosophy (Classical TDD on the API, E2E not maintained for MVP unless a story says otherwise), see
 [contributing_guidelines.md](contributing_guidelines.md#testing-expectations) and
 [unit_testing_sapie.md — controller-first, avoid mockist service specs](unit_testing_sapie.md#avoid-mockist-service-specs-for-orchestration-code).
+## Browser testing (OMP built-in browser)
+
+For user-visible changes and API smoke tests, use the OMP `browser` tool:
+
+- `browser.open({ url, viewport })` — opens a tab; persists across `run` calls
+- `tab.ariaSnapshot()` — returns YAML with `[ref=eN]` ids for all interactive elements
+- `tab.click("aria-ref=eN")` — click by ref (must use ref from LATEST snapshot)
+- `tab.fill("aria-ref=eN", "text")` — fill a textbox
+- `tab.type("aria-ref=eN", "content")` — type keystrokes into an editor
+- `tab.screenshot()` — capture visual state
+- `tab.goto(url)` — navigate; clears element refs
+- Re-snapshot after navigation, dialog opens, or form transitions
+
+**FirebaseUI login** is two-step: email → Next → password → Sign In.
+**MDXEditor** accepts real keyboard events via `tab.type`.
+
+Test user for local-dev (create once per emulator session):
+```bash
+curl -s -X POST http://localhost:9100/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-key \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@sapie.dev","password":"test1234","returnSecureToken":true}'
+```
+
+## Blob storage model (Story 75)
+
+Images are GCS-only blobs, directory-per-content, no Firestore:
+
+- `POST /api/content/:contentId/blobs` — one-step upload → `{ blobId, url }`
+- `GET /api/content/:contentId/blobs/:blobId` — stream with ownership check
+- Delete cascade: soft-delete note → list GCS prefix → delete all objects
+- Markdown URL: `![alt](/api/content/{contentId}/blobs/{blobId})`
+- `blobId` is 12-char nanoid, unique within content's GCS prefix
+- GCS path: `{ownerId}/content/{contentId}/blobs/{blobId}`
+
+`AttachmentService`, `AttachmentRepository`, `parse-attachment-urls-from-markdown` are **removed**.
+`expectedRevision` on `PUT /:id/body` is **removed** (reconcile no longer exists).
+
+## Test infrastructure quick reference
+
+| Purpose | Container | Auth port | Storage port |
+|---|------|------|---|
+| API unit tests | `sapie-firebase-test-emulator` | 9098 | 9199 |
+| Local dev | `sapie-firebase-local-dev` | 9100 | 9199 |
+
+```bash
+docker ps --filter "name=sapie"  # check running stacks
+curl -s http://localhost:3000/api/health  # API check
+```
+
+## Parallel story implementation
+
+Backend and frontend can be implemented in parallel via `task` subagents when:
+- They touch different packages (`packages/api` vs `packages/web`)
+- Share a settled API contract (passed in the agent's `context`)
+- Each agent runs its own tests independently
+
+This cuts wall-clock time for full-stack stories.

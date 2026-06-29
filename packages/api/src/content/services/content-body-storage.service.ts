@@ -21,11 +21,18 @@ export class ContentBodyStorageService {
   }
 
   /**
-   * Object path for a note attachment:
-   * `{ownerId}/content/{noteId}/attachments/{attachmentId}`.
+   * Object path for a blob: `{ownerId}/content/{contentId}/blobs/{blobId}`.
    */
-  attachmentObjectPath(ownerId: string, noteId: string, attachmentId: string): string {
-    return `${ownerId}/content/${noteId}/attachments/${attachmentId}`;
+  blobObjectPath(ownerId: string, contentId: string, blobId: string): string {
+    return `${ownerId}/content/${contentId}/blobs/${blobId}`;
+  }
+
+  /**
+   * Prefix for listing/deleting all blobs under a content item:
+   * `{ownerId}/content/{contentId}/blobs/`.
+   */
+  blobPrefix(ownerId: string, contentId: string): string {
+    return `${ownerId}/content/${contentId}/blobs/`;
   }
 
   private defaultBucket() {
@@ -81,30 +88,39 @@ export class ContentBodyStorageService {
   }
 
   /**
-   * Uploads raw bytes for a note attachment body.
+   * Uploads raw bytes for a blob. Sets immutable cache headers.
    */
-  async uploadAttachmentBody(
+  async uploadBlob(
     ownerId: string,
-    noteId: string,
-    attachmentId: string,
+    contentId: string,
+    blobId: string,
     body: Buffer,
     mimeType: string
   ): Promise<{ objectPath: string; size: number }> {
     const bucket = this.defaultBucket();
-    const path = this.attachmentObjectPath(ownerId, noteId, attachmentId);
+    const path = this.blobObjectPath(ownerId, contentId, blobId);
     const file = bucket.file(path);
 
     await file.save(body, {
       metadata: {
         contentType: mimeType,
-        cacheControl: `private, max-age=${CLIENT_CACHE_TTL_S}`,
+        cacheControl: 'private, max-age=31536000, immutable',
       },
     });
 
     this.logger.debug(
-      `Uploaded attachment body for ${noteId}/${attachmentId} (${body.length} bytes, ${mimeType})`
+      `Uploaded blob ${blobId} for content ${contentId} (${body.length} bytes, ${mimeType})`
     );
     return { objectPath: path, size: body.length };
+  }
+
+  /**
+   * Opens a read stream for a blob object. Returns `null` when the object is missing.
+   */
+  async openBlobReadStream(
+    objectPath: string
+  ): Promise<{ stream: Readable; contentType: string } | null> {
+    return this.openBodyReadStream(objectPath);
   }
 
   /**
@@ -118,5 +134,19 @@ export class ContentBodyStorageService {
       await file.delete();
       this.logger.debug(`Deleted storage object ${objectPath}`);
     }
+  }
+
+  /**
+   * Lists and deletes all blobs under the given content prefix.
+   */
+  async deleteBlobsByPrefix(ownerId: string, contentId: string): Promise<void> {
+    const bucket = this.defaultBucket();
+    const prefix = this.blobPrefix(ownerId, contentId);
+    const [files] = await bucket.getFiles({ prefix });
+    if (files.length === 0) {
+      return;
+    }
+    await Promise.all(files.map(file => file.delete()));
+    this.logger.debug(`Deleted ${files.length} blob(s) under prefix ${prefix}`);
   }
 }

@@ -34,13 +34,11 @@ import {
   useRenameContent,
   useSaveNoteBody,
 } from '../lib/content';
-import { contentService } from '../lib/content/content-service';
 import { noteEditorDebug } from '../lib/debug/note-editor-debug';
 import { getErrorMessageOr } from '../lib/error-messages-utils';
 import { PROBLEM_DETAILS_POINTERS } from '../lib/problemDetailsPointers.ts';
 
 import type { NoteBodyMarkdownChangeOptions } from './note-body-editor/note-body-editor-props';
-import { NoteImageUploadContext } from './note-body-editor/note-image-upload-context';
 import { NoteBodyEditor } from './note-body-editor/NoteBodyEditor';
 import { useNoteImageHandlers } from './note-body-editor/use-note-image-handlers';
 import {
@@ -171,9 +169,6 @@ const NoteEditorPage = () => {
   const runSaveRef = useRef<(targetNoteId?: string) => Promise<void>>(
     async () => {}
   );
-  const clearStagedAttachmentsRef = useRef<
-    () => Array<{ noteId: string; attachmentId: string }>
-  >(() => []);
 
   const runSave = useCallback(
     async (targetNoteId?: string) => {
@@ -208,25 +203,11 @@ const NoteEditorPage = () => {
             });
             expectedRevisionRef.current =
               saved.body?.updatedAt?.toISOString() ?? '';
-            clearStagedAttachmentsRef.current();
           } catch (saveError) {
             if (isAxiosError(saveError) && saveError.response?.status === 409) {
               showError(
                 'Save failed — note was changed elsewhere. Reload and try again.'
               );
-              if (currentUser && noteId) {
-                for (const staged of clearStagedAttachmentsRef.current()) {
-                  try {
-                    await contentService.deleteAttachment(
-                      currentUser,
-                      staged.noteId,
-                      staged.attachmentId
-                    );
-                  } catch {
-                    // Best-effort cleanup after conflict
-                  }
-                }
-              }
             }
             queuedRunSaveRef.current = false;
             safeSetSavePhase('error');
@@ -277,27 +258,13 @@ const NoteEditorPage = () => {
     [showError]
   );
 
-  const {
-    imageUploadHandler,
-    imagePreviewHandler,
-    uploadImageAttachment,
-    clearStagedAttachments,
-  } = useNoteImageHandlers(
-    currentUser,
-    noteId,
-    flushSaveAfterImageInsert,
-    handleImageUploadError
-  );
-  clearStagedAttachmentsRef.current = clearStagedAttachments;
-
-  const noteImageUploadContextValue = useMemo(
-    () => ({
-      uploadImageAttachment,
-      onImageInserted: flushSaveAfterImageInsert,
-      onUploadError: handleImageUploadError,
-    }),
-    [uploadImageAttachment, flushSaveAfterImageInsert, handleImageUploadError]
-  );
+  const { imageUploadHandler, imagePreviewHandler, uploadImageAttachment } =
+    useNoteImageHandlers(
+      currentUser,
+      noteId,
+      flushSaveAfterImageInsert,
+      handleImageUploadError
+    );
 
   const shouldBlockNavigation = useCallback<BlockerFunction>(() => {
     return noteEditorShouldWarnBeforeUnload({
@@ -951,21 +918,20 @@ const NoteEditorPage = () => {
               <CircularProgress size={32} />
             </Box>
           ) : (
-            <NoteImageUploadContext.Provider
-              value={noteImageUploadContextValue}
-            >
-              <NoteBodyEditor
-                key={noteId}
-                richEditorRef={richBodyEditorRef}
-                value={draftBody}
-                onChange={handleDraftBodyUpdate}
-                placeholder='Start writing your note…'
-                disabled={!currentUser || bodyLoadPending}
-                aria-label='Note body'
-                imageUploadHandler={imageUploadHandler}
-                imagePreviewHandler={imagePreviewHandler}
-              />
-            </NoteImageUploadContext.Provider>
+            <NoteBodyEditor
+              key={noteId}
+              richEditorRef={richBodyEditorRef}
+              value={draftBody}
+              onChange={handleDraftBodyUpdate}
+              placeholder='Start writing your note…'
+              disabled={!currentUser || bodyLoadPending}
+              aria-label='Note body'
+              imageUploadHandler={imageUploadHandler}
+              imagePreviewHandler={imagePreviewHandler}
+              uploadImageAttachment={uploadImageAttachment}
+              onImageInserted={flushSaveAfterImageInsert}
+              onUploadError={handleImageUploadError}
+            />
           )}
         </Box>
       </Paper>

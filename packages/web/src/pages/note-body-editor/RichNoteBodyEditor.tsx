@@ -21,11 +21,14 @@ import {
 } from '@mdxeditor/editor';
 import '@mdxeditor/editor/style.css';
 import { Box } from '@mui/material';
-import { forwardRef, useMemo } from 'react';
+import { forwardRef, useMemo, useRef } from 'react';
 
 import { noteBodyToolbarTranslation } from './mdxEditorTranslation';
 import type { NoteBodyEditorProps } from './note-body-editor-props';
-import { NoteImageInsertDialog } from './NoteImageInsertDialog';
+import {
+  NoteImageInsertDialog,
+  type NoteImageInsertDialogProps,
+} from './NoteImageInsertDialog';
 import './rich-note-body-content.css';
 
 export const RichNoteBodyEditor = forwardRef<
@@ -40,9 +43,32 @@ export const RichNoteBodyEditor = forwardRef<
     'aria-label': _ariaLabel,
     imageUploadHandler,
     imagePreviewHandler,
+    uploadImageAttachment,
+    onImageInserted,
+    onUploadError,
   },
   ref
 ) {
+  const dialogPropsRef = useRef<NoteImageInsertDialogProps>({
+    uploadImageAttachment: uploadImageAttachment ?? (async () => ''),
+    onImageInserted: onImageInserted ?? (() => {}),
+    onUploadError: onUploadError ?? (() => {}),
+  });
+  dialogPropsRef.current = {
+    uploadImageAttachment: uploadImageAttachment ?? (async () => ''),
+    onImageInserted: onImageInserted ?? (() => {}),
+    onUploadError: onUploadError ?? (() => {}),
+  };
+
+  const ImageDialog = useMemo(
+    () =>
+      function ImageDialogWrapper() {
+        const props = dialogPropsRef.current;
+        return <NoteImageInsertDialog {...props} />;
+      },
+    []
+  );
+
   const plugins = useMemo(
     () => [
       headingsPlugin(),
@@ -54,7 +80,7 @@ export const RichNoteBodyEditor = forwardRef<
             imagePlugin({
               imageUploadHandler,
               imagePreviewHandler: imagePreviewHandler ?? undefined,
-              ImageDialog: NoteImageInsertDialog,
+              ImageDialog,
             }),
           ]
         : []),
@@ -97,7 +123,7 @@ export const RichNoteBodyEditor = forwardRef<
         ),
       }),
     ],
-    [imageUploadHandler, imagePreviewHandler]
+    [imageUploadHandler, imagePreviewHandler, ImageDialog]
   );
 
   return (

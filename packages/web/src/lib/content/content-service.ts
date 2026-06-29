@@ -14,13 +14,9 @@ import { getApiAuthRequestOptions } from '../auth-utils';
 import type { Content, UpdateContentRequest } from './types';
 import { ContentType } from './types';
 
-export interface AttachmentMetadata {
-  id: string;
-  noteId: string;
-  mimeType: string;
-  size: number;
-  createdAt: Date;
-  updatedAt: Date;
+export interface BlobUploadResult {
+  blobId: string;
+  url: string;
 }
 
 /**
@@ -190,80 +186,62 @@ export class ContentService {
     }
   }
 
-  async createAttachment(
+  /**
+   * POST /api/content/:contentId/blobs — upload a blob (e.g. inline image).
+   * Returns { blobId, url } where `url` is the markdown-embeddable path.
+   */
+  async uploadBlob(
     currentUser: User,
-    noteId: string
-  ): Promise<AttachmentMetadata> {
+    contentId: string,
+    file: File
+  ): Promise<BlobUploadResult> {
     const options = await getApiAuthRequestOptions(currentUser);
     const basePath = getApiBaseUrl().replace(/\/$/, '');
-    const response = await axios.post<AttachmentMetadata>(
-      `${basePath}/api/content/${noteId}/attachments`,
-      undefined,
-      options
-    );
-    return this.mapAttachmentResponse(response.data);
-  }
-
-  async putAttachmentBodyFile(
-    currentUser: User,
-    noteId: string,
-    attachmentId: string,
-    body: Blob,
-    contentType: string
-  ): Promise<AttachmentMetadata> {
-    const options = await getApiAuthRequestOptions(currentUser);
-    const basePath = getApiBaseUrl().replace(/\/$/, '');
-    const file =
-      body instanceof File
-        ? body
-        : new File([body], 'attachment-body', { type: contentType });
-    const response = await axios.put<AttachmentMetadata>(
-      `${basePath}/api/content/${noteId}/attachments/${attachmentId}/body`,
+    const response = await axios.post<BlobUploadResult>(
+      `${basePath}/api/content/${contentId}/blobs`,
       file,
       {
         ...options,
         headers: {
           ...((options.headers as Record<string, string> | undefined) ?? {}),
-          'Content-Type': contentType,
+          'Content-Type': file.type || 'application/octet-stream',
         },
       }
     );
-    return this.mapAttachmentResponse(response.data);
+    return response.data;
   }
 
-  async fetchAttachmentBodyBlob(
+  /**
+   * GET /api/content/:contentId/blobs/:blobId — fetch blob bytes for preview.
+   */
+  async fetchBlob(
     currentUser: User,
-    noteId: string,
-    attachmentId: string
+    contentId: string,
+    blobId: string
   ): Promise<Blob> {
     const options = await getApiAuthRequestOptions(currentUser);
     const basePath = getApiBaseUrl().replace(/\/$/, '');
     const response = await axios.get<Blob>(
-      `${basePath}/api/content/${noteId}/attachments/${attachmentId}/body`,
+      `${basePath}/api/content/${contentId}/blobs/${blobId}`,
       { ...options, responseType: 'blob' }
     );
     return response.data;
   }
 
-  async deleteAttachment(
+  /**
+   * DELETE /api/content/:contentId/blobs/:blobId — remove a blob.
+   */
+  async deleteBlob(
     currentUser: User,
-    noteId: string,
-    attachmentId: string
+    contentId: string,
+    blobId: string
   ): Promise<void> {
     const options = await getApiAuthRequestOptions(currentUser);
     const basePath = getApiBaseUrl().replace(/\/$/, '');
     await axios.delete(
-      `${basePath}/api/content/${noteId}/attachments/${attachmentId}`,
+      `${basePath}/api/content/${contentId}/blobs/${blobId}`,
       options
     );
-  }
-
-  private mapAttachmentResponse(dto: AttachmentMetadata): AttachmentMetadata {
-    return {
-      ...dto,
-      createdAt: new Date(dto.createdAt),
-      updatedAt: new Date(dto.updatedAt),
-    };
   }
 
   /**

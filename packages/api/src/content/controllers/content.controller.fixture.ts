@@ -4,7 +4,6 @@ import * as supertest from 'supertest';
 import { AppFixture } from '../../test-helpers/app.fixture';
 import { TEST_USER_ID_HEADER } from '../../test-helpers/fake-auth.guard';
 import { Content } from '../entities/content.entity';
-import { AttachmentResponse } from '../dto/attachment.dto';
 
 export class ContentControllerFixture extends AppFixture {
   readonly API_CONTENT = '/api/content';
@@ -151,57 +150,40 @@ export class ContentControllerFixture extends AppFixture {
     return req.send(body);
   }
 
-  callApiCreateAttachment(testUserId: string, noteId: string): supertest.Test {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    return supertest(this.getHttpServer())
-      .post(`${this.API_CONTENT}/${noteId}/attachments`)
-      .set(TEST_USER_ID_HEADER, testUserId);
-  }
-
-  async callApiCreateAttachmentExpectingCreated(
-    testUserId: string,
-    noteId: string
-  ): Promise<AttachmentResponse> {
-    const response = await this.callApiCreateAttachment(testUserId, noteId).expect(
-      HttpStatus.CREATED
-    );
-    return response.body as AttachmentResponse;
-  }
-
-  callApiPutAttachmentBody(
+  callApiPostBlob(
     testUserId: string,
     noteId: string,
-    attachmentId: string,
     body: string | Buffer,
     contentType = 'image/png'
   ): supertest.Test {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return supertest(this.getHttpServer())
-      .put(`${this.API_CONTENT}/${noteId}/attachments/${attachmentId}/body`)
+      .post(`${this.API_CONTENT}/${noteId}/blobs`)
       .set(TEST_USER_ID_HEADER, testUserId)
       .set('Content-Type', contentType)
       .send(body);
   }
 
-  callApiGetAttachmentBody(
+  async callApiPostBlobExpectingCreated(
     testUserId: string,
     noteId: string,
-    attachmentId: string
-  ): supertest.Test {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    body: string | Buffer,
+    contentType = 'image/png'
+  ): Promise<{ blobId: string; url: string }> {
+    const response = await this.callApiPostBlob(testUserId, noteId, body, contentType).expect(
+      HttpStatus.CREATED
+    );
+    return response.body as { blobId: string; url: string };
+  }
+
+  callApiGetBlob(testUserId: string, noteId: string, blobId: string): supertest.Test {
     return supertest(this.getHttpServer())
-      .get(`${this.API_CONTENT}/${noteId}/attachments/${attachmentId}/body`)
+      .get(`${this.API_CONTENT}/${noteId}/blobs/${blobId}`)
       .set(TEST_USER_ID_HEADER, testUserId);
   }
 
-  callApiDeleteAttachment(
-    testUserId: string,
-    noteId: string,
-    attachmentId: string
-  ): supertest.Test {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+  callApiDeleteContent(testUserId: string, contentId: string): supertest.Test {
     return supertest(this.getHttpServer())
-      .delete(`${this.API_CONTENT}/${noteId}/attachments/${attachmentId}`)
+      .delete(`${this.API_CONTENT}/${contentId}`)
       .set(TEST_USER_ID_HEADER, testUserId);
   }
 }
