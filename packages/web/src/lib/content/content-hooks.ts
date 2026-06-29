@@ -159,6 +159,7 @@ export function useNoteBody(
       url != null &&
       bodyVersion != null,
     staleTime: NOTE_BODY_FETCH_STALE_MS,
+    refetchOnMount: 'always',
   });
 }
 
@@ -174,12 +175,18 @@ function syncCachesAfterPutNoteBody(
 ): void {
   queryClient.setQueryData(contentQueryKeys.item(id), updated);
   const ver = noteBodyVersionKey(updated);
-  queryClient.removeQueries({ queryKey: ['content', 'note-body-text', id] });
   if (ver != null) {
     queryClient.setQueryData(
       contentQueryKeys.noteBodyText(id, ver),
       savedBodyText
     );
+    queryClient.removeQueries({
+      predicate: query =>
+        query.queryKey[0] === 'content' &&
+        query.queryKey[1] === 'note-body-text' &&
+        query.queryKey[2] === id &&
+        query.queryKey[3] !== ver,
+    });
   }
 }
 

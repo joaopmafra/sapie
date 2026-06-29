@@ -11,6 +11,7 @@ import {
   waitFor,
 } from '@testing-library/react';
 import type { User } from 'firebase/auth';
+import { StrictMode } from 'react';
 import { Link, createMemoryRouter, RouterProvider } from 'react-router-dom';
 
 import { AuthContext } from '../contexts/AuthContext';
@@ -106,7 +107,10 @@ async function flushOpenMutationMicrotasks() {
   });
 }
 
-function renderNoteEditor(initialPath = '/notes/note-1') {
+function renderNoteEditor(
+  initialPath = '/notes/note-1',
+  options?: { strict?: boolean }
+) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -132,22 +136,24 @@ function renderNoteEditor(initialPath = '/notes/note-1') {
     { initialEntries: [initialPath] }
   );
 
+  const tree = (
+    <QueryClientProvider client={queryClient}>
+      <AuthContext.Provider
+        value={{
+          currentUser: mockUser,
+          loading: false,
+          logout: jest.fn(),
+        }}
+      >
+        <RouterProvider router={router} />
+      </AuthContext.Provider>
+    </QueryClientProvider>
+  );
+
   return {
     queryClient,
     router,
-    ...render(
-      <QueryClientProvider client={queryClient}>
-        <AuthContext.Provider
-          value={{
-            currentUser: mockUser,
-            loading: false,
-            logout: jest.fn(),
-          }}
-        >
-          <RouterProvider router={router} />
-        </AuthContext.Provider>
-      </QueryClientProvider>
-    ),
+    ...render(options?.strict ? <StrictMode>{tree}</StrictMode> : tree),
   };
 }
 
@@ -1007,5 +1013,112 @@ describe('NoteEditorPage', () => {
     await waitFor(() => {
       expect(body).not.toHaveValue('aaa');
     });
+  });
+
+  it('reloads saved body after leaving the note and returning', async () => {
+    jest.useFakeTimers();
+    let persistedBody = '# Hello';
+    const savedRevision = new Date('2025-12-20T12:00:00.000Z');
+
+    mockedContentService.getContentById.mockImplementation(() => {
+      if (persistedBody === '# Hello') {
+        return Promise.resolve(baseNote);
+      }
+      return Promise.resolve(
+        noteWithBody(baseNote, {
+          size: persistedBody.length,
+          updatedAt: savedRevision,
+        })
+      );
+    });
+    mockedContentService.getContentBody.mockResolvedValue({
+      signedUrl: 'https://storage.example/blob',
+      expiresAt: new Date().toISOString(),
+    });
+    mockedContentService.fetchNoteBodyText.mockImplementation(() =>
+      Promise.resolve(persistedBody)
+    );
+    mockedContentService.putContentBody.mockImplementation(
+      (_user, _id, body) => {
+        persistedBody = body;
+        return Promise.resolve(
+          noteWithBody(baseNote, {
+            size: body.length,
+            updatedAt: savedRevision,
+          })
+        );
+      }
+    );
+
+    const { router } = renderNoteEditor();
+
+    let body = await screen.findByRole('textbox', { name: 'Note body' });
+    await waitFor(() => {
+      expect(body).toHaveValue('# Hello');
+    });
+
+    fireEvent.change(body, { target: { value: '# Saved after nav' } });
+    await advanceAutosaveDebounce();
+
+    await waitFor(() => {
+      expect(mockedContentService.putContentBody).toHaveBeenCalledWith(
+        mockUser,
+        'note-1',
+        '# Saved after nav',
+        'text/markdown',
+        BASE_BODY_REVISION
+      );
+    });
+
+    fireEvent.click(screen.getByRole('link', { name: 'Go home' }));
+    expect(await screen.findByText('Home page')).toBeInTheDocument();
+
+    await act(async () => {
+      await router.navigate('/notes/note-1');
+    });
+
+    body = await screen.findByRole('textbox', { name: 'Note body' });
+    await waitFor(() => {
+      expect(body).toHaveValue('# Saved after nav');
+    });
+    expect(mockedContentService.fetchNoteBodyText).toHaveBeenCalled();
+  });
+
+  it('does not wipe note body on return under React StrictMode', async () => {
+    mockedContentService.getContentById.mockResolvedValue(baseNote);
+    mockedContentService.getContentBody.mockResolvedValue({
+      signedUrl: 'https://storage.example/blob',
+      expiresAt: new Date().toISOString(),
+    });
+    mockedContentService.fetchNoteBodyText.mockResolvedValue(
+      'browser test content'
+    );
+    mockedContentService.putContentBody.mockResolvedValue(baseNote);
+
+    const { router } = renderNoteEditor('/notes/note-1', { strict: true });
+
+    let body = await screen.findByRole('textbox', { name: 'Note body' });
+    await waitFor(() => {
+      expect(body).toHaveValue('browser test content');
+    });
+
+    await act(async () => {
+      await router.navigate('/home');
+    });
+    expect(await screen.findByText('Home page')).toBeInTheDocument();
+
+    await act(async () => {
+      await router.navigate('/notes/note-1');
+    });
+
+    body = await screen.findByRole('textbox', { name: 'Note body' });
+    await waitFor(() => {
+      expect(body).toHaveValue('browser test content');
+    });
+
+    const emptyPutCalls = mockedContentService.putContentBody.mock.calls.filter(
+      call => call[2] === ''
+    );
+    expect(emptyPutCalls).toHaveLength(0);
   });
 });
