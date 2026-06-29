@@ -12,7 +12,10 @@ export type {
   UpdateContentRequest,
 } from './types';
 
-export { noteBodyVersionKey } from './content-body-cache-policy';
+export {
+  noteBodyVersionKey,
+  noteBodyExpectedRevision,
+} from './content-body-cache-policy';
 
 export type { CreateContentRequest } from '../api-client';
 

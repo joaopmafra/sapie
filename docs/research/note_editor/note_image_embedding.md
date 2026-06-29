@@ -5,7 +5,7 @@
 **Stories:**
 
 - [71 — Inline images in notes](../../pm/5-done/71-story-inline_images_in_notes.md) — Phase A skateboard (interim `ContentType.IMAGE`; superseded by Story 74)
-- [74 — Dedicated attachment storage model](../../pm/3-stories/1-ready/74-story-dedicated_attachment_storage_model.md) — refactor to subcollection + note-scoped API (**next**)
+- [74 — Dedicated attachment storage model](../../pm/3-stories/1-ready/74-story-dedicated_attachment_storage_model.md) — refactor to subcollection + note-scoped API (**done**)
 - [72 — Content body read via SW](../../pm/3-stories/2-to-refine/72-story-content_body_read_via_service_worker.md) (Phases B–E)
 - [73 — Uniform reads and orphan cleanup](../../pm/3-stories/2-to-refine/73-story-uniform_body_reads_and_image_orphan_cleanup.md) (Phase F)
 - [65 — Note body concurrency](../../pm/3-stories/2-to-refine/65-story-note_body_concurrency_and_conflict_resolution.md) — full conflict UX (may overlap revision token with Story 74)
@@ -184,7 +184,7 @@ Notes keep **signed URLs** until **Phase F** (Story 73) migrates note markdown o
 
 ### Phase A — Images work without Service Worker (skateboard)
 
-**Status:** **Implemented** with interim content model (Story 71, 2026-06-26). **Refactor** to subcollection model: Story 74.
+**Status:** **Implemented** (Story 74, 2026-06-26). Subcollection model + revision/reconcile on note save.
 
 **Goal:** User can upload/paste an image; it persists and displays after reload.
 
@@ -264,4 +264,4 @@ Extend registry to attachment `body.updatedAt` values. When a note opens, parse 
 - **2026-06-25:** Initial research; hierarchy rules; cross-cutting decisions.
 - **2026-06-25:** Stable body URLs in markdown; uniform read path with SW + versioned cache + 304; iterative phases A–G.
 - **2026-06-26:** Phase A implemented (Story 71) with interim `ContentType.IMAGE` model.
-- **2026-06-26:** **Domain model settled:** attachments as Firestore subcollection (composition); decks as content children (aggregation); `/api/content/:noteId/attachments` API; `PUT …/body` with revision + reconcile; delete rules; Story 74 is the refactor; Story 71 interim superseded.
+- **2026-06-26:** **Story 74 implemented:** attachment subcollection + API; `PUT …/body` with `expectedRevision` + reconcile; removed interim `ContentType.IMAGE`.

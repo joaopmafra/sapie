@@ -7,6 +7,7 @@ base.ts
 common.ts
 configuration.ts
 docs/AppApi.md
+docs/AttachmentResponse.md
 docs/AuthControllerGetCurrentUser401Response.md
 docs/AuthenticatedUser.md
 docs/AuthenticationApi.md

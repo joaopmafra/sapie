@@ -25,6 +25,7 @@ import { useAppSnackbar } from '../hooks/useAppSnackbar';
 import {
   ContentType,
   noteBodyVersionKey,
+  noteBodyExpectedRevision,
   contentQueryKeys,
   useBodySignedUrlFetchSuppressedAfterSave,
   useContentBody,
@@ -33,6 +34,7 @@ import {
   useRenameContent,
   useSaveNoteBody,
 } from '../lib/content';
+import { contentService } from '../lib/content/content-service';
 import { getErrorMessageOr } from '../lib/error-messages-utils';
 import { PROBLEM_DETAILS_POINTERS } from '../lib/problemDetailsPointers.ts';
 
@@ -111,6 +113,7 @@ const NoteEditorPage = () => {
   const draftBodyRef = useRef(draftBody);
   draftBodyRef.current = draftBody;
   const baselineBodyRef = useRef('');
+  const expectedRevisionRef = useRef('');
   const editorSessionIdRef = useRef(editorSessionId);
   editorSessionIdRef.current = editorSessionId;
   const saveMutateAsyncRef = useRef(saveNoteBody.mutateAsync);
@@ -165,6 +168,9 @@ const NoteEditorPage = () => {
   const runSaveRef = useRef<(targetNoteId?: string) => Promise<void>>(
     async () => {}
   );
+  const clearStagedAttachmentsRef = useRef<
+    () => Array<{ noteId: string; attachmentId: string }>
+  >(() => []);
 
   const runSave = useCallback(
     async (targetNoteId?: string) => {
@@ -191,12 +197,34 @@ const NoteEditorPage = () => {
           safeSetSavePhase('saving');
           const sent = draft;
           try {
-            await saveMutateAsyncRef.current({
+            const saved = await saveMutateAsyncRef.current({
               id,
               bodyText: sent,
+              expectedRevision: expectedRevisionRef.current,
               editorSessionId: editorSessionIdRef.current,
             });
-          } catch {
+            expectedRevisionRef.current =
+              saved.body?.updatedAt?.toISOString() ?? '';
+            clearStagedAttachmentsRef.current();
+          } catch (saveError) {
+            if (isAxiosError(saveError) && saveError.response?.status === 409) {
+              showError(
+                'Save failed — note was changed elsewhere. Reload and try again.'
+              );
+              if (currentUser && noteId) {
+                for (const staged of clearStagedAttachmentsRef.current()) {
+                  try {
+                    await contentService.deleteAttachment(
+                      currentUser,
+                      staged.noteId,
+                      staged.attachmentId
+                    );
+                  } catch {
+                    // Best-effort cleanup after conflict
+                  }
+                }
+              }
+            }
             queuedRunSaveRef.current = false;
             safeSetSavePhase('error');
             break;
@@ -223,7 +251,7 @@ const NoteEditorPage = () => {
         saveInFlightRef.current = false;
       }
     },
-    [clearSavedHeaderTimer, noteId, safeSetSavePhase]
+    [clearSavedHeaderTimer, currentUser, noteId, safeSetSavePhase, showError]
   );
 
   runSaveRef.current = runSave;
@@ -246,13 +274,18 @@ const NoteEditorPage = () => {
     [showError]
   );
 
-  const { imageUploadHandler, imagePreviewHandler, uploadImageAttachment } =
-    useNoteImageHandlers(
-      currentUser,
-      noteId,
-      flushSaveAfterImageInsert,
-      handleImageUploadError
-    );
+  const {
+    imageUploadHandler,
+    imagePreviewHandler,
+    uploadImageAttachment,
+    clearStagedAttachments,
+  } = useNoteImageHandlers(
+    currentUser,
+    noteId,
+    flushSaveAfterImageInsert,
+    handleImageUploadError
+  );
+  clearStagedAttachmentsRef.current = clearStagedAttachments;
 
   const noteImageUploadContextValue = useMemo(
     () => ({
@@ -371,10 +404,17 @@ const NoteEditorPage = () => {
     setBodyReady(false);
     setDraftBody('');
     baselineBodyRef.current = '';
+    expectedRevisionRef.current = '';
     clearAutosaveDebounce();
     clearSavedHeaderTimer();
     safeSetSavePhase('idle');
   }, [noteId, clearAutosaveDebounce, clearSavedHeaderTimer, safeSetSavePhase]);
+
+  useEffect(() => {
+    if (note) {
+      expectedRevisionRef.current = noteBodyExpectedRevision(note);
+    }
+  }, [note?.body?.updatedAt, noteId, note]);
 
   useEffect(() => {
     if (resolvedServerBody === undefined) {

@@ -195,9 +195,11 @@ export function useSaveNoteBody() {
     mutationFn: async ({
       id,
       bodyText,
+      expectedRevision,
     }: {
       id: string;
       bodyText: string;
+      expectedRevision: string;
       /** Stable for this `NoteEditorPage` mount — scopes “suppress signed URL fetch” to this editor visit. */
       editorSessionId: string;
     }): Promise<Content> => {
@@ -208,7 +210,8 @@ export function useSaveNoteBody() {
         currentUser,
         id,
         bodyText,
-        'text/markdown'
+        'text/markdown',
+        expectedRevision
       );
     },
     onSuccess: (content, { id, bodyText, editorSessionId }) => {

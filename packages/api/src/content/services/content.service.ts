@@ -22,6 +22,7 @@ import {
   type ContentBodyReadService,
 } from './content-body-read.service';
 import { ContentBodyStorageService } from './content-body-storage.service';
+import { AttachmentService } from './attachment.service';
 
 import type { Readable } from 'stream';
 
@@ -32,19 +33,13 @@ export class ContentService {
   constructor(
     private readonly contentRepository: ContentRepository,
     private readonly contentBodyStorage: ContentBodyStorageService,
+    private readonly attachmentService: AttachmentService,
     @Inject(CONTENT_BODY_READ_SERVICE)
     private readonly contentBodyReadService: ContentBodyReadService
   ) {}
 
-  async findByParentIdAndOwnerId(
-    parentId: string,
-    ownerId: string,
-    options?: { attachmentsOnly?: boolean }
-  ): Promise<Content[]> {
+  async findByParentIdAndOwnerId(parentId: string, ownerId: string): Promise<Content[]> {
     const children = await this.contentRepository.findByParentIdAndOwnerId(parentId, ownerId);
-    if (options?.attachmentsOnly) {
-      return children.filter(child => child.type === ContentType.IMAGE);
-    }
     return children.filter(
       child => child.type === ContentType.DIRECTORY || child.type === ContentType.NOTE
     );
@@ -88,10 +83,6 @@ export class ContentService {
       throw new BadRequestException('A note can only be created inside a folder');
     }
 
-    if (contentType === ContentType.IMAGE && parent.type !== ContentType.NOTE) {
-      throw new BadRequestException('An image can only be created inside a note');
-    }
-
     const nameCollision = await this.contentRepository.findFirstByParentIdAndName(parentId, name);
     if (nameCollision) {
       throw new ConflictException(`Content with name "${name}" already exists in this location`);
@@ -100,16 +91,6 @@ export class ContentService {
     const now = new Date();
     if (contentType === ContentType.DIRECTORY) {
       return this.contentRepository.addDirectory({
-        name,
-        parentId,
-        ownerId,
-        createdAt: now,
-        updatedAt: now,
-      });
-    }
-
-    if (contentType === ContentType.IMAGE) {
-      return this.contentRepository.addImage({
         name,
         parentId,
         ownerId,
@@ -236,7 +217,8 @@ export class ContentService {
     id: string,
     ownerId: string,
     body: Buffer,
-    contentTypeHeader: string | undefined
+    contentTypeHeader: string | undefined,
+    expectedRevision?: string
   ): Promise<Content> {
     const existing = await this.contentRepository.findById(id);
 
@@ -250,6 +232,10 @@ export class ContentService {
 
     if (existing.type === ContentType.DIRECTORY) {
       throw new BadRequestException('Body storage is not applicable for directories');
+    }
+
+    if (existing.type === ContentType.NOTE) {
+      this.assertExpectedRevision(existing, expectedRevision);
     }
 
     if (body.length > CONTENT_BODY_MAX_BYTES) {
@@ -277,10 +263,28 @@ export class ContentService {
     const now = new Date();
     await this.contentRepository.updateContentBodyMetadata(id, objectPath, size, now, mimeType);
 
+    if (existing.type === ContentType.NOTE) {
+      const markdown = body.toString('utf8');
+      await this.attachmentService.reconcileAttachmentsFromMarkdown(id, ownerId, markdown);
+    }
+
     const updated = await this.contentRepository.findById(id);
     if (!updated) {
       throw new Error(`Content with ID ${id} disappeared after body update`);
     }
     return updated;
+  }
+
+  private assertExpectedRevision(existing: Content, expectedRevision?: string): void {
+    if (expectedRevision === undefined) {
+      throw new BadRequestException(
+        'Request must include `expectedRevision` query parameter (use empty string when the note has no body yet).'
+      );
+    }
+
+    const storedRevision = existing.body?.updatedAt.toISOString() ?? '';
+    if (expectedRevision !== storedRevision) {
+      throw new ConflictException('Note body revision mismatch; reload the note and try again.');
+    }
   }
 }

@@ -4,6 +4,7 @@ import * as supertest from 'supertest';
 import { AppFixture } from '../../test-helpers/app.fixture';
 import { TEST_USER_ID_HEADER } from '../../test-helpers/fake-auth.guard';
 import { Content } from '../entities/content.entity';
+import { AttachmentResponse } from '../dto/attachment.dto';
 
 export class ContentControllerFixture extends AppFixture {
   readonly API_CONTENT = '/api/content';
@@ -42,7 +43,7 @@ export class ContentControllerFixture extends AppFixture {
 
   async callApiCreateNoteExpectingCreated(
     testUserId: string,
-    payload: { name: string; parentId: string; type?: 'note' | 'directory' | 'image' }
+    payload: { name: string; parentId: string; type?: 'note' | 'directory' }
   ): Promise<supertest.Response> {
     return this.callApiCreateNote(testUserId, payload).expect(HttpStatus.CREATED);
   }
@@ -52,18 +53,9 @@ export class ContentControllerFixture extends AppFixture {
     return response.body as Content;
   }
 
-  async seedImage(userId: string, name: string, parentNoteId: string): Promise<Content> {
-    const response = await this.callApiCreateNoteExpectingCreated(userId, {
-      name,
-      parentId: parentNoteId,
-      type: 'image',
-    });
-    return response.body as Content;
-  }
-
   callApiCreateNote(
     testUserId: string,
-    payload: { name: string; parentId: string; type?: 'note' | 'directory' | 'image' }
+    payload: { name: string; parentId: string; type?: 'note' | 'directory' }
   ): supertest.Test {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return supertest(this.getHttpServer())
@@ -92,18 +84,11 @@ export class ContentControllerFixture extends AppFixture {
     return this.callApiPatchContent(testUserId, contentId, payload).expect(HttpStatus.OK);
   }
 
-  callApiGetContentByParentId(
-    testUserId: string,
-    parentId: string,
-    query?: { attachments?: boolean }
-  ): supertest.Test {
-    let req = supertest(this.getHttpServer())
+  callApiGetContentByParentId(testUserId: string, parentId: string): supertest.Test {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return supertest(this.getHttpServer())
       .get(this.API_CONTENT_CHILDREN.replace(':id', parentId))
       .set(TEST_USER_ID_HEADER, testUserId);
-    if (query?.attachments) {
-      req = req.query({ attachments: 'true' });
-    }
-    return req;
   }
 
   async callApiGetContentByParentIdExpectingOkAsContentArray(
@@ -152,13 +137,71 @@ export class ContentControllerFixture extends AppFixture {
     testUserId: string,
     contentId: string,
     body: string | Buffer,
-    contentType = 'text/plain; charset=utf-8'
+    contentType = 'text/plain; charset=utf-8',
+    expectedRevision?: string
+  ): supertest.Test {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    let req = supertest(this.getHttpServer())
+      .put(`${this.API_CONTENT}/${contentId}/body`)
+      .set(TEST_USER_ID_HEADER, testUserId)
+      .set('Content-Type', contentType);
+    if (expectedRevision !== undefined) {
+      req = req.query({ expectedRevision });
+    }
+    return req.send(body);
+  }
+
+  callApiCreateAttachment(testUserId: string, noteId: string): supertest.Test {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return supertest(this.getHttpServer())
+      .post(`${this.API_CONTENT}/${noteId}/attachments`)
+      .set(TEST_USER_ID_HEADER, testUserId);
+  }
+
+  async callApiCreateAttachmentExpectingCreated(
+    testUserId: string,
+    noteId: string
+  ): Promise<AttachmentResponse> {
+    const response = await this.callApiCreateAttachment(testUserId, noteId).expect(
+      HttpStatus.CREATED
+    );
+    return response.body as AttachmentResponse;
+  }
+
+  callApiPutAttachmentBody(
+    testUserId: string,
+    noteId: string,
+    attachmentId: string,
+    body: string | Buffer,
+    contentType = 'image/png'
   ): supertest.Test {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return supertest(this.getHttpServer())
-      .put(`${this.API_CONTENT}/${contentId}/body`)
+      .put(`${this.API_CONTENT}/${noteId}/attachments/${attachmentId}/body`)
       .set(TEST_USER_ID_HEADER, testUserId)
       .set('Content-Type', contentType)
       .send(body);
+  }
+
+  callApiGetAttachmentBody(
+    testUserId: string,
+    noteId: string,
+    attachmentId: string
+  ): supertest.Test {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return supertest(this.getHttpServer())
+      .get(`${this.API_CONTENT}/${noteId}/attachments/${attachmentId}/body`)
+      .set(TEST_USER_ID_HEADER, testUserId);
+  }
+
+  callApiDeleteAttachment(
+    testUserId: string,
+    noteId: string,
+    attachmentId: string
+  ): supertest.Test {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return supertest(this.getHttpServer())
+      .delete(`${this.API_CONTENT}/${noteId}/attachments/${attachmentId}`)
+      .set(TEST_USER_ID_HEADER, testUserId);
   }
 }

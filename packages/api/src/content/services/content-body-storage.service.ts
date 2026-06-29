@@ -20,6 +20,14 @@ export class ContentBodyStorageService {
     return `${ownerId}/content/${contentId}`;
   }
 
+  /**
+   * Object path for a note attachment:
+   * `{ownerId}/content/{noteId}/attachments/{attachmentId}`.
+   */
+  attachmentObjectPath(ownerId: string, noteId: string, attachmentId: string): string {
+    return `${ownerId}/content/${noteId}/attachments/${attachmentId}`;
+  }
+
   private defaultBucket() {
     return this.firebaseAdminService.getStorage().bucket(resolveFirebaseStorageBucketName());
   }
@@ -70,5 +78,45 @@ export class ContentBodyStorageService {
     });
 
     return { stream, contentType };
+  }
+
+  /**
+   * Uploads raw bytes for a note attachment body.
+   */
+  async uploadAttachmentBody(
+    ownerId: string,
+    noteId: string,
+    attachmentId: string,
+    body: Buffer,
+    mimeType: string
+  ): Promise<{ objectPath: string; size: number }> {
+    const bucket = this.defaultBucket();
+    const path = this.attachmentObjectPath(ownerId, noteId, attachmentId);
+    const file = bucket.file(path);
+
+    await file.save(body, {
+      metadata: {
+        contentType: mimeType,
+        cacheControl: `private, max-age=${CLIENT_CACHE_TTL_S}`,
+      },
+    });
+
+    this.logger.debug(
+      `Uploaded attachment body for ${noteId}/${attachmentId} (${body.length} bytes, ${mimeType})`
+    );
+    return { objectPath: path, size: body.length };
+  }
+
+  /**
+   * Deletes a storage object when present. Idempotent when the object is already gone.
+   */
+  async deleteObject(objectPath: string): Promise<void> {
+    const bucket = this.defaultBucket();
+    const file = bucket.file(objectPath);
+    const [exists] = await file.exists();
+    if (exists) {
+      await file.delete();
+      this.logger.debug(`Deleted storage object ${objectPath}`);
+    }
   }
 }

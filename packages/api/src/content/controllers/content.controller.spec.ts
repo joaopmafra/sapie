@@ -328,7 +328,13 @@ describe('ContentController', () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
     const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Doc', root.id);
     await fixture
-      .callApiPutContentBody(fixture.TEST_USER_ID, note.id, '# Hello')
+      .callApiPutContentBody(
+        fixture.TEST_USER_ID,
+        note.id,
+        '# Hello',
+        'text/plain; charset=utf-8',
+        ''
+      )
       .expect(HttpStatus.OK);
 
     const before = await fixture.callApiGetContentByIdExpectingOkAsContent(
@@ -398,7 +404,13 @@ describe('ContentController', () => {
     const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Doc', root.id);
 
     const putResponse = await fixture
-      .callApiPutContentBody(fixture.TEST_USER_ID, note.id, '# Hello')
+      .callApiPutContentBody(
+        fixture.TEST_USER_ID,
+        note.id,
+        '# Hello',
+        'text/plain; charset=utf-8',
+        ''
+      )
       .expect(HttpStatus.OK);
 
     expect(putResponse.body).toMatchObject({
@@ -443,7 +455,7 @@ describe('ContentController', () => {
     const payload = Buffer.from([0, 1, 2, 255]);
 
     const putResponse = await fixture
-      .callApiPutContentBody(fixture.TEST_USER_ID, note.id, payload, 'application/octet-stream')
+      .callApiPutContentBody(fixture.TEST_USER_ID, note.id, payload, 'application/octet-stream', '')
       .expect(HttpStatus.OK);
 
     expect(putResponse.body).toMatchObject({
@@ -472,7 +484,8 @@ describe('ContentController', () => {
         fixture.TEST_USER_ID,
         note.id,
         '--x',
-        'multipart/form-data; boundary=x'
+        'multipart/form-data; boundary=x',
+        ''
       )
       .expect(HttpStatus.UNSUPPORTED_MEDIA_TYPE);
   });
@@ -482,7 +495,7 @@ describe('ContentController', () => {
     const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Mine', root.id);
 
     await fixture
-      .callApiPutContentBody(fixture.OTHER_USER_ID, note.id, 'x')
+      .callApiPutContentBody(fixture.OTHER_USER_ID, note.id, 'x', 'text/plain; charset=utf-8', '')
       .expect(HttpStatus.FORBIDDEN);
   });
 
@@ -490,7 +503,13 @@ describe('ContentController', () => {
     await fixture.seedRootDirectory(fixture.TEST_USER_ID);
 
     await fixture
-      .callApiPutContentBody(fixture.TEST_USER_ID, 'non-existent-id', 'x')
+      .callApiPutContentBody(
+        fixture.TEST_USER_ID,
+        'non-existent-id',
+        'x',
+        'text/plain; charset=utf-8',
+        ''
+      )
       .expect(HttpStatus.NOT_FOUND);
   });
 
@@ -498,38 +517,54 @@ describe('ContentController', () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
 
     await fixture
-      .callApiPutContentBody(fixture.TEST_USER_ID, root.id, 'x')
+      .callApiPutContentBody(fixture.TEST_USER_ID, root.id, 'x', 'text/plain; charset=utf-8')
       .expect(HttpStatus.BAD_REQUEST);
   });
 
-  it(`POST ${fixture.API_CONTENT} creates an image under a note (happy path)`, async () => {
+  it(`PUT ${fixture.API_CONTENT}/:id/body returns 400 when expectedRevision is missing for a note`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Doc', root.id);
+
+    await fixture
+      .callApiPutContentBody(fixture.TEST_USER_ID, note.id, '# Hello')
+      .expect(HttpStatus.BAD_REQUEST);
+  });
+
+  it(`PUT ${fixture.API_CONTENT}/:id/body returns 409 when expectedRevision is stale`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Doc', root.id);
+
+    await fixture
+      .callApiPutContentBody(fixture.TEST_USER_ID, note.id, '# v1', 'text/markdown', '')
+      .expect(HttpStatus.OK);
+
+    await fixture
+      .callApiPutContentBody(fixture.TEST_USER_ID, note.id, '# v2', 'text/markdown', '')
+      .expect(HttpStatus.CONFLICT);
+  });
+
+  it(`POST ${fixture.API_CONTENT}/:noteId/attachments creates attachment metadata`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
     const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Host', root.id);
 
-    const response = await fixture.callApiCreateNoteExpectingCreated(fixture.TEST_USER_ID, {
-      name: 'diagram.png',
-      parentId: note.id,
-      type: 'image',
-    });
+    const attachment = await fixture.callApiCreateAttachmentExpectingCreated(
+      fixture.TEST_USER_ID,
+      note.id
+    );
 
-    expect(response.body).toMatchObject({
-      name: 'diagram.png',
-      type: 'image',
-      parentId: note.id,
-      ownerId: fixture.TEST_USER_ID,
-      body: null,
+    expect(attachment).toMatchObject({
+      noteId: note.id,
+      mimeType: 'application/octet-stream',
+      size: 0,
     });
+    expect(attachment.id).toBeTruthy();
   });
 
-  it(`POST ${fixture.API_CONTENT} rejects image under a folder with 400`, async () => {
+  it(`POST ${fixture.API_CONTENT}/:noteId/attachments rejects folder parent with 400`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
 
     await fixture
-      .callApiCreateNote(fixture.TEST_USER_ID, {
-        name: 'bad.png',
-        parentId: root.id,
-        type: 'image',
-      })
+      .callApiCreateAttachment(fixture.TEST_USER_ID, root.id)
       .expect(HttpStatus.BAD_REQUEST);
   });
 
@@ -545,88 +580,88 @@ describe('ContentController', () => {
       .expect(HttpStatus.BAD_REQUEST);
   });
 
-  it(`GET ${fixture.API_CONTENT}/:id/children omits image attachments under a note`, async () => {
+  it(`GET ${fixture.API_CONTENT}/:noteId/attachments/:id/body streams image bytes`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
-    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'With image', root.id);
-    await fixture.seedImage(fixture.TEST_USER_ID, 'shot.png', note.id);
-
-    const children = await fixture.callApiGetContentByParentIdExpectingOkAsContentArray(
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Doc', root.id);
+    const attachment = await fixture.callApiCreateAttachmentExpectingCreated(
       fixture.TEST_USER_ID,
       note.id
     );
-
-    expect(children).toHaveLength(0);
-  });
-
-  it(`GET ${fixture.API_CONTENT}/:id/children?attachments=true lists image attachments under a note`, async () => {
-    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
-    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'With images', root.id);
-    const image = await fixture.seedImage(fixture.TEST_USER_ID, 'image1.png', note.id);
-
-    const response = await fixture
-      .callApiGetContentByParentId(fixture.TEST_USER_ID, note.id, { attachments: true })
-      .expect(HttpStatus.OK);
-
-    const attachments = response.body as Array<{ id: string; type: string; name: string }>;
-    expect(attachments).toHaveLength(1);
-    expect(attachments[0].id).toBe(image.id);
-    expect(attachments[0].type).toBe('image');
-    expect(attachments[0].name).toBe('image1.png');
-  });
-
-  it(`GET ${fixture.API_CONTENT}/:id/body streams image bytes with Content-Type`, async () => {
-    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
-    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Doc', root.id);
-    const image = await fixture.seedImage(fixture.TEST_USER_ID, 'pic.png', note.id);
     const pngBytes = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
     await fixture
-      .callApiPutContentBody(fixture.TEST_USER_ID, image.id, pngBytes, 'image/png')
+      .callApiPutAttachmentBody(fixture.TEST_USER_ID, note.id, attachment.id, pngBytes, 'image/png')
       .expect(HttpStatus.OK);
 
     const response = await fixture
-      .callApiGetContentBody(fixture.TEST_USER_ID, image.id)
+      .callApiGetAttachmentBody(fixture.TEST_USER_ID, note.id, attachment.id)
       .expect(HttpStatus.OK);
 
     expect(response.headers['content-type']).toMatch(/image\/png/);
     expect(Buffer.from(response.body as Buffer)).toEqual(pngBytes);
   });
 
-  it(`GET ${fixture.API_CONTENT}/:id/body returns 404 when content has no body yet`, async () => {
+  it(`GET ${fixture.API_CONTENT}/:noteId/attachments/:id/body returns 404 when body not uploaded`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
     const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Empty', root.id);
-    const image = await fixture.seedImage(fixture.TEST_USER_ID, 'empty.png', note.id);
+    const attachment = await fixture.callApiCreateAttachmentExpectingCreated(
+      fixture.TEST_USER_ID,
+      note.id
+    );
 
     await fixture
-      .callApiGetContentBody(fixture.TEST_USER_ID, image.id)
+      .callApiGetAttachmentBody(fixture.TEST_USER_ID, note.id, attachment.id)
       .expect(HttpStatus.NOT_FOUND);
   });
 
-  it(`GET ${fixture.API_CONTENT}/:id/body returns 403 when caller does not own the content`, async () => {
-    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
-    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Private', root.id);
-    const image = await fixture.seedImage(fixture.TEST_USER_ID, 'pic.png', note.id);
-    await fixture
-      .callApiPutContentBody(fixture.TEST_USER_ID, image.id, Buffer.from([1, 2, 3]), 'image/png')
-      .expect(HttpStatus.OK);
-
-    await fixture
-      .callApiGetContentBody(fixture.OTHER_USER_ID, image.id)
-      .expect(HttpStatus.FORBIDDEN);
-  });
-
-  it(`PUT ${fixture.API_CONTENT}/:id/body returns 413 when body exceeds size limit`, async () => {
+  it(`PUT ${fixture.API_CONTENT}/:noteId/attachments/:id/body returns 413 when body exceeds size limit`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
     const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Doc', root.id);
-    const image = await fixture.seedImage(fixture.TEST_USER_ID, 'big.png', note.id);
+    const attachment = await fixture.callApiCreateAttachmentExpectingCreated(
+      fixture.TEST_USER_ID,
+      note.id
+    );
     const tooLarge = Buffer.alloc(CONTENT_BODY_MAX_BYTES + 1, 0xab);
 
     const response = await fixture
-      .callApiPutContentBody(fixture.TEST_USER_ID, image.id, tooLarge, 'image/png')
+      .callApiPutAttachmentBody(fixture.TEST_USER_ID, note.id, attachment.id, tooLarge, 'image/png')
       .expect(HttpStatus.PAYLOAD_TOO_LARGE);
 
     const body = response.body as unknown as ProblemDetailsBody;
     expect(body.status).toBe(HttpStatus.PAYLOAD_TOO_LARGE);
     expect(String(body.detail ?? '')).toMatch(/maximum size/i);
+  });
+
+  it(`PUT ${fixture.API_CONTENT}/:id/body reconciles unreferenced attachments on save`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Doc', root.id);
+    const kept = await fixture.callApiCreateAttachmentExpectingCreated(
+      fixture.TEST_USER_ID,
+      note.id
+    );
+    const orphan = await fixture.callApiCreateAttachmentExpectingCreated(
+      fixture.TEST_USER_ID,
+      note.id
+    );
+    const pngBytes = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+
+    await fixture
+      .callApiPutAttachmentBody(fixture.TEST_USER_ID, note.id, kept.id, pngBytes, 'image/png')
+      .expect(HttpStatus.OK);
+    await fixture
+      .callApiPutAttachmentBody(fixture.TEST_USER_ID, note.id, orphan.id, pngBytes, 'image/png')
+      .expect(HttpStatus.OK);
+
+    const markdown = `![x](/api/content/${note.id}/attachments/${kept.id}/body)`;
+    await fixture
+      .callApiPutContentBody(fixture.TEST_USER_ID, note.id, markdown, 'text/markdown', '')
+      .expect(HttpStatus.OK);
+
+    await fixture
+      .callApiGetAttachmentBody(fixture.TEST_USER_ID, note.id, kept.id)
+      .expect(HttpStatus.OK);
+    await fixture
+      .callApiGetAttachmentBody(fixture.TEST_USER_ID, note.id, orphan.id)
+      .expect(HttpStatus.NOT_FOUND);
   });
 });

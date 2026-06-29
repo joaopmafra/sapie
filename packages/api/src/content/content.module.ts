@@ -4,8 +4,10 @@ import * as bodyParser from 'body-parser';
 import { FakeStorageModule } from '../fake-storage/fake-storage.module';
 import { ContentController } from './controllers/content.controller';
 import { ContentRepository } from './repositories/content-repository.service';
+import { AttachmentRepository } from './repositories/attachment-repository.service';
 import { RootDirectoryService } from './services/root-directory.service';
 import { ContentService } from './services/content.service';
+import { AttachmentService } from './services/attachment.service';
 import { ContentBodyStorageService } from './services/content-body-storage.service';
 import { getContentBodyReadServiceProviderPair } from './services/content-body-read.service';
 
@@ -26,11 +28,20 @@ import { getContentBodyReadServiceProviderPair } from './services/content-body-r
   providers: [
     RootDirectoryService,
     ContentRepository,
+    AttachmentRepository,
     ContentService,
+    AttachmentService,
     ContentBodyStorageService,
     ...getContentBodyReadServiceProviderPair(),
   ],
-  exports: [RootDirectoryService, ContentRepository, ContentService, ContentBodyStorageService],
+  exports: [
+    RootDirectoryService,
+    ContentRepository,
+    AttachmentRepository,
+    ContentService,
+    AttachmentService,
+    ContentBodyStorageService,
+  ],
 })
 export class ContentModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
@@ -41,9 +52,9 @@ export class ContentModule implements NestModule {
           limit: '50mb',
         })
       )
-      .forRoutes({
-        path: 'api/content/:id/body',
-        method: RequestMethod.PUT,
-      });
+      .forRoutes(
+        { path: 'api/content/:id/body', method: RequestMethod.PUT },
+        { path: 'api/content/:noteId/attachments/:attachmentId/body', method: RequestMethod.PUT }
+      );
   }
 }

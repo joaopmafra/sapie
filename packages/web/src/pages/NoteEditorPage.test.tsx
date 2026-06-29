@@ -26,6 +26,10 @@ jest.mock('../lib/content/content-service', () => ({
     getContentBody: jest.fn(),
     fetchNoteBodyText: jest.fn(),
     putContentBody: jest.fn(),
+    createAttachment: jest.fn(),
+    putAttachmentBodyFile: jest.fn(),
+    fetchAttachmentBodyBlob: jest.fn(),
+    deleteAttachment: jest.fn(),
     getRootDirectory: jest.fn(),
     getContentByParentId: jest.fn(),
     createNote: jest.fn(),
@@ -44,6 +48,7 @@ const mockUser = {
 } as unknown as User;
 
 const BASE_BODY_UPDATED = new Date('2024-01-03T00:00:00.000Z');
+const BASE_BODY_REVISION = BASE_BODY_UPDATED.toISOString();
 
 function makeNoteBody(
   overrides: Partial<ContentBodySummary> = {}
@@ -272,7 +277,8 @@ describe('NoteEditorPage', () => {
         mockUser,
         'note-1',
         '# Edited',
-        'text/markdown'
+        'text/markdown',
+        BASE_BODY_REVISION
       );
     });
 
@@ -341,7 +347,8 @@ describe('NoteEditorPage', () => {
       mockUser,
       'note-1',
       'v1',
-      'text/markdown'
+      'text/markdown',
+      expect.any(String)
     );
 
     fireEvent.change(body, { target: { value: 'v2' } });
@@ -372,7 +379,8 @@ describe('NoteEditorPage', () => {
       mockUser,
       'note-1',
       'v2',
-      'text/markdown'
+      'text/markdown',
+      expect.any(String)
     );
   });
 
@@ -436,7 +444,8 @@ describe('NoteEditorPage', () => {
       mockUser,
       'note-1',
       'v2',
-      'text/markdown'
+      'text/markdown',
+      expect.any(String)
     );
   });
 
@@ -495,14 +504,16 @@ describe('NoteEditorPage', () => {
       mockUser,
       'note-1',
       'v1',
-      'text/markdown'
+      'text/markdown',
+      BASE_BODY_REVISION
     );
     expect(mockedContentService.putContentBody).toHaveBeenNthCalledWith(
       2,
       mockUser,
       'note-1',
       'v2',
-      'text/markdown'
+      'text/markdown',
+      expect.any(String)
     );
   });
 
@@ -576,14 +587,16 @@ describe('NoteEditorPage', () => {
       mockUser,
       'note-1',
       'oops',
-      'text/markdown'
+      'text/markdown',
+      BASE_BODY_REVISION
     );
     expect(mockedContentService.putContentBody).toHaveBeenNthCalledWith(
       3,
       mockUser,
       'note-1',
       'oops2',
-      'text/markdown'
+      'text/markdown',
+      expect.any(String)
     );
   });
 
@@ -643,7 +656,8 @@ describe('NoteEditorPage', () => {
         mockUser,
         'note-1',
         '# Stay and save',
-        'text/markdown'
+        'text/markdown',
+        BASE_BODY_REVISION
       );
     });
   });
@@ -703,7 +717,8 @@ describe('NoteEditorPage', () => {
         mockUser,
         'note-1',
         '# Pending nav',
-        'text/markdown'
+        'text/markdown',
+        BASE_BODY_REVISION
       );
       expect(screen.getByText('Home page')).toBeInTheDocument();
     });
@@ -791,7 +806,8 @@ describe('NoteEditorPage', () => {
         mockUser,
         'note-1',
         '# Flushed',
-        'text/markdown'
+        'text/markdown',
+        BASE_BODY_REVISION
       );
     });
 
@@ -834,7 +850,8 @@ describe('NoteEditorPage', () => {
         mockUser,
         'note-1',
         'oops',
-        'text/markdown'
+        'text/markdown',
+        BASE_BODY_REVISION
       );
     });
   });
@@ -968,14 +985,16 @@ describe('NoteEditorPage', () => {
         mockUser,
         'note-b',
         'bbb',
-        'text/markdown'
+        'text/markdown',
+        ''
       );
     });
     expect(mockedContentService.putContentBody).not.toHaveBeenCalledWith(
       mockUser,
       'note-a',
       'bbb',
-      'text/markdown'
+      'text/markdown',
+      expect.any(String)
     );
 
     await act(async () => {
