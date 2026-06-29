@@ -42,7 +42,7 @@ export class ContentControllerFixture extends AppFixture {
 
   async callApiCreateNoteExpectingCreated(
     testUserId: string,
-    payload: { name: string; parentId: string; type?: 'note' | 'directory' | 'image' }
+    payload: { name: string; parentId: string; type?: 'note' | 'directory' }
   ): Promise<supertest.Response> {
     return this.callApiCreateNote(testUserId, payload).expect(HttpStatus.CREATED);
   }
@@ -52,18 +52,9 @@ export class ContentControllerFixture extends AppFixture {
     return response.body as Content;
   }
 
-  async seedImage(userId: string, name: string, parentNoteId: string): Promise<Content> {
-    const response = await this.callApiCreateNoteExpectingCreated(userId, {
-      name,
-      parentId: parentNoteId,
-      type: 'image',
-    });
-    return response.body as Content;
-  }
-
   callApiCreateNote(
     testUserId: string,
-    payload: { name: string; parentId: string; type?: 'note' | 'directory' | 'image' }
+    payload: { name: string; parentId: string; type?: 'note' | 'directory' }
   ): supertest.Test {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return supertest(this.getHttpServer())
@@ -92,18 +83,11 @@ export class ContentControllerFixture extends AppFixture {
     return this.callApiPatchContent(testUserId, contentId, payload).expect(HttpStatus.OK);
   }
 
-  callApiGetContentByParentId(
-    testUserId: string,
-    parentId: string,
-    query?: { attachments?: boolean }
-  ): supertest.Test {
-    let req = supertest(this.getHttpServer())
+  callApiGetContentByParentId(testUserId: string, parentId: string): supertest.Test {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return supertest(this.getHttpServer())
       .get(this.API_CONTENT_CHILDREN.replace(':id', parentId))
       .set(TEST_USER_ID_HEADER, testUserId);
-    if (query?.attachments) {
-      req = req.query({ attachments: 'true' });
-    }
-    return req;
   }
 
   async callApiGetContentByParentIdExpectingOkAsContentArray(
@@ -152,13 +136,54 @@ export class ContentControllerFixture extends AppFixture {
     testUserId: string,
     contentId: string,
     body: string | Buffer,
-    contentType = 'text/plain; charset=utf-8'
+    contentType = 'text/plain; charset=utf-8',
+    expectedRevision?: string
   ): supertest.Test {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    return supertest(this.getHttpServer())
+    let req = supertest(this.getHttpServer())
       .put(`${this.API_CONTENT}/${contentId}/body`)
+      .set(TEST_USER_ID_HEADER, testUserId)
+      .set('Content-Type', contentType);
+    if (expectedRevision !== undefined) {
+      req = req.query({ expectedRevision });
+    }
+    return req.send(body);
+  }
+
+  callApiPostBlob(
+    testUserId: string,
+    noteId: string,
+    body: string | Buffer,
+    contentType = 'image/png'
+  ): supertest.Test {
+    return supertest(this.getHttpServer())
+      .post(`${this.API_CONTENT}/${noteId}/blobs`)
       .set(TEST_USER_ID_HEADER, testUserId)
       .set('Content-Type', contentType)
       .send(body);
+  }
+
+  async callApiPostBlobExpectingCreated(
+    testUserId: string,
+    noteId: string,
+    body: string | Buffer,
+    contentType = 'image/png'
+  ): Promise<{ blobId: string; url: string }> {
+    const response = await this.callApiPostBlob(testUserId, noteId, body, contentType).expect(
+      HttpStatus.CREATED
+    );
+    return response.body as { blobId: string; url: string };
+  }
+
+  callApiGetBlob(testUserId: string, noteId: string, blobId: string): supertest.Test {
+    return supertest(this.getHttpServer())
+      .get(`${this.API_CONTENT}/${noteId}/blobs/${blobId}`)
+      .set(TEST_USER_ID_HEADER, testUserId);
+  }
+
+  callApiDeleteContent(testUserId: string, contentId: string): supertest.Test {
+    return supertest(this.getHttpServer())
+      .delete(`${this.API_CONTENT}/${contentId}`)
+      .set(TEST_USER_ID_HEADER, testUserId);
   }
 }

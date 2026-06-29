@@ -15,7 +15,7 @@ import { getContentBodyReadServiceProviderPair } from './services/content-body-r
  * This module provides content management functionality including:
  * - Root directory management for users
  * - Content storage and retrieval operations
- * - Content type definitions and entities
+ * - Blob (inline image) storage for notes
  *
  * The module serves as the foundation for the content management system,
  * providing users with their personal workspace and content organization capabilities.
@@ -41,9 +41,9 @@ export class ContentModule implements NestModule {
           limit: '50mb',
         })
       )
-      .forRoutes({
-        path: 'api/content/:id/body',
-        method: RequestMethod.PUT,
-      });
+      .forRoutes(
+        { path: 'api/content/:id/body', method: RequestMethod.PUT },
+        { path: 'api/content/:contentId/blobs', method: RequestMethod.POST }
+      );
   }
 }

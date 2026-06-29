@@ -9,6 +9,7 @@ import {
   PayloadTooLargeException,
   Logger,
 } from '@nestjs/common';
+import { nanoid } from 'nanoid';
 import { Content, ContentType } from '../entities/content.entity';
 import { ContentRepository } from '../repositories/content-repository.service';
 import { CONTENT_BODY_MAX_BYTES } from '../constants/content-body-limits';
@@ -25,6 +26,8 @@ import { ContentBodyStorageService } from './content-body-storage.service';
 
 import type { Readable } from 'stream';
 
+const BLOB_ID_LENGTH = 12;
+
 @Injectable()
 export class ContentService {
   private readonly logger = new Logger(ContentService.name);
@@ -36,15 +39,8 @@ export class ContentService {
     private readonly contentBodyReadService: ContentBodyReadService
   ) {}
 
-  async findByParentIdAndOwnerId(
-    parentId: string,
-    ownerId: string,
-    options?: { attachmentsOnly?: boolean }
-  ): Promise<Content[]> {
+  async findByParentIdAndOwnerId(parentId: string, ownerId: string): Promise<Content[]> {
     const children = await this.contentRepository.findByParentIdAndOwnerId(parentId, ownerId);
-    if (options?.attachmentsOnly) {
-      return children.filter(child => child.type === ContentType.IMAGE);
-    }
     return children.filter(
       child => child.type === ContentType.DIRECTORY || child.type === ContentType.NOTE
     );
@@ -88,10 +84,6 @@ export class ContentService {
       throw new BadRequestException('A note can only be created inside a folder');
     }
 
-    if (contentType === ContentType.IMAGE && parent.type !== ContentType.NOTE) {
-      throw new BadRequestException('An image can only be created inside a note');
-    }
-
     const nameCollision = await this.contentRepository.findFirstByParentIdAndName(parentId, name);
     if (nameCollision) {
       throw new ConflictException(`Content with name "${name}" already exists in this location`);
@@ -100,16 +92,6 @@ export class ContentService {
     const now = new Date();
     if (contentType === ContentType.DIRECTORY) {
       return this.contentRepository.addDirectory({
-        name,
-        parentId,
-        ownerId,
-        createdAt: now,
-        updatedAt: now,
-      });
-    }
-
-    if (contentType === ContentType.IMAGE) {
-      return this.contentRepository.addImage({
         name,
         parentId,
         ownerId,
@@ -236,7 +218,8 @@ export class ContentService {
     id: string,
     ownerId: string,
     body: Buffer,
-    contentTypeHeader: string | undefined
+    contentTypeHeader: string | undefined,
+    expectedRevision?: string
   ): Promise<Content> {
     const existing = await this.contentRepository.findById(id);
 
@@ -250,6 +233,10 @@ export class ContentService {
 
     if (existing.type === ContentType.DIRECTORY) {
       throw new BadRequestException('Body storage is not applicable for directories');
+    }
+
+    if (existing.type === ContentType.NOTE) {
+      this.assertExpectedRevision(existing, expectedRevision);
     }
 
     if (body.length > CONTENT_BODY_MAX_BYTES) {
@@ -282,5 +269,109 @@ export class ContentService {
       throw new Error(`Content with ID ${id} disappeared after body update`);
     }
     return updated;
+  }
+
+  private assertExpectedRevision(existing: Content, expectedRevision?: string): void {
+    if (expectedRevision === undefined) {
+      throw new BadRequestException(
+        'Request must include `expectedRevision` query parameter (use empty string when the note has no body yet).'
+      );
+    }
+
+    const storedRevision = existing.body?.updatedAt.toISOString() ?? '';
+    if (expectedRevision !== storedRevision) {
+      throw new ConflictException('Note body revision mismatch; reload the note and try again.');
+    }
+  }
+
+  /**
+   * Validates the content is a note owned by the caller, returns it (or throws).
+   */
+  private async assertNoteOwnedByUser(contentId: string, ownerId: string): Promise<Content> {
+    const content = await this.contentRepository.findById(contentId);
+    if (!content) {
+      throw new NotFoundException(`Content with ID ${contentId} not found`);
+    }
+    if (content.ownerId !== ownerId) {
+      throw new ForbiddenException('User does not own this content');
+    }
+    if (content.type !== ContentType.NOTE) {
+      throw new BadRequestException('Blobs can only be attached to note-type content');
+    }
+    return content;
+  }
+
+  /**
+   * Uploads a blob (inline image / attachment) for a note.
+   */
+  async uploadBlob(
+    contentId: string,
+    ownerId: string,
+    body: Buffer,
+    contentTypeHeader: string | undefined
+  ): Promise<{ blobId: string; url: string }> {
+    await this.assertNoteOwnedByUser(contentId, ownerId);
+
+    if (body.length > CONTENT_BODY_MAX_BYTES) {
+      throw new PayloadTooLargeException(
+        `Blob body exceeds the maximum size of ${CONTENT_BODY_MAX_BYTES} bytes`
+      );
+    }
+
+    const mimeType = normalizeBodyMimeType(contentTypeHeader);
+    if (isMultipartMediaType(mimeType)) {
+      throw new UnsupportedMediaTypeException(
+        'Multipart is not supported on this endpoint; send a raw body with a concrete Content-Type (e.g. image/png).'
+      );
+    }
+    if (isMediaTypeTooLong(mimeType)) {
+      throw new BadRequestException('Content-Type media type is too long');
+    }
+
+    const blobId = nanoid(BLOB_ID_LENGTH);
+    await this.contentBodyStorage.uploadBlob(ownerId, contentId, blobId, body, mimeType);
+
+    const url = `/api/content/${contentId}/blobs/${blobId}`;
+    return { blobId, url };
+  }
+
+  /**
+   * Streams a blob from GCS. Validates note ownership first.
+   */
+  async getBlobStream(
+    contentId: string,
+    blobId: string,
+    ownerId: string
+  ): Promise<{ stream: Readable; contentType: string }> {
+    await this.assertNoteOwnedByUser(contentId, ownerId);
+
+    const objectPath = this.contentBodyStorage.blobObjectPath(ownerId, contentId, blobId);
+    const opened = await this.contentBodyStorage.openBlobReadStream(objectPath);
+    if (!opened) {
+      throw new NotFoundException(`Blob ${blobId} not found for content ${contentId}`);
+    }
+
+    return opened;
+  }
+
+  /**
+   * Deletes content (note or directory) and cascades blob deletion for notes.
+   */
+  async deleteContent(contentId: string, ownerId: string): Promise<void> {
+    const content = await this.contentRepository.findById(contentId);
+    if (!content) {
+      throw new NotFoundException(`Content with ID ${contentId} not found`);
+    }
+    if (content.ownerId !== ownerId) {
+      throw new ForbiddenException('User does not own this content');
+    }
+
+    // Cascade-delete all blobs for notes first
+    if (content.type === ContentType.NOTE) {
+      await this.contentBodyStorage.deleteBlobsByPrefix(ownerId, contentId);
+    }
+
+    // Delete the content document
+    await this.contentRepository.deleteContent(contentId);
   }
 }

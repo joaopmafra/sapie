@@ -20,14 +20,20 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { ClientErrorAlert } from '../../components/ClientErrorAlert';
 
-import { useNoteImageUploadActions } from './note-image-upload-context';
+export interface NoteImageInsertDialogProps {
+  uploadImageAttachment: (file: File) => Promise<string>;
+  onImageInserted: () => void;
+  onUploadError: (error: unknown) => void;
+}
 
-export function NoteImageInsertDialog() {
+export function NoteImageInsertDialog({
+  uploadImageAttachment,
+  onImageInserted,
+  onUploadError,
+}: NoteImageInsertDialogProps) {
   const [dialogState] = useCellValues(imageDialogState$);
   const saveImage = usePublisher(saveImage$);
   const closeImageDialog = usePublisher(closeImageDialog$);
-  const { uploadImageAttachment, onImageInserted, onUploadError } =
-    useNoteImageUploadActions();
 
   const open = dialogState.type !== 'inactive';
   const isEditing = dialogState.type === 'editing';
@@ -115,73 +121,66 @@ export function NoteImageInsertDialog() {
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth='sm'>
       <DialogTitle>{isEditing ? 'Edit image' : 'Insert image'}</DialogTitle>
       <DialogContent>
+        {error != null ? (
+          <Box sx={{ mb: 2 }}>
+            <ClientErrorAlert value={error} />
+          </Box>
+        ) : null}
+
         {!isEditing ? (
           <Box
-            onDragOver={event => {
-              event.preventDefault();
+            sx={{
+              border: '2px dashed',
+              borderColor: dragOver ? 'primary.main' : 'grey.400',
+              borderRadius: 1,
+              p: 3,
+              textAlign: 'center',
+              cursor: 'pointer',
+              mb: 2,
+            }}
+            onDragOver={e => {
+              e.preventDefault();
               setDragOver(true);
             }}
             onDragLeave={() => setDragOver(false)}
             onDrop={onDrop}
-            sx={{
-              mt: 1,
-              mb: 2,
-              p: 3,
-              border: '2px dashed',
-              borderColor: dragOver ? 'primary.main' : 'divider',
-              borderRadius: 1,
-              bgcolor: dragOver ? 'action.hover' : 'background.default',
-              textAlign: 'center',
-            }}
+            onClick={() => document.getElementById('image-file-input')?.click()}
           >
-            <Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
-              Drag an image here, or choose a file from your device.
+            <Typography variant='body2' color='text.secondary'>
+              {selectedFile ? selectedFile.name : 'Click or drag an image here'}
             </Typography>
-            <Button variant='outlined' component='label' disabled={submitting}>
-              Choose file
-              <input
-                type='file'
-                accept='image/*'
-                hidden
-                onChange={event => {
-                  setSelectedFile(event.target.files?.item(0) ?? null);
-                  event.target.value = '';
-                }}
-              />
-            </Button>
-            {selectedFile ? (
-              <Typography variant='body2' sx={{ mt: 2 }}>
-                Selected: <strong>{selectedFile.name}</strong>
-              </Typography>
-            ) : null}
+            <input
+              id='image-file-input'
+              type='file'
+              accept='image/*'
+              style={{ display: 'none' }}
+              onChange={e => {
+                const file = e.target.files?.item(0);
+                if (file) setSelectedFile(file);
+              }}
+            />
           </Box>
         ) : null}
+
         <TextField
           margin='dense'
           label='Alt text'
           fullWidth
           value={altText}
-          onChange={event => setAltText(event.target.value)}
+          onChange={e => setAltText(e.target.value)}
           disabled={submitting}
-          helperText='Optional description for accessibility and markdown export.'
-          sx={{ mt: isEditing ? 1 : 0 }}
         />
-        {error ? (
-          <Box sx={{ mt: 2 }}>
-            <ClientErrorAlert value={error} />
-          </Box>
-        ) : null}
       </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2 }}>
+      <DialogActions>
         <Button onClick={handleClose} disabled={submitting}>
           Cancel
         </Button>
         <Button
+          onClick={handleSubmit}
+          disabled={submitting}
           variant='contained'
-          onClick={() => void handleSubmit()}
-          disabled={submitting || (!isEditing && !selectedFile)}
-          startIcon={submitting ? <CircularProgress size={16} /> : undefined}
         >
+          {submitting ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
           {isEditing ? 'Save' : 'Insert'}
         </Button>
       </DialogActions>

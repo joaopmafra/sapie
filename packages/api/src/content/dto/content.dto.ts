@@ -80,7 +80,7 @@ export class ContentResponse {
 
   @ApiPropertyOptional({
     description:
-      '**Notes and images.** Public summary of the stored body. Omitted for directories. `null` before the first `PUT …/body`.',
+      '**Notes.** Public summary of the stored body. Omitted for directories. `null` before the first `PUT …/body`.',
     type: ContentBodySummaryResponse,
     nullable: true,
   })
@@ -154,8 +154,7 @@ export class CreateContentRequest {
 
   @ApiPropertyOptional({
     description:
-      'Kind of content to create. Omit or `note` for a note under a folder; `directory` for a folder under a folder; ' +
-      '`image` for an inline image attachment under a note.',
+      'Kind of content to create. Omit or `note` for a note under a folder; `directory` for a folder under a folder.',
     enum: ContentType,
     default: ContentType.NOTE,
     example: ContentType.NOTE,

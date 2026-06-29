@@ -18,4 +18,8 @@ export type NoteBodyEditorProps = {
   /** When set, enables MDXEditor inline image upload/paste (rich editor only). */
   imageUploadHandler?: ImageUploadHandler | null;
   imagePreviewHandler?: ImagePreviewHandler | null;
+  /** Dialog actions for the MDXEditor image dialog. */
+  uploadImageAttachment?: (file: File) => Promise<string>;
+  onImageInserted?: () => void;
+  onUploadError?: (error: unknown) => void;
 };

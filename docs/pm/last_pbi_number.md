@@ -4,11 +4,12 @@ This file is used to track the PBI (product backlog item), which is the number o
 
 ## Current Last PBI Number
 
-74
+75
 
 ## Recent PBIs Created (limited to 10)
 
-- **74**: Story - Dedicated attachment storage model (**1-ready**, domain settled 2026-06-26)
+- **75**: Story - Blob storage model refactor (**1-ready**) — replaces Story 74 attachment model with GCS-only blobs
+- **74**: Story - Dedicated attachment storage model (**5-done**, domain settled 2026-06-26)
 - **73**: Story - Uniform body reads and image orphan cleanup
 - **72**: Story - Content body read via Service Worker
 - **71**: Story - Inline images in notes

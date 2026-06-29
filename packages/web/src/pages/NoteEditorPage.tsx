@@ -25,6 +25,7 @@ import { useAppSnackbar } from '../hooks/useAppSnackbar';
 import {
   ContentType,
   noteBodyVersionKey,
+  noteBodyExpectedRevision,
   contentQueryKeys,
   useBodySignedUrlFetchSuppressedAfterSave,
   useContentBody,
@@ -33,11 +34,11 @@ import {
   useRenameContent,
   useSaveNoteBody,
 } from '../lib/content';
+import { noteEditorDebug } from '../lib/debug/note-editor-debug';
 import { getErrorMessageOr } from '../lib/error-messages-utils';
 import { PROBLEM_DETAILS_POINTERS } from '../lib/problemDetailsPointers.ts';
 
 import type { NoteBodyMarkdownChangeOptions } from './note-body-editor/note-body-editor-props';
-import { NoteImageUploadContext } from './note-body-editor/note-image-upload-context';
 import { NoteBodyEditor } from './note-body-editor/NoteBodyEditor';
 import { useNoteImageHandlers } from './note-body-editor/use-note-image-handlers';
 import {
@@ -71,20 +72,22 @@ const NoteEditorPage = () => {
   });
   const signedUrl = bodySignedUrlQuery.data?.signedUrl ?? null;
   const bodyVersionKey = note ? noteBodyVersionKey(note) : null;
-  const noteBodyQuery = useNoteBody(noteId, signedUrl, bodyVersionKey);
+  const noteBodyQuery = useNoteBody(
+    noteId,
+    suppressSignedUrlFetch ? null : signedUrl,
+    bodyVersionKey
+  );
   const cachedNoteBodyFromPut = useQuery({
     queryKey:
       noteId != null && bodyVersionKey != null
         ? contentQueryKeys.noteBodyText(noteId, bodyVersionKey)
         : (['content', 'note-body-text', '__disabled__'] as const),
-    queryFn: async () => {
+    queryFn: async (): Promise<string | undefined> => {
       if (noteId == null || bodyVersionKey == null) {
-        return '';
+        return undefined;
       }
-      return (
-        queryClient.getQueryData<string>(
-          contentQueryKeys.noteBodyText(noteId, bodyVersionKey)
-        ) ?? ''
+      return queryClient.getQueryData<string>(
+        contentQueryKeys.noteBodyText(noteId, bodyVersionKey)
       );
     },
     enabled:
@@ -111,6 +114,7 @@ const NoteEditorPage = () => {
   const draftBodyRef = useRef(draftBody);
   draftBodyRef.current = draftBody;
   const baselineBodyRef = useRef('');
+  const expectedRevisionRef = useRef('');
   const editorSessionIdRef = useRef(editorSessionId);
   editorSessionIdRef.current = editorSessionId;
   const saveMutateAsyncRef = useRef(saveNoteBody.mutateAsync);
@@ -191,12 +195,20 @@ const NoteEditorPage = () => {
           safeSetSavePhase('saving');
           const sent = draft;
           try {
-            await saveMutateAsyncRef.current({
+            const saved = await saveMutateAsyncRef.current({
               id,
               bodyText: sent,
+              expectedRevision: expectedRevisionRef.current,
               editorSessionId: editorSessionIdRef.current,
             });
-          } catch {
+            expectedRevisionRef.current =
+              saved.body?.updatedAt?.toISOString() ?? '';
+          } catch (saveError) {
+            if (isAxiosError(saveError) && saveError.response?.status === 409) {
+              showError(
+                'Save failed — note was changed elsewhere. Reload and try again.'
+              );
+            }
             queuedRunSaveRef.current = false;
             safeSetSavePhase('error');
             break;
@@ -223,7 +235,7 @@ const NoteEditorPage = () => {
         saveInFlightRef.current = false;
       }
     },
-    [clearSavedHeaderTimer, noteId, safeSetSavePhase]
+    [clearSavedHeaderTimer, currentUser, noteId, safeSetSavePhase, showError]
   );
 
   runSaveRef.current = runSave;
@@ -253,15 +265,6 @@ const NoteEditorPage = () => {
       flushSaveAfterImageInsert,
       handleImageUploadError
     );
-
-  const noteImageUploadContextValue = useMemo(
-    () => ({
-      uploadImageAttachment,
-      onImageInserted: flushSaveAfterImageInsert,
-      onUploadError: handleImageUploadError,
-    }),
-    [uploadImageAttachment, flushSaveAfterImageInsert, handleImageUploadError]
-  );
 
   const shouldBlockNavigation = useCallback<BlockerFunction>(() => {
     return noteEditorShouldWarnBeforeUnload({
@@ -324,14 +327,12 @@ const NoteEditorPage = () => {
     if (!fetchBodySignedUrl) {
       return '';
     }
-    if (suppressSignedUrlFetch) {
-      if (
-        !cachedNoteBodyFromPut.isFetched &&
-        cachedNoteBodyFromPut.data === undefined
-      ) {
-        return undefined;
-      }
-      return cachedNoteBodyFromPut.data ?? '';
+    const suppressWithCachedBody =
+      suppressSignedUrlFetch &&
+      cachedNoteBodyFromPut.isFetched &&
+      cachedNoteBodyFromPut.data !== undefined;
+    if (suppressWithCachedBody) {
+      return cachedNoteBodyFromPut.data;
     }
     if (!bodySignedUrlQuery.isSuccess) {
       return undefined;
@@ -357,13 +358,90 @@ const NoteEditorPage = () => {
   ]);
 
   useEffect(() => {
+    if (!noteId) {
+      return;
+    }
+    noteEditorDebug('mount', { noteId, editorSessionId });
+    void queryClient.invalidateQueries({
+      queryKey: contentQueryKeys.bodySignedUrl(noteId),
+    });
+    void queryClient.invalidateQueries({
+      predicate: query =>
+        query.queryKey[0] === 'content' &&
+        query.queryKey[1] === 'note-body-text' &&
+        query.queryKey[2] === noteId,
+    });
+    return () => {
+      noteEditorDebug('unmount', { noteId, editorSessionId });
+    };
+  }, [noteId, editorSessionId, queryClient]);
+
+  useEffect(() => {
+    noteEditorDebug('load-state', {
+      noteId,
+      editorSessionId,
+      suppressSignedUrlFetch,
+      bodyReady,
+      bodyVersionKey,
+      storedBodySize: note?.body?.size ?? null,
+      resolvedServerBody:
+        resolvedServerBody === undefined
+          ? undefined
+          : {
+              length: resolvedServerBody.length,
+              preview: resolvedServerBody.slice(0, 80),
+            },
+      signedUrlPending: bodySignedUrlQuery.isPending,
+      signedUrlSuccess: bodySignedUrlQuery.isSuccess,
+      noteBodyPending: noteBodyQuery.isPending,
+      noteBodySuccess: noteBodyQuery.isSuccess,
+      cachedBodyFromPut:
+        cachedNoteBodyFromPut.data === undefined
+          ? undefined
+          : {
+              length: cachedNoteBodyFromPut.data.length,
+              preview: cachedNoteBodyFromPut.data.slice(0, 80),
+            },
+      saveInFlight: saveInFlightRef.current,
+    });
+  }, [
+    noteId,
+    editorSessionId,
+    suppressSignedUrlFetch,
+    bodyReady,
+    bodyVersionKey,
+    note?.body?.size,
+    resolvedServerBody,
+    bodySignedUrlQuery.isPending,
+    bodySignedUrlQuery.isSuccess,
+    noteBodyQuery.isPending,
+    noteBodyQuery.isSuccess,
+    cachedNoteBodyFromPut.data,
+  ]);
+
+  useEffect(() => {
     const idForSession = noteId;
     return () => {
       clearAutosaveDebounce();
       clearSavedHeaderTimer();
-      if (idForSession && draftBodyRef.current !== baselineBodyRef.current) {
-        void runSaveRef.current(idForSession);
+      if (!idForSession) {
+        return;
       }
+      const draft = draftBodyRef.current;
+      const base = baselineBodyRef.current;
+      if (draft === base) {
+        return;
+      }
+      // Refs can lag setState by one render; never overwrite stored content with "".
+      if (draft === '' && base.length > 0) {
+        noteEditorDebug('unmount-flush-skipped', {
+          reason: 'empty-draft-nonempty-baseline',
+          noteId: idForSession,
+          baselineLength: base.length,
+        });
+        return;
+      }
+      void runSaveRef.current(idForSession);
     };
   }, [noteId, clearAutosaveDebounce, clearSavedHeaderTimer]);
 
@@ -371,6 +449,7 @@ const NoteEditorPage = () => {
     setBodyReady(false);
     setDraftBody('');
     baselineBodyRef.current = '';
+    expectedRevisionRef.current = '';
     clearAutosaveDebounce();
     clearSavedHeaderTimer();
     safeSetSavePhase('idle');
@@ -380,17 +459,61 @@ const NoteEditorPage = () => {
     if (resolvedServerBody === undefined) {
       return;
     }
+    // After a successful save this session, the editor is source of truth — do not re-apply
+    // server/cache body (a version-key cache miss would otherwise wipe the draft as "").
+    if (suppressSignedUrlFetch && bodyReady) {
+      noteEditorDebug('apply-server-body-skipped', {
+        reason: 'suppress-after-save',
+        noteId,
+      });
+      return;
+    }
+    if (saveInFlightRef.current) {
+      noteEditorDebug('apply-server-body-skipped', {
+        reason: 'save-in-flight',
+        noteId,
+      });
+      return;
+    }
+
     const incoming = resolvedServerBody;
     const currentDraft = draftBodyRef.current;
+    const storedBodySize = note?.body?.size ?? 0;
+    if (incoming === '' && storedBodySize > 0 && currentDraft.length > 0) {
+      noteEditorDebug('apply-server-body-skipped', {
+        reason: 'empty-incoming-with-nonempty-draft-and-metadata',
+        noteId,
+        storedBodySize,
+        draftLength: currentDraft.length,
+      });
+      return;
+    }
     const serverContentChangedVsLocal = incoming !== currentDraft;
+    const isInitialLoad = !bodyReady;
 
-    setDraftBody(incoming);
+    if (note) {
+      expectedRevisionRef.current = noteBodyExpectedRevision(note);
+    }
+
+    noteEditorDebug('apply-server-body', {
+      noteId,
+      isInitialLoad,
+      serverContentChangedVsLocal,
+      incomingLength: incoming.length,
+      draftLength: currentDraft.length,
+      storedBodySize,
+    });
+
+    // Keep refs in sync before setState — StrictMode can unmount before the next render,
+    // and unmount flush compares draftBodyRef to baselineBodyRef.
+    draftBodyRef.current = incoming;
     baselineBodyRef.current = incoming;
+    setDraftBody(incoming);
     setBodyReady(true);
 
     // Post-save TanStack cache sync often refreshes body text with the same bytes; do not
     // reset save phase or cancel the “Saved” header timer in that case (Story 55 Phase 3).
-    if (serverContentChangedVsLocal) {
+    if (serverContentChangedVsLocal || isInitialLoad) {
       clearAutosaveDebounce();
       clearSavedHeaderTimer();
       safeSetSavePhase('idle');
@@ -401,9 +524,25 @@ const NoteEditorPage = () => {
   }, [
     resolvedServerBody,
     noteId,
+    note,
+    suppressSignedUrlFetch,
+    bodyReady,
     clearAutosaveDebounce,
     clearSavedHeaderTimer,
     safeSetSavePhase,
+  ]);
+
+  useEffect(() => {
+    if (!note || !suppressSignedUrlFetch || !bodyReady) {
+      return;
+    }
+    expectedRevisionRef.current = noteBodyExpectedRevision(note);
+  }, [
+    note?.body?.updatedAt?.toISOString(),
+    noteId,
+    suppressSignedUrlFetch,
+    bodyReady,
+    note,
   ]);
 
   useEffect(() => {
@@ -556,6 +695,7 @@ const NoteEditorPage = () => {
         if (value !== baselineBodyRef.current) {
           return;
         }
+        draftBodyRef.current = value;
         setDraftBody(value);
         baselineBodyRef.current = value;
         clearAutosaveDebounce();
@@ -564,6 +704,7 @@ const NoteEditorPage = () => {
         return;
       }
 
+      draftBodyRef.current = value;
       setDraftBody(value);
       clearSavedHeaderTimer();
 
@@ -635,7 +776,7 @@ const NoteEditorPage = () => {
   const bodyLoadPending =
     !bodyReady ||
     (waitForBodySignedUrlQuery && bodySignedUrlQuery.isPending) ||
-    (Boolean(signedUrl) && noteBodyQuery.isPending);
+    (!suppressSignedUrlFetch && Boolean(signedUrl) && noteBodyQuery.isPending);
 
   const bodyLoadError =
     (waitForBodySignedUrlQuery && bodySignedUrlQuery.isError) ||
@@ -777,21 +918,20 @@ const NoteEditorPage = () => {
               <CircularProgress size={32} />
             </Box>
           ) : (
-            <NoteImageUploadContext.Provider
-              value={noteImageUploadContextValue}
-            >
-              <NoteBodyEditor
-                key={noteId}
-                richEditorRef={richBodyEditorRef}
-                value={draftBody}
-                onChange={handleDraftBodyUpdate}
-                placeholder='Start writing your note…'
-                disabled={!currentUser || bodyLoadPending}
-                aria-label='Note body'
-                imageUploadHandler={imageUploadHandler}
-                imagePreviewHandler={imagePreviewHandler}
-              />
-            </NoteImageUploadContext.Provider>
+            <NoteBodyEditor
+              key={noteId}
+              richEditorRef={richBodyEditorRef}
+              value={draftBody}
+              onChange={handleDraftBodyUpdate}
+              placeholder='Start writing your note…'
+              disabled={!currentUser || bodyLoadPending}
+              aria-label='Note body'
+              imageUploadHandler={imageUploadHandler}
+              imagePreviewHandler={imagePreviewHandler}
+              uploadImageAttachment={uploadImageAttachment}
+              onImageInserted={flushSaveAfterImageInsert}
+              onUploadError={handleImageUploadError}
+            />
           )}
         </Box>
       </Paper>

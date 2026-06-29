@@ -88,23 +88,13 @@ export class ContentRepository {
     return this.addContentWithType({ ...params, type: ContentType.NOTE });
   }
 
-  async addImage(params: {
-    name: string;
-    parentId: string;
-    ownerId: string;
-    createdAt: Date;
-    updatedAt: Date;
-  }): Promise<Content> {
-    return this.addContentWithType({ ...params, type: ContentType.IMAGE });
-  }
-
   private async addContentWithType(params: {
     name: string;
     parentId: string;
     ownerId: string;
     createdAt: Date;
     updatedAt: Date;
-    type: ContentType.NOTE | ContentType.IMAGE;
+    type: ContentType.NOTE;
   }): Promise<Content> {
     const newContentData = {
       name: params.name,
@@ -166,6 +156,10 @@ export class ContentRepository {
       name,
       updatedAt,
     });
+  }
+
+  async deleteContent(id: string): Promise<void> {
+    await this.firestore.collection(this.contentCollection).doc(id).delete();
   }
 
   async updateContentBodyMetadata(

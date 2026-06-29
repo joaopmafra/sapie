@@ -1,10 +1,9 @@
-import { isAxiosError } from 'axios';
+import axios, { isAxiosError } from 'axios';
 import type { User } from 'firebase/auth';
 
 import {
   Configuration,
   ContentApi,
-  CreateContentRequestTypeEnum,
   type ContentBodyUrlResponse,
   type ContentResponse,
   type CreateContentRequest,
@@ -14,6 +13,11 @@ import { getApiAuthRequestOptions } from '../auth-utils';
 
 import type { Content, UpdateContentRequest } from './types';
 import { ContentType } from './types';
+
+export interface BlobUploadResult {
+  blobId: string;
+  url: string;
+}
 
 /**
  * Content Service
@@ -131,28 +135,6 @@ export class ContentService {
     }
   }
 
-  async getAttachmentChildren(
-    currentUser: User,
-    noteId: string
-  ): Promise<Content[]> {
-    try {
-      const options = await getApiAuthRequestOptions(currentUser);
-
-      const response = await this.contentApi.contentControllerListContents(
-        { id: noteId },
-        {
-          ...options,
-          params: { attachments: 'true' },
-        }
-      );
-
-      return response.data.map(item => this.mapContentResponseToContent(item));
-    } catch (error) {
-      console.error('Failed to get attachment children:', error);
-      throw error;
-    }
-  }
-
   async createNote(
     currentUser: User,
     name: string,
@@ -204,30 +186,62 @@ export class ContentService {
     }
   }
 
-  async createImage(
+  /**
+   * POST /api/content/:contentId/blobs — upload a blob (e.g. inline image).
+   * Returns { blobId, url } where `url` is the markdown-embeddable path.
+   */
+  async uploadBlob(
     currentUser: User,
-    name: string,
-    parentNoteId: string
-  ): Promise<Content> {
-    try {
-      const options = await getApiAuthRequestOptions(currentUser);
+    contentId: string,
+    file: File
+  ): Promise<BlobUploadResult> {
+    const options = await getApiAuthRequestOptions(currentUser);
+    const basePath = getApiBaseUrl().replace(/\/$/, '');
+    const response = await axios.post<BlobUploadResult>(
+      `${basePath}/api/content/${contentId}/blobs`,
+      file,
+      {
+        ...options,
+        headers: {
+          ...((options.headers as Record<string, string> | undefined) ?? {}),
+          'Content-Type': file.type || 'application/octet-stream',
+        },
+      }
+    );
+    return response.data;
+  }
 
-      const createContentRequest: CreateContentRequest = {
-        name,
-        parentId: parentNoteId,
-        type: CreateContentRequestTypeEnum.Image,
-      };
+  /**
+   * GET /api/content/:contentId/blobs/:blobId — fetch blob bytes for preview.
+   */
+  async fetchBlob(
+    currentUser: User,
+    contentId: string,
+    blobId: string
+  ): Promise<Blob> {
+    const options = await getApiAuthRequestOptions(currentUser);
+    const basePath = getApiBaseUrl().replace(/\/$/, '');
+    const response = await axios.get<Blob>(
+      `${basePath}/api/content/${contentId}/blobs/${blobId}`,
+      { ...options, responseType: 'blob' }
+    );
+    return response.data;
+  }
 
-      const response = await this.contentApi.contentControllerCreateContent(
-        { createContentRequest },
-        options
-      );
-
-      return this.mapContentResponseToContent(response.data);
-    } catch (error) {
-      console.error('Failed to create image:', error);
-      throw error;
-    }
+  /**
+   * DELETE /api/content/:contentId/blobs/:blobId — remove a blob.
+   */
+  async deleteBlob(
+    currentUser: User,
+    contentId: string,
+    blobId: string
+  ): Promise<void> {
+    const options = await getApiAuthRequestOptions(currentUser);
+    const basePath = getApiBaseUrl().replace(/\/$/, '');
+    await axios.delete(
+      `${basePath}/api/content/${contentId}/blobs/${blobId}`,
+      options
+    );
   }
 
   /**
@@ -296,30 +310,46 @@ export class ContentService {
     currentUser: User,
     id: string,
     bodyText: string,
-    contentType: string
+    contentType: string,
+    expectedRevision: string
   ): Promise<Content> {
     const file = new File([bodyText], 'note-body', { type: contentType });
-    return this.putContentBodyFile(currentUser, id, file, contentType);
+    return this.putContentBodyFile(
+      currentUser,
+      id,
+      file,
+      contentType,
+      expectedRevision
+    );
   }
 
-  /** `PUT /api/content/:id/body` — upload a File/Blob (e.g. inline image). */
+  /** `PUT /api/content/:id/body` — upload a File/Blob (note markdown). */
   async putContentBodyFile(
     currentUser: User,
     id: string,
     body: Blob,
-    contentType: string
+    contentType: string,
+    expectedRevision: string
   ): Promise<Content> {
     try {
       const options = await getApiAuthRequestOptions(currentUser);
-
+      const basePath = getApiBaseUrl().replace(/\/$/, '');
       const file =
         body instanceof File
           ? body
           : new File([body], 'content-body', { type: contentType });
 
-      const response = await this.contentApi.contentControllerPutContentBody(
-        { id, contentType, body: file },
-        options
+      const response = await axios.put<ContentResponse>(
+        `${basePath}/api/content/${id}/body`,
+        file,
+        {
+          ...options,
+          params: { expectedRevision },
+          headers: {
+            ...((options.headers as Record<string, string> | undefined) ?? {}),
+            'Content-Type': contentType,
+          },
+        }
       );
 
       return this.mapContentResponseToContent(response.data);

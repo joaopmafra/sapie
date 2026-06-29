@@ -81,3 +81,4 @@ in [claude_code_roadmap_to_opencode.md](claude_code_roadmap_to_opencode.md).
 
 _Add a bullet when you adopt, drop, or complete a significant item (date + one sentence)._
 
+2026-06-29 — Implemented Story 75 blob storage model. Replaced Firestore subcollection + 3-step upload + regex reconcile with GCS-only, directory-per-content, single POST blobs. Removed AttachmentService, AttachmentRepository, parse-attachment-urls. 155 tests pass.
