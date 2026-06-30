@@ -53,6 +53,11 @@ Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 *AppApi* | [**appControllerGetHello**](docs/AppApi.md#appcontrollergethello) | **GET** /api | Get API status
 *AuthenticationApi* | [**authControllerGetCurrentUser**](docs/AuthenticationApi.md#authcontrollergetcurrentuser) | **GET** /api/auth | Get current user information
+*CardsApi* | [**cardControllerCreateCard**](docs/CardsApi.md#cardcontrollercreatecard) | **POST** /api/content/{deckId}/cards | Create a flashcard
+*CardsApi* | [**cardControllerDeleteCard**](docs/CardsApi.md#cardcontrollerdeletecard) | **DELETE** /api/content/{deckId}/cards/{cardId} | Delete a flashcard
+*CardsApi* | [**cardControllerGetCards**](docs/CardsApi.md#cardcontrollergetcards) | **GET** /api/content/{deckId}/cards | List all flashcards in a deck
+*CardsApi* | [**cardControllerRecordStudyResult**](docs/CardsApi.md#cardcontrollerrecordstudyresult) | **PATCH** /api/content/{deckId}/cards/{cardId}/study-result | Record a study result for a card
+*CardsApi* | [**cardControllerUpdateCard**](docs/CardsApi.md#cardcontrollerupdatecard) | **PATCH** /api/content/{deckId}/cards/{cardId} | Update a flashcard
 *ContentApi* | [**contentControllerCreateContent**](docs/ContentApi.md#contentcontrollercreatecontent) | **POST** /api/content | Create content (note or folder)
 *ContentApi* | [**contentControllerDeleteContent**](docs/ContentApi.md#contentcontrollerdeletecontent) | **DELETE** /api/content/{id} | Soft-delete content (note or directory)
 *ContentApi* | [**contentControllerGetBlob**](docs/ContentApi.md#contentcontrollergetblob) | **GET** /api/content/{contentId}/blobs/{blobId} | Stream blob bytes
@@ -60,27 +65,36 @@ Class | Method | HTTP request | Description
 *ContentApi* | [**contentControllerGetContentBodySignedUrl**](docs/ContentApi.md#contentcontrollergetcontentbodysignedurl) | **GET** /api/content/{id}/body/signed-url | Get signed URL to read content body
 *ContentApi* | [**contentControllerGetContentById**](docs/ContentApi.md#contentcontrollergetcontentbyid) | **GET** /api/content/{id} | Get content by ID
 *ContentApi* | [**contentControllerGetRootDirectory**](docs/ContentApi.md#contentcontrollergetrootdirectory) | **GET** /api/content/root | Get or create user\&#39;s root directory
+*ContentApi* | [**contentControllerGetRoots**](docs/ContentApi.md#contentcontrollergetroots) | **GET** /api/content/roots | List content roots
 *ContentApi* | [**contentControllerListContents**](docs/ContentApi.md#contentcontrollerlistcontents) | **GET** /api/content/{id}/children | List a parent\&#39;s children
 *ContentApi* | [**contentControllerPatchContent**](docs/ContentApi.md#contentcontrollerpatchcontent) | **PATCH** /api/content/{id} | Patch content metadata
 *ContentApi* | [**contentControllerPostBlob**](docs/ContentApi.md#contentcontrollerpostblob) | **POST** /api/content/{contentId}/blobs | Upload a blob (inline image) for a note
 *ContentApi* | [**contentControllerPutContentBody**](docs/ContentApi.md#contentcontrollerputcontentbody) | **PUT** /api/content/{id}/body | Upload or replace content body
 *FakeStorageReadApi* | [**fakeStorageReadControllerRead**](docs/FakeStorageReadApi.md#fakestoragereadcontrollerread) | **GET** /api/fake-storage/read | 
 *HealthApi* | [**healthControllerGetHealth**](docs/HealthApi.md#healthcontrollergethealth) | **GET** /api/health | Health check endpoint
+*StudyApi* | [**studyControllerGetDueCards**](docs/StudyApi.md#studycontrollergetduecards) | **GET** /api/study/due-cards | Get due cards for content roots
 
 
 ### Documentation For Models
 
  - [AuthControllerGetCurrentUser401Response](docs/AuthControllerGetCurrentUser401Response.md)
  - [AuthenticatedUser](docs/AuthenticatedUser.md)
+ - [CardResponse](docs/CardResponse.md)
  - [ContentBodySummaryResponse](docs/ContentBodySummaryResponse.md)
  - [ContentBodyUrlResponse](docs/ContentBodyUrlResponse.md)
+ - [ContentControllerGetRoots200Response](docs/ContentControllerGetRoots200Response.md)
+ - [ContentControllerGetRoots200ResponseRootsInner](docs/ContentControllerGetRoots200ResponseRootsInner.md)
  - [ContentControllerPostBlob201Response](docs/ContentControllerPostBlob201Response.md)
  - [ContentResponse](docs/ContentResponse.md)
+ - [CreateCardRequest](docs/CreateCardRequest.md)
  - [CreateContentRequest](docs/CreateContentRequest.md)
  - [HealthControllerGetHealth200Response](docs/HealthControllerGetHealth200Response.md)
  - [ProblemDetailsDto](docs/ProblemDetailsDto.md)
  - [ProblemDetailsErrorItemDto](docs/ProblemDetailsErrorItemDto.md)
  - [ProviderDataDto](docs/ProviderDataDto.md)
+ - [StudyControllerGetDueCards200Response](docs/StudyControllerGetDueCards200Response.md)
+ - [StudyControllerGetDueCards200ResponseCardsInner](docs/StudyControllerGetDueCards200ResponseCardsInner.md)
+ - [UpdateCardRequest](docs/UpdateCardRequest.md)
  - [UpdateContentRequest](docs/UpdateContentRequest.md)
 
 

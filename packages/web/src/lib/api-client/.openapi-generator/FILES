@@ -10,11 +10,16 @@ docs/AppApi.md
 docs/AuthControllerGetCurrentUser401Response.md
 docs/AuthenticatedUser.md
 docs/AuthenticationApi.md
+docs/CardResponse.md
+docs/CardsApi.md
 docs/ContentApi.md
 docs/ContentBodySummaryResponse.md
 docs/ContentBodyUrlResponse.md
+docs/ContentControllerGetRoots200Response.md
+docs/ContentControllerGetRoots200ResponseRootsInner.md
 docs/ContentControllerPostBlob201Response.md
 docs/ContentResponse.md
+docs/CreateCardRequest.md
 docs/CreateContentRequest.md
 docs/FakeStorageReadApi.md
 docs/HealthApi.md
@@ -22,6 +27,10 @@ docs/HealthControllerGetHealth200Response.md
 docs/ProblemDetailsDto.md
 docs/ProblemDetailsErrorItemDto.md
 docs/ProviderDataDto.md
+docs/StudyApi.md
+docs/StudyControllerGetDueCards200Response.md
+docs/StudyControllerGetDueCards200ResponseCardsInner.md
+docs/UpdateCardRequest.md
 docs/UpdateContentRequest.md
 git_push.sh
 index.ts

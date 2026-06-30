@@ -141,7 +141,7 @@ const FolderPage = () => {
               placeholder='Type or select a tag'
             />
           )}
-          sx={{ maxWidth: 300 }}
+          sx={{ maxWidth: { xs: '100%', sm: 300 } }}
           blurOnSelect
           clearOnBlur
           disabled={availableTags.length === 0 || updateTags.isPending}
