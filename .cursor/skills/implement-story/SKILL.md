@@ -59,6 +59,10 @@ cd packages/web && pnpm run format && pnpm run lint && pnpm verify:types
 pnpm run verify
 ```
 
+### Regenerate OpenAPI client
+
+After any backend route change, run `cd packages/web && pnpm run generate:api-client` to keep the frontend API client in sync. Frontend code uses direct axios calls until regeneration is done.
+
 ### 5. Browser smoke test
 
 Only when the change is user-visible or you touched the API contract.
@@ -125,9 +129,11 @@ Fix any failures before claiming work is done.
 - Update `docs/research/ai_workflow/ai_workflow_adoption_log.md` with a one-line change log entry
 - If the story introduced a new API endpoint, update `docs/adr/` or `docs/dev/content_naming.md` as appropriate
 
-### 8. Don't commit
+### 8. Git operations
 
-Stage changes for the user to review. Never `git commit` or `git push`.
+Do **not** automatically commit or push changes, **unless** explicitly instructed by the user or the current prompt (e.g. "commit when complete" or "create a PR and merge"). Default behavior: stage changes for the user to review.
+
+When deleting or moving git-versioned files, use `git rm` and `git mv` (not plain `rm`/`mv`) to preserve version history.
 
 ## Test Infrastructure
 
@@ -170,7 +176,7 @@ cd packages/api && pnpm test -- --testPathPattern="content.controller"
 cd packages/web && pnpm test -- --testPathPattern="NoteEditorPage"
 ```
 
-## Blob storage model (Story 75 — current)
+## Blob storage model (current)
 
 Images are stored as blobs under GCS directories, per-content:
 
@@ -184,6 +190,8 @@ Markdown: ![alt](/api/content/{contentId}/blobs/{blobId})
 ```
 
 No Firestore. No reconcile. No attachment subcollection.
+
+`expectedRevision` on `PUT /:id/body` is **kept** for concurrency control (only attachment reconcile was removed).
 
 ## Parallel implementation pattern
 

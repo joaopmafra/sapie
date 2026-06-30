@@ -52,9 +52,9 @@ as the primary backlog item rather than duplicating a “nested directories” s
 
 **Two kinds of note-related data (settled 2026-06-26):**
 
-- **Image attachments** — **composition** (whole–part with the note). Stored in a Firestore **subcollection** under the
-  note (`content/{noteId}/attachments/{attachmentId}`), not as tree **content**. Immutable blobs referenced by id in
-  markdown; no separate versioning. Deleting a note cascades to its attachments silently.
+- **Inline image blobs** — **composition** (whole–part with the note). Stored as immutable objects in Cloud Storage
+  under the note's GCS prefix (`{ownerId}/content/{contentId}/blobs/{blobId}`), not as tree **content** and not in
+  Firestore. Referenced by blob URL in markdown; no separate versioning. Deleting a note cascades to its blobs silently.
 - **Flashcard decks** — **aggregation** (container). **`content`** children with `parentId = noteId`, named and edited
   independently. Note versions do not version decks. Deleting a note is blocked while deck children exist, unless the
   user explicitly confirms cascade delete in the dialog.
@@ -72,7 +72,7 @@ as the primary backlog item rather than duplicating a “nested directories” s
 - Deck view shows the deck's cards and a Study button
 
 **Inline images:** See [note_image_embedding.md](../research/note_editor/note_image_embedding.md) and
-[Story 74](../pm/3-stories/1-ready/74-story-dedicated_attachment_storage_model.md).
+[Story 75](../pm/5-done/75-story-blob_storage_model_refactor.md).
 
 **Folder-level study query:**
 Decks store a denormalized `folderId` field (the folder containing their parent note) to enable efficient
