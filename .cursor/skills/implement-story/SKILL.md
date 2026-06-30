@@ -114,18 +114,38 @@ await tab.screenshot()
 
 ### 6. Final verification
 
-```bash
-# Run full test suite
-pnpm run test
+The authoritative quality gate script is:
 
-# Verify format + lint + types
-pnpm run verify
+```bash
+bash scripts/verify-all-test-unit.sh
 ```
 
-Fix any failures before claiming work is done.
+This runs, in order:
+1. **API verify:all** — TypeScript types, ESLint, Prettier for `packages/api/`
+2. **Start test emulator** — if not already running (`scripts/emulator-test-unit-start.sh`)
+3. **API unit tests** — `pnpm test` in `packages/api/` (112 tests, 10 suites)
+4. **Stop test emulator** — in CI only (`scripts/emulator-test-unit-stop.sh`)
+5. **Web verify:all** — TypeScript types, ESLint, Prettier for `packages/web/`
+6. **Web unit tests** — `pnpm test` in `packages/web/` (71 tests, 17 suites)
 
-### 7. PM hygiene
+For faster feedback during implementation, use package-level commands:
 
+```bash
+# Backend: types + lint + format + unit tests
+cd packages/api && pnpm verify:all && pnpm test
+
+# Backend: single test file
+cd packages/api && pnpm test -- --testPathPattern="study.controller"
+
+# Frontend: types + tests only (lint has known pre-existing issues — see below)
+cd packages/web && pnpm verify:types && pnpm test
+```
+
+**Known pre-existing issues** (do not treat as regressions):
+- Web `lint:check` — errors in `DeckViewPage.tsx`, `NoteEditorPage.tsx`, `card-hooks.ts`, `card-service.ts`, `DeckViewPage.test.tsx` (import order, unescaped entities, autoFocus). These predate Stories 81–84 and are queued for a separate cleanup pass.
+- API `lint:check` — 19× `@typescript-eslint/no-unsafe-argument` warnings in fixture files (all test code, all pre-existing).
+
+Fix any **new** failures before claiming work is done.
 - Move the story from `docs/pm/4-in-progress/` to `docs/pm/5-done/`
 - Update `docs/pm/last_pbi_number.md` if it was a new story
 - Update `docs/research/ai_workflow/ai_workflow_adoption_log.md` with a one-line change log entry
