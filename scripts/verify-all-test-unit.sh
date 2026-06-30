@@ -21,7 +21,7 @@ printf "OK\n\n"
 
 if [ -n "${CI:-}" ]; then
   echo "Stopping Firebase Emulators for unit tests (CI)..."
-  ./scripts/test-emulator-stop.sh
+  ./scripts/emulator-test-unit-stop.sh
   printf "OK\n\n"
 fi
 
