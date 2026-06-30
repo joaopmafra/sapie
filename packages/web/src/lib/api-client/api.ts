@@ -100,6 +100,117 @@ export interface AuthenticatedUser {
 /**
  * 
  * @export
+ * @interface CardResponse
+ */
+export interface CardResponse {
+    /**
+     * Unique identifier for the card
+     * @type {string}
+     * @memberof CardResponse
+     */
+    'id': string;
+    /**
+     * ID of the deck this card belongs to
+     * @type {string}
+     * @memberof CardResponse
+     */
+    'deckId': string;
+    /**
+     * ID of the user who owns this card
+     * @type {string}
+     * @memberof CardResponse
+     */
+    'ownerId': string;
+    /**
+     * Front side of the flashcard (question / prompt)
+     * @type {string}
+     * @memberof CardResponse
+     */
+    'front': string;
+    /**
+     * Back side of the flashcard (answer)
+     * @type {string}
+     * @memberof CardResponse
+     */
+    'back': string;
+    /**
+     * Next due date for review
+     * @type {string}
+     * @memberof CardResponse
+     */
+    'dueDate': string;
+    /**
+     * Current interval in days between reviews (FSRS-compatible)
+     * @type {number}
+     * @memberof CardResponse
+     */
+    'interval': number;
+    /**
+     * Number of consecutive times the card was recalled correctly
+     * @type {number}
+     * @memberof CardResponse
+     */
+    'repetitions': number;
+    /**
+     * Result of the last study session
+     * @type {string}
+     * @memberof CardResponse
+     */
+    'lastResult'?: CardResponseLastResultEnum | null;
+    /**
+     * Timestamp of the last study session
+     * @type {string}
+     * @memberof CardResponse
+     */
+    'lastStudied'?: string | null;
+    /**
+     * Total number of times the card was answered correctly
+     * @type {number}
+     * @memberof CardResponse
+     */
+    'correctCount': number;
+    /**
+     * Total number of times the card was answered incorrectly
+     * @type {number}
+     * @memberof CardResponse
+     */
+    'incorrectCount': number;
+    /**
+     * Soft-delete flag
+     * @type {boolean}
+     * @memberof CardResponse
+     */
+    'deleted'?: boolean | null;
+    /**
+     * Soft-delete timestamp
+     * @type {string}
+     * @memberof CardResponse
+     */
+    'deletedAt'?: string | null;
+    /**
+     * Timestamp when the card was created
+     * @type {string}
+     * @memberof CardResponse
+     */
+    'createdAt': string;
+    /**
+     * Timestamp when the card was last updated
+     * @type {string}
+     * @memberof CardResponse
+     */
+    'updatedAt': string;
+}
+
+export const CardResponseLastResultEnum = {
+    Know: 'know',
+    DontKnow: 'dont_know'
+} as const;
+
+export type CardResponseLastResultEnum = typeof CardResponseLastResultEnum[keyof typeof CardResponseLastResultEnum];
+
+/**
+ * 
+ * @export
  * @interface ContentBodySummaryResponse
  */
 export interface ContentBodySummaryResponse {
@@ -146,6 +257,44 @@ export interface ContentBodyUrlResponse {
      * @memberof ContentBodyUrlResponse
      */
     'expiresAt': string;
+}
+/**
+ * 
+ * @export
+ * @interface ContentControllerGetRoots200Response
+ */
+export interface ContentControllerGetRoots200Response {
+    /**
+     * 
+     * @type {Array<ContentControllerGetRoots200ResponseRootsInner>}
+     * @memberof ContentControllerGetRoots200Response
+     */
+    'roots'?: Array<ContentControllerGetRoots200ResponseRootsInner>;
+}
+/**
+ * 
+ * @export
+ * @interface ContentControllerGetRoots200ResponseRootsInner
+ */
+export interface ContentControllerGetRoots200ResponseRootsInner {
+    /**
+     * 
+     * @type {string}
+     * @memberof ContentControllerGetRoots200ResponseRootsInner
+     */
+    'id'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ContentControllerGetRoots200ResponseRootsInner
+     */
+    'name'?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof ContentControllerGetRoots200ResponseRootsInner
+     */
+    'dueCardCount'?: number;
 }
 /**
  * 
@@ -215,6 +364,12 @@ export interface ContentResponse {
      */
     'body'?: ContentBodySummaryResponse | null;
     /**
+     * Tags for categorization (e.g. \"content-root\", \"knowledge-area\"). Applicable to folders.
+     * @type {Array<string>}
+     * @memberof ContentResponse
+     */
+    'tags'?: Array<string> | null;
+    /**
      * Timestamp when the content was created
      * @type {string}
      * @memberof ContentResponse
@@ -236,6 +391,25 @@ export const ContentResponseTypeEnum = {
 
 export type ContentResponseTypeEnum = typeof ContentResponseTypeEnum[keyof typeof ContentResponseTypeEnum];
 
+/**
+ * 
+ * @export
+ * @interface CreateCardRequest
+ */
+export interface CreateCardRequest {
+    /**
+     * Front side of the flashcard (question / prompt)
+     * @type {string}
+     * @memberof CreateCardRequest
+     */
+    'front': string;
+    /**
+     * Back side of the flashcard (answer)
+     * @type {string}
+     * @memberof CreateCardRequest
+     */
+    'back': string;
+}
 /**
  * 
  * @export
@@ -373,6 +547,105 @@ export interface ProviderDataDto {
 /**
  * 
  * @export
+ * @interface StudyControllerGetDueCards200Response
+ */
+export interface StudyControllerGetDueCards200Response {
+    /**
+     * 
+     * @type {Array<StudyControllerGetDueCards200ResponseCardsInner>}
+     * @memberof StudyControllerGetDueCards200Response
+     */
+    'cards'?: Array<StudyControllerGetDueCards200ResponseCardsInner>;
+    /**
+     * 
+     * @type {number}
+     * @memberof StudyControllerGetDueCards200Response
+     */
+    'totalDue'?: number;
+}
+/**
+ * 
+ * @export
+ * @interface StudyControllerGetDueCards200ResponseCardsInner
+ */
+export interface StudyControllerGetDueCards200ResponseCardsInner {
+    /**
+     * 
+     * @type {string}
+     * @memberof StudyControllerGetDueCards200ResponseCardsInner
+     */
+    'id'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof StudyControllerGetDueCards200ResponseCardsInner
+     */
+    'front'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof StudyControllerGetDueCards200ResponseCardsInner
+     */
+    'back'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof StudyControllerGetDueCards200ResponseCardsInner
+     */
+    'dueDate'?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof StudyControllerGetDueCards200ResponseCardsInner
+     */
+    'interval'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof StudyControllerGetDueCards200ResponseCardsInner
+     */
+    'repetitions'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof StudyControllerGetDueCards200ResponseCardsInner
+     */
+    'deckId'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof StudyControllerGetDueCards200ResponseCardsInner
+     */
+    'deckName'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof StudyControllerGetDueCards200ResponseCardsInner
+     */
+    'noteId'?: string;
+}
+/**
+ * 
+ * @export
+ * @interface UpdateCardRequest
+ */
+export interface UpdateCardRequest {
+    /**
+     * Front side of the flashcard (question / prompt)
+     * @type {string}
+     * @memberof UpdateCardRequest
+     */
+    'front'?: string;
+    /**
+     * Back side of the flashcard (answer)
+     * @type {string}
+     * @memberof UpdateCardRequest
+     */
+    'back'?: string;
+}
+/**
+ * 
+ * @export
  * @interface UpdateContentRequest
  */
 export interface UpdateContentRequest {
@@ -388,6 +661,12 @@ export interface UpdateContentRequest {
      * @memberof UpdateContentRequest
      */
     'parentId'?: string | null;
+    /**
+     * Tags for categorization (e.g. \"content-root\", \"knowledge-area\"). Only supported for folder-type content. Sending this for note or deck types returns 400.
+     * @type {Array<string>}
+     * @memberof UpdateContentRequest
+     */
+    'tags'?: Array<string>;
 }
 
 /**
@@ -625,6 +904,602 @@ export class AuthenticationApi extends BaseAPI implements AuthenticationApiInter
      */
     public authControllerGetCurrentUser(options?: RawAxiosRequestConfig) {
         return AuthenticationApiFp(this.configuration).authControllerGetCurrentUser(options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * CardsApi - axios parameter creator
+ * @export
+ */
+export const CardsApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Creates a new flashcard in the specified deck.
+         * @summary Create a flashcard
+         * @param {string} deckId The ID of the deck to add the card to.
+         * @param {CreateCardRequest} createCardRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        cardControllerCreateCard: async (deckId: string, createCardRequest: CreateCardRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'deckId' is not null or undefined
+            assertParamExists('cardControllerCreateCard', 'deckId', deckId)
+            // verify required parameter 'createCardRequest' is not null or undefined
+            assertParamExists('cardControllerCreateCard', 'createCardRequest', createCardRequest)
+            const localVarPath = `/api/content/{deckId}/cards`
+                .replace(`{${"deckId"}}`, encodeURIComponent(String(deckId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(createCardRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Deletes a flashcard from the specified deck.
+         * @summary Delete a flashcard
+         * @param {string} deckId The ID of the deck containing the card.
+         * @param {string} cardId The ID of the card to delete.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        cardControllerDeleteCard: async (deckId: string, cardId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'deckId' is not null or undefined
+            assertParamExists('cardControllerDeleteCard', 'deckId', deckId)
+            // verify required parameter 'cardId' is not null or undefined
+            assertParamExists('cardControllerDeleteCard', 'cardId', cardId)
+            const localVarPath = `/api/content/{deckId}/cards/{cardId}`
+                .replace(`{${"deckId"}}`, encodeURIComponent(String(deckId)))
+                .replace(`{${"cardId"}}`, encodeURIComponent(String(cardId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns all cards belonging to the specified deck.
+         * @summary List all flashcards in a deck
+         * @param {string} deckId The ID of the deck whose cards to list.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        cardControllerGetCards: async (deckId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'deckId' is not null or undefined
+            assertParamExists('cardControllerGetCards', 'deckId', deckId)
+            const localVarPath = `/api/content/{deckId}/cards`
+                .replace(`{${"deckId"}}`, encodeURIComponent(String(deckId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Rates a card with \"know\" or \"dont_know\" and applies the SM-2 spaced repetition algorithm. Updates dueDate, interval, repetitions, lastResult, lastStudied, correctCount, and incorrectCount.
+         * @summary Record a study result for a card
+         * @param {string} deckId The deck ID
+         * @param {string} cardId The card ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        cardControllerRecordStudyResult: async (deckId: string, cardId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'deckId' is not null or undefined
+            assertParamExists('cardControllerRecordStudyResult', 'deckId', deckId)
+            // verify required parameter 'cardId' is not null or undefined
+            assertParamExists('cardControllerRecordStudyResult', 'cardId', cardId)
+            const localVarPath = `/api/content/{deckId}/cards/{cardId}/study-result`
+                .replace(`{${"deckId"}}`, encodeURIComponent(String(deckId)))
+                .replace(`{${"cardId"}}`, encodeURIComponent(String(cardId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Partially updates a flashcard. At least one of `front` or `back` must be provided.
+         * @summary Update a flashcard
+         * @param {string} deckId The ID of the deck containing the card.
+         * @param {string} cardId The ID of the card to update.
+         * @param {UpdateCardRequest} updateCardRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        cardControllerUpdateCard: async (deckId: string, cardId: string, updateCardRequest: UpdateCardRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'deckId' is not null or undefined
+            assertParamExists('cardControllerUpdateCard', 'deckId', deckId)
+            // verify required parameter 'cardId' is not null or undefined
+            assertParamExists('cardControllerUpdateCard', 'cardId', cardId)
+            // verify required parameter 'updateCardRequest' is not null or undefined
+            assertParamExists('cardControllerUpdateCard', 'updateCardRequest', updateCardRequest)
+            const localVarPath = `/api/content/{deckId}/cards/{cardId}`
+                .replace(`{${"deckId"}}`, encodeURIComponent(String(deckId)))
+                .replace(`{${"cardId"}}`, encodeURIComponent(String(cardId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(updateCardRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * CardsApi - functional programming interface
+ * @export
+ */
+export const CardsApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = CardsApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Creates a new flashcard in the specified deck.
+         * @summary Create a flashcard
+         * @param {string} deckId The ID of the deck to add the card to.
+         * @param {CreateCardRequest} createCardRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async cardControllerCreateCard(deckId: string, createCardRequest: CreateCardRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<CardResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.cardControllerCreateCard(deckId, createCardRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['CardsApi.cardControllerCreateCard']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Deletes a flashcard from the specified deck.
+         * @summary Delete a flashcard
+         * @param {string} deckId The ID of the deck containing the card.
+         * @param {string} cardId The ID of the card to delete.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async cardControllerDeleteCard(deckId: string, cardId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.cardControllerDeleteCard(deckId, cardId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['CardsApi.cardControllerDeleteCard']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Returns all cards belonging to the specified deck.
+         * @summary List all flashcards in a deck
+         * @param {string} deckId The ID of the deck whose cards to list.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async cardControllerGetCards(deckId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<CardResponse>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.cardControllerGetCards(deckId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['CardsApi.cardControllerGetCards']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Rates a card with \"know\" or \"dont_know\" and applies the SM-2 spaced repetition algorithm. Updates dueDate, interval, repetitions, lastResult, lastStudied, correctCount, and incorrectCount.
+         * @summary Record a study result for a card
+         * @param {string} deckId The deck ID
+         * @param {string} cardId The card ID
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async cardControllerRecordStudyResult(deckId: string, cardId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<CardResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.cardControllerRecordStudyResult(deckId, cardId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['CardsApi.cardControllerRecordStudyResult']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Partially updates a flashcard. At least one of `front` or `back` must be provided.
+         * @summary Update a flashcard
+         * @param {string} deckId The ID of the deck containing the card.
+         * @param {string} cardId The ID of the card to update.
+         * @param {UpdateCardRequest} updateCardRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async cardControllerUpdateCard(deckId: string, cardId: string, updateCardRequest: UpdateCardRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<CardResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.cardControllerUpdateCard(deckId, cardId, updateCardRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['CardsApi.cardControllerUpdateCard']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * CardsApi - factory interface
+ * @export
+ */
+export const CardsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = CardsApiFp(configuration)
+    return {
+        /**
+         * Creates a new flashcard in the specified deck.
+         * @summary Create a flashcard
+         * @param {CardsApiCardControllerCreateCardRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        cardControllerCreateCard(requestParameters: CardsApiCardControllerCreateCardRequest, options?: RawAxiosRequestConfig): AxiosPromise<CardResponse> {
+            return localVarFp.cardControllerCreateCard(requestParameters.deckId, requestParameters.createCardRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Deletes a flashcard from the specified deck.
+         * @summary Delete a flashcard
+         * @param {CardsApiCardControllerDeleteCardRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        cardControllerDeleteCard(requestParameters: CardsApiCardControllerDeleteCardRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.cardControllerDeleteCard(requestParameters.deckId, requestParameters.cardId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Returns all cards belonging to the specified deck.
+         * @summary List all flashcards in a deck
+         * @param {CardsApiCardControllerGetCardsRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        cardControllerGetCards(requestParameters: CardsApiCardControllerGetCardsRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<CardResponse>> {
+            return localVarFp.cardControllerGetCards(requestParameters.deckId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Rates a card with \"know\" or \"dont_know\" and applies the SM-2 spaced repetition algorithm. Updates dueDate, interval, repetitions, lastResult, lastStudied, correctCount, and incorrectCount.
+         * @summary Record a study result for a card
+         * @param {CardsApiCardControllerRecordStudyResultRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        cardControllerRecordStudyResult(requestParameters: CardsApiCardControllerRecordStudyResultRequest, options?: RawAxiosRequestConfig): AxiosPromise<CardResponse> {
+            return localVarFp.cardControllerRecordStudyResult(requestParameters.deckId, requestParameters.cardId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Partially updates a flashcard. At least one of `front` or `back` must be provided.
+         * @summary Update a flashcard
+         * @param {CardsApiCardControllerUpdateCardRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        cardControllerUpdateCard(requestParameters: CardsApiCardControllerUpdateCardRequest, options?: RawAxiosRequestConfig): AxiosPromise<CardResponse> {
+            return localVarFp.cardControllerUpdateCard(requestParameters.deckId, requestParameters.cardId, requestParameters.updateCardRequest, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * CardsApi - interface
+ * @export
+ * @interface CardsApi
+ */
+export interface CardsApiInterface {
+    /**
+     * Creates a new flashcard in the specified deck.
+     * @summary Create a flashcard
+     * @param {CardsApiCardControllerCreateCardRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof CardsApiInterface
+     */
+    cardControllerCreateCard(requestParameters: CardsApiCardControllerCreateCardRequest, options?: RawAxiosRequestConfig): AxiosPromise<CardResponse>;
+
+    /**
+     * Deletes a flashcard from the specified deck.
+     * @summary Delete a flashcard
+     * @param {CardsApiCardControllerDeleteCardRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof CardsApiInterface
+     */
+    cardControllerDeleteCard(requestParameters: CardsApiCardControllerDeleteCardRequest, options?: RawAxiosRequestConfig): AxiosPromise<void>;
+
+    /**
+     * Returns all cards belonging to the specified deck.
+     * @summary List all flashcards in a deck
+     * @param {CardsApiCardControllerGetCardsRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof CardsApiInterface
+     */
+    cardControllerGetCards(requestParameters: CardsApiCardControllerGetCardsRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<CardResponse>>;
+
+    /**
+     * Rates a card with \"know\" or \"dont_know\" and applies the SM-2 spaced repetition algorithm. Updates dueDate, interval, repetitions, lastResult, lastStudied, correctCount, and incorrectCount.
+     * @summary Record a study result for a card
+     * @param {CardsApiCardControllerRecordStudyResultRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof CardsApiInterface
+     */
+    cardControllerRecordStudyResult(requestParameters: CardsApiCardControllerRecordStudyResultRequest, options?: RawAxiosRequestConfig): AxiosPromise<CardResponse>;
+
+    /**
+     * Partially updates a flashcard. At least one of `front` or `back` must be provided.
+     * @summary Update a flashcard
+     * @param {CardsApiCardControllerUpdateCardRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof CardsApiInterface
+     */
+    cardControllerUpdateCard(requestParameters: CardsApiCardControllerUpdateCardRequest, options?: RawAxiosRequestConfig): AxiosPromise<CardResponse>;
+
+}
+
+/**
+ * Request parameters for cardControllerCreateCard operation in CardsApi.
+ * @export
+ * @interface CardsApiCardControllerCreateCardRequest
+ */
+export interface CardsApiCardControllerCreateCardRequest {
+    /**
+     * The ID of the deck to add the card to.
+     * @type {string}
+     * @memberof CardsApiCardControllerCreateCard
+     */
+    readonly deckId: string
+
+    /**
+     * 
+     * @type {CreateCardRequest}
+     * @memberof CardsApiCardControllerCreateCard
+     */
+    readonly createCardRequest: CreateCardRequest
+}
+
+/**
+ * Request parameters for cardControllerDeleteCard operation in CardsApi.
+ * @export
+ * @interface CardsApiCardControllerDeleteCardRequest
+ */
+export interface CardsApiCardControllerDeleteCardRequest {
+    /**
+     * The ID of the deck containing the card.
+     * @type {string}
+     * @memberof CardsApiCardControllerDeleteCard
+     */
+    readonly deckId: string
+
+    /**
+     * The ID of the card to delete.
+     * @type {string}
+     * @memberof CardsApiCardControllerDeleteCard
+     */
+    readonly cardId: string
+}
+
+/**
+ * Request parameters for cardControllerGetCards operation in CardsApi.
+ * @export
+ * @interface CardsApiCardControllerGetCardsRequest
+ */
+export interface CardsApiCardControllerGetCardsRequest {
+    /**
+     * The ID of the deck whose cards to list.
+     * @type {string}
+     * @memberof CardsApiCardControllerGetCards
+     */
+    readonly deckId: string
+}
+
+/**
+ * Request parameters for cardControllerRecordStudyResult operation in CardsApi.
+ * @export
+ * @interface CardsApiCardControllerRecordStudyResultRequest
+ */
+export interface CardsApiCardControllerRecordStudyResultRequest {
+    /**
+     * The deck ID
+     * @type {string}
+     * @memberof CardsApiCardControllerRecordStudyResult
+     */
+    readonly deckId: string
+
+    /**
+     * The card ID
+     * @type {string}
+     * @memberof CardsApiCardControllerRecordStudyResult
+     */
+    readonly cardId: string
+}
+
+/**
+ * Request parameters for cardControllerUpdateCard operation in CardsApi.
+ * @export
+ * @interface CardsApiCardControllerUpdateCardRequest
+ */
+export interface CardsApiCardControllerUpdateCardRequest {
+    /**
+     * The ID of the deck containing the card.
+     * @type {string}
+     * @memberof CardsApiCardControllerUpdateCard
+     */
+    readonly deckId: string
+
+    /**
+     * The ID of the card to update.
+     * @type {string}
+     * @memberof CardsApiCardControllerUpdateCard
+     */
+    readonly cardId: string
+
+    /**
+     * 
+     * @type {UpdateCardRequest}
+     * @memberof CardsApiCardControllerUpdateCard
+     */
+    readonly updateCardRequest: UpdateCardRequest
+}
+
+/**
+ * CardsApi - object-oriented interface
+ * @export
+ * @class CardsApi
+ * @extends {BaseAPI}
+ */
+export class CardsApi extends BaseAPI implements CardsApiInterface {
+    /**
+     * Creates a new flashcard in the specified deck.
+     * @summary Create a flashcard
+     * @param {CardsApiCardControllerCreateCardRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof CardsApi
+     */
+    public cardControllerCreateCard(requestParameters: CardsApiCardControllerCreateCardRequest, options?: RawAxiosRequestConfig) {
+        return CardsApiFp(this.configuration).cardControllerCreateCard(requestParameters.deckId, requestParameters.createCardRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Deletes a flashcard from the specified deck.
+     * @summary Delete a flashcard
+     * @param {CardsApiCardControllerDeleteCardRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof CardsApi
+     */
+    public cardControllerDeleteCard(requestParameters: CardsApiCardControllerDeleteCardRequest, options?: RawAxiosRequestConfig) {
+        return CardsApiFp(this.configuration).cardControllerDeleteCard(requestParameters.deckId, requestParameters.cardId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Returns all cards belonging to the specified deck.
+     * @summary List all flashcards in a deck
+     * @param {CardsApiCardControllerGetCardsRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof CardsApi
+     */
+    public cardControllerGetCards(requestParameters: CardsApiCardControllerGetCardsRequest, options?: RawAxiosRequestConfig) {
+        return CardsApiFp(this.configuration).cardControllerGetCards(requestParameters.deckId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Rates a card with \"know\" or \"dont_know\" and applies the SM-2 spaced repetition algorithm. Updates dueDate, interval, repetitions, lastResult, lastStudied, correctCount, and incorrectCount.
+     * @summary Record a study result for a card
+     * @param {CardsApiCardControllerRecordStudyResultRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof CardsApi
+     */
+    public cardControllerRecordStudyResult(requestParameters: CardsApiCardControllerRecordStudyResultRequest, options?: RawAxiosRequestConfig) {
+        return CardsApiFp(this.configuration).cardControllerRecordStudyResult(requestParameters.deckId, requestParameters.cardId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Partially updates a flashcard. At least one of `front` or `back` must be provided.
+     * @summary Update a flashcard
+     * @param {CardsApiCardControllerUpdateCardRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof CardsApi
+     */
+    public cardControllerUpdateCard(requestParameters: CardsApiCardControllerUpdateCardRequest, options?: RawAxiosRequestConfig) {
+        return CardsApiFp(this.configuration).cardControllerUpdateCard(requestParameters.deckId, requestParameters.cardId, requestParameters.updateCardRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
@@ -883,6 +1758,40 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
          */
         contentControllerGetRootDirectory: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/content/root`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Returns all folders tagged \"content-root\" for the current user, with due card counts.
+         * @summary List content roots
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        contentControllerGetRoots: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/content/roots`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -1199,6 +2108,18 @@ export const ContentApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * Returns all folders tagged \"content-root\" for the current user, with due card counts.
+         * @summary List content roots
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async contentControllerGetRoots(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ContentControllerGetRoots200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerGetRoots(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerGetRoots']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Returns child content (metadata only) for the given parent ID. Returns **folders and notes** for sidebar tree use. Does not load content bodies or signed read URLs.
          * @summary List a parent\'s children
          * @param {string} id The ID of the parent content.
@@ -1336,6 +2257,15 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.contentControllerGetRootDirectory(options).then((request) => request(axios, basePath));
         },
         /**
+         * Returns all folders tagged \"content-root\" for the current user, with due card counts.
+         * @summary List content roots
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        contentControllerGetRoots(options?: RawAxiosRequestConfig): AxiosPromise<ContentControllerGetRoots200Response> {
+            return localVarFp.contentControllerGetRoots(options).then((request) => request(axios, basePath));
+        },
+        /**
          * Returns child content (metadata only) for the given parent ID. Returns **folders and notes** for sidebar tree use. Does not load content bodies or signed read URLs.
          * @summary List a parent\'s children
          * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
@@ -1452,6 +2382,15 @@ export interface ContentApiInterface {
      * @memberof ContentApiInterface
      */
     contentControllerGetRootDirectory(options?: RawAxiosRequestConfig): AxiosPromise<ContentResponse>;
+
+    /**
+     * Returns all folders tagged \"content-root\" for the current user, with due card counts.
+     * @summary List content roots
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ContentApiInterface
+     */
+    contentControllerGetRoots(options?: RawAxiosRequestConfig): AxiosPromise<ContentControllerGetRoots200Response>;
 
     /**
      * Returns child content (metadata only) for the given parent ID. Returns **folders and notes** for sidebar tree use. Does not load content bodies or signed read URLs.
@@ -1782,6 +2721,17 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
     }
 
     /**
+     * Returns all folders tagged \"content-root\" for the current user, with due card counts.
+     * @summary List content roots
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ContentApi
+     */
+    public contentControllerGetRoots(options?: RawAxiosRequestConfig) {
+        return ContentApiFp(this.configuration).contentControllerGetRoots(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Returns child content (metadata only) for the given parent ID. Returns **folders and notes** for sidebar tree use. Does not load content bodies or signed read URLs.
      * @summary List a parent\'s children
      * @param {ContentApiContentControllerListContentsRequest} requestParameters Request parameters.
@@ -2058,6 +3008,153 @@ export class HealthApi extends BaseAPI implements HealthApiInterface {
      */
     public healthControllerGetHealth(options?: RawAxiosRequestConfig) {
         return HealthApiFp(this.configuration).healthControllerGetHealth(options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * StudyApi - axios parameter creator
+ * @export
+ */
+export const StudyApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Returns all due cards (dueDate <= now) from decks under the given content roots. Cards are ordered by dueDate ascending (oldest due first).
+         * @summary Get due cards for content roots
+         * @param {string} rootIds Comma-separated content root IDs
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        studyControllerGetDueCards: async (rootIds: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'rootIds' is not null or undefined
+            assertParamExists('studyControllerGetDueCards', 'rootIds', rootIds)
+            const localVarPath = `/api/study/due-cards`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (rootIds !== undefined) {
+                localVarQueryParameter['rootIds'] = rootIds;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * StudyApi - functional programming interface
+ * @export
+ */
+export const StudyApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = StudyApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Returns all due cards (dueDate <= now) from decks under the given content roots. Cards are ordered by dueDate ascending (oldest due first).
+         * @summary Get due cards for content roots
+         * @param {string} rootIds Comma-separated content root IDs
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async studyControllerGetDueCards(rootIds: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<StudyControllerGetDueCards200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.studyControllerGetDueCards(rootIds, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['StudyApi.studyControllerGetDueCards']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * StudyApi - factory interface
+ * @export
+ */
+export const StudyApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = StudyApiFp(configuration)
+    return {
+        /**
+         * Returns all due cards (dueDate <= now) from decks under the given content roots. Cards are ordered by dueDate ascending (oldest due first).
+         * @summary Get due cards for content roots
+         * @param {StudyApiStudyControllerGetDueCardsRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        studyControllerGetDueCards(requestParameters: StudyApiStudyControllerGetDueCardsRequest, options?: RawAxiosRequestConfig): AxiosPromise<StudyControllerGetDueCards200Response> {
+            return localVarFp.studyControllerGetDueCards(requestParameters.rootIds, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * StudyApi - interface
+ * @export
+ * @interface StudyApi
+ */
+export interface StudyApiInterface {
+    /**
+     * Returns all due cards (dueDate <= now) from decks under the given content roots. Cards are ordered by dueDate ascending (oldest due first).
+     * @summary Get due cards for content roots
+     * @param {StudyApiStudyControllerGetDueCardsRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof StudyApiInterface
+     */
+    studyControllerGetDueCards(requestParameters: StudyApiStudyControllerGetDueCardsRequest, options?: RawAxiosRequestConfig): AxiosPromise<StudyControllerGetDueCards200Response>;
+
+}
+
+/**
+ * Request parameters for studyControllerGetDueCards operation in StudyApi.
+ * @export
+ * @interface StudyApiStudyControllerGetDueCardsRequest
+ */
+export interface StudyApiStudyControllerGetDueCardsRequest {
+    /**
+     * Comma-separated content root IDs
+     * @type {string}
+     * @memberof StudyApiStudyControllerGetDueCards
+     */
+    readonly rootIds: string
+}
+
+/**
+ * StudyApi - object-oriented interface
+ * @export
+ * @class StudyApi
+ * @extends {BaseAPI}
+ */
+export class StudyApi extends BaseAPI implements StudyApiInterface {
+    /**
+     * Returns all due cards (dueDate <= now) from decks under the given content roots. Cards are ordered by dueDate ascending (oldest due first).
+     * @summary Get due cards for content roots
+     * @param {StudyApiStudyControllerGetDueCardsRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof StudyApi
+     */
+    public studyControllerGetDueCards(requestParameters: StudyApiStudyControllerGetDueCardsRequest, options?: RawAxiosRequestConfig) {
+        return StudyApiFp(this.configuration).studyControllerGetDueCards(requestParameters.rootIds, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

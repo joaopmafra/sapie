@@ -11,6 +11,7 @@ All URIs are relative to *http://localhost*
 |[**contentControllerGetContentBodySignedUrl**](#contentcontrollergetcontentbodysignedurl) | **GET** /api/content/{id}/body/signed-url | Get signed URL to read content body|
 |[**contentControllerGetContentById**](#contentcontrollergetcontentbyid) | **GET** /api/content/{id} | Get content by ID|
 |[**contentControllerGetRootDirectory**](#contentcontrollergetrootdirectory) | **GET** /api/content/root | Get or create user\&#39;s root directory|
+|[**contentControllerGetRoots**](#contentcontrollergetroots) | **GET** /api/content/roots | List content roots|
 |[**contentControllerListContents**](#contentcontrollerlistcontents) | **GET** /api/content/{id}/children | List a parent\&#39;s children|
 |[**contentControllerPatchContent**](#contentcontrollerpatchcontent) | **PATCH** /api/content/{id} | Patch content metadata|
 |[**contentControllerPostBlob**](#contentcontrollerpostblob) | **POST** /api/content/{contentId}/blobs | Upload a blob (inline image) for a note|
@@ -393,6 +394,51 @@ This endpoint does not have any parameters.
 |**200** | Root directory retrieved or created successfully |  -  |
 |**401** | Unauthorized - Valid Firebase ID token required |  -  |
 |**500** | Internal server error - Failed to ensure root directory |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **contentControllerGetRoots**
+> ContentControllerGetRoots200Response contentControllerGetRoots()
+
+Returns all folders tagged \"content-root\" for the current user, with due card counts.
+
+### Example
+
+```typescript
+import {
+    ContentApi,
+    Configuration
+} from 'api-client';
+
+const configuration = new Configuration();
+const apiInstance = new ContentApi(configuration);
+
+const { status, data } = await apiInstance.contentControllerGetRoots();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**ContentControllerGetRoots200Response**
+
+### Authorization
+
+[bearer](../README.md#bearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Content roots returned successfully. |  -  |
+|**401** | Unauthorized - Valid Firebase ID token required |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

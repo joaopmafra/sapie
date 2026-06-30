@@ -163,13 +163,15 @@ const StudySessionPage = () => {
   }
 
   return (
-    <Box sx={{ maxWidth: 700, mx: 'auto', mt: 4 }}>
+    <Box sx={{ maxWidth: 700, mx: 'auto', mt: 4, px: { xs: 2, sm: 0 } }}>
       <Box
         sx={{
           mb: 2,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 1,
         }}
       >
         <Typography variant="subtitle2" color="text.secondary">
@@ -180,7 +182,7 @@ const StudySessionPage = () => {
         </Button>
       </Box>
 
-      <Paper elevation={2} sx={{ p: 4, minHeight: 300 }}>
+      <Paper elevation={2} sx={{ p: { xs: 2, sm: 4 }, minHeight: 300 }}>
         <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
           {currentCard.deckName}
         </Typography>
@@ -205,20 +207,24 @@ const StudySessionPage = () => {
             variant="contained"
             size="large"
             onClick={handleReveal}
-            sx={{ minWidth: 200, minHeight: 48 }}
+            sx={{ minWidth: 200, minHeight: 48, width: { xs: '100%', sm: 'auto' } }}
           >
             Reveal
           </Button>
         )}
 
         {phase === 'back' && (
-          <Stack direction="row" spacing={2}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={2}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
+          >
             <Button
               variant="contained"
               color="error"
               size="large"
               onClick={() => handleRate('dont_know')}
-              sx={{ minWidth: 160, minHeight: 48 }}
+              sx={{ minWidth: 160, minHeight: 48, flex: { xs: 1, sm: 'none' } }}
               disabled={recordResult.isPending}
             >
               I don&rsquo;t know
@@ -228,7 +234,7 @@ const StudySessionPage = () => {
               color="success"
               size="large"
               onClick={() => handleRate('know')}
-              sx={{ minWidth: 160, minHeight: 48 }}
+              sx={{ minWidth: 160, minHeight: 48, flex: { xs: 1, sm: 'none' } }}
               disabled={recordResult.isPending}
             >
               I know

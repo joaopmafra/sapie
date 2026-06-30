@@ -92,13 +92,13 @@ const StudyDashboard = () => {
   const allDueZero = roots.every(r => r.dueCardCount === 0);
 
   return (
-    <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
+    <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4, px: { xs: 2, sm: 0 } }}>
       <Typography variant="h4" component="h1" sx={{ mb: 3 }}>
         Study
       </Typography>
 
       {allDueZero && (
-        <Paper elevation={1} sx={{ p: 4, textAlign: 'center', mb: 3 }}>
+        <Paper elevation={1} sx={{ p: { xs: 2, sm: 4 }, textAlign: 'center', mb: 3 }}>
           <Typography variant="h5" sx={{ mb: 1 }}>
             All caught up! 🎉
           </Typography>
@@ -108,7 +108,7 @@ const StudyDashboard = () => {
         </Paper>
       )}
 
-      <Paper elevation={1} sx={{ p: 3 }}>
+      <Paper elevation={1} sx={{ p: { xs: 2, sm: 3 } }}>
         <Stack spacing={1} sx={{ mb: 3 }}>
           {roots.map(root => (
             <FormControlLabel
@@ -120,19 +120,34 @@ const StudyDashboard = () => {
                 />
               }
               label={
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                    alignItems: 'center',
+                  }}
+                >
                   <Typography>{root.name}</Typography>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     {root.dueCardCount} due
                   </Typography>
                 </Box>
               }
-              sx={{ ml: 0, mr: 0 }}
+              sx={{ ml: 0, mr: 0, width: '100%' }}
             />
           ))}
         </Stack>
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: { xs: 2, sm: 0 },
+          }}
+        >
           <Typography variant="body1" color="text.secondary">
             Total cards due: {totalDue}
           </Typography>
@@ -141,6 +156,8 @@ const StudyDashboard = () => {
             size="large"
             disabled={totalDue === 0}
             onClick={handleStartStudy}
+            fullWidth={false}
+            sx={{ minWidth: 200, width: { xs: '100%', sm: 'auto' } }}
           >
             Start Study
           </Button>
