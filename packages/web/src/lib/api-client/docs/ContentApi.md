@@ -4,72 +4,17 @@ All URIs are relative to *http://localhost*
 
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|
-|[**contentControllerCreateAttachment**](#contentcontrollercreateattachment) | **POST** /api/content/{noteId}/attachments | Create note attachment metadata|
 |[**contentControllerCreateContent**](#contentcontrollercreatecontent) | **POST** /api/content | Create content (note or folder)|
-|[**contentControllerDeleteAttachment**](#contentcontrollerdeleteattachment) | **DELETE** /api/content/{noteId}/attachments/{attachmentId} | Delete note attachment|
-|[**contentControllerGetAttachmentBody**](#contentcontrollergetattachmentbody) | **GET** /api/content/{noteId}/attachments/{attachmentId}/body | Stream attachment body bytes|
+|[**contentControllerDeleteContent**](#contentcontrollerdeletecontent) | **DELETE** /api/content/{id} | Soft-delete content (note or directory)|
+|[**contentControllerGetBlob**](#contentcontrollergetblob) | **GET** /api/content/{contentId}/blobs/{blobId} | Stream blob bytes|
 |[**contentControllerGetContentBody**](#contentcontrollergetcontentbody) | **GET** /api/content/{id}/body | Stream content body bytes|
 |[**contentControllerGetContentBodySignedUrl**](#contentcontrollergetcontentbodysignedurl) | **GET** /api/content/{id}/body/signed-url | Get signed URL to read content body|
 |[**contentControllerGetContentById**](#contentcontrollergetcontentbyid) | **GET** /api/content/{id} | Get content by ID|
 |[**contentControllerGetRootDirectory**](#contentcontrollergetrootdirectory) | **GET** /api/content/root | Get or create user\&#39;s root directory|
 |[**contentControllerListContents**](#contentcontrollerlistcontents) | **GET** /api/content/{id}/children | List a parent\&#39;s children|
 |[**contentControllerPatchContent**](#contentcontrollerpatchcontent) | **PATCH** /api/content/{id} | Patch content metadata|
-|[**contentControllerPutAttachmentBody**](#contentcontrollerputattachmentbody) | **PUT** /api/content/{noteId}/attachments/{attachmentId}/body | Upload or replace attachment body bytes|
+|[**contentControllerPostBlob**](#contentcontrollerpostblob) | **POST** /api/content/{contentId}/blobs | Upload a blob (inline image) for a note|
 |[**contentControllerPutContentBody**](#contentcontrollerputcontentbody) | **PUT** /api/content/{id}/body | Upload or replace content body|
-
-# **contentControllerCreateAttachment**
-> AttachmentResponse contentControllerCreateAttachment()
-
-Creates an attachment record under `content/{noteId}/attachments/{attachmentId}`. Upload bytes via `PUT …/attachments/:attachmentId/body`. Parent `:noteId` must be type `note`.
-
-### Example
-
-```typescript
-import {
-    ContentApi,
-    Configuration
-} from 'api-client';
-
-const configuration = new Configuration();
-const apiInstance = new ContentApi(configuration);
-
-let noteId: string; // (default to undefined)
-
-const { status, data } = await apiInstance.contentControllerCreateAttachment(
-    noteId
-);
-```
-
-### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **noteId** | [**string**] |  | defaults to undefined|
-
-
-### Return type
-
-**AttachmentResponse**
-
-### Authorization
-
-[bearer](../README.md#bearer)
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**201** | Attachment metadata created. |  -  |
-|**400** | Parent is not a note. |  -  |
-|**401** | Unauthorized - Valid Firebase ID token required |  -  |
-|**404** | Note not found. |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **contentControllerCreateContent**
 > ContentResponse contentControllerCreateContent(createContentRequest)
@@ -128,10 +73,10 @@ const { status, data } = await apiInstance.contentControllerCreateContent(
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **contentControllerDeleteAttachment**
-> contentControllerDeleteAttachment()
+# **contentControllerDeleteContent**
+> contentControllerDeleteContent()
 
-Removes attachment metadata and storage object (e.g. after failed note save).
+Soft-deletes content by setting `deleted: true`. Notes with content children (e.g. flashcard decks) require `?cascade=true` to delete. Folders are always cascaded to all descendants. Cloud Storage objects (bodies and blobs) are NOT deleted — permanent cleanup is deferred.
 
 ### Example
 
@@ -144,12 +89,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new ContentApi(configuration);
 
-let noteId: string; // (default to undefined)
-let attachmentId: string; // (default to undefined)
+let id: string; // (default to undefined)
+let cascade: boolean; //Set to true to cascade-delete content children of a note. (optional) (default to undefined)
 
-const { status, data } = await apiInstance.contentControllerDeleteAttachment(
-    noteId,
-    attachmentId
+const { status, data } = await apiInstance.contentControllerDeleteContent(
+    id,
+    cascade
 );
 ```
 
@@ -157,8 +102,8 @@ const { status, data } = await apiInstance.contentControllerDeleteAttachment(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **noteId** | [**string**] |  | defaults to undefined|
-| **attachmentId** | [**string**] |  | defaults to undefined|
+| **id** | [**string**] |  | defaults to undefined|
+| **cascade** | [**boolean**] | Set to true to cascade-delete content children of a note. | (optional) defaults to undefined|
 
 
 ### Return type
@@ -178,14 +123,16 @@ void (empty response body)
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-|**200** | Attachment deleted. |  -  |
+|**204** | Content soft-deleted successfully. |  -  |
 |**401** | Unauthorized - Valid Firebase ID token required |  -  |
-|**404** | Note or attachment not found. |  -  |
+|**403** | Not the content owner. |  -  |
+|**404** | Content not found or already deleted. |  -  |
+|**409** | Note has content children and cascade was not set. |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **contentControllerGetAttachmentBody**
-> File contentControllerGetAttachmentBody()
+# **contentControllerGetBlob**
+> File contentControllerGetBlob()
 
 
 ### Example
@@ -199,12 +146,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new ContentApi(configuration);
 
-let noteId: string; // (default to undefined)
-let attachmentId: string; // (default to undefined)
+let contentId: string; //Parent note ID (default to undefined)
+let blobId: string; //Blob ID (default to undefined)
 
-const { status, data } = await apiInstance.contentControllerGetAttachmentBody(
-    noteId,
-    attachmentId
+const { status, data } = await apiInstance.contentControllerGetBlob(
+    contentId,
+    blobId
 );
 ```
 
@@ -212,8 +159,8 @@ const { status, data } = await apiInstance.contentControllerGetAttachmentBody(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **noteId** | [**string**] |  | defaults to undefined|
-| **attachmentId** | [**string**] |  | defaults to undefined|
+| **contentId** | [**string**] | Parent note ID | defaults to undefined|
+| **blobId** | [**string**] | Blob ID | defaults to undefined|
 
 
 ### Return type
@@ -233,9 +180,10 @@ const { status, data } = await apiInstance.contentControllerGetAttachmentBody(
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-|**200** | Attachment bytes streamed successfully. |  -  |
+|**200** | Blob bytes streamed successfully. |  -  |
 |**401** | Unauthorized - Valid Firebase ID token required |  -  |
-|**404** | Note, attachment, or body not found. |  -  |
+|**403** | Not the note owner. |  -  |
+|**404** | Note or blob not found. |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -560,9 +508,10 @@ const { status, data } = await apiInstance.contentControllerPatchContent(
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **contentControllerPutAttachmentBody**
-> AttachmentResponse contentControllerPutAttachmentBody(body)
+# **contentControllerPostBlob**
+> ContentControllerPostBlob201Response contentControllerPostBlob(body)
 
+Stores raw bytes as a blob under the note. Returns the generated blob ID and its read URL.
 
 ### Example
 
@@ -575,14 +524,12 @@ import {
 const configuration = new Configuration();
 const apiInstance = new ContentApi(configuration);
 
-let noteId: string; // (default to undefined)
-let attachmentId: string; // (default to undefined)
+let contentId: string; //Parent note ID (default to undefined)
 let contentType: string; // (default to undefined)
-let body: File; //Raw image bytes. `Content-Type` sets stored media type.
+let body: File; //Raw bytes of the blob (inline image). The `Content-Type` header sets the stored media type.
 
-const { status, data } = await apiInstance.contentControllerPutAttachmentBody(
-    noteId,
-    attachmentId,
+const { status, data } = await apiInstance.contentControllerPostBlob(
+    contentId,
     contentType,
     body
 );
@@ -592,15 +539,14 @@ const { status, data } = await apiInstance.contentControllerPutAttachmentBody(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **body** | **File**| Raw image bytes. &#x60;Content-Type&#x60; sets stored media type. | |
-| **noteId** | [**string**] |  | defaults to undefined|
-| **attachmentId** | [**string**] |  | defaults to undefined|
+| **body** | **File**| Raw bytes of the blob (inline image). The &#x60;Content-Type&#x60; header sets the stored media type. | |
+| **contentId** | [**string**] | Parent note ID | defaults to undefined|
 | **contentType** | [**string**] |  | defaults to undefined|
 
 
 ### Return type
 
-**AttachmentResponse**
+**ContentControllerPostBlob201Response**
 
 ### Authorization
 
@@ -608,24 +554,27 @@ const { status, data } = await apiInstance.contentControllerPutAttachmentBody(
 
 ### HTTP request headers
 
- - **Content-Type**: application/octet-stream, image/png, image/jpeg, image/webp, image/gif
+ - **Content-Type**: image/png, image/jpeg, image/webp, image/gif, application/octet-stream
  - **Accept**: application/json
 
 
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-|**200** | Updated attachment metadata. |  -  |
+|**201** | Blob stored successfully. |  -  |
+|**400** | Parent is not a note. |  -  |
 |**401** | Unauthorized - Valid Firebase ID token required |  -  |
-|**404** | Note or attachment not found. |  -  |
+|**403** | Not the note owner. |  -  |
+|**404** | Note not found. |  -  |
 |**413** | Body exceeds size limit. |  -  |
+|**415** | Multipart is not supported. |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **contentControllerPutContentBody**
 > ContentResponse contentControllerPutContentBody(body)
 
-Single endpoint for note markdown body bytes. Updates Cloud Storage and nested Firestore `body` (incl. `body.updatedAt`). **Notes** require `expectedRevision` query parameter (`body.updatedAt` ISO string from metadata, or empty string before first save). Returns **409** when revision is stale. Reconciles note attachment subcollection from markdown references on success.
+Single endpoint for note markdown body bytes. Updates Cloud Storage and nested Firestore `body` (incl. `body.updatedAt`). **Notes** require `expectedRevision` query parameter (`body.updatedAt` ISO string from metadata, or empty string before first save). Returns **409** when revision is stale.
 
 ### Example
 

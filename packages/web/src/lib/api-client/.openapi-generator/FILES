@@ -7,13 +7,13 @@ base.ts
 common.ts
 configuration.ts
 docs/AppApi.md
-docs/AttachmentResponse.md
 docs/AuthControllerGetCurrentUser401Response.md
 docs/AuthenticatedUser.md
 docs/AuthenticationApi.md
 docs/ContentApi.md
 docs/ContentBodySummaryResponse.md
 docs/ContentBodyUrlResponse.md
+docs/ContentControllerPostBlob201Response.md
 docs/ContentResponse.md
 docs/CreateContentRequest.md
 docs/FakeStorageReadApi.md

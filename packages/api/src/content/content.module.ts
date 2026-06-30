@@ -1,7 +1,8 @@
-import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule, RequestMethod, forwardRef } from '@nestjs/common';
 import * as bodyParser from 'body-parser';
 
 import { FakeStorageModule } from '../fake-storage/fake-storage.module';
+import { CardModule } from '../cards/card.module';
 import { ContentController } from './controllers/content.controller';
 import { ContentRepository } from './repositories/content-repository.service';
 import { RootDirectoryService } from './services/root-directory.service';
@@ -21,7 +22,10 @@ import { getContentBodyReadServiceProviderPair } from './services/content-body-r
  * providing users with their personal workspace and content organization capabilities.
  */
 @Module({
-  imports: [...(FakeStorageModule.isEnabled() ? [FakeStorageModule] : [])],
+  imports: [
+    ...(FakeStorageModule.isEnabled() ? [FakeStorageModule] : []),
+    forwardRef(() => CardModule),
+  ],
   controllers: [ContentController],
   providers: [
     RootDirectoryService,

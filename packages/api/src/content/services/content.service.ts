@@ -8,6 +8,7 @@ import {
   UnsupportedMediaTypeException,
   PayloadTooLargeException,
   Logger,
+  forwardRef,
 } from '@nestjs/common';
 import { nanoid } from 'nanoid';
 import { Content, ContentType } from '../entities/content.entity';
@@ -24,6 +25,8 @@ import {
 } from './content-body-read.service';
 import { ContentBodyStorageService } from './content-body-storage.service';
 
+import { CardService } from '../../cards/services/card.service';
+
 import type { Readable } from 'stream';
 
 const BLOB_ID_LENGTH = 12;
@@ -36,24 +39,29 @@ export class ContentService {
     private readonly contentRepository: ContentRepository,
     private readonly contentBodyStorage: ContentBodyStorageService,
     @Inject(CONTENT_BODY_READ_SERVICE)
-    private readonly contentBodyReadService: ContentBodyReadService
+    private readonly contentBodyReadService: ContentBodyReadService,
+    @Inject(forwardRef(() => CardService))
+    private readonly cardService: CardService
   ) {}
 
   async findByParentIdAndOwnerId(parentId: string, ownerId: string): Promise<Content[]> {
     const children = await this.contentRepository.findByParentIdAndOwnerId(parentId, ownerId);
     return children.filter(
-      child => child.type === ContentType.DIRECTORY || child.type === ContentType.NOTE
+      child =>
+        child.type === ContentType.DIRECTORY ||
+        child.type === ContentType.NOTE ||
+        child.type === ContentType.DECK
     );
   }
 
   /**
-   * Returns a single content (metadata) if it exists and is owned by the user.
-   * Same 404 semantics as rename: missing id or wrong owner yields NotFound (no id leakage).
+   * Returns a single content (metadata) if it exists, is owned by the user, and is not soft-deleted.
+   * Same 404 semantics as rename: missing id, wrong owner, or deleted yields NotFound (no id leakage).
    */
   async findByIdAndOwnerId(id: string, ownerId: string): Promise<Content> {
     const existing = await this.contentRepository.findById(id);
 
-    if (!existing || existing.ownerId !== ownerId) {
+    if (!existing || existing.ownerId !== ownerId || existing.deleted) {
       throw new NotFoundException(`Content with ID ${id} not found`);
     }
 
@@ -76,12 +84,20 @@ export class ContentService {
       throw new ForbiddenException('User is not the owner of the parent folder');
     }
 
+    if (parent.deleted) {
+      throw new BadRequestException('Cannot create content under a deleted parent');
+    }
+
     if (contentType === ContentType.DIRECTORY && parent.type !== ContentType.DIRECTORY) {
       throw new BadRequestException('A folder can only be created inside another folder');
     }
 
     if (contentType === ContentType.NOTE && parent.type !== ContentType.DIRECTORY) {
       throw new BadRequestException('A note can only be created inside a folder');
+    }
+
+    if (contentType === ContentType.DECK && parent.type !== ContentType.NOTE) {
+      throw new BadRequestException('A deck can only be created under a note');
     }
 
     const nameCollision = await this.contentRepository.findFirstByParentIdAndName(parentId, name);
@@ -94,6 +110,18 @@ export class ContentService {
       return this.contentRepository.addDirectory({
         name,
         parentId,
+        ownerId,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    if (contentType === ContentType.DECK) {
+      // Denormalize folderId from the parent note's parent folder
+      return this.contentRepository.addDeck({
+        name,
+        parentId,
+        folderId: parent.parentId!,
         ownerId,
         createdAt: now,
         updatedAt: now,
@@ -115,7 +143,7 @@ export class ContentService {
   async patchContent(id: string, name: string, ownerId: string): Promise<Content> {
     const existing = await this.contentRepository.findById(id);
 
-    if (!existing || existing.ownerId !== ownerId) {
+    if (!existing || existing.ownerId !== ownerId || existing.deleted) {
       throw new NotFoundException(`Content with ID ${id} not found`);
     }
 
@@ -152,7 +180,7 @@ export class ContentService {
     const existing = await this.contentRepository.findById(id);
     this.logger.debug(`getContentBodySignedUrl; existing: ${JSON.stringify(existing)}`);
 
-    if (!existing) {
+    if (!existing || existing.deleted) {
       throw new NotFoundException(`Content with ID ${id} not found`);
     }
 
@@ -184,7 +212,7 @@ export class ContentService {
   ): Promise<{ stream: Readable; contentType: string }> {
     const existing = await this.contentRepository.findById(id);
 
-    if (!existing) {
+    if (!existing || existing.deleted) {
       throw new NotFoundException(`Content with ID ${id} not found`);
     }
 
@@ -223,7 +251,7 @@ export class ContentService {
   ): Promise<Content> {
     const existing = await this.contentRepository.findById(id);
 
-    if (!existing) {
+    if (!existing || existing.deleted) {
       throw new NotFoundException(`Content with ID ${id} not found`);
     }
 
@@ -285,7 +313,7 @@ export class ContentService {
   }
 
   /**
-   * Validates the content is a note owned by the caller, returns it (or throws).
+   * Validates the content is a non-deleted note owned by the caller, returns it (or throws).
    */
   private async assertNoteOwnedByUser(contentId: string, ownerId: string): Promise<Content> {
     const content = await this.contentRepository.findById(contentId);
@@ -294,6 +322,9 @@ export class ContentService {
     }
     if (content.ownerId !== ownerId) {
       throw new ForbiddenException('User does not own this content');
+    }
+    if (content.deleted) {
+      throw new NotFoundException(`Content with ID ${contentId} not found`);
     }
     if (content.type !== ContentType.NOTE) {
       throw new BadRequestException('Blobs can only be attached to note-type content');
@@ -355,9 +386,13 @@ export class ContentService {
   }
 
   /**
-   * Deletes content (note or directory) and cascades blob deletion for notes.
+   * Soft-deletes content (note or directory).
+   *
+   * - Notes: blocked (409) if content children exist unless `cascade` is true.
+   *   Cloud Storage blobs are NOT deleted (deferred to versioning story).
+   * - Directories: recursively soft-deletes all non-deleted descendants, then the folder itself.
    */
-  async deleteContent(contentId: string, ownerId: string): Promise<void> {
+  async deleteContent(contentId: string, ownerId: string, cascade = false): Promise<void> {
     const content = await this.contentRepository.findById(contentId);
     if (!content) {
       throw new NotFoundException(`Content with ID ${contentId} not found`);
@@ -365,13 +400,47 @@ export class ContentService {
     if (content.ownerId !== ownerId) {
       throw new ForbiddenException('User does not own this content');
     }
-
-    // Cascade-delete all blobs for notes first
-    if (content.type === ContentType.NOTE) {
-      await this.contentBodyStorage.deleteBlobsByPrefix(ownerId, contentId);
+    if (content.deleted) {
+      throw new NotFoundException(`Content with ID ${contentId} not found`);
     }
 
-    // Delete the content document
-    await this.contentRepository.deleteContent(contentId);
+    const now = new Date();
+
+    if (content.type === ContentType.NOTE) {
+      const childCount = await this.contentRepository.findContentChildrenCount(contentId);
+      if (childCount > 0 && !cascade) {
+        throw new ConflictException(
+          `Note has ${childCount} content child(ren) (e.g. flashcard decks). Use ?cascade=true to delete anyway.`
+        );
+      }
+
+      // Soft-delete content children (e.g. flashcard decks) if cascading
+      if (cascade && childCount > 0) {
+        const childIds = await this.contentRepository.findAllDescendantIds(contentId, ownerId);
+        const childDeletePromises = childIds.map(id =>
+          this.contentRepository.softDeleteContent(id, now, ownerId)
+        );
+        await Promise.all(childDeletePromises);
+      }
+
+      // Soft-delete the note itself (blobs are NOT deleted per versioning plan)
+      await this.contentRepository.softDeleteContent(contentId, now, ownerId);
+    } else if (content.type === ContentType.DECK) {
+      // Cascade-delete all cards in the deck subcollection
+      await this.cardService.deleteCardsForDeck(contentId);
+
+      // Soft-delete the deck itself
+      await this.contentRepository.softDeleteContent(contentId, now, ownerId);
+    } else {
+      // Directory: fetch all descendants and soft-delete them, then the folder
+      const descendantIds = await this.contentRepository.findAllDescendantIds(contentId, ownerId);
+      const deletePromises = descendantIds.map(id =>
+        this.contentRepository.softDeleteContent(id, now, ownerId)
+      );
+      await Promise.all(deletePromises);
+
+      // Soft-delete the directory itself
+      await this.contentRepository.softDeleteContent(contentId, now, ownerId);
+    }
   }
 }

@@ -97,15 +97,17 @@ function mapContentToEnriched(
   const isExpanded = expanded.has(content.id);
 
   if (cached !== undefined) {
-    const childNodes = sortTreeChildren(cached).map(child =>
-      mapContentToEnriched(
-        child,
-        expanded,
-        childrenByParentId,
-        loadingParentIds,
-        cache
-      )
-    );
+    const childNodes = sortTreeChildren(cached)
+      .filter(child => child.type !== ContentType.DECK)
+      .map(child =>
+        mapContentToEnriched(
+          child,
+          expanded,
+          childrenByParentId,
+          loadingParentIds,
+          cache
+        )
+      );
     return reuseOrCreateNode(content, childNodes, cache);
   }
 

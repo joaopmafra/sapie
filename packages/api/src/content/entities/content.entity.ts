@@ -8,6 +8,7 @@ import * as admin from 'firebase-admin';
 export enum ContentType {
   DIRECTORY = 'directory',
   NOTE = 'note',
+  DECK = 'deck',
 }
 
 /**
@@ -53,6 +54,9 @@ export interface Content {
   /** ID of the parent directory, null for root directory */
   parentId: string | null;
 
+  /** Denormalized folder ID (the folder containing the parent, for deck-type content). Enables folder-level study queries. */
+  folderId?: string | null;
+
   /** ID of the user who owns this content */
   ownerId: string;
 
@@ -61,6 +65,15 @@ export interface Content {
    * The HTTP metadata DTO exposes a public summary under `body` without `uri`.
    */
   body: ContentBody | null;
+
+  /** True if the content has been soft-deleted */
+  deleted?: boolean;
+
+  /** Timestamp when the content was soft-deleted */
+  deletedAt?: Date | null;
+
+  /** User who deleted the content (for operation log / versioning) */
+  deletedBy?: { uid: string } | null;
 
   /** Timestamp when the content was created */
   createdAt: Date;
@@ -86,11 +99,23 @@ export interface ContentDocument {
   /** ID of the parent directory, null for root directory */
   parentId: string | null;
 
+  /** Denormalized folder ID (for deck-type content). */
+  folderId?: string | null;
+
   /** ID of the user who owns this content */
   ownerId: string;
 
   /** Nested body storage metadata; `null` until first body save (notes) or absent for directories. */
   body?: ContentBodyDocument | null;
+
+  /** True if the content has been soft-deleted */
+  deleted?: boolean;
+
+  /** Firestore timestamp when the content was soft-deleted */
+  deletedAt?: admin.firestore.Timestamp | null;
+
+  /** User who deleted the content (for operation log / versioning) */
+  deletedBy?: { uid: string } | null;
 
   /** Firestore timestamp when the content was created */
   createdAt: admin.firestore.Timestamp;

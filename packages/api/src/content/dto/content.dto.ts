@@ -72,6 +72,14 @@ export class ContentResponse {
   })
   parentId: string | null;
 
+  @ApiPropertyOptional({
+    type: String,
+    description:
+      'Denormalized folder ID (set for deck-type content, enables folder-level study queries).',
+    nullable: true,
+  })
+  folderId?: string | null;
+
   @ApiProperty({
     description: 'ID of the user who owns this content',
     example: 'firebase-user-id',
@@ -115,6 +123,7 @@ export function toContentResponse(content: Content): ContentResponse {
   response.ownerId = content.ownerId;
   response.createdAt = content.createdAt;
   response.updatedAt = content.updatedAt;
+  response.folderId = content.folderId ?? null;
   if (content.type !== ContentType.DIRECTORY) {
     if (content.body) {
       const summary = new ContentBodySummaryResponse();

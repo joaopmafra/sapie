@@ -138,7 +138,8 @@ export class ContentService {
   async createNote(
     currentUser: User,
     name: string,
-    parentId: string
+    parentId: string,
+    type?: 'note' | 'deck'
   ): Promise<Content> {
     try {
       const options = await getApiAuthRequestOptions(currentUser);
@@ -147,6 +148,9 @@ export class ContentService {
         name,
         parentId,
       };
+      if (type) {
+        createContentRequest.type = type;
+      }
 
       const response = await this.contentApi.contentControllerCreateContent(
         { createContentRequest },
@@ -242,6 +246,27 @@ export class ContentService {
       `${basePath}/api/content/${contentId}/blobs/${blobId}`,
       options
     );
+  }
+
+  /**
+   * DELETE /api/content/:id — soft-delete content (note or folder).
+   * Pass `cascade=true` to allow deletion of notes with content children.
+   */
+  async deleteContent(
+    currentUser: User,
+    id: string,
+    cascade?: boolean
+  ): Promise<void> {
+    const options = await getApiAuthRequestOptions(currentUser);
+    const basePath = getApiBaseUrl().replace(/\/$/, '');
+    const params: Record<string, string> = {};
+    if (cascade) {
+      params.cascade = 'true';
+    }
+    await axios.delete(`${basePath}/api/content/${id}`, {
+      ...options,
+      params,
+    });
   }
 
   /**

@@ -53,17 +53,16 @@ Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 *AppApi* | [**appControllerGetHello**](docs/AppApi.md#appcontrollergethello) | **GET** /api | Get API status
 *AuthenticationApi* | [**authControllerGetCurrentUser**](docs/AuthenticationApi.md#authcontrollergetcurrentuser) | **GET** /api/auth | Get current user information
-*ContentApi* | [**contentControllerCreateAttachment**](docs/ContentApi.md#contentcontrollercreateattachment) | **POST** /api/content/{noteId}/attachments | Create note attachment metadata
 *ContentApi* | [**contentControllerCreateContent**](docs/ContentApi.md#contentcontrollercreatecontent) | **POST** /api/content | Create content (note or folder)
-*ContentApi* | [**contentControllerDeleteAttachment**](docs/ContentApi.md#contentcontrollerdeleteattachment) | **DELETE** /api/content/{noteId}/attachments/{attachmentId} | Delete note attachment
-*ContentApi* | [**contentControllerGetAttachmentBody**](docs/ContentApi.md#contentcontrollergetattachmentbody) | **GET** /api/content/{noteId}/attachments/{attachmentId}/body | Stream attachment body bytes
+*ContentApi* | [**contentControllerDeleteContent**](docs/ContentApi.md#contentcontrollerdeletecontent) | **DELETE** /api/content/{id} | Soft-delete content (note or directory)
+*ContentApi* | [**contentControllerGetBlob**](docs/ContentApi.md#contentcontrollergetblob) | **GET** /api/content/{contentId}/blobs/{blobId} | Stream blob bytes
 *ContentApi* | [**contentControllerGetContentBody**](docs/ContentApi.md#contentcontrollergetcontentbody) | **GET** /api/content/{id}/body | Stream content body bytes
 *ContentApi* | [**contentControllerGetContentBodySignedUrl**](docs/ContentApi.md#contentcontrollergetcontentbodysignedurl) | **GET** /api/content/{id}/body/signed-url | Get signed URL to read content body
 *ContentApi* | [**contentControllerGetContentById**](docs/ContentApi.md#contentcontrollergetcontentbyid) | **GET** /api/content/{id} | Get content by ID
 *ContentApi* | [**contentControllerGetRootDirectory**](docs/ContentApi.md#contentcontrollergetrootdirectory) | **GET** /api/content/root | Get or create user\&#39;s root directory
 *ContentApi* | [**contentControllerListContents**](docs/ContentApi.md#contentcontrollerlistcontents) | **GET** /api/content/{id}/children | List a parent\&#39;s children
 *ContentApi* | [**contentControllerPatchContent**](docs/ContentApi.md#contentcontrollerpatchcontent) | **PATCH** /api/content/{id} | Patch content metadata
-*ContentApi* | [**contentControllerPutAttachmentBody**](docs/ContentApi.md#contentcontrollerputattachmentbody) | **PUT** /api/content/{noteId}/attachments/{attachmentId}/body | Upload or replace attachment body bytes
+*ContentApi* | [**contentControllerPostBlob**](docs/ContentApi.md#contentcontrollerpostblob) | **POST** /api/content/{contentId}/blobs | Upload a blob (inline image) for a note
 *ContentApi* | [**contentControllerPutContentBody**](docs/ContentApi.md#contentcontrollerputcontentbody) | **PUT** /api/content/{id}/body | Upload or replace content body
 *FakeStorageReadApi* | [**fakeStorageReadControllerRead**](docs/FakeStorageReadApi.md#fakestoragereadcontrollerread) | **GET** /api/fake-storage/read | 
 *HealthApi* | [**healthControllerGetHealth**](docs/HealthApi.md#healthcontrollergethealth) | **GET** /api/health | Health check endpoint
@@ -71,11 +70,11 @@ Class | Method | HTTP request | Description
 
 ### Documentation For Models
 
- - [AttachmentResponse](docs/AttachmentResponse.md)
  - [AuthControllerGetCurrentUser401Response](docs/AuthControllerGetCurrentUser401Response.md)
  - [AuthenticatedUser](docs/AuthenticatedUser.md)
  - [ContentBodySummaryResponse](docs/ContentBodySummaryResponse.md)
  - [ContentBodyUrlResponse](docs/ContentBodyUrlResponse.md)
+ - [ContentControllerPostBlob201Response](docs/ContentControllerPostBlob201Response.md)
  - [ContentResponse](docs/ContentResponse.md)
  - [CreateContentRequest](docs/CreateContentRequest.md)
  - [HealthControllerGetHealth200Response](docs/HealthControllerGetHealth200Response.md)
