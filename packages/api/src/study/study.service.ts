@@ -82,4 +82,43 @@ export class StudyService {
       totalDue: allCards.length,
     };
   }
+
+  /**
+   * Returns ALL cards (not just due) under a folder, for ungraded review.
+   */
+  async getFolderCards(folderId: string, ownerId: string): Promise<DueCardsResponse> {
+    const folder = await this.contentRepository.findById(folderId);
+    if (!folder || folder.ownerId !== ownerId || folder.deleted) {
+      throw new NotFoundException(`Folder ${folderId} not found`);
+    }
+    if (folder.type !== ContentType.DIRECTORY) {
+      throw new BadRequestException(`Content ${folderId} is not a folder`);
+    }
+
+    const descendantIds = await this.contentRepository.findAllDescendantIds(folderId, ownerId);
+    const folderIds = [folderId, ...descendantIds];
+
+    const decks = await this.contentRepository.findDecksByFolderIds(folderIds, ownerId);
+
+    const allCards: StudyCard[] = [];
+    for (const deck of decks) {
+      const noteId = deck.parentId ?? 'unknown';
+      const cards = await this.cardService.getCards(deck.id, ownerId);
+      for (const card of cards) {
+        allCards.push({
+          id: card.id,
+          front: card.front,
+          back: card.back,
+          dueDate: card.dueDate,
+          interval: card.interval,
+          repetitions: card.repetitions,
+          deckId: deck.id,
+          deckName: deck.name,
+          noteId,
+        });
+      }
+    }
+
+    return { cards: allCards, totalDue: allCards.length };
+  }
 }

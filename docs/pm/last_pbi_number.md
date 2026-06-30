@@ -4,10 +4,11 @@ This file is used to track the PBI (product backlog item), which is the number o
 
 ## Current Last PBI Number
 
-83
+84
 
 ## Recent PBIs Created (limited to 10)
 
+- **84**: Story - Secondary study paths (**5-done**)
 - **83**: Story - Spaced repetition + result tracking (**5-done**)
 - **82**: Story - Study dashboard + due cards (**5-done**)
 - **81**: Story - Content roots + tags (**5-done**)
@@ -17,4 +18,3 @@ This file is used to track the PBI (product backlog item), which is the number o
 - **77**: Story - Flashcard card CRUD (**5-done**)
 - **76**: Story - Flashcard deck CRUD (**5-done**)
 - **75**: Story - Blob storage model refactor (**5-done**) — replaces Story 74 attachment model with GCS-only blobs
-- **74**: Story - Dedicated attachment storage model (**5-done**, domain settled 2026-06-26)

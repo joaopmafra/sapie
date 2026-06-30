@@ -1,3 +1,3 @@
 export { studyService } from './study-service';
-export { useDueCards, studyQueryKeys } from './study-hooks';
+export { useDueCards, useFolderCards, studyQueryKeys } from './study-hooks';
 export type { StudyCard, DueCardsResponse, StudyPhase, StudyResult } from './types';
