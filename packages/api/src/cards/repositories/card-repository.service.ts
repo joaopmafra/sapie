@@ -38,6 +38,22 @@ export class CardRepository {
       .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
   }
 
+  /**
+   * Returns non-deleted cards in a deck that are due for review (dueDate <= now),
+   * ordered by dueDate ascending (oldest due first).
+   */
+  async findDueCards(deckId: string): Promise<Card[]> {
+    const now = admin.firestore.Timestamp.now();
+    const snapshot = await this.cardsCollection(deckId)
+      .where('dueDate', '<=', now)
+      .where('deleted', '==', false)
+      .get();
+
+    return snapshot.docs
+      .map(d => this.convertDocumentToCard(d.id, d.data() as CardDocument))
+      .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
+  }
+
   async addCard(params: {
     deckId: string;
     ownerId: string;
@@ -89,6 +105,36 @@ export class CardRepository {
     await this.cardsCollection(deckId).doc(cardId).update(updateData);
   }
 
+  /**
+   * Atomically updates card scheduling fields after a study result is recorded.
+   */
+  async updateCardStudyState(
+    deckId: string,
+    cardId: string,
+    updates: {
+      dueDate: Date;
+      interval: number;
+      repetitions: number;
+      lastResult: 'know' | 'dont_know';
+      lastStudied: Date;
+      correctCount: number;
+      incorrectCount: number;
+    }
+  ): Promise<void> {
+    await this.cardsCollection(deckId)
+      .doc(cardId)
+      .update({
+        dueDate: admin.firestore.Timestamp.fromDate(updates.dueDate),
+        interval: updates.interval,
+        repetitions: updates.repetitions,
+        lastResult: updates.lastResult,
+        lastStudied: admin.firestore.Timestamp.fromDate(updates.lastStudied),
+        correctCount: updates.correctCount,
+        incorrectCount: updates.incorrectCount,
+        updatedAt: admin.firestore.Timestamp.fromDate(updates.lastStudied),
+      });
+  }
+
   async softDeleteCard(deckId: string, cardId: string, deletedAt: Date): Promise<void> {
     await this.cardsCollection(deckId)
       .doc(cardId)
@@ -99,6 +145,18 @@ export class CardRepository {
       });
   }
 
+  /**
+   * Counts non-deleted cards in a deck where `dueDate <= now`.
+   */
+  async countDueCards(deckId: string): Promise<number> {
+    const now = admin.firestore.Timestamp.now();
+    const snapshot = await this.cardsCollection(deckId)
+      .where('dueDate', '<=', now)
+      .where('deleted', '==', false)
+      .count()
+      .get();
+    return snapshot.data().count;
+  }
   async deleteCardsByDeckId(deckId: string): Promise<void> {
     const snapshot = await this.cardsCollection(deckId).get();
 

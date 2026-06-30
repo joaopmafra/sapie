@@ -272,6 +272,52 @@ export class ContentRepository {
     });
   }
 
+  /**
+   * Updates the `tags` field and `updatedAt` timestamp for a content document.
+   */
+  async updateContentTags(id: string, tags: string[], updatedAt: Date): Promise<void> {
+    const ref = this.firestore.collection(this.contentCollection).doc(id);
+    await ref.update({
+      tags,
+      updatedAt: admin.firestore.Timestamp.fromDate(updatedAt),
+    });
+  }
+
+  /**
+   * Finds all folders tagged "content-root" owned by the given user (non-deleted).
+   */
+  async findRootsByOwnerId(ownerId: string): Promise<Content[]> {
+    const snapshot = await this.firestore
+      .collection(this.contentCollection)
+      .where('type', '==', ContentType.DIRECTORY)
+      .where('tags', 'array-contains', 'content-root')
+      .where('ownerId', '==', ownerId)
+      .get();
+
+    return snapshot.docs
+      .map(doc => this.convertDocumentToContent(doc.id, doc.data() as ContentDocument))
+      .filter(c => !c.deleted);
+  }
+
+  /**
+   * Finds all non-deleted deck-type content whose `folderId` is in the given list.
+   */
+  async findDecksByFolderIds(folderIds: string[], ownerId: string): Promise<Content[]> {
+    if (folderIds.length === 0) return [];
+
+    // Firestore `in` query supports up to 30 values. For MVP we assume fewer than 30 folders per root.
+    const snapshot = await this.firestore
+      .collection(this.contentCollection)
+      .where('type', '==', ContentType.DECK)
+      .where('folderId', 'in', folderIds)
+      .where('ownerId', '==', ownerId)
+      .get();
+
+    return snapshot.docs
+      .map(doc => this.convertDocumentToContent(doc.id, doc.data() as ContentDocument))
+      .filter(c => !c.deleted);
+  }
+
   private isContentBodyDocument(v: unknown): v is ContentBodyDocument {
     if (!v || typeof v !== 'object') return false;
     const o = v as ContentBodyDocument;
@@ -304,6 +350,7 @@ export class ContentRepository {
       parentId: data.parentId,
       folderId: data.folderId ?? null,
       ownerId: data.ownerId,
+      tags: data.tags ?? null,
       deleted: data.deleted,
       deletedAt: data.deletedAt?.toDate() ?? null,
       deletedBy: data.deletedBy ?? null,

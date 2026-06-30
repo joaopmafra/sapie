@@ -190,6 +190,12 @@ export class ContentControllerFixture extends AppFixture {
       .set(TEST_USER_ID_HEADER, testUserId);
   }
 
+  callApiGetRoots(testUserId: string): supertest.Test {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return supertest(this.getHttpServer())
+      .get(`${this.API_CONTENT}/roots`)
+      .set(TEST_USER_ID_HEADER, testUserId);
+  }
   callApiDeleteContent(testUserId: string, contentId: string, cascade?: boolean): supertest.Test {
     let req = supertest(this.getHttpServer())
       .delete(`${this.API_CONTENT}/${contentId}`)

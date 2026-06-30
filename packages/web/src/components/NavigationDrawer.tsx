@@ -136,7 +136,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
         <Menu
           id='new-content-menu'
           anchorEl={anchorEl}
-          marginThreshold={0} // prevent the menu from being shifted 16px to the right
+          marginThreshold={0}
           open={menuOpen}
           onClose={handleMenuClose}
           slotProps={{
@@ -153,6 +153,15 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
           <MenuItem onClick={handleCreateNoteClick}>Create Note</MenuItem>
           <MenuItem onClick={handleCreateFolderClick}>Create Folder</MenuItem>
         </Menu>
+      </Box>
+      <Box sx={{ px: paddingRL, pb: 2 }}>
+        <Button
+          variant='outlined'
+          fullWidth
+          onClick={() => navigate('/study')}
+        >
+          Study
+        </Button>
       </Box>
       <Box sx={{ p: paddingRL }}>
         <ContentExplorer />

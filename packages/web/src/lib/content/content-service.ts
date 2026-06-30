@@ -47,6 +47,7 @@ export class ContentService {
       ownerId: dto.ownerId,
       type: dto.type as ContentType,
       parentId: dto.parentId as string | null,
+      tags: (dtoRecord.tags as string[] | null) ?? null,
       createdAt: new Date(dto.createdAt),
       updatedAt: new Date(dto.updatedAt),
     };
@@ -380,6 +381,26 @@ export class ContentService {
       return this.mapContentResponseToContent(response.data);
     } catch (error) {
       console.error('Failed to put content body:', error);
+      throw error;
+    }
+
+  }
+
+  /**
+   * GET /api/content/roots — list content roots with due card counts.
+   */
+  async getContentRoots(
+    currentUser: User
+  ): Promise<{ id: string; name: string; dueCardCount: number }[]> {
+    try {
+      const options = await getApiAuthRequestOptions(currentUser);
+      const basePath = getApiBaseUrl().replace(/\/$/, '');
+      const response = await axios.get<{
+        roots: { id: string; name: string; dueCardCount: number }[];
+      }>(`${basePath}/api/content/roots`, options);
+      return response.data.roots;
+    } catch (error) {
+      console.error('Failed to get content roots:', error);
       throw error;
     }
   }

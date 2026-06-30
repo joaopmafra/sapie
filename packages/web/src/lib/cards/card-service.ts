@@ -116,6 +116,26 @@ export class CardService {
       throw error;
     }
   }
+
+  /**
+   * Records a study result for a card.
+   * PATCH /api/content/:deckId/cards/:cardId/study-result
+   */
+  async recordStudyResult(
+    currentUser: User,
+    deckId: string,
+    cardId: string,
+    result: 'know' | 'dont_know',
+  ): Promise<Card> {
+    const options = await getApiAuthRequestOptions(currentUser);
+    const basePath = getApiBaseUrl().replace(/\/$/, '');
+    const response = await axios.patch<Card>(
+      `${basePath}/api/content/${deckId}/cards/${cardId}/study-result`,
+      { result },
+      options,
+    );
+    return response.data;
+  }
 }
 
 export const cardService = new CardService();

@@ -33,10 +33,12 @@ export {
   useBodySignedUrlFetchSuppressedAfterSave,
   useContentBody,
   useContentItem,
+  useContentRoots,
   useCreateFolder,
   useCreateNote,
   useDeleteContent,
   useNoteBody,
   useRenameContent,
   useSaveNoteBody,
+  useUpdateContentTags,
 } from './content-hooks';

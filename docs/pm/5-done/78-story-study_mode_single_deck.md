@@ -1,3 +1,5 @@
+> **SUPERSEDED** by Stories 81–83 (study dashboard design). The study session UI concept (front → reveal → rate) is preserved in Story 82, but the entry point is now the global study dashboard at `/study` instead of a per-deck "Study" button. Single-deck direct study remains as a secondary ungraded review path.
+
 # Story 78: Study Mode — Single Deck
 
 ## Description

@@ -138,29 +138,51 @@ export class ContentService {
   }
 
   /**
-   * TODO: Currently we are allowing root directories renaming. Maybe this operation should not be allowed?
+   * Patches content metadata: rename (`name`) and/or update `tags`.
+   * At least one of `name` or `tags` must be provided.
+   * Tags are only supported for folder-type content.
    */
-  async patchContent(id: string, name: string, ownerId: string): Promise<Content> {
+  async patchContent(
+    id: string,
+    ownerId: string,
+    name?: string,
+    tags?: string[]
+  ): Promise<Content> {
     const existing = await this.contentRepository.findById(id);
 
     if (!existing || existing.ownerId !== ownerId || existing.deleted) {
       throw new NotFoundException(`Content with ID ${id} not found`);
     }
 
-    if (existing.name === name) {
-      return existing;
-    }
-
-    const nameCollision = await this.contentRepository.findFirstByParentIdAndName(
-      existing.parentId,
-      name
-    );
-    if (nameCollision && nameCollision.id !== id) {
-      throw new ConflictException(`Content with name "${name}" already exists in this location`);
+    if (tags !== undefined && existing.type !== ContentType.DIRECTORY) {
+      throw new BadRequestException('Tags are only supported for folder-type content');
     }
 
     const now = new Date();
-    await this.contentRepository.updateContentName(id, name, now);
+    let changed = false;
+
+    // Handle rename
+    if (name !== undefined && name !== existing.name) {
+      const nameCollision = await this.contentRepository.findFirstByParentIdAndName(
+        existing.parentId,
+        name
+      );
+      if (nameCollision && nameCollision.id !== id) {
+        throw new ConflictException(`Content with name "${name}" already exists in this location`);
+      }
+      await this.contentRepository.updateContentName(id, name, now);
+      changed = true;
+    }
+
+    // Handle tags update
+    if (tags !== undefined) {
+      await this.contentRepository.updateContentTags(id, tags, now);
+      changed = true;
+    }
+
+    if (!changed) {
+      return existing;
+    }
 
     const updated = await this.contentRepository.findById(id);
     if (!updated) {
@@ -392,6 +414,35 @@ export class ContentService {
    *   Cloud Storage blobs are NOT deleted (deferred to versioning story).
    * - Directories: recursively soft-deletes all non-deleted descendants, then the folder itself.
    */
+
+  /**
+   * Returns content roots (folders tagged "content-root") for the current user
+   * with due card counts computed server-side.
+   */
+  async getRoots(ownerId: string): Promise<{ id: string; name: string; dueCardCount: number }[]> {
+    const roots = await this.contentRepository.findRootsByOwnerId(ownerId);
+
+    const results: { id: string; name: string; dueCardCount: number }[] = [];
+    for (const root of roots) {
+      // Collect all descendant folder IDs + the root itself
+      const descendantIds = await this.contentRepository.findAllDescendantIds(root.id, ownerId);
+      const folderIds = [root.id, ...descendantIds];
+
+      // Find all non-deleted decks under those folders
+      const decks = await this.contentRepository.findDecksByFolderIds(folderIds, ownerId);
+
+      // Count due cards for each deck
+      let dueCardCount = 0;
+      for (const deck of decks) {
+        const count = await this.cardService.countDueCards(deck.id);
+        dueCardCount += count;
+      }
+
+      results.push({ id: root.id, name: root.name, dueCardCount });
+    }
+
+    return results;
+  }
   async deleteContent(contentId: string, ownerId: string, cascade = false): Promise<void> {
     const content = await this.contentRepository.findById(contentId);
     if (!content) {

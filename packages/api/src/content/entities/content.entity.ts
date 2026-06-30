@@ -75,6 +75,9 @@ export interface Content {
   /** User who deleted the content (for operation log / versioning) */
   deletedBy?: { uid: string } | null;
 
+  /** Tags for categorization (e.g. 'content-root', 'knowledge-area'). Applicable to folders. */
+  tags?: string[] | null;
+
   /** Timestamp when the content was created */
   createdAt: Date;
 
@@ -116,6 +119,9 @@ export interface ContentDocument {
 
   /** User who deleted the content (for operation log / versioning) */
   deletedBy?: { uid: string } | null;
+
+  /** Tags for categorization (e.g. 'content-root', 'knowledge-area'). Applicable to folders. */
+  tags?: string[] | null;
 
   /** Firestore timestamp when the content was created */
   createdAt: admin.firestore.Timestamp;
