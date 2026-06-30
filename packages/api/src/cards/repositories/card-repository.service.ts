@@ -74,6 +74,7 @@ export class CardRepository {
       lastStudied: null,
       correctCount: 0,
       incorrectCount: 0,
+      deleted: false,
       createdAt: admin.firestore.Timestamp.fromDate(now),
       updatedAt: admin.firestore.Timestamp.fromDate(now),
     };
