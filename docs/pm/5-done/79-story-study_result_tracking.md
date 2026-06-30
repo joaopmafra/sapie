@@ -1,3 +1,5 @@
+> **SUPERSEDED** by Stories 81–83 (study dashboard design). The per-card study result tracking is absorbed into Story 83, which applies the full SM-2 spaced repetition algorithm. The same card fields (`dueDate`, `interval`, `repetitions`, `lastResult`, `lastStudied`, `correctCount`, `incorrectCount`) are updated, but with proper SR scheduling instead of the +1 day simple logic.
+
 # Story 79: Study Result Tracking
 
 ## Description

@@ -1,3 +1,5 @@
+> **SUPERSEDED** by Stories 81–83 (study dashboard design). Folder-level study is replaced by content-root aggregation in Story 82. The study dashboard at `/study` collects due cards from all checked content roots. Folder-level "Study all" from right-click is kept as a secondary ungraded review path.
+
 # Story 80: Folder-Level Study
 
 ## Description

@@ -3,6 +3,8 @@ export const contentQueryKeys = {
   allChildren: () => ['content', 'children'] as const,
   children: (parentId: string) => ['content', 'children', parentId] as const,
   item: (id: string) => ['content', 'item', id] as const,
+  /** Content roots for study dashboard (`GET /api/content/roots`). */
+  roots: () => ['content', 'roots'] as const,
   /** Signed read URL for `GET /api/content/:id/body/signed-url`. */
   bodySignedUrl: (id: string) => ['content', 'body-signed-url', id] as const,
   /**

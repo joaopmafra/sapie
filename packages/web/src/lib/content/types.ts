@@ -52,6 +52,9 @@ export interface Content {
    */
   body?: ContentBodySummary | null;
 
+  /** Tags for categorization (e.g. 'content-root', 'knowledge-area'). Applicable to folders. */
+  tags?: string[] | null;
+
   /** Timestamp when the content was created */
   createdAt: Date;
 
@@ -96,4 +99,7 @@ export interface UpdateContentRequest {
 
   /** Target parent folder id after a move (not implemented on the API yet). */
   parentId?: string | null;
+
+  /** Tags for categorization. Only supported for folder-type content. */
+  tags?: string[];
 }

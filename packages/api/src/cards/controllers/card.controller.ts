@@ -386,4 +386,52 @@ export class CardController {
     this.logger.debug(`Deleting card ${cardId} from deck ${deckId} for user: ${user.uid}`);
     await this.cardService.deleteCard(deckId, cardId, user.uid);
   }
+
+  /** DTO for study result body */
+  @Patch(':deckId/cards/:cardId/study-result')
+  @Auth()
+  @ApiOperation({
+    summary: 'Record a study result for a card',
+    description:
+      'Rates a card with "know" or "dont_know" and applies the SM-2 spaced repetition algorithm. ' +
+      'Updates dueDate, interval, repetitions, lastResult, lastStudied, correctCount, and incorrectCount.',
+  })
+  @ApiParam({ name: 'deckId', required: true, type: String, description: 'The deck ID' })
+  @ApiParam({ name: 'cardId', required: true, type: String, description: 'The card ID' })
+  @ApiOkResponse({
+    description: 'Study result recorded successfully.',
+    type: CardResponse,
+  })
+  @ApiNotFoundResponse({
+    description: 'Card or deck not found, or the authenticated user does not own it.',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid result value or deck is not a deck.',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Valid Firebase ID token required',
+    ...apiProblemDetailsSchema,
+  })
+  async recordStudyResult(
+    @Request() request: AuthenticatedRequest,
+    @Param('deckId') deckId: string,
+    @Param('cardId') cardId: string,
+    @Body() body: { result: 'know' | 'dont_know' }
+  ) {
+    const { user } = request;
+
+    if (!body.result || !['know', 'dont_know'].includes(body.result)) {
+      throw new BadRequestException('Body must include `result` with value "know" or "dont_know"');
+    }
+
+    this.logger.debug(
+      `Recording study result for card ${cardId} in deck ${deckId}: ${body.result}`
+    );
+
+    const updated = await this.cardService.recordStudyResult(deckId, cardId, user.uid, body.result);
+
+    return toCardResponse(updated);
+  }
 }

@@ -72,3 +72,29 @@ export function useDeleteCard() {
     },
   });
 }
+
+export function useRecordStudyResult() {
+  const { currentUser } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      deckId,
+      cardId,
+      result,
+    }: {
+      deckId: string;
+      cardId: string;
+      result: 'know' | 'dont_know';
+    }) => cardService.recordStudyResult(currentUser!, deckId, cardId, result),
+    onSuccess: (_data, { deckId }) => {
+      void queryClient.invalidateQueries({
+        queryKey: cardQueryKeys.list(deckId),
+      });
+      // Also invalidate roots query to refresh due counts
+      void queryClient.invalidateQueries({
+        queryKey: ['content', 'roots'],
+      });
+    },
+  });
+}

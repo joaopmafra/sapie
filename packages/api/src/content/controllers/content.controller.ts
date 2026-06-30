@@ -169,14 +169,12 @@ export class ContentController {
       );
     }
 
-    if (body.name === undefined || body.name === null) {
-      throw new BadRequestException(
-        'Request body must include `name` until additional patch fields (such as `parentId`) are supported.'
-      );
+    if (body.name === undefined && body.tags === undefined) {
+      throw new BadRequestException('Request body must include at least one of `name` or `tags`.');
     }
 
     this.logger.debug(`Patching content ${id} for user: ${user.uid}`);
-    const updated = await this.contentService.patchContent(id, body.name, user.uid);
+    const updated = await this.contentService.patchContent(id, user.uid, body.name, body.tags);
     return toContentResponse(updated);
   }
 
@@ -580,6 +578,43 @@ export class ContentController {
       this.logger.error(`Failed to get root directory for user: ${userId}`, error);
       throw error;
     }
+  }
+
+  @Get('/roots')
+  @Auth()
+  @ApiOperation({
+    summary: 'List content roots',
+    description:
+      'Returns all folders tagged "content-root" for the current user, with due card counts.',
+  })
+  @ApiOkResponse({
+    description: 'Content roots returned successfully.',
+    schema: {
+      type: 'object',
+      properties: {
+        roots: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              name: { type: 'string' },
+              dueCardCount: { type: 'number' },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Valid Firebase ID token required',
+    ...apiProblemDetailsSchema,
+  })
+  async getRoots(@Request() request: AuthenticatedRequest) {
+    const { user } = request;
+    this.logger.debug(`Getting content roots for user: ${user.uid}`);
+    const roots = await this.contentService.getRoots(user.uid);
+    return { roots };
   }
 
   @Get(':id')

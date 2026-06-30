@@ -7,12 +7,14 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { ProtectedRoute, AuthErrorBoundary } from './components/auth';
 import { AuthProvider } from './contexts/AuthContext';
 import { queryClient } from './lib/queryClient';
+import DeckViewPage from './pages/DeckViewPage';
 import FolderPage from './pages/FolderPage';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import NoteEditorPage from './pages/NoteEditorPage';
-import DeckViewPage from './pages/DeckViewPage';
 import StatusPage from './pages/StatusPage';
+import StudyDashboard from './pages/StudyDashboard';
+import StudySessionPage from './pages/StudySessionPage';
 import './App.css';
 
 function AppRoutes() {
@@ -56,6 +58,22 @@ function AppRoutes() {
           element: (
             <ProtectedRoute>
               <DeckViewPage />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: '/study',
+          element: (
+            <ProtectedRoute>
+              <StudyDashboard />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: '/study/session',
+          element: (
+            <ProtectedRoute>
+              <StudySessionPage />
             </ProtectedRoute>
           ),
         },

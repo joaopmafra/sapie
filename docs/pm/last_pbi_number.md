@@ -8,9 +8,9 @@ This file is used to track the PBI (product backlog item), which is the number o
 
 ## Recent PBIs Created (limited to 10)
 
-- **83**: Story - Spaced repetition + result tracking (**planned** — [design doc](../research/study_mode/study_dashboard_design.md))
-- **82**: Story - Study dashboard + due cards (**planned** — [design doc](../research/study_mode/study_dashboard_design.md))
-- **81**: Story - Content roots + tags (**planned** — [design doc](../research/study_mode/study_dashboard_design.md))
+- **83**: Story - Spaced repetition + result tracking (**5-done**)
+- **82**: Story - Study dashboard + due cards (**5-done**)
+- **81**: Story - Content roots + tags (**5-done**)
 - **80**: Story - Folder-level study (**superseded** by 81–83)
 - **79**: Story - Study result tracking (**superseded** by 81–83)
 - **78**: Story - Study mode — single deck (**superseded** by 81–83)

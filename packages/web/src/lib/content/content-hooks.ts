@@ -352,3 +352,37 @@ export function useDeleteContent() {
     },
   });
 }
+
+/**
+ * `GET /api/content/roots` — content roots for the study dashboard.
+ */
+export function useContentRoots() {
+  const { currentUser } = useAuth();
+
+  return useQuery({
+    queryKey: contentQueryKeys.roots(),
+    queryFn: () => contentService.getContentRoots(currentUser!),
+    enabled: !!currentUser,
+  });
+}
+
+/**
+ * PATCH tags on content.
+ */
+export function useUpdateContentTags() {
+  const { currentUser } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, tags }: { id: string; tags: string[] }) =>
+      contentService.patchContent(currentUser!, id, { tags }),
+    onSuccess: (_updated, { id }) => {
+      void queryClient.invalidateQueries({
+        queryKey: contentQueryKeys.item(id),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: contentQueryKeys.roots(),
+      });
+    },
+  });
+}

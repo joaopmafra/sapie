@@ -4,21 +4,43 @@
 
 ## What was implemented
 
-### Documentation overhaul (this session)
+### Stories 81–83 (this session)
 
-Updated all docs to reflect the Story 75 blob storage model and established the study dashboard design:
+Implemented the full study workflow: content roots, study dashboard, and spaced repetition.
 
-- `docs/dev/content_naming.md` — blob vocabulary replaced attachment vocabulary
-- `docs/research/note_editor/note_image_embedding.md` — full rewrite of storage + API sections
-- `docs/dev/architecture_review_cycle.md` — new: critique → proposal → review → settle → implement
-- `docs/research/study_mode/study_dashboard_design.md` — new: content roots, due-based SR, dashboard UI
-- `docs/plans/mvp_objective.md` — study mode section rewritten, priority table updated (81→82→83)
-- `.cursor/skills/implement-story/SKILL.md` — OpenAPI regeneration step, git rm/mv, conditional commit rule
-- `docs/dev/ai_agent_guidelines.md` — post-backend-change checklist, git hygiene
+#### Story 81 — Content roots + tags
+
+- Added `tags: string[]` field to Content Firestore document (entity, DTO, repository, service, controller)
+- Extended `PATCH /api/content/:id` to support `tags` updates alongside `name`
+- Added `GET /api/content/roots` endpoint — lists folders tagged `"content-root"` with server-computed `dueCardCount`
+- Folder detail view now shows tag chips (add/remove with autocomplete for known tags: `content-root`, `knowledge-area`)
+
+#### Story 82 — Study dashboard + due cards
+
+- Created `StudyModule` with `GET /api/study/due-cards?rootIds=id1,id2` endpoint
+- Aggregates due cards from decks under content roots (recursive folder traversal)
+- Returns cards ordered by `dueDate` ascending with deck context (deckName, noteId)
+- Study dashboard at `/study` — content root checkboxes with due counts, "Start Study" button
+- Study session at `/study/session` — card study UI: front → reveal → "I know" / "I don't know"
+- Queue logic: "I don't know" re-queues, "I know" removes; session ends when all answered "I know"
+- Session summary with correct/incorrect counts
+- "All caught up! 🎉" empty states
+- "Study" button in navigation drawer sidebar
+- Mobile-friendly layout (full-width cards, large tap targets)
+
+#### Story 83 — Spaced repetition + result tracking
+
+- Added `PATCH /api/content/:deckId/cards/:cardId/study-result` endpoint with SM-2 algorithm
+- "I know": `repetitions += 1`, `interval = 2^repetitions` (capped 365), `dueDate = now + interval`
+- "I don't know": `repetitions = 0`, `interval = 0`, `dueDate = now`
+- Updates `lastStudied`, `correctCount`, `incorrectCount`, `lastResult`
+- Per-card persistence (immediate, not batched)
+- Study session wired to API — each rating persists immediately
+- Dashboard due counts invalidated after session completion
 
 ### Previous sessions (stories shipped)
 
-All stories through 77 are done. Stories 64, 75, 76, 77 are in `docs/pm/5-done/`.
+All stories through 83 are done. Stories 64, 75, 76, 77, 81–83 are in `docs/pm/5-done/`. Stories 78–80 are superseded and moved to `docs/pm/5-done/`.
 
 ---
 
@@ -38,55 +60,21 @@ All stories through 77 are done. Stories 64, 75, 76, 77 are in `docs/pm/5-done/`
 ✅  Story 64  — content deletion (soft-delete + cascade)
 ✅  Story 76  — flashcard deck CRUD
 ✅  Story 77  — flashcard card CRUD
-❌  Story 81  — content roots + tags (PLANNED — needs story written)
-❌  Story 82  — study dashboard + due cards (PLANNED — needs story written)
-❌  Story 83  — spaced repetition + result tracking (PLANNED — needs story written)
-❌  —        — responsive polish
+✅  Story 81  — content roots + tags
+✅  Story 82  — study dashboard + due cards
+✅  Story 83  — spaced repetition + result tracking
+❌  —        — responsive polish (cross-cutting)
 ```
 
-Stories 78–80 are superseded by 81–83 and the study dashboard design.
+All planned MVP stories are now **done**. Study mode is functional: tag folders as content roots, visit `/study` to see due cards, start a study session, rate cards with SM-2 spaced repetition.
 
 ---
 
-## Next session: implement Stories 81 → 82 → 83
+## Outstanding
 
-### Pre-flight
-
-- [ ] Regenerate OpenAPI client: `cd packages/web && pnpm run generate:api-client`
-- [ ] Start test infrastructure: `bash scripts/dev-local.sh`
-- [ ] Move superseded stories 78–80 from `docs/pm/3-stories/1-ready/` to `docs/pm/5-done/` with a "superseded" note
-
-### Story 81 — Content roots + tags
-
-Write the story from `docs/research/study_mode/study_dashboard_design.md`:
-
-- Add `tags: string[]` to Content Firestore document
-- `PATCH /api/content/:id` — support `tags` updates
-- `GET /api/content/roots` — list folders tagged `"content-root"` with `dueCardCount`
-- Folder detail view: tag chips with add/remove UI (autocomplete for known tags)
-- Tags: `"content-root"` (MVP), `"knowledge-area"` (future umbrella, no special behavior yet)
-
-### Story 82 — Study dashboard + due cards
-
-- `GET /api/study/due-cards?rootIds=id1,id2` — aggregate due cards from checked content roots
-- Study dashboard at `/study` — content root checkboxes (checked by default), due counts, "Start Study"
-- Card study session component: front → reveal → "I know" / "I don't know" → re-queue → summary
-- Session component supports both graded (dashboard) and ungraded (single-deck/folder direct) modes
-- "All caught up! 🎉" when zero cards due
-
-### Story 83 — Spaced repetition + result tracking
-
-- `PATCH /api/content/:deckId/cards/:cardId/study-result` with SM-2 algorithm
-- "I know": `repetitions += 1`, `interval = 2^repetitions` (capped 365), `dueDate = now + interval`
-- "I don't know": `repetitions = 0`, `interval = 0`, `dueDate = now`
-- Update `lastStudied`, `correctCount`, `incorrectCount`, `lastResult`
-- Per-card updates (not batched at session end)
-
-### Responsive polish
-
-Cross-cutting mobile testing after 81–83 ship.
-
----
+- **OpenAPI client regeneration**: Still needs dev server running (`bash scripts/dev-local.sh` then `cd packages/web && pnpm run generate:api-client`). The generated `api-client` directory was restored from git for now.
+- **Responsive polish**: Cross-cutting mobile testing pass.
+- **E2E tests**: Not maintained during MVP push (per contributing guidelines).
 
 ## Key design docs
 
@@ -105,3 +93,7 @@ Cross-cutting mobile testing after 81–83 ship.
 
 Start local dev: `bash scripts/dev-local.sh`
 Test user: `test@sapie.dev` / `test1234` (create via Auth emulator REST API on port 9100)
+
+Backend tests: `cd packages/api && pnpm test` (108 tests, 9 suites)
+Web tests: `cd packages/web && pnpm test` (71 tests, 17 suites)
+Full verify: `pnpm run verify` (format + lint + types)

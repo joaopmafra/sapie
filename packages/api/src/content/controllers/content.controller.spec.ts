@@ -834,4 +834,118 @@ describe('ContentController', () => {
     const deletedChild = await repo.findById(child.id);
     expect(deletedChild!.deleted).toBe(true);
   });
+
+  // ── Tags ───────────────────────────────────────────────────────
+
+  it(`PATCH ${fixture.API_CONTENT}/:id updates tags on a folder (happy path)`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+
+    const response = await fixture.callApiPatchContentExpectingOk(fixture.TEST_USER_ID, root.id, {
+      tags: ['content-root'],
+    });
+
+    expect(response.body).toHaveProperty('tags', ['content-root']);
+    expect(response.body).toHaveProperty('type', 'directory');
+  });
+
+  it(`PATCH ${fixture.API_CONTENT}/:id updates name and tags together on a folder`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+
+    const response = await fixture.callApiPatchContentExpectingOk(fixture.TEST_USER_ID, root.id, {
+      name: 'My Root',
+      tags: ['content-root', 'knowledge-area'],
+    });
+
+    expect(response.body).toHaveProperty('name', 'My Root');
+    expect(response.body).toHaveProperty('tags', ['content-root', 'knowledge-area']);
+  });
+
+  it(`PATCH ${fixture.API_CONTENT}/:id returns 400 when tags sent for non-folder content`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'My Note', root.id);
+
+    await fixture
+      .callApiPatchContent(fixture.TEST_USER_ID, note.id, { tags: ['content-root'] })
+      .expect(HttpStatus.BAD_REQUEST);
+  });
+
+  it(`PATCH ${fixture.API_CONTENT}/:id clears tags when empty array sent`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+
+    // First set tags
+    await fixture.callApiPatchContentExpectingOk(fixture.TEST_USER_ID, root.id, {
+      tags: ['content-root'],
+    });
+
+    // Then clear them
+    const response = await fixture.callApiPatchContentExpectingOk(fixture.TEST_USER_ID, root.id, {
+      tags: [],
+    });
+
+    expect(response.body).toHaveProperty('tags', []);
+  });
+
+  // ── Content Roots ──────────────────────────────────────────────
+
+  type RootsResponse = { roots: { id: string; name: string; dueCardCount: number }[] };
+
+  it(`GET ${fixture.API_CONTENT}/roots returns empty list when no content roots exist`, async () => {
+    const response = await fixture.callApiGetRoots(fixture.TEST_USER_ID).expect(HttpStatus.OK);
+
+    const body = response.body as RootsResponse;
+    expect(body).toHaveProperty('roots');
+    expect(body.roots).toEqual([]);
+  });
+
+  it(`GET ${fixture.API_CONTENT}/roots returns tagged content roots with dueCardCount`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+
+    // Tag the root as content-root
+    await fixture.callApiPatchContentExpectingOk(fixture.TEST_USER_ID, root.id, {
+      tags: ['content-root'],
+    });
+
+    const response = await fixture.callApiGetRoots(fixture.TEST_USER_ID).expect(HttpStatus.OK);
+
+    const body = response.body as RootsResponse;
+    expect(body.roots).toHaveLength(1);
+    expect(body.roots[0]).toHaveProperty('id', root.id);
+    expect(body.roots[0]).toHaveProperty('name', root.name);
+    expect(body.roots[0]).toHaveProperty('dueCardCount', 0);
+  });
+
+  it(`GET ${fixture.API_CONTENT}/roots excludes roots owned by other users`, async () => {
+    // Create root for TEST_USER
+    const root1 = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    await fixture.callApiPatchContentExpectingOk(fixture.TEST_USER_ID, root1.id, {
+      tags: ['content-root'],
+    });
+
+    // Create root for OTHER_USER
+    const root2 = await fixture.seedRootDirectory(fixture.OTHER_USER_ID);
+    await fixture.callApiPatchContentExpectingOk(fixture.OTHER_USER_ID, root2.id, {
+      tags: ['content-root'],
+    });
+
+    // TEST_USER should only see their own root
+    const response = await fixture.callApiGetRoots(fixture.TEST_USER_ID).expect(HttpStatus.OK);
+
+    const body = response.body as RootsResponse;
+    expect(body.roots).toHaveLength(1);
+    expect(body.roots[0].id).toBe(root1.id);
+  });
+
+  it(`GET ${fixture.API_CONTENT}/roots counts due cards under a content root`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    await fixture.callApiPatchContentExpectingOk(fixture.TEST_USER_ID, root.id, {
+      tags: ['content-root'],
+    });
+
+    const response = await fixture.callApiGetRoots(fixture.TEST_USER_ID).expect(HttpStatus.OK);
+
+    const body = response.body as RootsResponse;
+    expect(body.roots).toHaveLength(1);
+    // dueCardCount is 0 when no cards exist under the root
+    expect(body.roots[0].dueCardCount).toBe(0);
+  });
 });

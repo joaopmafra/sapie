@@ -94,6 +94,14 @@ export class ContentResponse {
   })
   body?: ContentBodySummaryResponse | null;
 
+  @ApiPropertyOptional({
+    type: [String],
+    description:
+      'Tags for categorization (e.g. "content-root", "knowledge-area"). Applicable to folders.',
+    nullable: true,
+  })
+  tags?: string[] | null;
+
   @ApiProperty({
     description: 'Timestamp when the content was created',
     type: 'string',
@@ -124,6 +132,7 @@ export function toContentResponse(content: Content): ContentResponse {
   response.createdAt = content.createdAt;
   response.updatedAt = content.updatedAt;
   response.folderId = content.folderId ?? null;
+  response.tags = content.tags ?? null;
   if (content.type !== ContentType.DIRECTORY) {
     if (content.body) {
       const summary = new ContentBodySummaryResponse();
@@ -223,4 +232,32 @@ export class UpdateContentRequest {
   @IsOptional()
   @IsString()
   parentId?: string | null;
+
+  @ApiPropertyOptional({
+    type: [String],
+    description:
+      'Tags for categorization (e.g. "content-root", "knowledge-area"). Only supported for folder-type content. ' +
+      'Sending this for note or deck types returns 400.',
+    example: ['content-root'],
+  })
+  @IsOptional()
+  tags?: string[];
+}
+
+/** A single content root entry returned by `GET /api/content/roots`. */
+export class ContentRootEntry {
+  @ApiProperty({ description: 'Content root folder ID', type: String })
+  id: string;
+
+  @ApiProperty({ description: 'Folder name', type: String })
+  name: string;
+
+  @ApiProperty({ description: 'Number of due cards under this root', type: Number })
+  dueCardCount: number;
+}
+
+/** Response for `GET /api/content/roots`. */
+export class ContentRootsResponse {
+  @ApiProperty({ type: [ContentRootEntry], description: 'Content roots for the current user' })
+  roots: ContentRootEntry[];
 }

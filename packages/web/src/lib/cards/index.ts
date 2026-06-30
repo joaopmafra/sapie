@@ -17,4 +17,5 @@ export {
   useCreateCard,
   useUpdateCard,
   useDeleteCard,
+  useRecordStudyResult,
 } from './card-hooks';
