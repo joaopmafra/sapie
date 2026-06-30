@@ -429,6 +429,25 @@ const ContentExplorer: React.FC = () => {
             : undefined
         }
       >
+        <MenuItem
+          onClick={() => {
+            if (!contextMenu) return;
+            const node = contextMenu.node;
+            setContextMenu(null);
+            if (node.type === ContentType.DIRECTORY) {
+              navigate(`/folders/${node.id}/study`);
+            }
+          }}
+        >
+          <ListItemIcon>
+            <ArticleIcon fontSize='small' />
+          </ListItemIcon>
+          <ListItemText>
+            {contextMenu?.node.type === ContentType.DIRECTORY
+              ? 'Study all'
+              : 'Study'}
+          </ListItemText>
+        </MenuItem>
         <MenuItem onClick={handleDeleteClick}>
           <ListItemIcon>
             <DeleteIcon fontSize='small' color='error' />

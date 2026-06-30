@@ -93,4 +93,44 @@ export class StudyController {
 
     return this.studyService.getDueCards(rootIds, user.uid);
   }
+
+  @Get('folder-cards')
+  @Auth()
+  @ApiOperation({
+    summary: 'Get all cards under a folder for ungraded study',
+    description:
+      'Returns ALL cards (not just due) from decks under the given folder, recursively. ' +
+      'For ungraded review sessions.',
+  })
+  @ApiQuery({
+    name: 'folderId',
+    required: true,
+    type: String,
+    description: 'The folder ID to collect cards from',
+  })
+  @ApiOkResponse({
+    description: 'Cards returned successfully.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Missing or invalid folderId.',
+    ...apiProblemDetailsSchema,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Valid Firebase ID token required',
+    ...apiProblemDetailsSchema,
+  })
+  async getFolderCards(
+    @Request() request: AuthenticatedRequest,
+    @Query('folderId') folderId: string
+  ) {
+    const { user } = request;
+
+    if (!folderId || folderId.trim().length === 0) {
+      throw new BadRequestException('Query parameter `folderId` is required');
+    }
+
+    this.logger.debug(`Getting folder cards for user ${user.uid}, folder: ${folderId}`);
+
+    return this.studyService.getFolderCards(folderId.trim(), user.uid);
+  }
 }

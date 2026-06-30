@@ -209,8 +209,7 @@ const DeckViewPage = () => {
           <Button
             variant='contained'
             color='primary'
-            disabled
-            title='Study mode coming soon (Story 78)'
+            onClick={() => navigate(`/decks/${deckId}/study`)}
           >
             Study
           </Button>

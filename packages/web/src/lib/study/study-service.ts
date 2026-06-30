@@ -28,6 +28,28 @@ export class StudyService {
       totalDue: response.data.totalDue,
     };
   }
+
+  async getFolderCards(
+    currentUser: User,
+    folderId: string,
+  ): Promise<DueCardsResponse> {
+    const options = await getApiAuthRequestOptions(currentUser);
+    const basePath = getApiBaseUrl().replace(/\/$/, '');
+    const response = await axios.get<DueCardsResponse>(
+      `${basePath}/api/study/folder-cards`,
+      {
+        ...options,
+        params: { folderId },
+      },
+    );
+    return {
+      cards: response.data.cards.map(c => ({
+        ...c,
+        dueDate: new Date(c.dueDate),
+      })),
+      totalDue: response.data.totalDue,
+    };
+  }
 }
 
 export const studyService = new StudyService();

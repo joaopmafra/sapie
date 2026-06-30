@@ -7,8 +7,10 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { ProtectedRoute, AuthErrorBoundary } from './components/auth';
 import { AuthProvider } from './contexts/AuthContext';
 import { queryClient } from './lib/queryClient';
+import DeckStudyPage from './pages/DeckStudyPage';
 import DeckViewPage from './pages/DeckViewPage';
 import FolderPage from './pages/FolderPage';
+import FolderStudyPage from './pages/FolderStudyPage';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import NoteEditorPage from './pages/NoteEditorPage';
@@ -54,10 +56,27 @@ function AppRoutes() {
           ),
         },
         {
+          path: '/folders/:folderId/study',
+          element: (
+            <ProtectedRoute>
+              <FolderStudyPage />
+            </ProtectedRoute>
+          ),
+        },
+
+        {
           path: '/decks/:deckId',
           element: (
             <ProtectedRoute>
               <DeckViewPage />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: '/decks/:deckId/study',
+          element: (
+            <ProtectedRoute>
+              <DeckStudyPage />
             </ProtectedRoute>
           ),
         },
