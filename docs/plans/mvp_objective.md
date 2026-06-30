@@ -88,32 +88,30 @@ This is consistent with the denormalization approach already planned in Story 60
 
 ### 4. Study Mode
 
-**Buttons (MVP):** "I know" / "I don't know" (or equivalent positive/negative pair).
+**Entry point:** A global study dashboard at `/study` (not contextual deck/folder launching).
 
-**Data model (designed for future FSRS upgrade):**
-Even though the UI uses two buttons, the card schema stores fields needed for spaced repetition scheduling later:
-`dueDate`, `interval`, `repetitions`, `lastResult`. Upgrading to FSRS (4-button: Again/Hard/Good/Easy) later
-becomes a UI change only, not a schema migration.
+**Spaced repetition:** Simplified SM-2 algorithm with 2 buttons:
+- "I know" — doubles the interval (1→2→4→8→16... days, capped at 365). Card won't appear again until `dueDate`.
+- "I don't know" — resets interval to 0. Card is re-queued in the current session AND due again immediately.
+- Card schema stores `dueDate`, `interval`, `repetitions`, `lastResult` — same fields, now actively scheduled.
 
-**Study flows:**
+**Content roots:** Folders tagged with `"content-root"` act as top-level study domain aggregators. The dashboard shows all content roots with due card counts, checked by default. Users uncheck roots they don't want to study.
 
-- Study a single deck (from the deck view)
-- Study all decks under a folder (right-click folder → "Study")
-
-**Session behavior:**
-
+**Study session:**
 - Show cards one at a time (front → reveal back → rate)
 - Cards answered "I don't know" are re-queued in the current session
 - Session ends when all cards have been answered "I know" at least once
+- Summary: total cards, correct count, incorrect count
+
+**Secondary paths:** Single-deck "Study" button and folder "Study all" remain as ungraded review (no SR updates).
+
+Full design: [study_dashboard_design.md](../research/study_mode/study_dashboard_design.md).
 
 ### 5. Study Result Tracking
 
 **Per-card tracking (MVP):**
-Each card stores: `lastStudied`, `correctCount`, `incorrectCount`, `lastResult`.
-This is sufficient to identify cards that need improvement.
-
-**Per-session summaries:** defer to a later iteration (useful for habit/streak tracking but not needed for
-"what needs improvement").
+Each card stores: `lastStudied`, `correctCount`, `incorrectCount`, `lastResult`, `dueDate`, `interval`, `repetitions`.
+Updated immediately on each rating (not batched at session end).
 
 ### 6. Responsive Interface
 
@@ -157,10 +155,12 @@ Full plan: `docs/research/client_state_management/phase_1_tanstack_query.md`
 | 4        | Folder creation                                               | Story 53 complete     |
 | 5        | Content deletion (notes + folders)                            | Story 53 complete     |
 | 6        | Flashcard deck + card creation (in note editor)               | Note editor           |
-| 7        | Study mode — single deck                                      | Flashcard creation    |
-| 8        | Study result tracking                                         | Study mode            |
-| 9        | Folder-level study ("Study all")                              | Study result tracking |
+| 7        | Content roots + tags (Story 81)                               | Folder creation       |
+| 8        | Study dashboard + due cards (Story 82)                        | Stories 76, 77, 81    |
+| 9        | Spaced repetition + result tracking (Story 83)                | Story 82              |
 | 10       | Responsive polish (mobile testing pass)                       | All above             |
+
+Stories 78 (single deck study), 79 (result tracking), and 80 (folder-level study) are superseded by 81–83 and the [study dashboard design](../research/study_mode/study_dashboard_design.md). Their single-deck and folder-study paths are kept as secondary ungraded review.
 
 ---
 
@@ -170,8 +170,10 @@ The following were considered and explicitly deferred — do not implement them 
 
 | Feature                                | Reason                                                                               |
 |----------------------------------------|--------------------------------------------------------------------------------------|
-| Spaced repetition (FSRS / SM-2)        | Data model is upgrade-ready; UI upgrade deferred                                     |
+| FSRS 4-button grading (Again/Hard/Good/Easy) | SM-2 with 2 buttons is sufficient for MVP; upgrade is schema-compatible         |
 | Per-session study summaries / streaks  | Nice-to-have; per-card tracking is sufficient                                        |
+| Knowledge-area filtering in dashboard  | Tags exist; filtering deferred                                                       |
+| Tag nesting validation                 | Deferred; manual organization is sufficient for MVP                                  |
 | Full-text search                       | Planned (FlexSearch, Phase 2); not needed until content volume grows                 |
 | Note-to-note linking                   | Future; not needed for studying                                                      |
 | Math/LaTeX in editor                   | Future; not needed for initial study domains                                         |
@@ -191,9 +193,10 @@ The following were considered and explicitly deferred — do not implement them 
 The MVP is complete when the owner can:
 
 1. Open the app on a laptop and a phone
-2. Create a folder for a study domain (e.g., "DSA")
-3. Create a note inside it and write content with code blocks
+2. Create a folder for a study domain (e.g., "DSA"), tag it as a content root
+3. Create a note inside it and write content with code blocks and inline images
 4. Create a flashcard deck attached to that note and add cards
-5. Study the deck and have the results tracked
-6. Right-click the folder and study all decks inside it
-7. Bookmark a note URL and navigate directly to it (no "note not found" errors)
+5. Open the study dashboard and see due cards from all content roots
+6. Study due cards with spaced repetition ("I know" / "I don't know"), see results tracked
+7. Return later and see cards they know well spaced further out, struggling cards due sooner
+8. Bookmark a note URL and navigate directly to it (no "note not found" errors)
