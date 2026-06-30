@@ -9,7 +9,7 @@ import type { DueCardsResponse } from './types';
 export class StudyService {
   async getDueCards(
     currentUser: User,
-    rootIds: string[],
+    rootIds: string[]
   ): Promise<DueCardsResponse> {
     const options = await getApiAuthRequestOptions(currentUser);
     const basePath = getApiBaseUrl().replace(/\/$/, '');
@@ -18,7 +18,7 @@ export class StudyService {
       {
         ...options,
         params: { rootIds: rootIds.join(',') },
-      },
+      }
     );
     return {
       cards: response.data.cards.map(c => ({
@@ -31,7 +31,7 @@ export class StudyService {
 
   async getFolderCards(
     currentUser: User,
-    folderId: string,
+    folderId: string
   ): Promise<DueCardsResponse> {
     const options = await getApiAuthRequestOptions(currentUser);
     const basePath = getApiBaseUrl().replace(/\/$/, '');
@@ -40,7 +40,7 @@ export class StudyService {
       {
         ...options,
         params: { folderId },
-      },
+      }
     );
     return {
       cards: response.data.cards.map(c => ({

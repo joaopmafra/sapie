@@ -21,11 +21,6 @@ import {
 } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
-
-import { ClientErrorAlert } from '../components/ClientErrorAlert';
-import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog';
-import { useAuth } from '../contexts/AuthContext';
-import { useAppSnackbar } from '../hooks/useAppSnackbar';
 import React, {
   useState,
   useEffect,
@@ -39,6 +34,11 @@ import {
   useBlocker,
   type BlockerFunction,
 } from 'react-router-dom';
+
+import { ClientErrorAlert } from '../components/ClientErrorAlert';
+import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog';
+import { useAuth } from '../contexts/AuthContext';
+import { useAppSnackbar } from '../hooks/useAppSnackbar';
 import {
   ContentType,
   noteBodyVersionKey,
@@ -989,7 +989,8 @@ const NoteEditorPage = () => {
         </Typography>
         {decks.length === 0 ? (
           <Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
-            No decks yet. Create a flashcard deck to study this note's content.
+            No decks yet. Create a flashcard deck to study this note&rsquo;s
+            content.
           </Typography>
         ) : (
           <List dense disablePadding>
@@ -1055,7 +1056,6 @@ const NoteEditorPage = () => {
                       }
                       setDeckRenameId(null);
                     }}
-                    autoFocus
                     sx={{ flexGrow: 1 }}
                   />
                 ) : (
@@ -1116,7 +1116,6 @@ const NoteEditorPage = () => {
         <DialogTitle>Create Deck</DialogTitle>
         <DialogContent>
           <TextField
-            autoFocus
             margin='dense'
             label='Deck Name'
             fullWidth

@@ -1,4 +1,10 @@
-import { Box, CircularProgress, Alert, Button, Typography } from '@mui/material';
+import {
+  Box,
+  CircularProgress,
+  Alert,
+  Button,
+  Typography,
+} from '@mui/material';
 import { useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -18,7 +24,7 @@ const FolderStudyPage = () => {
     (_results: StudyResult[]) => {
       navigate(`/folders/${folderId}`);
     },
-    [navigate, folderId],
+    [navigate, folderId]
   );
 
   const handleExit = useCallback(() => {
@@ -38,7 +44,7 @@ const FolderStudyPage = () => {
       error instanceof Error ? error.message : 'Failed to load folder cards.';
     return (
       <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
-        <Alert severity="error">{message}</Alert>
+        <Alert severity='error'>{message}</Alert>
         <Button sx={{ mt: 2 }} onClick={() => navigate(`/folders/${folderId}`)}>
           Back to folder
         </Button>
@@ -49,13 +55,17 @@ const FolderStudyPage = () => {
   if (!data || data.cards.length === 0) {
     return (
       <Box sx={{ maxWidth: 600, mx: 'auto', mt: 8, textAlign: 'center' }}>
-        <Typography variant="h5" sx={{ mb: 2 }}>
+        <Typography variant='h5' sx={{ mb: 2 }}>
           No cards found
         </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-          {folder?.name ?? 'This folder'} has no cards to study. Add decks with cards first.
+        <Typography variant='body1' color='text.secondary' sx={{ mb: 3 }}>
+          {folder?.name ?? 'This folder'} has no cards to study. Add decks with
+          cards first.
         </Typography>
-        <Button variant="contained" onClick={() => navigate(`/folders/${folderId}`)}>
+        <Button
+          variant='contained'
+          onClick={() => navigate(`/folders/${folderId}`)}
+        >
           Back to folder
         </Button>
       </Box>

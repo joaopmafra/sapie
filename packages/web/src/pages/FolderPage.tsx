@@ -13,7 +13,11 @@ import { isAxiosError } from 'axios';
 import { useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { ContentType, useContentItem, useUpdateContentTags } from '../lib/content';
+import {
+  ContentType,
+  useContentItem,
+  useUpdateContentTags,
+} from '../lib/content';
 
 const KNOWN_TAGS = ['content-root', 'knowledge-area'];
 
@@ -110,7 +114,11 @@ const FolderPage = () => {
           Tags
         </Typography>
 
-        <Stack direction='row' spacing={1} sx={{ mb: 2, flexWrap: 'wrap', gap: 0.5 }}>
+        <Stack
+          direction='row'
+          spacing={1}
+          sx={{ mb: 2, flexWrap: 'wrap', gap: 0.5 }}
+        >
           {currentTags.map(tag => (
             <Chip
               key={tag}
@@ -134,7 +142,7 @@ const FolderPage = () => {
           inputValue={tagInputValue}
           onInputChange={(_event, value) => setTagInputValue(value)}
           onChange={handleAddTag}
-          renderInput={(params) => (
+          renderInput={params => (
             <TextField
               {...params}
               label='Add tag'

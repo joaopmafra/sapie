@@ -1,4 +1,10 @@
-import { Box, CircularProgress, Alert, Button, Typography } from '@mui/material';
+import {
+  Box,
+  CircularProgress,
+  Alert,
+  Button,
+  Typography,
+} from '@mui/material';
 import { useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -27,14 +33,14 @@ const DeckStudyPage = () => {
         deckName: deck?.name ?? 'Deck',
         noteId: deck?.parentId ?? '',
       })),
-    [cards, deck],
+    [cards, deck]
   );
 
   const handleComplete = useCallback(
     (_results: StudyResult[]) => {
       navigate(`/decks/${deckId}`);
     },
-    [navigate, deckId],
+    [navigate, deckId]
   );
 
   const handleExit = useCallback(() => {
@@ -52,7 +58,7 @@ const DeckStudyPage = () => {
   if (!deck) {
     return (
       <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
-        <Alert severity="error">Deck not found.</Alert>
+        <Alert severity='error'>Deck not found.</Alert>
         <Button sx={{ mt: 2 }} onClick={() => navigate('/')}>
           Go home
         </Button>
@@ -63,10 +69,13 @@ const DeckStudyPage = () => {
   if (studyCards.length === 0) {
     return (
       <Box sx={{ maxWidth: 600, mx: 'auto', mt: 8, textAlign: 'center' }}>
-        <Typography variant="h5" sx={{ mb: 2 }}>
+        <Typography variant='h5' sx={{ mb: 2 }}>
           No cards in this deck
         </Typography>
-        <Button variant="contained" onClick={() => navigate(`/decks/${deckId}`)}>
+        <Button
+          variant='contained'
+          onClick={() => navigate(`/decks/${deckId}`)}
+        >
           Back to deck
         </Button>
       </Box>
