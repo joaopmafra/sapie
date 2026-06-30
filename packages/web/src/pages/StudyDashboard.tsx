@@ -39,10 +39,7 @@ const StudyDashboard = () => {
     });
   };
 
-  const checkedRootIds = useMemo(
-    () => [...checkedRoots],
-    [checkedRoots],
-  );
+  const checkedRootIds = useMemo(() => [...checkedRoots], [checkedRoots]);
 
   const totalDue = useMemo(() => {
     if (!roots) return 0;
@@ -69,7 +66,7 @@ const StudyDashboard = () => {
       error instanceof Error ? error.message : 'Failed to load content roots.';
     return (
       <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
-        <Alert severity="error">{message}</Alert>
+        <Alert severity='error'>{message}</Alert>
       </Box>
     );
   }
@@ -78,11 +75,12 @@ const StudyDashboard = () => {
     return (
       <Box sx={{ maxWidth: 600, mx: 'auto', mt: 8 }}>
         <Paper elevation={1} sx={{ p: 4, textAlign: 'center' }}>
-          <Typography variant="h4" sx={{ mb: 2 }}>
+          <Typography variant='h4' sx={{ mb: 2 }}>
             All caught up! 🎉
           </Typography>
-          <Typography variant="body1" color="text.secondary">
-            No content roots found. Tag a folder with &quot;content-root&quot; to create a study domain.
+          <Typography variant='body1' color='text.secondary'>
+            No content roots found. Tag a folder with &quot;content-root&quot;
+            to create a study domain.
           </Typography>
         </Paper>
       </Box>
@@ -93,17 +91,21 @@ const StudyDashboard = () => {
 
   return (
     <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4, px: { xs: 2, sm: 0 } }}>
-      <Typography variant="h4" component="h1" sx={{ mb: 3 }}>
+      <Typography variant='h4' component='h1' sx={{ mb: 3 }}>
         Study
       </Typography>
 
       {allDueZero && (
-        <Paper elevation={1} sx={{ p: { xs: 2, sm: 4 }, textAlign: 'center', mb: 3 }}>
-          <Typography variant="h5" sx={{ mb: 1 }}>
+        <Paper
+          elevation={1}
+          sx={{ p: { xs: 2, sm: 4 }, textAlign: 'center', mb: 3 }}
+        >
+          <Typography variant='h5' sx={{ mb: 1 }}>
             All caught up! 🎉
           </Typography>
-          <Typography variant="body1" color="text.secondary">
-            No cards are due for review. Check back later or add new cards to your decks.
+          <Typography variant='body1' color='text.secondary'>
+            No cards are due for review. Check back later or add new cards to
+            your decks.
           </Typography>
         </Paper>
       )}
@@ -129,7 +131,7 @@ const StudyDashboard = () => {
                   }}
                 >
                   <Typography>{root.name}</Typography>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                  <Typography color='text.secondary' sx={{ fontWeight: 500 }}>
                     {root.dueCardCount} due
                   </Typography>
                 </Box>
@@ -148,12 +150,12 @@ const StudyDashboard = () => {
             gap: { xs: 2, sm: 0 },
           }}
         >
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant='body1' color='text.secondary'>
             Total cards due: {totalDue}
           </Typography>
           <Button
-            variant="contained"
-            size="large"
+            variant='contained'
+            size='large'
             disabled={totalDue === 0}
             onClick={handleStartStudy}
             fullWidth={false}

@@ -15,7 +15,11 @@ export interface StudySessionProps {
   cards: StudyCard[];
   /** If true, calls onRate for persistence; if false, only tracks locally. */
   graded?: boolean;
-  onRate?: (cardId: string, deckId: string, result: 'know' | 'dont_know') => void;
+  onRate?: (
+    cardId: string,
+    deckId: string,
+    result: 'know' | 'dont_know'
+  ) => void;
   onComplete: (results: StudyResult[]) => void;
   onExit: () => void;
   isRating?: boolean;
@@ -76,7 +80,7 @@ const StudySession = ({
         }
       });
     },
-    [currentCard, graded, onRate],
+    [currentCard, graded, onRate]
   );
 
   const correctCount = results.filter(r => r.result === 'know').length;
@@ -86,10 +90,10 @@ const StudySession = ({
     return (
       <Box sx={{ maxWidth: 600, mx: 'auto', mt: 8 }}>
         <Paper elevation={1} sx={{ p: 4, textAlign: 'center' }}>
-          <Typography variant="h4" sx={{ mb: 2 }}>
+          <Typography variant='h4' sx={{ mb: 2 }}>
             No cards to study
           </Typography>
-          <Button variant="contained" onClick={onExit}>
+          <Button variant='contained' onClick={onExit}>
             Go back
           </Button>
         </Paper>
@@ -101,23 +105,23 @@ const StudySession = ({
     return (
       <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
         <Paper elevation={1} sx={{ p: { xs: 2, sm: 4 }, textAlign: 'center' }}>
-          <Typography variant="h4" sx={{ mb: 3 }}>
+          <Typography variant='h4' sx={{ mb: 3 }}>
             Session Complete
           </Typography>
           <Stack spacing={1} sx={{ mb: 3 }}>
-            <Typography variant="body1">
+            <Typography variant='body1'>
               Total cards studied: {results.length}
             </Typography>
-            <Typography variant="body1" color="success.main">
+            <Typography variant='body1' color='success.main'>
               Correct: {correctCount}
             </Typography>
-            <Typography variant="body1" color="error.main">
+            <Typography variant='body1' color='error.main'>
               Incorrect: {incorrectCount}
             </Typography>
           </Stack>
           <Button
-            variant="contained"
-            size="large"
+            variant='contained'
+            size='large'
             onClick={() => onComplete(results)}
           >
             {graded ? 'Back to Dashboard' : 'Back'}
@@ -130,7 +134,7 @@ const StudySession = ({
   if (!currentCard) {
     return (
       <Box sx={{ maxWidth: 600, mx: 'auto', mt: 8 }}>
-        <Alert severity="info">No more cards to review.</Alert>
+        <Alert severity='info'>No more cards to review.</Alert>
       </Box>
     );
   }
@@ -147,27 +151,27 @@ const StudySession = ({
           gap: 1,
         }}
       >
-        <Typography variant="subtitle2" color="text.secondary">
+        <Typography variant='subtitle2' color='text.secondary'>
           {queue.length} card{queue.length !== 1 ? 's' : ''} remaining
         </Typography>
-        <Button size="small" onClick={onExit}>
+        <Button size='small' onClick={onExit}>
           Finish Early
         </Button>
       </Box>
 
       <Paper elevation={2} sx={{ p: { xs: 2, sm: 4 }, minHeight: 300 }}>
-        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+        <Typography variant='subtitle2' color='text.secondary' sx={{ mb: 1 }}>
           {currentCard.deckName}
         </Typography>
 
-        <Typography variant="h5" sx={{ mb: phase === 'back' ? 2 : 4 }}>
+        <Typography variant='h5' sx={{ mb: phase === 'back' ? 2 : 4 }}>
           {currentCard.front}
         </Typography>
 
         {phase === 'back' && (
           <>
             <Divider sx={{ my: 3 }} />
-            <Typography variant="h5" color="primary" sx={{ mb: 4 }}>
+            <Typography variant='h5' color='primary' sx={{ mb: 4 }}>
               {currentCard.back}
             </Typography>
           </>
@@ -177,10 +181,14 @@ const StudySession = ({
       <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
         {phase === 'front' && (
           <Button
-            variant="contained"
-            size="large"
+            variant='contained'
+            size='large'
             onClick={handleReveal}
-            sx={{ minWidth: 200, minHeight: 48, width: { xs: '100%', sm: 'auto' } }}
+            sx={{
+              minWidth: 200,
+              minHeight: 48,
+              width: { xs: '100%', sm: 'auto' },
+            }}
           >
             Reveal
           </Button>
@@ -193,9 +201,9 @@ const StudySession = ({
             sx={{ width: { xs: '100%', sm: 'auto' } }}
           >
             <Button
-              variant="contained"
-              color="error"
-              size="large"
+              variant='contained'
+              color='error'
+              size='large'
               onClick={() => handleRate('dont_know')}
               sx={{ minWidth: 160, minHeight: 48, flex: { xs: 1, sm: 'none' } }}
               disabled={isRating}
@@ -203,9 +211,9 @@ const StudySession = ({
               I don&rsquo;t know
             </Button>
             <Button
-              variant="contained"
-              color="success"
-              size="large"
+              variant='contained'
+              color='success'
+              size='large'
               onClick={() => handleRate('know')}
               sx={{ minWidth: 160, minHeight: 48, flex: { xs: 1, sm: 'none' } }}
               disabled={isRating}

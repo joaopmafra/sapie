@@ -1,8 +1,8 @@
 import axios from 'axios';
 import type { User } from 'firebase/auth';
 
-import { getApiAuthRequestOptions } from '../auth-utils';
 import { getApiBaseUrl } from '../apiBaseUrl.ts';
+import { getApiAuthRequestOptions } from '../auth-utils';
 
 import type { Card, CreateCardRequest, UpdateCardRequest } from './types';
 
@@ -125,14 +125,14 @@ export class CardService {
     currentUser: User,
     deckId: string,
     cardId: string,
-    result: 'know' | 'dont_know',
+    result: 'know' | 'dont_know'
   ): Promise<Card> {
     const options = await getApiAuthRequestOptions(currentUser);
     const basePath = getApiBaseUrl().replace(/\/$/, '');
     const response = await axios.patch<Card>(
       `${basePath}/api/content/${deckId}/cards/${cardId}/study-result`,
       { result },
-      options,
+      options
     );
     return response.data;
   }

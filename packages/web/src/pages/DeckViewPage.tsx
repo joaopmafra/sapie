@@ -246,7 +246,8 @@ const DeckViewPage = () => {
           </Box>
         ) : cards.length === 0 ? (
           <Typography variant='body2' color='text.secondary' sx={{ py: 2 }}>
-            No cards yet. Click "Add Card" to create your first flashcard.
+            No cards yet. Click &quot;Add Card&quot; to create your first
+            flashcard.
           </Typography>
         ) : (
           <List disablePadding>
@@ -298,7 +299,6 @@ const DeckViewPage = () => {
         <DialogTitle>Add Card</DialogTitle>
         <DialogContent>
           <TextField
-            autoFocus
             margin='dense'
             label='Front'
             placeholder='Question or prompt'
@@ -344,7 +344,6 @@ const DeckViewPage = () => {
         <DialogTitle>Edit Card</DialogTitle>
         <DialogContent>
           <TextField
-            autoFocus
             margin='dense'
             label='Front'
             placeholder='Question or prompt'
@@ -353,7 +352,6 @@ const DeckViewPage = () => {
             minRows={2}
             value={editFront}
             onChange={e => setEditFront(e.target.value)}
-            sx={{ mb: 2 }}
           />
           <TextField
             margin='dense'

@@ -5,8 +5,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { studyService } from './study-service';
 
 export const studyQueryKeys = {
-  dueCards: (rootIds: string[]) => ['study', 'due-cards', ...rootIds.sort()] as const,
-  folderCards: (folderId: string) => ['study', 'folder-cards', folderId] as const,
+  dueCards: (rootIds: string[]) =>
+    ['study', 'due-cards', ...rootIds.sort()] as const,
+  folderCards: (folderId: string) =>
+    ['study', 'folder-cards', folderId] as const,
 };
 
 export function useDueCards(rootIds: string[]) {

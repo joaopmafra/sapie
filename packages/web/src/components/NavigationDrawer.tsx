@@ -155,11 +155,7 @@ const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
         </Menu>
       </Box>
       <Box sx={{ px: paddingRL, pb: 2 }}>
-        <Button
-          variant='outlined'
-          fullWidth
-          onClick={() => navigate('/study')}
-        >
+        <Button variant='outlined' fullWidth onClick={() => navigate('/study')}>
           Study
         </Button>
       </Box>

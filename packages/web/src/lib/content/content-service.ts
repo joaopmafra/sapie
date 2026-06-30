@@ -383,7 +383,6 @@ export class ContentService {
       console.error('Failed to put content body:', error);
       throw error;
     }
-
   }
 
   /**

@@ -141,11 +141,11 @@ cd packages/api && pnpm test -- --testPathPattern="study.controller"
 cd packages/web && pnpm verify:types && pnpm test
 ```
 
-**Known pre-existing issues** (do not treat as regressions):
-- Web `lint:check` — errors in `DeckViewPage.tsx`, `NoteEditorPage.tsx`, `card-hooks.ts`, `card-service.ts`, `DeckViewPage.test.tsx` (import order, unescaped entities, autoFocus). These predate Stories 81–84 and are queued for a separate cleanup pass.
-- API `lint:check` — 19× `@typescript-eslint/no-unsafe-argument` warnings in fixture files (all test code, all pre-existing).
+**Known pre-existing warnings** (non-blocking, do not treat as regressions):
+- API `lint:check` — 19× `@typescript-eslint/no-unsafe-argument` in fixture files (all test code).
+- Web `lint:check` — 7× warnings in ContentExplorer, AuthContext, ContentContext, NoteEditorPage (react-hooks, fast-refresh). All pre-existing.
 
-Fix any **new** failures before claiming work is done.
+Fix any **new** errors or warnings before claiming work is done. If pre-existing lint errors appear in files you didn't touch, clean them up — they block `verify-all-test-unit.sh` for everyone.
 - Move the story from `docs/pm/4-in-progress/` to `docs/pm/5-done/`
 - Update `docs/pm/last_pbi_number.md` if it was a new story
 - Update `docs/research/ai_workflow/ai_workflow_adoption_log.md` with a one-line change log entry
@@ -166,8 +166,6 @@ When deleting or moving git-versioned files, use `git rm` and `git mv` (not plai
 | API unit tests | `compose.test-unit.yml` | `sapie-firebase-test-emulator` | UI 4001, Auth 9098, Storage 9199 |
 | Local dev (host) | `compose.local-dev.yml` | `sapie-firebase-local-dev` | UI 4002, Auth 9100, Firestore 9200, Storage 9199 |
 | Full emulator | `compose.emulator.yml` | `sapie-firebase-full-emulator` | UI 4000, Hosting 5000, Functions 5001 |
-
-### Checking status
 
 ```bash
 # Which containers are running?
