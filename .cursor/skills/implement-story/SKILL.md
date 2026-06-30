@@ -19,6 +19,8 @@ Complete lifecycle for shipping a story: pick from backlog → implement backend
 
 ### 2. Backend (Classical TDD)
 
+**Read the Classical TDD skill first:** `skill://classical-tdd` — it defines what "unit test" means in this project, the fixture pattern, and what to never do (mockist service specs, jest.fn() on providers, calling controller specs "integration tests").
+
 Follow test patterns in `packages/api/src/content/controllers/`:
 
 - **Fixture**: extend `ContentControllerFixture` with helper methods for new endpoints
