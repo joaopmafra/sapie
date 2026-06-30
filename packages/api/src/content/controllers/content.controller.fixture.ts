@@ -42,7 +42,7 @@ export class ContentControllerFixture extends AppFixture {
 
   async callApiCreateNoteExpectingCreated(
     testUserId: string,
-    payload: { name: string; parentId: string; type?: 'note' | 'directory' }
+    payload: { name: string; parentId: string; type?: 'note' | 'directory' | 'deck' }
   ): Promise<supertest.Response> {
     return this.callApiCreateNote(testUserId, payload).expect(HttpStatus.CREATED);
   }
@@ -52,9 +52,18 @@ export class ContentControllerFixture extends AppFixture {
     return response.body as Content;
   }
 
+  async seedDeck(userId: string, name: string, parentNoteId: string): Promise<Content> {
+    const response = await this.callApiCreateNoteExpectingCreated(userId, {
+      name,
+      parentId: parentNoteId,
+      type: 'deck',
+    });
+    return response.body as Content;
+  }
+
   callApiCreateNote(
     testUserId: string,
-    payload: { name: string; parentId: string; type?: 'note' | 'directory' }
+    payload: { name: string; parentId: string; type?: 'note' | 'directory' | 'deck' }
   ): supertest.Test {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return supertest(this.getHttpServer())
@@ -181,9 +190,13 @@ export class ContentControllerFixture extends AppFixture {
       .set(TEST_USER_ID_HEADER, testUserId);
   }
 
-  callApiDeleteContent(testUserId: string, contentId: string): supertest.Test {
-    return supertest(this.getHttpServer())
+  callApiDeleteContent(testUserId: string, contentId: string, cascade?: boolean): supertest.Test {
+    let req = supertest(this.getHttpServer())
       .delete(`${this.API_CONTENT}/${contentId}`)
       .set(TEST_USER_ID_HEADER, testUserId);
+    if (cascade !== undefined) {
+      req = req.query({ cascade: String(cascade) });
+    }
+    return req;
   }
 }

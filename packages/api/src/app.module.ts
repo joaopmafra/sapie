@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth';
 import { ContentModule } from './content';
+import { CardModule } from './cards/card.module';
 import { FirebaseAdminModule } from './firebase';
 import * as process from 'node:process';
 
@@ -19,6 +20,7 @@ import * as process from 'node:process';
     HealthModule,
     AuthModule,
     ContentModule,
+    CardModule,
   ],
   controllers: [AppController],
 })

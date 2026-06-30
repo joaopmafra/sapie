@@ -255,8 +255,21 @@ export function useCreateNote() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ name, parentId }: { name: string; parentId: string }) =>
-      contentService.createNote(currentUser!, name, parentId),
+    mutationFn: ({
+      name,
+      parentId,
+      type,
+    }: {
+      name: string;
+      parentId: string;
+      type?: string;
+    }) =>
+      contentService.createNote(
+        currentUser!,
+        name,
+        parentId,
+        type as 'note' | 'deck' | undefined
+      ),
     onSuccess: (_newNote, { parentId }) => {
       void queryClient.invalidateQueries({
         queryKey: contentQueryKeys.children(parentId),
@@ -310,8 +323,32 @@ export function useRenameContent() {
   });
 }
 
-// TODO (Story 64 — content deletion): Add `useDeleteContent()` when `DELETE /api/content/:id` exists.
-// In `onSuccess`, invalidate `contentQueryKeys.children(parentId)` and call
-// `queryClient.removeQueries({ queryKey: contentQueryKeys.item(id) })` so cached
-// single-item data (e.g. `/notes/:id`) is dropped immediately. See
-// docs/pm/3-stories/1-ready/64-story-content_deletion.md (TanStack Query section).
+export function useDeleteContent() {
+  const queryClient = useQueryClient();
+  const { currentUser } = useAuth();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      cascade,
+    }: {
+      id: string;
+      parentId: string | null;
+      cascade?: boolean;
+    }) => contentService.deleteContent(currentUser!, id, cascade),
+    onSuccess: (_data, { id, parentId }) => {
+      if (parentId) {
+        void queryClient.invalidateQueries({
+          queryKey: contentQueryKeys.children(parentId),
+        });
+      }
+      void queryClient.removeQueries({
+        queryKey: contentQueryKeys.item(id),
+      });
+      // Also remove body-related caches for the deleted item
+      void queryClient.removeQueries({
+        queryKey: contentQueryKeys.bodySignedUrl(id),
+      });
+    },
+  });
+}

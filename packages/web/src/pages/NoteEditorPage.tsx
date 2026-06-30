@@ -1,4 +1,6 @@
 import type { MDXEditorMethods } from '@mdxeditor/editor';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 import {
   Box,
   Typography,
@@ -7,9 +9,23 @@ import {
   CircularProgress,
   Paper,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
 } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
+
+import { ClientErrorAlert } from '../components/ClientErrorAlert';
+import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog';
+import { useAuth } from '../contexts/AuthContext';
+import { useAppSnackbar } from '../hooks/useAppSnackbar';
 import React, {
   useState,
   useEffect,
@@ -17,11 +33,12 @@ import React, {
   useMemo,
   useCallback,
 } from 'react';
-import { useParams, useBlocker, type BlockerFunction } from 'react-router-dom';
-
-import { ClientErrorAlert } from '../components/ClientErrorAlert';
-import { useAuth } from '../contexts/AuthContext';
-import { useAppSnackbar } from '../hooks/useAppSnackbar';
+import {
+  useParams,
+  useNavigate,
+  useBlocker,
+  type BlockerFunction,
+} from 'react-router-dom';
 import {
   ContentType,
   noteBodyVersionKey,
@@ -30,6 +47,9 @@ import {
   useBodySignedUrlFetchSuppressedAfterSave,
   useContentBody,
   useContentItem,
+  useCreateNote,
+  useDeleteContent,
+  useFolderChildren,
   useNoteBody,
   useRenameContent,
   useSaveNoteBody,
@@ -97,8 +117,25 @@ const NoteEditorPage = () => {
       suppressSignedUrlFetch,
     staleTime: Infinity,
   });
+  const deleteContent = useDeleteContent();
+  const navigate = useNavigate();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const saveNoteBody = useSaveNoteBody();
   const renameContent = useRenameContent();
+
+  // ── Decks (Attachments section) ────────────────────────────────
+  const { data: noteChildren = [] } = useFolderChildren(noteId);
+  const decks = noteChildren.filter(c => c.type === ContentType.DECK);
+  const createNote = useCreateNote();
+  const [createDeckOpen, setCreateDeckOpen] = useState(false);
+  const [newDeckName, setNewDeckName] = useState('');
+  const [deckRenameId, setDeckRenameId] = useState<string | null>(null);
+  const [deckRenameName, setDeckRenameName] = useState('');
+  const [deckDeleteTarget, setDeckDeleteTarget] = useState<{
+    id: string;
+    name: string;
+    parentId: string | null;
+  } | null>(null);
 
   const [noteName, setNoteName] = useState('');
   const [isEditing, setIsEditing] = useState(false);
@@ -888,6 +925,16 @@ const NoteEditorPage = () => {
                 Retry
               </Button>
             ) : null}
+            <Button
+              type='button'
+              size='small'
+              color='error'
+              variant='outlined'
+              onClick={() => setDeleteDialogOpen(true)}
+              disabled={!currentUser || !note}
+            >
+              Delete
+            </Button>
           </Box>
         </Box>
 
@@ -934,7 +981,209 @@ const NoteEditorPage = () => {
             />
           )}
         </Box>
+
+        {/* ── Attachments (Decks) ─────────────────────────────── */}
+        <Divider sx={{ my: 3 }} />
+        <Typography variant='h6' sx={{ mb: 1 }}>
+          Attachments
+        </Typography>
+        {decks.length === 0 ? (
+          <Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
+            No decks yet. Create a flashcard deck to study this note's content.
+          </Typography>
+        ) : (
+          <List dense disablePadding>
+            {decks.map(deck => (
+              <ListItem
+                key={deck.id}
+                disableGutters
+                secondaryAction={
+                  <Box sx={{ display: 'flex', gap: 0.5 }}>
+                    <IconButton
+                      size='small'
+                      aria-label={`Rename deck ${deck.name}`}
+                      onClick={() => {
+                        setDeckRenameId(deck.id);
+                        setDeckRenameName(deck.name);
+                      }}
+                    >
+                      <EditIcon fontSize='small' />
+                    </IconButton>
+                    <IconButton
+                      size='small'
+                      aria-label={`Delete deck ${deck.name}`}
+                      onClick={() =>
+                        setDeckDeleteTarget({
+                          id: deck.id,
+                          name: deck.name,
+                          parentId: deck.parentId,
+                        })
+                      }
+                    >
+                      <DeleteIcon fontSize='small' />
+                    </IconButton>
+                  </Box>
+                }
+              >
+                {deckRenameId === deck.id ? (
+                  <TextField
+                    size='small'
+                    value={deckRenameName}
+                    onChange={e => setDeckRenameName(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        renameContent.mutate({
+                          id: deck.id,
+                          name: deckRenameName,
+                          parentId: deck.parentId,
+                        });
+                        setDeckRenameId(null);
+                      } else if (e.key === 'Escape') {
+                        setDeckRenameId(null);
+                      }
+                    }}
+                    onBlur={() => {
+                      if (
+                        deckRenameName.trim() &&
+                        deckRenameName !== deck.name
+                      ) {
+                        renameContent.mutate({
+                          id: deck.id,
+                          name: deckRenameName.trim(),
+                          parentId: deck.parentId,
+                        });
+                      }
+                      setDeckRenameId(null);
+                    }}
+                    autoFocus
+                    sx={{ flexGrow: 1 }}
+                  />
+                ) : (
+                  <ListItemText
+                    primary={deck.name}
+                    primaryTypographyProps={{
+                      variant: 'body2',
+                      sx: {
+                        cursor: 'pointer',
+                        '&:hover': { textDecoration: 'underline' },
+                      },
+                    }}
+                    onClick={() => navigate(`/decks/${deck.id}`)}
+                  />
+                )}
+              </ListItem>
+            ))}
+          </List>
+        )}
+        <Button
+          variant='outlined'
+          size='small'
+          onClick={() => {
+            setNewDeckName('');
+            setCreateDeckOpen(true);
+          }}
+          sx={{ mt: 1 }}
+        >
+          Create Deck
+        </Button>
       </Paper>
+
+      <ConfirmDeleteDialog
+        open={deleteDialogOpen}
+        message={`Are you sure you want to delete "${note?.name ?? 'this note'}"? This action cannot be undone.`}
+        onCancel={() => setDeleteDialogOpen(false)}
+        onConfirm={() => {
+          if (!note) return;
+          deleteContent.mutate(
+            { id: note.id, parentId: note.parentId },
+            {
+              onSuccess: () => {
+                setDeleteDialogOpen(false);
+                navigate('/');
+              },
+              onError: err => {
+                showError(getErrorMessageOr(err, 'Failed to delete note'));
+                setDeleteDialogOpen(false);
+              },
+            }
+          );
+        }}
+        loading={deleteContent.isPending}
+      />
+
+      {/* ── Create Deck Dialog ────────────────────────────────── */}
+      <Dialog open={createDeckOpen} onClose={() => setCreateDeckOpen(false)}>
+        <DialogTitle>Create Deck</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin='dense'
+            label='Deck Name'
+            fullWidth
+            value={newDeckName}
+            onChange={e => setNewDeckName(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && newDeckName.trim()) {
+                if (!note) return;
+                createNote.mutate(
+                  { name: newDeckName.trim(), parentId: note.id, type: 'deck' },
+                  {
+                    onSuccess: () => {
+                      setCreateDeckOpen(false);
+                      setNewDeckName('');
+                    },
+                  }
+                );
+              }
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCreateDeckOpen(false)}>Cancel</Button>
+          <Button
+            onClick={() => {
+              if (!note || !newDeckName.trim()) return;
+              createNote.mutate(
+                { name: newDeckName.trim(), parentId: note.id, type: 'deck' },
+                {
+                  onSuccess: () => {
+                    setCreateDeckOpen(false);
+                    setNewDeckName('');
+                  },
+                }
+              );
+            }}
+            disabled={!newDeckName.trim() || createNote.isPending}
+          >
+            Create
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Delete Deck Confirmation ──────────────────────────── */}
+      <ConfirmDeleteDialog
+        open={deckDeleteTarget !== null}
+        message={`Are you sure you want to delete the deck "${deckDeleteTarget?.name ?? ''}"? All cards in this deck will be lost.`}
+        onCancel={() => setDeckDeleteTarget(null)}
+        onConfirm={() => {
+          if (!deckDeleteTarget) return;
+          deleteContent.mutate(
+            {
+              id: deckDeleteTarget.id,
+              parentId: deckDeleteTarget.parentId,
+              cascade: true,
+            },
+            {
+              onSuccess: () => setDeckDeleteTarget(null),
+              onError: err => {
+                showError(getErrorMessageOr(err, 'Failed to delete deck'));
+                setDeckDeleteTarget(null);
+              },
+            }
+          );
+        }}
+        loading={deleteContent.isPending}
+      />
     </Box>
   );
 };

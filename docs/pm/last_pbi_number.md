@@ -4,18 +4,17 @@ This file is used to track the PBI (product backlog item), which is the number o
 
 ## Current Last PBI Number
 
-75
+83
 
 ## Recent PBIs Created (limited to 10)
 
-- **75**: Story - Blob storage model refactor (**1-ready**) — replaces Story 74 attachment model with GCS-only blobs
+- **83**: Story - Spaced repetition + result tracking (**planned** — [design doc](../research/study_mode/study_dashboard_design.md))
+- **82**: Story - Study dashboard + due cards (**planned** — [design doc](../research/study_mode/study_dashboard_design.md))
+- **81**: Story - Content roots + tags (**planned** — [design doc](../research/study_mode/study_dashboard_design.md))
+- **80**: Story - Folder-level study (**superseded** by 81–83)
+- **79**: Story - Study result tracking (**superseded** by 81–83)
+- **78**: Story - Study mode — single deck (**superseded** by 81–83)
+- **77**: Story - Flashcard card CRUD (**5-done**)
+- **76**: Story - Flashcard deck CRUD (**5-done**)
+- **75**: Story - Blob storage model refactor (**5-done**) — replaces Story 74 attachment model with GCS-only blobs
 - **74**: Story - Dedicated attachment storage model (**5-done**, domain settled 2026-06-26)
-- **73**: Story - Uniform body reads and image orphan cleanup
-- **72**: Story - Content body read via Service Worker
-- **71**: Story - Inline images in notes
-- **70**: Story - URL-driven sidebar selection and folder view
-- **69**: Story - Replace Jest with Vitest (api, web, monorepo tooling)
-- **68**: Story - Preserve extra blank lines in rich note editor (markdown round-trip)
-- **67**: Story - Rich note content editor (MDXEditor)
-- **66**: Story - Content body subdocument and client cache policy
-- **65**: Story - Note Body Concurrency and Conflict Resolution

@@ -26,49 +26,6 @@ import { BASE_PATH, COLLECTION_FORMATS, BaseAPI, RequiredError, operationServerM
 /**
  * 
  * @export
- * @interface AttachmentResponse
- */
-export interface AttachmentResponse {
-    /**
-     * Unique attachment id (UUID).
-     * @type {string}
-     * @memberof AttachmentResponse
-     */
-    'id': string;
-    /**
-     * Parent note id.
-     * @type {string}
-     * @memberof AttachmentResponse
-     */
-    'noteId': string;
-    /**
-     * IANA media type from the last successful `PUT …/body`.
-     * @type {string}
-     * @memberof AttachmentResponse
-     */
-    'mimeType': string;
-    /**
-     * Byte size after the last `PUT …/body`.
-     * @type {number}
-     * @memberof AttachmentResponse
-     */
-    'size': number;
-    /**
-     * 
-     * @type {string}
-     * @memberof AttachmentResponse
-     */
-    'createdAt': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof AttachmentResponse
-     */
-    'updatedAt': string;
-}
-/**
- * 
- * @export
  * @interface AuthControllerGetCurrentUser401Response
  */
 export interface AuthControllerGetCurrentUser401Response {
@@ -193,6 +150,25 @@ export interface ContentBodyUrlResponse {
 /**
  * 
  * @export
+ * @interface ContentControllerPostBlob201Response
+ */
+export interface ContentControllerPostBlob201Response {
+    /**
+     * 
+     * @type {string}
+     * @memberof ContentControllerPostBlob201Response
+     */
+    'blobId'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ContentControllerPostBlob201Response
+     */
+    'url'?: string;
+}
+/**
+ * 
+ * @export
  * @interface ContentResponse
  */
 export interface ContentResponse {
@@ -221,6 +197,12 @@ export interface ContentResponse {
      */
     'parentId': string | null;
     /**
+     * Denormalized folder ID (set for deck-type content, enables folder-level study queries).
+     * @type {string}
+     * @memberof ContentResponse
+     */
+    'folderId'?: string | null;
+    /**
      * ID of the user who owns this content
      * @type {string}
      * @memberof ContentResponse
@@ -248,7 +230,8 @@ export interface ContentResponse {
 
 export const ContentResponseTypeEnum = {
     Directory: 'directory',
-    Note: 'note'
+    Note: 'note',
+    Deck: 'deck'
 } as const;
 
 export type ContentResponseTypeEnum = typeof ContentResponseTypeEnum[keyof typeof ContentResponseTypeEnum];
@@ -281,7 +264,8 @@ export interface CreateContentRequest {
 
 export const CreateContentRequestTypeEnum = {
     Directory: 'directory',
-    Note: 'note'
+    Note: 'note',
+    Deck: 'deck'
 } as const;
 
 export type CreateContentRequestTypeEnum = typeof CreateContentRequestTypeEnum[keyof typeof CreateContentRequestTypeEnum];
@@ -653,44 +637,6 @@ export class AuthenticationApi extends BaseAPI implements AuthenticationApiInter
 export const ContentApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
         /**
-         * Creates an attachment record under `content/{noteId}/attachments/{attachmentId}`. Upload bytes via `PUT …/attachments/:attachmentId/body`. Parent `:noteId` must be type `note`.
-         * @summary Create note attachment metadata
-         * @param {string} noteId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        contentControllerCreateAttachment: async (noteId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'noteId' is not null or undefined
-            assertParamExists('contentControllerCreateAttachment', 'noteId', noteId)
-            const localVarPath = `/api/content/{noteId}/attachments`
-                .replace(`{${"noteId"}}`, encodeURIComponent(String(noteId)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication bearer required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Creates metadata under the given parent. Default `type` is `note`. Send `type: directory` to create a folder (parent must be a folder).
          * @summary Create content (note or folder)
          * @param {CreateContentRequest} createContentRequest 
@@ -731,21 +677,18 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Removes attachment metadata and storage object (e.g. after failed note save).
-         * @summary Delete note attachment
-         * @param {string} noteId 
-         * @param {string} attachmentId 
+         * Soft-deletes content by setting `deleted: true`. Notes with content children (e.g. flashcard decks) require `?cascade=true` to delete. Folders are always cascaded to all descendants. Cloud Storage objects (bodies and blobs) are NOT deleted — permanent cleanup is deferred.
+         * @summary Soft-delete content (note or directory)
+         * @param {string} id 
+         * @param {boolean} [cascade] Set to true to cascade-delete content children of a note.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        contentControllerDeleteAttachment: async (noteId: string, attachmentId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'noteId' is not null or undefined
-            assertParamExists('contentControllerDeleteAttachment', 'noteId', noteId)
-            // verify required parameter 'attachmentId' is not null or undefined
-            assertParamExists('contentControllerDeleteAttachment', 'attachmentId', attachmentId)
-            const localVarPath = `/api/content/{noteId}/attachments/{attachmentId}`
-                .replace(`{${"noteId"}}`, encodeURIComponent(String(noteId)))
-                .replace(`{${"attachmentId"}}`, encodeURIComponent(String(attachmentId)));
+        contentControllerDeleteContent: async (id: string, cascade?: boolean, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('contentControllerDeleteContent', 'id', id)
+            const localVarPath = `/api/content/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -761,6 +704,10 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            if (cascade !== undefined) {
+                localVarQueryParameter['cascade'] = cascade;
+            }
+
 
     
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -774,20 +721,20 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @summary Stream attachment body bytes
-         * @param {string} noteId 
-         * @param {string} attachmentId 
+         * @summary Stream blob bytes
+         * @param {string} contentId Parent note ID
+         * @param {string} blobId Blob ID
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        contentControllerGetAttachmentBody: async (noteId: string, attachmentId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'noteId' is not null or undefined
-            assertParamExists('contentControllerGetAttachmentBody', 'noteId', noteId)
-            // verify required parameter 'attachmentId' is not null or undefined
-            assertParamExists('contentControllerGetAttachmentBody', 'attachmentId', attachmentId)
-            const localVarPath = `/api/content/{noteId}/attachments/{attachmentId}/body`
-                .replace(`{${"noteId"}}`, encodeURIComponent(String(noteId)))
-                .replace(`{${"attachmentId"}}`, encodeURIComponent(String(attachmentId)));
+        contentControllerGetBlob: async (contentId: string, blobId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'contentId' is not null or undefined
+            assertParamExists('contentControllerGetBlob', 'contentId', contentId)
+            // verify required parameter 'blobId' is not null or undefined
+            assertParamExists('contentControllerGetBlob', 'blobId', blobId)
+            const localVarPath = `/api/content/{contentId}/blobs/{blobId}`
+                .replace(`{${"contentId"}}`, encodeURIComponent(String(contentId)))
+                .replace(`{${"blobId"}}`, encodeURIComponent(String(blobId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -1045,27 +992,23 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * 
-         * @summary Upload or replace attachment body bytes
-         * @param {string} noteId 
-         * @param {string} attachmentId 
+         * Stores raw bytes as a blob under the note. Returns the generated blob ID and its read URL.
+         * @summary Upload a blob (inline image) for a note
+         * @param {string} contentId Parent note ID
          * @param {string} contentType 
-         * @param {File} body Raw image bytes. &#x60;Content-Type&#x60; sets stored media type.
+         * @param {File} body Raw bytes of the blob (inline image). The &#x60;Content-Type&#x60; header sets the stored media type.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        contentControllerPutAttachmentBody: async (noteId: string, attachmentId: string, contentType: string, body: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'noteId' is not null or undefined
-            assertParamExists('contentControllerPutAttachmentBody', 'noteId', noteId)
-            // verify required parameter 'attachmentId' is not null or undefined
-            assertParamExists('contentControllerPutAttachmentBody', 'attachmentId', attachmentId)
+        contentControllerPostBlob: async (contentId: string, contentType: string, body: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'contentId' is not null or undefined
+            assertParamExists('contentControllerPostBlob', 'contentId', contentId)
             // verify required parameter 'contentType' is not null or undefined
-            assertParamExists('contentControllerPutAttachmentBody', 'contentType', contentType)
+            assertParamExists('contentControllerPostBlob', 'contentType', contentType)
             // verify required parameter 'body' is not null or undefined
-            assertParamExists('contentControllerPutAttachmentBody', 'body', body)
-            const localVarPath = `/api/content/{noteId}/attachments/{attachmentId}/body`
-                .replace(`{${"noteId"}}`, encodeURIComponent(String(noteId)))
-                .replace(`{${"attachmentId"}}`, encodeURIComponent(String(attachmentId)));
+            assertParamExists('contentControllerPostBlob', 'body', body)
+            const localVarPath = `/api/content/{contentId}/blobs`
+                .replace(`{${"contentId"}}`, encodeURIComponent(String(contentId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -1073,7 +1016,7 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
@@ -1083,7 +1026,7 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            localVarHeaderParameter['Content-Type'] = 'application/octet-stream';
+            localVarHeaderParameter['Content-Type'] = 'image/png';
 
             if (contentType != null) {
                 localVarHeaderParameter['content-type'] = String(contentType);
@@ -1099,7 +1042,7 @@ export const ContentApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Single endpoint for note markdown body bytes. Updates Cloud Storage and nested Firestore `body` (incl. `body.updatedAt`). **Notes** require `expectedRevision` query parameter (`body.updatedAt` ISO string from metadata, or empty string before first save). Returns **409** when revision is stale. Reconciles note attachment subcollection from markdown references on success.
+         * Single endpoint for note markdown body bytes. Updates Cloud Storage and nested Firestore `body` (incl. `body.updatedAt`). **Notes** require `expectedRevision` query parameter (`body.updatedAt` ISO string from metadata, or empty string before first save). Returns **409** when revision is stale.
          * @summary Upload or replace content body
          * @param {string} id The ID of the content whose content body is replaced (leaf types such as a note in MVP).
          * @param {string} contentType 
@@ -1164,19 +1107,6 @@ export const ContentApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = ContentApiAxiosParamCreator(configuration)
     return {
         /**
-         * Creates an attachment record under `content/{noteId}/attachments/{attachmentId}`. Upload bytes via `PUT …/attachments/:attachmentId/body`. Parent `:noteId` must be type `note`.
-         * @summary Create note attachment metadata
-         * @param {string} noteId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async contentControllerCreateAttachment(noteId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AttachmentResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerCreateAttachment(noteId, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerCreateAttachment']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
          * Creates metadata under the given parent. Default `type` is `note`. Send `type: directory` to create a folder (parent must be a folder).
          * @summary Create content (note or folder)
          * @param {CreateContentRequest} createContentRequest 
@@ -1190,31 +1120,31 @@ export const ContentApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Removes attachment metadata and storage object (e.g. after failed note save).
-         * @summary Delete note attachment
-         * @param {string} noteId 
-         * @param {string} attachmentId 
+         * Soft-deletes content by setting `deleted: true`. Notes with content children (e.g. flashcard decks) require `?cascade=true` to delete. Folders are always cascaded to all descendants. Cloud Storage objects (bodies and blobs) are NOT deleted — permanent cleanup is deferred.
+         * @summary Soft-delete content (note or directory)
+         * @param {string} id 
+         * @param {boolean} [cascade] Set to true to cascade-delete content children of a note.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async contentControllerDeleteAttachment(noteId: string, attachmentId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerDeleteAttachment(noteId, attachmentId, options);
+        async contentControllerDeleteContent(id: string, cascade?: boolean, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerDeleteContent(id, cascade, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerDeleteAttachment']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerDeleteContent']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
          * 
-         * @summary Stream attachment body bytes
-         * @param {string} noteId 
-         * @param {string} attachmentId 
+         * @summary Stream blob bytes
+         * @param {string} contentId Parent note ID
+         * @param {string} blobId Blob ID
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async contentControllerGetAttachmentBody(noteId: string, attachmentId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerGetAttachmentBody(noteId, attachmentId, options);
+        async contentControllerGetBlob(contentId: string, blobId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerGetBlob(contentId, blobId, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerGetAttachmentBody']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerGetBlob']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -1296,23 +1226,22 @@ export const ContentApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * 
-         * @summary Upload or replace attachment body bytes
-         * @param {string} noteId 
-         * @param {string} attachmentId 
+         * Stores raw bytes as a blob under the note. Returns the generated blob ID and its read URL.
+         * @summary Upload a blob (inline image) for a note
+         * @param {string} contentId Parent note ID
          * @param {string} contentType 
-         * @param {File} body Raw image bytes. &#x60;Content-Type&#x60; sets stored media type.
+         * @param {File} body Raw bytes of the blob (inline image). The &#x60;Content-Type&#x60; header sets the stored media type.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async contentControllerPutAttachmentBody(noteId: string, attachmentId: string, contentType: string, body: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AttachmentResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerPutAttachmentBody(noteId, attachmentId, contentType, body, options);
+        async contentControllerPostBlob(contentId: string, contentType: string, body: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ContentControllerPostBlob201Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.contentControllerPostBlob(contentId, contentType, body, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerPutAttachmentBody']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['ContentApi.contentControllerPostBlob']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Single endpoint for note markdown body bytes. Updates Cloud Storage and nested Firestore `body` (incl. `body.updatedAt`). **Notes** require `expectedRevision` query parameter (`body.updatedAt` ISO string from metadata, or empty string before first save). Returns **409** when revision is stale. Reconciles note attachment subcollection from markdown references on success.
+         * Single endpoint for note markdown body bytes. Updates Cloud Storage and nested Firestore `body` (incl. `body.updatedAt`). **Notes** require `expectedRevision` query parameter (`body.updatedAt` ISO string from metadata, or empty string before first save). Returns **409** when revision is stale.
          * @summary Upload or replace content body
          * @param {string} id The ID of the content whose content body is replaced (leaf types such as a note in MVP).
          * @param {string} contentType 
@@ -1338,16 +1267,6 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
     const localVarFp = ContentApiFp(configuration)
     return {
         /**
-         * Creates an attachment record under `content/{noteId}/attachments/{attachmentId}`. Upload bytes via `PUT …/attachments/:attachmentId/body`. Parent `:noteId` must be type `note`.
-         * @summary Create note attachment metadata
-         * @param {ContentApiContentControllerCreateAttachmentRequest} requestParameters Request parameters.
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        contentControllerCreateAttachment(requestParameters: ContentApiContentControllerCreateAttachmentRequest, options?: RawAxiosRequestConfig): AxiosPromise<AttachmentResponse> {
-            return localVarFp.contentControllerCreateAttachment(requestParameters.noteId, options).then((request) => request(axios, basePath));
-        },
-        /**
          * Creates metadata under the given parent. Default `type` is `note`. Send `type: directory` to create a folder (parent must be a folder).
          * @summary Create content (note or folder)
          * @param {ContentApiContentControllerCreateContentRequest} requestParameters Request parameters.
@@ -1358,24 +1277,24 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.contentControllerCreateContent(requestParameters.createContentRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         * Removes attachment metadata and storage object (e.g. after failed note save).
-         * @summary Delete note attachment
-         * @param {ContentApiContentControllerDeleteAttachmentRequest} requestParameters Request parameters.
+         * Soft-deletes content by setting `deleted: true`. Notes with content children (e.g. flashcard decks) require `?cascade=true` to delete. Folders are always cascaded to all descendants. Cloud Storage objects (bodies and blobs) are NOT deleted — permanent cleanup is deferred.
+         * @summary Soft-delete content (note or directory)
+         * @param {ContentApiContentControllerDeleteContentRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        contentControllerDeleteAttachment(requestParameters: ContentApiContentControllerDeleteAttachmentRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.contentControllerDeleteAttachment(requestParameters.noteId, requestParameters.attachmentId, options).then((request) => request(axios, basePath));
+        contentControllerDeleteContent(requestParameters: ContentApiContentControllerDeleteContentRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.contentControllerDeleteContent(requestParameters.id, requestParameters.cascade, options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @summary Stream attachment body bytes
-         * @param {ContentApiContentControllerGetAttachmentBodyRequest} requestParameters Request parameters.
+         * @summary Stream blob bytes
+         * @param {ContentApiContentControllerGetBlobRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        contentControllerGetAttachmentBody(requestParameters: ContentApiContentControllerGetAttachmentBodyRequest, options?: RawAxiosRequestConfig): AxiosPromise<File> {
-            return localVarFp.contentControllerGetAttachmentBody(requestParameters.noteId, requestParameters.attachmentId, options).then((request) => request(axios, basePath));
+        contentControllerGetBlob(requestParameters: ContentApiContentControllerGetBlobRequest, options?: RawAxiosRequestConfig): AxiosPromise<File> {
+            return localVarFp.contentControllerGetBlob(requestParameters.contentId, requestParameters.blobId, options).then((request) => request(axios, basePath));
         },
         /**
          * Authenticated read of stored body bytes (note markdown or image). Returns 200 with `Content-Type` from stored metadata. 404 when the content has no body yet. No ETag / 304 in this release.
@@ -1437,17 +1356,17 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.contentControllerPatchContent(requestParameters.id, requestParameters.updateContentRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         * 
-         * @summary Upload or replace attachment body bytes
-         * @param {ContentApiContentControllerPutAttachmentBodyRequest} requestParameters Request parameters.
+         * Stores raw bytes as a blob under the note. Returns the generated blob ID and its read URL.
+         * @summary Upload a blob (inline image) for a note
+         * @param {ContentApiContentControllerPostBlobRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        contentControllerPutAttachmentBody(requestParameters: ContentApiContentControllerPutAttachmentBodyRequest, options?: RawAxiosRequestConfig): AxiosPromise<AttachmentResponse> {
-            return localVarFp.contentControllerPutAttachmentBody(requestParameters.noteId, requestParameters.attachmentId, requestParameters.contentType, requestParameters.body, options).then((request) => request(axios, basePath));
+        contentControllerPostBlob(requestParameters: ContentApiContentControllerPostBlobRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentControllerPostBlob201Response> {
+            return localVarFp.contentControllerPostBlob(requestParameters.contentId, requestParameters.contentType, requestParameters.body, options).then((request) => request(axios, basePath));
         },
         /**
-         * Single endpoint for note markdown body bytes. Updates Cloud Storage and nested Firestore `body` (incl. `body.updatedAt`). **Notes** require `expectedRevision` query parameter (`body.updatedAt` ISO string from metadata, or empty string before first save). Returns **409** when revision is stale. Reconciles note attachment subcollection from markdown references on success.
+         * Single endpoint for note markdown body bytes. Updates Cloud Storage and nested Firestore `body` (incl. `body.updatedAt`). **Notes** require `expectedRevision` query parameter (`body.updatedAt` ISO string from metadata, or empty string before first save). Returns **409** when revision is stale.
          * @summary Upload or replace content body
          * @param {ContentApiContentControllerPutContentBodyRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -1466,16 +1385,6 @@ export const ContentApiFactory = function (configuration?: Configuration, basePa
  */
 export interface ContentApiInterface {
     /**
-     * Creates an attachment record under `content/{noteId}/attachments/{attachmentId}`. Upload bytes via `PUT …/attachments/:attachmentId/body`. Parent `:noteId` must be type `note`.
-     * @summary Create note attachment metadata
-     * @param {ContentApiContentControllerCreateAttachmentRequest} requestParameters Request parameters.
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof ContentApiInterface
-     */
-    contentControllerCreateAttachment(requestParameters: ContentApiContentControllerCreateAttachmentRequest, options?: RawAxiosRequestConfig): AxiosPromise<AttachmentResponse>;
-
-    /**
      * Creates metadata under the given parent. Default `type` is `note`. Send `type: directory` to create a folder (parent must be a folder).
      * @summary Create content (note or folder)
      * @param {ContentApiContentControllerCreateContentRequest} requestParameters Request parameters.
@@ -1486,24 +1395,24 @@ export interface ContentApiInterface {
     contentControllerCreateContent(requestParameters: ContentApiContentControllerCreateContentRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentResponse>;
 
     /**
-     * Removes attachment metadata and storage object (e.g. after failed note save).
-     * @summary Delete note attachment
-     * @param {ContentApiContentControllerDeleteAttachmentRequest} requestParameters Request parameters.
+     * Soft-deletes content by setting `deleted: true`. Notes with content children (e.g. flashcard decks) require `?cascade=true` to delete. Folders are always cascaded to all descendants. Cloud Storage objects (bodies and blobs) are NOT deleted — permanent cleanup is deferred.
+     * @summary Soft-delete content (note or directory)
+     * @param {ContentApiContentControllerDeleteContentRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ContentApiInterface
      */
-    contentControllerDeleteAttachment(requestParameters: ContentApiContentControllerDeleteAttachmentRequest, options?: RawAxiosRequestConfig): AxiosPromise<void>;
+    contentControllerDeleteContent(requestParameters: ContentApiContentControllerDeleteContentRequest, options?: RawAxiosRequestConfig): AxiosPromise<void>;
 
     /**
      * 
-     * @summary Stream attachment body bytes
-     * @param {ContentApiContentControllerGetAttachmentBodyRequest} requestParameters Request parameters.
+     * @summary Stream blob bytes
+     * @param {ContentApiContentControllerGetBlobRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ContentApiInterface
      */
-    contentControllerGetAttachmentBody(requestParameters: ContentApiContentControllerGetAttachmentBodyRequest, options?: RawAxiosRequestConfig): AxiosPromise<File>;
+    contentControllerGetBlob(requestParameters: ContentApiContentControllerGetBlobRequest, options?: RawAxiosRequestConfig): AxiosPromise<File>;
 
     /**
      * Authenticated read of stored body bytes (note markdown or image). Returns 200 with `Content-Type` from stored metadata. 404 when the content has no body yet. No ETag / 304 in this release.
@@ -1565,17 +1474,17 @@ export interface ContentApiInterface {
     contentControllerPatchContent(requestParameters: ContentApiContentControllerPatchContentRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentResponse>;
 
     /**
-     * 
-     * @summary Upload or replace attachment body bytes
-     * @param {ContentApiContentControllerPutAttachmentBodyRequest} requestParameters Request parameters.
+     * Stores raw bytes as a blob under the note. Returns the generated blob ID and its read URL.
+     * @summary Upload a blob (inline image) for a note
+     * @param {ContentApiContentControllerPostBlobRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ContentApiInterface
      */
-    contentControllerPutAttachmentBody(requestParameters: ContentApiContentControllerPutAttachmentBodyRequest, options?: RawAxiosRequestConfig): AxiosPromise<AttachmentResponse>;
+    contentControllerPostBlob(requestParameters: ContentApiContentControllerPostBlobRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentControllerPostBlob201Response>;
 
     /**
-     * Single endpoint for note markdown body bytes. Updates Cloud Storage and nested Firestore `body` (incl. `body.updatedAt`). **Notes** require `expectedRevision` query parameter (`body.updatedAt` ISO string from metadata, or empty string before first save). Returns **409** when revision is stale. Reconciles note attachment subcollection from markdown references on success.
+     * Single endpoint for note markdown body bytes. Updates Cloud Storage and nested Firestore `body` (incl. `body.updatedAt`). **Notes** require `expectedRevision` query parameter (`body.updatedAt` ISO string from metadata, or empty string before first save). Returns **409** when revision is stale.
      * @summary Upload or replace content body
      * @param {ContentApiContentControllerPutContentBodyRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -1584,20 +1493,6 @@ export interface ContentApiInterface {
      */
     contentControllerPutContentBody(requestParameters: ContentApiContentControllerPutContentBodyRequest, options?: RawAxiosRequestConfig): AxiosPromise<ContentResponse>;
 
-}
-
-/**
- * Request parameters for contentControllerCreateAttachment operation in ContentApi.
- * @export
- * @interface ContentApiContentControllerCreateAttachmentRequest
- */
-export interface ContentApiContentControllerCreateAttachmentRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ContentApiContentControllerCreateAttachment
-     */
-    readonly noteId: string
 }
 
 /**
@@ -1615,45 +1510,45 @@ export interface ContentApiContentControllerCreateContentRequest {
 }
 
 /**
- * Request parameters for contentControllerDeleteAttachment operation in ContentApi.
+ * Request parameters for contentControllerDeleteContent operation in ContentApi.
  * @export
- * @interface ContentApiContentControllerDeleteAttachmentRequest
+ * @interface ContentApiContentControllerDeleteContentRequest
  */
-export interface ContentApiContentControllerDeleteAttachmentRequest {
+export interface ContentApiContentControllerDeleteContentRequest {
     /**
      * 
      * @type {string}
-     * @memberof ContentApiContentControllerDeleteAttachment
+     * @memberof ContentApiContentControllerDeleteContent
      */
-    readonly noteId: string
+    readonly id: string
 
     /**
-     * 
-     * @type {string}
-     * @memberof ContentApiContentControllerDeleteAttachment
+     * Set to true to cascade-delete content children of a note.
+     * @type {boolean}
+     * @memberof ContentApiContentControllerDeleteContent
      */
-    readonly attachmentId: string
+    readonly cascade?: boolean
 }
 
 /**
- * Request parameters for contentControllerGetAttachmentBody operation in ContentApi.
+ * Request parameters for contentControllerGetBlob operation in ContentApi.
  * @export
- * @interface ContentApiContentControllerGetAttachmentBodyRequest
+ * @interface ContentApiContentControllerGetBlobRequest
  */
-export interface ContentApiContentControllerGetAttachmentBodyRequest {
+export interface ContentApiContentControllerGetBlobRequest {
     /**
-     * 
+     * Parent note ID
      * @type {string}
-     * @memberof ContentApiContentControllerGetAttachmentBody
+     * @memberof ContentApiContentControllerGetBlob
      */
-    readonly noteId: string
+    readonly contentId: string
 
     /**
-     * 
+     * Blob ID
      * @type {string}
-     * @memberof ContentApiContentControllerGetAttachmentBody
+     * @memberof ContentApiContentControllerGetBlob
      */
-    readonly attachmentId: string
+    readonly blobId: string
 }
 
 /**
@@ -1734,36 +1629,29 @@ export interface ContentApiContentControllerPatchContentRequest {
 }
 
 /**
- * Request parameters for contentControllerPutAttachmentBody operation in ContentApi.
+ * Request parameters for contentControllerPostBlob operation in ContentApi.
  * @export
- * @interface ContentApiContentControllerPutAttachmentBodyRequest
+ * @interface ContentApiContentControllerPostBlobRequest
  */
-export interface ContentApiContentControllerPutAttachmentBodyRequest {
+export interface ContentApiContentControllerPostBlobRequest {
     /**
-     * 
+     * Parent note ID
      * @type {string}
-     * @memberof ContentApiContentControllerPutAttachmentBody
+     * @memberof ContentApiContentControllerPostBlob
      */
-    readonly noteId: string
+    readonly contentId: string
 
     /**
      * 
      * @type {string}
-     * @memberof ContentApiContentControllerPutAttachmentBody
-     */
-    readonly attachmentId: string
-
-    /**
-     * 
-     * @type {string}
-     * @memberof ContentApiContentControllerPutAttachmentBody
+     * @memberof ContentApiContentControllerPostBlob
      */
     readonly contentType: string
 
     /**
-     * Raw image bytes. &#x60;Content-Type&#x60; sets stored media type.
+     * Raw bytes of the blob (inline image). The &#x60;Content-Type&#x60; header sets the stored media type.
      * @type {File}
-     * @memberof ContentApiContentControllerPutAttachmentBody
+     * @memberof ContentApiContentControllerPostBlob
      */
     readonly body: File
 }
@@ -1811,18 +1699,6 @@ export interface ContentApiContentControllerPutContentBodyRequest {
  */
 export class ContentApi extends BaseAPI implements ContentApiInterface {
     /**
-     * Creates an attachment record under `content/{noteId}/attachments/{attachmentId}`. Upload bytes via `PUT …/attachments/:attachmentId/body`. Parent `:noteId` must be type `note`.
-     * @summary Create note attachment metadata
-     * @param {ContentApiContentControllerCreateAttachmentRequest} requestParameters Request parameters.
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof ContentApi
-     */
-    public contentControllerCreateAttachment(requestParameters: ContentApiContentControllerCreateAttachmentRequest, options?: RawAxiosRequestConfig) {
-        return ContentApiFp(this.configuration).contentControllerCreateAttachment(requestParameters.noteId, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
      * Creates metadata under the given parent. Default `type` is `note`. Send `type: directory` to create a folder (parent must be a folder).
      * @summary Create content (note or folder)
      * @param {ContentApiContentControllerCreateContentRequest} requestParameters Request parameters.
@@ -1835,27 +1711,27 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
     }
 
     /**
-     * Removes attachment metadata and storage object (e.g. after failed note save).
-     * @summary Delete note attachment
-     * @param {ContentApiContentControllerDeleteAttachmentRequest} requestParameters Request parameters.
+     * Soft-deletes content by setting `deleted: true`. Notes with content children (e.g. flashcard decks) require `?cascade=true` to delete. Folders are always cascaded to all descendants. Cloud Storage objects (bodies and blobs) are NOT deleted — permanent cleanup is deferred.
+     * @summary Soft-delete content (note or directory)
+     * @param {ContentApiContentControllerDeleteContentRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ContentApi
      */
-    public contentControllerDeleteAttachment(requestParameters: ContentApiContentControllerDeleteAttachmentRequest, options?: RawAxiosRequestConfig) {
-        return ContentApiFp(this.configuration).contentControllerDeleteAttachment(requestParameters.noteId, requestParameters.attachmentId, options).then((request) => request(this.axios, this.basePath));
+    public contentControllerDeleteContent(requestParameters: ContentApiContentControllerDeleteContentRequest, options?: RawAxiosRequestConfig) {
+        return ContentApiFp(this.configuration).contentControllerDeleteContent(requestParameters.id, requestParameters.cascade, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
-     * @summary Stream attachment body bytes
-     * @param {ContentApiContentControllerGetAttachmentBodyRequest} requestParameters Request parameters.
+     * @summary Stream blob bytes
+     * @param {ContentApiContentControllerGetBlobRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ContentApi
      */
-    public contentControllerGetAttachmentBody(requestParameters: ContentApiContentControllerGetAttachmentBodyRequest, options?: RawAxiosRequestConfig) {
-        return ContentApiFp(this.configuration).contentControllerGetAttachmentBody(requestParameters.noteId, requestParameters.attachmentId, options).then((request) => request(this.axios, this.basePath));
+    public contentControllerGetBlob(requestParameters: ContentApiContentControllerGetBlobRequest, options?: RawAxiosRequestConfig) {
+        return ContentApiFp(this.configuration).contentControllerGetBlob(requestParameters.contentId, requestParameters.blobId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -1930,19 +1806,19 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
     }
 
     /**
-     * 
-     * @summary Upload or replace attachment body bytes
-     * @param {ContentApiContentControllerPutAttachmentBodyRequest} requestParameters Request parameters.
+     * Stores raw bytes as a blob under the note. Returns the generated blob ID and its read URL.
+     * @summary Upload a blob (inline image) for a note
+     * @param {ContentApiContentControllerPostBlobRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ContentApi
      */
-    public contentControllerPutAttachmentBody(requestParameters: ContentApiContentControllerPutAttachmentBodyRequest, options?: RawAxiosRequestConfig) {
-        return ContentApiFp(this.configuration).contentControllerPutAttachmentBody(requestParameters.noteId, requestParameters.attachmentId, requestParameters.contentType, requestParameters.body, options).then((request) => request(this.axios, this.basePath));
+    public contentControllerPostBlob(requestParameters: ContentApiContentControllerPostBlobRequest, options?: RawAxiosRequestConfig) {
+        return ContentApiFp(this.configuration).contentControllerPostBlob(requestParameters.contentId, requestParameters.contentType, requestParameters.body, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
-     * Single endpoint for note markdown body bytes. Updates Cloud Storage and nested Firestore `body` (incl. `body.updatedAt`). **Notes** require `expectedRevision` query parameter (`body.updatedAt` ISO string from metadata, or empty string before first save). Returns **409** when revision is stale. Reconciles note attachment subcollection from markdown references on success.
+     * Single endpoint for note markdown body bytes. Updates Cloud Storage and nested Firestore `body` (incl. `body.updatedAt`). **Notes** require `expectedRevision` query parameter (`body.updatedAt` ISO string from metadata, or empty string before first save). Returns **409** when revision is stale.
      * @summary Upload or replace content body
      * @param {ContentApiContentControllerPutContentBodyRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.

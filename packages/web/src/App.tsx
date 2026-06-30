@@ -11,6 +11,7 @@ import FolderPage from './pages/FolderPage';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import NoteEditorPage from './pages/NoteEditorPage';
+import DeckViewPage from './pages/DeckViewPage';
 import StatusPage from './pages/StatusPage';
 import './App.css';
 
@@ -47,6 +48,14 @@ function AppRoutes() {
           element: (
             <ProtectedRoute>
               <FolderPage />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: '/decks/:deckId',
+          element: (
+            <ProtectedRoute>
+              <DeckViewPage />
             </ProtectedRoute>
           ),
         },

@@ -7,6 +7,7 @@
 export enum ContentType {
   DIRECTORY = 'directory',
   NOTE = 'note',
+  DECK = 'deck',
 }
 
 /**
@@ -38,6 +39,9 @@ export interface Content {
 
   /** ID of the parent directory, null for root directory */
   parentId: string | null;
+
+  /** Denormalized folder ID (set for deck-type content). */
+  folderId?: string | null;
 
   /** ID of the user who owns this content */
   ownerId: string;

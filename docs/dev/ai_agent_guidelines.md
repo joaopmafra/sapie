@@ -64,8 +64,8 @@ scope.
 
 ### Repository hygiene
 
-- Do **not** commit for the user; stage and let them review and commit.
-- Delete files only when part of the task (e.g. rename removes the old path).
+- Do **not** commit or push unless the user explicitly instructs you to (e.g. "commit when complete", "create a PR and merge"). Default: stage changes for the user to review.
+- When deleting or moving git-versioned files, use `git rm` and `git mv` (not plain `rm`/`mv`) to preserve history.
 - Remove unused dependencies and dead code from abandoned approaches.
 
 ## Don’ts (summary)
@@ -113,7 +113,18 @@ Images are GCS-only blobs, directory-per-content, no Firestore:
 - GCS path: `{ownerId}/content/{contentId}/blobs/{blobId}`
 
 `AttachmentService`, `AttachmentRepository`, `parse-attachment-urls-from-markdown` are **removed**.
-`expectedRevision` on `PUT /:id/body` is **removed** (reconcile no longer exists).
+`expectedRevision` on `PUT /:id/body` is **kept** for concurrency control (only attachment reconcile was removed).
+
+## After backend route changes
+
+When a story adds, removes, or changes API routes:
+
+1. **Regenerate OpenAPI client** — `cd packages/web && pnpm run generate:api-client`
+2. **Update `docs/dev/content_naming.md`** — ensure vocabulary matches new routes
+3. **Update research docs** — `docs/research/note_editor/note_image_embedding.md`, any ADRs
+4. **Update `docs/plans/mvp_objective.md`** — if the story changed a settled design
+5. **Update story references** — move story files, bump PBI counter in `docs/pm/last_pbi_number.md`
+6. **Update adoption log** — add a one-line entry to `docs/research/ai_workflow/ai_workflow_adoption_log.md`
 
 ## Test infrastructure quick reference
 

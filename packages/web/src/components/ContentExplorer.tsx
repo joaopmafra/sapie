@@ -1,8 +1,18 @@
 import ArticleIcon from '@mui/icons-material/Article';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import DeleteIcon from '@mui/icons-material/Delete';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FolderIcon from '@mui/icons-material/Folder';
-import { Alert, Box, CircularProgress, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  CircularProgress,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Typography,
+} from '@mui/material';
 import { RichTreeView, useTreeViewApiRef } from '@mui/x-tree-view';
 import { TreeItem, type TreeItemProps } from '@mui/x-tree-view/TreeItem';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
@@ -12,6 +22,7 @@ import React, {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -23,6 +34,7 @@ import {
   contentQueryKeys,
   contentService,
   ContentType,
+  useDeleteContent,
   useRootDirectory,
   type Content,
 } from '../lib/content';
@@ -32,9 +44,15 @@ import {
   type EnrichedTreeNode,
 } from '../lib/content/build-content-tree';
 
+import ConfirmDeleteDialog from './ConfirmDeleteDialog';
+
 const TreeNodeMetaContext = React.createContext<Map<string, EnrichedTreeNode>>(
   new Map()
 );
+
+const TreeContextMenuContext = React.createContext<
+  ((event: React.MouseEvent, node: EnrichedTreeNode) => void) | null
+>(null);
 
 const CustomTreeItem = React.forwardRef(function CustomTreeItem(
   props: TreeItemProps,
@@ -42,6 +60,7 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
 ) {
   const { itemId, label, ...other } = props;
   const nodeMap = useContext(TreeNodeMetaContext);
+  const onContextMenu = useContext(TreeContextMenuContext);
   const node = nodeMap.get(itemId);
 
   const icon =
@@ -56,6 +75,11 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
       {...other}
       itemId={itemId}
       ref={ref}
+      onContextMenu={(event: React.MouseEvent) => {
+        if (onContextMenu && node) {
+          onContextMenu(event, node);
+        }
+      }}
       label={
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           {icon}
@@ -163,6 +187,39 @@ const ContentExplorer: React.FC = () => {
   const nodeMapRef = useRef(new Map<string, EnrichedTreeNode>());
 
   useExpandContentAncestors(activeNodeId);
+
+  const deleteContent = useDeleteContent();
+  const [contextMenu, setContextMenu] = useState<{
+    mouseX: number;
+    mouseY: number;
+    node: EnrichedTreeNode;
+  } | null>(null);
+  const [deleteDialogTarget, setDeleteDialogTarget] =
+    useState<EnrichedTreeNode | null>(null);
+
+  const handleContextMenu = useCallback(
+    (event: React.MouseEvent, node: EnrichedTreeNode) => {
+      // Only show context menu for non-root items (root has parentId === null)
+      if (node.parentId === null) return;
+      event.preventDefault();
+      setContextMenu({
+        mouseX: event.clientX,
+        mouseY: event.clientY,
+        node,
+      });
+    },
+    []
+  );
+
+  const handleCloseContextMenu = useCallback(() => {
+    setContextMenu(null);
+  }, []);
+
+  const handleDeleteClick = useCallback(() => {
+    if (!contextMenu) return;
+    setDeleteDialogTarget(contextMenu.node);
+    setContextMenu(null);
+  }, [contextMenu]);
 
   const rootQuery = useRootDirectory();
   const root = rootQuery.data;
@@ -331,6 +388,12 @@ const ContentExplorer: React.FC = () => {
     );
   }
 
+  const deleteDialogMessage = deleteDialogTarget
+    ? deleteDialogTarget.type === ContentType.DIRECTORY
+      ? `Are you sure you want to delete the folder "${deleteDialogTarget.name}" and all its contents? This action cannot be undone.`
+      : `Are you sure you want to delete "${deleteDialogTarget.name}"? This action cannot be undone.`
+    : '';
+
   return (
     <Box
       sx={{
@@ -340,19 +403,60 @@ const ContentExplorer: React.FC = () => {
       }}
     >
       <TreeNodeMetaContext.Provider value={nodeMap}>
-        <RichTreeView
-          apiRef={apiRef}
-          items={tree}
-          getItemLabel={getItemLabel}
-          slots={treeViewSlots}
-          expansionTrigger='iconContainer'
-          selectedItems={activeNodeId}
-          onSelectedItemsChange={handleSelectedItemsChange}
-          expandedItems={expandedNodeIds}
-          onExpandedItemsChange={handleExpandedItemsChange}
-          sx={contentExplorerTreeSx}
-        />
+        <TreeContextMenuContext.Provider value={handleContextMenu}>
+          <RichTreeView
+            apiRef={apiRef}
+            items={tree}
+            getItemLabel={getItemLabel}
+            slots={treeViewSlots}
+            expansionTrigger='iconContainer'
+            selectedItems={activeNodeId}
+            onSelectedItemsChange={handleSelectedItemsChange}
+            expandedItems={expandedNodeIds}
+            onExpandedItemsChange={handleExpandedItemsChange}
+            sx={contentExplorerTreeSx}
+          />
+        </TreeContextMenuContext.Provider>
       </TreeNodeMetaContext.Provider>
+
+      <Menu
+        open={contextMenu !== null}
+        onClose={handleCloseContextMenu}
+        anchorReference='anchorPosition'
+        anchorPosition={
+          contextMenu
+            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+            : undefined
+        }
+      >
+        <MenuItem onClick={handleDeleteClick}>
+          <ListItemIcon>
+            <DeleteIcon fontSize='small' color='error' />
+          </ListItemIcon>
+          <ListItemText>Delete</ListItemText>
+        </MenuItem>
+      </Menu>
+
+      <ConfirmDeleteDialog
+        open={deleteDialogTarget !== null}
+        message={deleteDialogMessage}
+        onCancel={() => setDeleteDialogTarget(null)}
+        onConfirm={() => {
+          if (!deleteDialogTarget || !currentUser) return;
+          deleteContent.mutate(
+            {
+              id: deleteDialogTarget.id,
+              parentId: deleteDialogTarget.parentId,
+            },
+            {
+              onSuccess: () => {
+                setDeleteDialogTarget(null);
+              },
+            }
+          );
+        }}
+        loading={deleteContent.isPending}
+      />
     </Box>
   );
 };

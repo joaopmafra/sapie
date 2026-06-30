@@ -35,6 +35,7 @@ export {
   useContentItem,
   useCreateFolder,
   useCreateNote,
+  useDeleteContent,
   useNoteBody,
   useRenameContent,
   useSaveNoteBody,

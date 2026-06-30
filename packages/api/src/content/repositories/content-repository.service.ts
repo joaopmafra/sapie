@@ -36,13 +36,14 @@ export class ContentRepository {
 
       const doc = querySnapshot.docs[0];
       const data = doc.data() as ContentDocument;
-      return this.convertDocumentToContent(doc.id, data);
+      const content = this.convertDocumentToContent(doc.id, data);
+      // Filter out soft-deleted roots (unlikely but defensive)
+      return content.deleted ? null : content;
     } catch (error) {
       this.logger.error(`Failed to find root directory for user ${userId}:`, error);
       throw error;
     }
   }
-
   async findFirstByParentIdAndName(parentId: string | null, name: string): Promise<Content | null> {
     const querySnapshot = await this.firestore
       .collection(this.contentCollection)
@@ -56,7 +57,9 @@ export class ContentRepository {
     }
 
     const doc = querySnapshot.docs[0];
-    return this.convertDocumentToContent(doc.id, doc.data() as ContentDocument);
+    const content = this.convertDocumentToContent(doc.id, doc.data() as ContentDocument);
+    // Skip soft-deleted items (they should not block name reuse)
+    return content.deleted ? null : content;
   }
 
   async findById(id: string): Promise<Content | null> {
@@ -75,7 +78,9 @@ export class ContentRepository {
       .where('parentId', '==', parentId)
       .where('ownerId', '==', ownerId)
       .get();
-    return snapshot.docs.map(d => this.convertDocumentToContent(d.id, d.data() as ContentDocument));
+    return snapshot.docs
+      .map(d => this.convertDocumentToContent(d.id, d.data() as ContentDocument))
+      .filter(c => !c.deleted);
   }
 
   async addNote(params: {
@@ -94,9 +99,10 @@ export class ContentRepository {
     ownerId: string;
     createdAt: Date;
     updatedAt: Date;
-    type: ContentType.NOTE;
+    type: ContentType;
+    folderId?: string | null;
   }): Promise<Content> {
-    const newContentData = {
+    const newContentData: Record<string, unknown> = {
       name: params.name,
       type: params.type,
       parentId: params.parentId,
@@ -105,19 +111,37 @@ export class ContentRepository {
       createdAt: params.createdAt,
       updatedAt: params.updatedAt,
     };
+    if (params.folderId !== undefined) {
+      newContentData.folderId = params.folderId;
+    }
 
     const docRef = await this.firestore.collection(this.contentCollection).add(newContentData);
 
     return {
       id: docRef.id,
-      name: newContentData.name,
-      type: newContentData.type,
-      parentId: newContentData.parentId,
-      ownerId: newContentData.ownerId,
+      name: newContentData.name as string,
+      type: newContentData.type as ContentType,
+      parentId: newContentData.parentId as string | null,
+      folderId: (newContentData.folderId as string) ?? null,
+      ownerId: newContentData.ownerId as string,
       body: null,
       createdAt: params.createdAt,
       updatedAt: params.updatedAt,
     };
+  }
+
+  async addDeck(params: {
+    name: string;
+    parentId: string;
+    folderId: string;
+    ownerId: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }): Promise<Content> {
+    return this.addContentWithType({
+      ...params,
+      type: ContentType.DECK,
+    });
   }
 
   async addDirectory(params: {
@@ -158,8 +182,64 @@ export class ContentRepository {
     });
   }
 
-  async deleteContent(id: string): Promise<void> {
-    await this.firestore.collection(this.contentCollection).doc(id).delete();
+  /**
+   * Soft-deletes content by setting `deleted: true`, `deletedAt`, and `deletedBy`.
+   * Permanent deletion of Firestore documents and GCS objects is deferred to the versioning story.
+   */
+  async softDeleteContent(id: string, deletedAt: Date, deletedBy: string): Promise<void> {
+    await this.firestore
+      .collection(this.contentCollection)
+      .doc(id)
+      .update({
+        deleted: true,
+        deletedAt: admin.firestore.Timestamp.fromDate(deletedAt),
+        deletedBy: { uid: deletedBy },
+        updatedAt: admin.firestore.Timestamp.fromDate(deletedAt),
+      });
+  }
+
+  /**
+   * Recursively fetches all descendant IDs under a parent. Returns both folder and note IDs.
+   * Firestore doesn't support recursive queries, so this fetches level by level.
+   */
+  async findAllDescendantIds(parentId: string, ownerId: string): Promise<string[]> {
+    const result: string[] = [];
+    const queue: string[] = [parentId];
+
+    while (queue.length > 0) {
+      const current = queue.shift();
+      if (!current) continue;
+      const snapshot = await this.firestore
+        .collection(this.contentCollection)
+        .where('parentId', '==', current)
+        .where('ownerId', '==', ownerId)
+        .get();
+
+      for (const doc of snapshot.docs) {
+        const docData = doc.data() as ContentDocument;
+        // Skip soft-deleted descendants (shouldn't exist but defensive)
+        if (!docData.deleted) {
+          result.push(doc.id);
+          if (docData.type === (ContentType.DIRECTORY as string)) {
+            queue.push(doc.id);
+          }
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Counts content children (e.g. flashcard decks) with the given parent that are not soft-deleted.
+   * Used to block note deletion when children exist.
+   */
+  async findContentChildrenCount(parentId: string): Promise<number> {
+    const snapshot = await this.firestore
+      .collection(this.contentCollection)
+      .where('parentId', '==', parentId)
+      .get();
+    return snapshot.docs.filter(d => !(d.data() as ContentDocument).deleted).length;
   }
 
   async updateContentBodyMetadata(
@@ -217,28 +297,24 @@ export class ContentRepository {
   }
 
   private convertDocumentToContent(id: string, data: ContentDocument): Content {
-    if (this.isContentBodyDocument(data.body)) {
-      return {
-        id,
-        name: data.name,
-        type: data.type as ContentType,
-        parentId: data.parentId,
-        ownerId: data.ownerId,
-        body: this.bodyFromNested(data.body),
-        createdAt: data.createdAt.toDate(),
-        updatedAt: data.updatedAt.toDate(),
-      };
-    }
-
-    return {
+    const base = {
       id,
       name: data.name,
       type: data.type as ContentType,
       parentId: data.parentId,
+      folderId: data.folderId ?? null,
       ownerId: data.ownerId,
-      body: null,
+      deleted: data.deleted,
+      deletedAt: data.deletedAt?.toDate() ?? null,
+      deletedBy: data.deletedBy ?? null,
       createdAt: data.createdAt.toDate(),
       updatedAt: data.updatedAt.toDate(),
     };
+
+    if (this.isContentBodyDocument(data.body)) {
+      return { ...base, body: this.bodyFromNested(data.body) };
+    }
+
+    return { ...base, body: null };
   }
 }

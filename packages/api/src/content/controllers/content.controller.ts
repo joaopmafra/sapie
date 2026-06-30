@@ -11,6 +11,8 @@ import {
   Delete,
   Headers,
   Header,
+  HttpCode,
+  HttpStatus,
   BadRequestException,
   StreamableFile,
   Query,
@@ -26,6 +28,7 @@ import {
   ApiConflictResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
+  ApiNoContentResponse,
   ApiBadRequestResponse,
   ApiUnprocessableEntityResponse,
   ApiParam,
@@ -475,26 +478,44 @@ export class ContentController {
 
   @Delete(':id')
   @Auth()
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
-    summary: 'Delete content (note or directory)',
+    summary: 'Soft-delete content (note or directory)',
     description:
-      'Soft-deletes content and cascades blob deletion for notes. Folders must be empty to delete.',
+      'Soft-deletes content by setting `deleted: true`. ' +
+      'Notes with content children (e.g. flashcard decks) require `?cascade=true` to delete. ' +
+      'Folders are always cascaded to all descendants. ' +
+      'Cloud Storage objects (bodies and blobs) are NOT deleted — permanent cleanup is deferred.',
   })
   @ApiParam({ name: 'id', required: true, type: String })
-  @ApiOkResponse({ description: 'Content deleted.' })
-  @ApiNotFoundResponse({ description: 'Content not found.', ...apiProblemDetailsSchema })
+  @ApiQuery({
+    name: 'cascade',
+    required: false,
+    type: Boolean,
+    description: 'Set to true to cascade-delete content children of a note.',
+  })
+  @ApiNoContentResponse({ description: 'Content soft-deleted successfully.' })
+  @ApiNotFoundResponse({
+    description: 'Content not found or already deleted.',
+    ...apiProblemDetailsSchema,
+  })
   @ApiForbiddenResponse({ description: 'Not the content owner.', ...apiProblemDetailsSchema })
+  @ApiConflictResponse({
+    description: 'Note has content children and cascade was not set.',
+    ...apiProblemDetailsSchema,
+  })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Valid Firebase ID token required',
     ...apiProblemDetailsSchema,
   })
   async deleteContent(
     @Request() request: AuthenticatedRequest,
-    @Param('id') id: string
+    @Param('id') id: string,
+    @Query('cascade') cascade?: string
   ): Promise<void> {
     const { user } = request;
-    this.logger.debug(`Deleting content ${id} for user ${user.uid}`);
-    await this.contentService.deleteContent(id, user.uid);
+    this.logger.debug(`Deleting content ${id} for user ${user.uid}, cascade=${cascade}`);
+    await this.contentService.deleteContent(id, user.uid, cascade === 'true');
   }
 
   private readRawPutBody(body: unknown): Buffer {

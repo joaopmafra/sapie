@@ -3,6 +3,7 @@ import { HttpStatus } from '@nestjs/common';
 import type { ProblemDetailsBody } from '../../common/dto/problem-details.dto';
 import { CONTENT_BODY_MAX_BYTES } from '../constants/content-body-limits';
 import { ContentRepository } from '../repositories/content-repository.service';
+import type { Content } from '../entities/content.entity';
 import { CONTENT_NAME_MAX_LENGTH } from '../validation/content-name.validation';
 import { ContentControllerFixture } from './content.controller.fixture';
 
@@ -80,6 +81,54 @@ describe('ContentController', () => {
     expect(response.body).toHaveProperty('type', 'directory');
     expect(response.body).toHaveProperty('parentId', root.id);
     expect(response.body).not.toHaveProperty('body');
+  });
+
+  // ── Deck creation ──────────────────────────────────────────────
+
+  it(`POST ${fixture.API_CONTENT} creates a deck under a note`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'My Note', root.id);
+
+    const response = await fixture.callApiCreateNoteExpectingCreated(fixture.TEST_USER_ID, {
+      name: 'My Deck',
+      parentId: note.id,
+      type: 'deck',
+    });
+
+    expect(response.body).toHaveProperty('id');
+    expect(response.body).toHaveProperty('name', 'My Deck');
+    expect(response.body).toHaveProperty('type', 'deck');
+    expect(response.body).toHaveProperty('parentId', note.id);
+    expect(response.body).toHaveProperty('folderId', root.id);
+    expect(response.body).toHaveProperty('ownerId', fixture.TEST_USER_ID);
+  });
+
+  it(`POST ${fixture.API_CONTENT} rejects deck under a directory parent with 400`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+
+    await fixture
+      .callApiCreateNote(fixture.TEST_USER_ID, {
+        name: 'Bad Deck',
+        parentId: root.id,
+        type: 'deck',
+      })
+      .expect(HttpStatus.BAD_REQUEST);
+  });
+
+  it(`GET ${fixture.API_CONTENT}/:id/children returns decks for a note`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'My Note', root.id);
+    await fixture.seedDeck(fixture.TEST_USER_ID, 'Deck One', note.id);
+    await fixture.seedDeck(fixture.TEST_USER_ID, 'Deck Two', note.id);
+
+    const children = await fixture.callApiGetContentByParentIdExpectingOkAsContentArray(
+      fixture.TEST_USER_ID,
+      note.id
+    );
+
+    expect(children).toHaveLength(2);
+    expect(children.map(c => c.type)).toEqual(['deck', 'deck']);
+    expect(children.map(c => c.name).sort()).toEqual(['Deck One', 'Deck Two']);
   });
 
   it(`POST ${fixture.API_CONTENT} rejects directory under a note parent with 400`, async () => {
@@ -655,29 +704,38 @@ describe('ContentController', () => {
       .expect(HttpStatus.FORBIDDEN);
   });
 
-  // ── Delete endpoint ─────────────────────────────────────────────
+  // ── Delete (soft-delete) endpoint ───────────────────────────────
 
-  it(`DELETE ${fixture.API_CONTENT}/:id soft-deletes a note and cascades blob deletion`, async () => {
+  it(`DELETE ${fixture.API_CONTENT}/:id soft-deletes a note and returns 204`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
     const note = await fixture.seedNote(fixture.TEST_USER_ID, 'ToDelete', root.id);
-    const pngBytes = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
 
-    const { blobId } = await fixture.callApiPostBlobExpectingCreated(
-      fixture.TEST_USER_ID,
-      note.id,
-      pngBytes,
-      'image/png'
-    );
+    await fixture.callApiDeleteContent(fixture.TEST_USER_ID, note.id).expect(HttpStatus.NO_CONTENT);
 
-    await fixture.callApiDeleteContent(fixture.TEST_USER_ID, note.id).expect(HttpStatus.OK);
-
-    // Note should be 404 after delete
+    // Note should be 404 after soft-delete
     await fixture.callApiGetContentById(fixture.TEST_USER_ID, note.id).expect(HttpStatus.NOT_FOUND);
 
-    // Blob should be 404 after delete cascade
-    await fixture
-      .callApiGetBlob(fixture.TEST_USER_ID, note.id, blobId)
-      .expect(HttpStatus.NOT_FOUND);
+    // Verify soft-delete fields in Firestore directly
+    const repo = fixture.getComponent(ContentRepository);
+    const deleted = await repo.findById(note.id);
+    expect(deleted).not.toBeNull();
+    expect(deleted!.deleted).toBe(true);
+    expect(deleted!.deletedAt).toBeInstanceOf(Date);
+    expect(deleted!.deletedBy).toEqual({ uid: fixture.TEST_USER_ID });
+  });
+
+  it(`DELETE ${fixture.API_CONTENT}/:id excludes soft-deleted notes from children`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'ToDelete', root.id);
+    await fixture.seedNote(fixture.TEST_USER_ID, 'KeepMe', root.id);
+
+    await fixture.callApiDeleteContent(fixture.TEST_USER_ID, note.id).expect(HttpStatus.NO_CONTENT);
+
+    const children = await fixture.callApiGetContentByParentIdExpectingOkAsContentArray(
+      fixture.TEST_USER_ID,
+      root.id
+    );
+    expect(children.map(c => c.name)).toEqual(['KeepMe']);
   });
 
   it(`DELETE ${fixture.API_CONTENT}/:id returns 404 when content does not exist`, async () => {
@@ -688,10 +746,92 @@ describe('ContentController', () => {
       .expect(HttpStatus.NOT_FOUND);
   });
 
+  it(`DELETE ${fixture.API_CONTENT}/:id returns 404 when already soft-deleted`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'AlreadyGone', root.id);
+
+    await fixture.callApiDeleteContent(fixture.TEST_USER_ID, note.id).expect(HttpStatus.NO_CONTENT);
+
+    await fixture.callApiDeleteContent(fixture.TEST_USER_ID, note.id).expect(HttpStatus.NOT_FOUND);
+  });
+
   it(`DELETE ${fixture.API_CONTENT}/:id returns 403 when caller does not own the content`, async () => {
     const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
     const note = await fixture.seedNote(fixture.TEST_USER_ID, 'Private', root.id);
 
     await fixture.callApiDeleteContent(fixture.OTHER_USER_ID, note.id).expect(HttpStatus.FORBIDDEN);
+  });
+
+  it(`DELETE ${fixture.API_CONTENT}/:id on directory soft-deletes descendants`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const folder = (
+      await fixture.callApiCreateNoteExpectingCreated(fixture.TEST_USER_ID, {
+        name: 'MyFolder',
+        parentId: root.id,
+        type: 'directory',
+      })
+    ).body as Content;
+    const noteInFolder = await fixture.seedNote(fixture.TEST_USER_ID, 'ChildNote', folder.id);
+
+    await fixture
+      .callApiDeleteContent(fixture.TEST_USER_ID, folder.id)
+      .expect(HttpStatus.NO_CONTENT);
+
+    // Folder and child note should both be 404
+    await fixture
+      .callApiGetContentById(fixture.TEST_USER_ID, folder.id)
+      .expect(HttpStatus.NOT_FOUND);
+    await fixture
+      .callApiGetContentById(fixture.TEST_USER_ID, noteInFolder.id)
+      .expect(HttpStatus.NOT_FOUND);
+
+    // Verify both are soft-deleted in Firestore
+    const repo = fixture.getComponent(ContentRepository);
+    const deletedFolder = await repo.findById(folder.id);
+    expect(deletedFolder!.deleted).toBe(true);
+    const deletedNote = await repo.findById(noteInFolder.id);
+    expect(deletedNote!.deleted).toBe(true);
+  });
+
+  it(`DELETE ${fixture.API_CONTENT}/:id on note with content children returns 409 without cascade`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'ParentNote', root.id);
+
+    // Simulate a content child (e.g. flashcard deck) by creating another content with this note as parent
+    const repo = fixture.getComponent(ContentRepository);
+    // Directly create a content child in Firestore to simulate a deck
+    await repo.addNote({
+      name: 'MyDeck',
+      parentId: note.id,
+      ownerId: fixture.TEST_USER_ID,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await fixture.callApiDeleteContent(fixture.TEST_USER_ID, note.id).expect(HttpStatus.CONFLICT);
+  });
+
+  it(`DELETE ${fixture.API_CONTENT}/:id on note with content children + cascade=true succeeds`, async () => {
+    const root = await fixture.seedRootDirectory(fixture.TEST_USER_ID);
+    const note = await fixture.seedNote(fixture.TEST_USER_ID, 'ParentNote', root.id);
+
+    const repo = fixture.getComponent(ContentRepository);
+    const child = await repo.addNote({
+      name: 'MyDeck',
+      parentId: note.id,
+      ownerId: fixture.TEST_USER_ID,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await fixture
+      .callApiDeleteContent(fixture.TEST_USER_ID, note.id, true)
+      .expect(HttpStatus.NO_CONTENT);
+
+    // Both note and child should be soft-deleted
+    const deletedNote = await repo.findById(note.id);
+    expect(deletedNote!.deleted).toBe(true);
+    const deletedChild = await repo.findById(child.id);
+    expect(deletedChild!.deleted).toBe(true);
   });
 });
