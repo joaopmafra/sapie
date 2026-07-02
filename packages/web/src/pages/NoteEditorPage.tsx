@@ -1095,7 +1095,7 @@ const NoteEditorPage = () => {
         onConfirm={() => {
           if (!note) return;
           deleteContent.mutate(
-            { id: note.id, parentId: note.parentId },
+            { id: note.id, parentId: note.parentId, cascade: true },
             {
               onSuccess: () => {
                 setDeleteDialogOpen(false);

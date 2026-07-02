@@ -461,11 +461,11 @@ const ContentExplorer: React.FC = () => {
         message={deleteDialogMessage}
         onCancel={() => setDeleteDialogTarget(null)}
         onConfirm={() => {
-          if (!deleteDialogTarget || !currentUser) return;
           deleteContent.mutate(
             {
               id: deleteDialogTarget.id,
               parentId: deleteDialogTarget.parentId,
+              cascade: true,
             },
             {
               onSuccess: () => {

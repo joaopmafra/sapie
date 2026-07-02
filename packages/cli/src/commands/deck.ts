@@ -129,6 +129,10 @@ export const deckCommand = {
   describe: 'Manage flashcard decks',
   builder: (y: Argv) =>
     y
+      .option('workspace', {
+        type: 'string' as const,
+        description: 'Path to Sapie workspace directory (default: CWD)',
+      })
       .command(
         'create <notePath>',
         'Create a new flashcard deck in a note',
@@ -144,7 +148,13 @@ export const deckCommand = {
               demandOption: true,
               description: 'Deck name',
             }),
-        (args) => handleCreate(args as { notePath: string; name: string })
+        (args) => {
+          const ws = (args.workspace as string) || '';
+          const notePath = ws
+            ? path.resolve(ws, args.notePath as string)
+            : (args.notePath as string);
+          handleCreate({ notePath, name: args.name as string });
+        }
       )
       .command(
         'ls <deckPath>',
@@ -155,7 +165,13 @@ export const deckCommand = {
             demandOption: true,
             description: 'Path to the deck JSON file (e.g. folder/MyNote.md/decks/mycards.json)',
           }),
-        (args) => handleList(args as { deckPath: string })
+        (args) => {
+          const ws = (args.workspace as string) || '';
+          const deckPath = ws
+            ? path.resolve(ws, args.deckPath as string)
+            : (args.deckPath as string);
+          handleList({ deckPath });
+        }
       )
       .command(
         'add <deckPath>',
@@ -177,7 +193,13 @@ export const deckCommand = {
               demandOption: true,
               description: 'Back side text (answer)',
             }),
-        (args) => handleAdd(args as { deckPath: string; front: string; back: string })
+        (args) => {
+          const ws = (args.workspace as string) || '';
+          const deckPath = ws
+            ? path.resolve(ws, args.deckPath as string)
+            : (args.deckPath as string);
+          handleAdd({ deckPath, front: args.front as string, back: args.back as string });
+        }
       )
       .command(
         'edit <deckPath>',
@@ -202,15 +224,18 @@ export const deckCommand = {
               type: 'string' as const,
               description: 'New back side text',
             }),
-        (args) =>
-          handleEdit(
-            args as {
-              deckPath: string;
-              index: number;
-              front?: string;
-              back?: string;
-            }
-          )
+        (args) => {
+          const ws = (args.workspace as string) || '';
+          const deckPath = ws
+            ? path.resolve(ws, args.deckPath as string)
+            : (args.deckPath as string);
+          handleEdit({
+            deckPath,
+            index: args.index as number,
+            front: args.front as string | undefined,
+            back: args.back as string | undefined,
+          });
+        }
       )
       .command(
         'rm <deckPath>',
@@ -227,10 +252,15 @@ export const deckCommand = {
               demandOption: true,
               description: 'Card index (0-based)',
             }),
-        (args) => handleRemove(args as { deckPath: string; index: number })
+        (args) => {
+          const ws = (args.workspace as string) || '';
+          const deckPath = ws
+            ? path.resolve(ws, args.deckPath as string)
+            : (args.deckPath as string);
+          handleRemove({ deckPath, index: args.index as number });
+        }
       ),
   handler: () => {
-    // Subcommands handle their own execution; this is only reached when no subcommand matches.
     console.error('✗ Please specify an action: create, ls, add, edit, rm');
     process.exit(1);
   },

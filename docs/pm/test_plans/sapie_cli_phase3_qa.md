@@ -299,8 +299,8 @@ sapie deck create "$NOTE" --name "QA Deck" --workspace "$TEST_WS"
 sapie deck ls "$NOTE/decks/QA Deck.json" --workspace "$TEST_WS"
 sapie deck add "$NOTE/decks/QA Deck.json" --front "Q1" --back "A1" --workspace "$TEST_WS"
 sapie deck add "$NOTE/decks/QA Deck.json" --front "Q2" --back "A2" --workspace "$TEST_WS"
-sapie deck edit "$NOTE/decks/QA Deck.json" --index 1 --front "Updated Q" --workspace "$TEST_WS"
-sapie deck rm "$NOTE/decks/QA Deck.json" --index 2 --workspace "$TEST_WS"
+sapie deck edit "$NOTE/decks/QA Deck.json" --index 0 --front "Updated Q" --workspace "$TEST_WS"
+sapie deck rm "$NOTE/decks/QA Deck.json" --index 1 --workspace "$TEST_WS"
 sapie deck ls "$NOTE/decks/QA Deck.json" --workspace "$TEST_WS"
 ```
 

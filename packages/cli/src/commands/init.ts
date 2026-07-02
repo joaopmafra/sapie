@@ -37,23 +37,21 @@ export async function initCommand(opts: InitOptions): Promise<void> {
     console.log(`✓ Created .sapie/config.json`);
   }
 
-  // 4. Generate AGENTS.md (reuses existing generator — skips if exists)
+  // 4. Generate AGENTS.md (reuses existing generator)
+  const agentsExisted = await fileExists(path.join(opts.workspaceRoot, 'AGENTS.md'));
   await generateAgentsMd(opts.workspaceRoot);
-  const agentsPath = path.join(opts.workspaceRoot, 'AGENTS.md');
-  try {
-    await fs.access(agentsPath);
+  if (agentsExisted) {
     console.log(`⚠ AGENTS.md already exists — skipping.`);
-  } catch {
+  } else {
     console.log(`✓ Created AGENTS.md`);
   }
 
-  // 5. Generate .gitignore (reuses existing generator — skips if exists)
+  // 5. Generate .gitignore
+  const gitignoreExisted = await fileExists(path.join(opts.workspaceRoot, '.gitignore'));
   await generateGitignore(opts.workspaceRoot);
-  const gitignorePath = path.join(opts.workspaceRoot, '.gitignore');
-  try {
-    await fs.access(gitignorePath);
+  if (gitignoreExisted) {
     console.log(`⚠ .gitignore already exists — skipping.`);
-  } catch {
+  } else {
     console.log(`✓ Created .gitignore`);
   }
 
@@ -66,4 +64,13 @@ export async function initCommand(opts: InitOptions): Promise<void> {
   console.log(
     `\nNext: run \`sapie login\` to authenticate, then \`sapie pull\` to download your content.`
   );
+}
+
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
 }
