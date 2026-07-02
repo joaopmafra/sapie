@@ -15,3 +15,9 @@ pnpm run lint
 cd ../..
 printf "OK\n\n"
 
+
+echo "Linting packages/cli..."
+cd packages/cli
+pnpm run lint
+cd ../..
+printf "OK\n\n"

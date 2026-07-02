@@ -14,3 +14,9 @@ cd packages/web
 pnpm run verify:all
 cd ../..
 printf "OK!\n\n"
+
+echo "Verifying cli..."
+cd packages/cli
+pnpm run verify:all
+cd ../..
+printf "OK!\n\n"

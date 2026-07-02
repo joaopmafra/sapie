@@ -36,3 +36,15 @@ cd packages/web
 pnpm test
 cd ../..
 printf "OK\n\n"
+
+echo "Verifying cli..."
+cd packages/cli
+pnpm verify:all
+cd ../..
+printf "OK\n\n"
+
+echo "Running cli unit tests..."
+cd packages/cli
+pnpm test
+cd ../..
+printf "OK\n\n"
