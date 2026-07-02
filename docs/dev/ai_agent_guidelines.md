@@ -78,6 +78,19 @@ scope.
 For test philosophy (Classical TDD on the API, E2E not maintained for MVP unless a story says otherwise), see
 [contributing_guidelines.md](contributing_guidelines.md#testing-expectations) and
 [unit_testing_sapie.md — controller-first, avoid mockist service specs](unit_testing_sapie.md#avoid-mockist-service-specs-for-orchestration-code).
+
+## IDE MCP tools
+
+When an IDE MCP server (IntelliJ) is available, follow the tool selection rules in
+[ide_mcp_tool_guidelines.md](ide_mcp_tool_guidelines.md). Summary:
+
+- **Native first** for file I/O, search, and shell — IDE tools give poor results for TypeScript in this project.
+- **IDE when unique** — symbol search, run config discovery, editor integration.
+- **IDE as fallback** — retry with IDE tools when native tools produce no results.
+
+Key finding: this project is `JAVA_MODULE` in IntelliJ. Most IDE language-analysis tools
+(diagnostics, symbol docs, build, format) are unreliable for TypeScript.
+
 ## Browser testing (OMP built-in browser)
 
 For user-visible changes and API smoke tests, use the OMP `browser` tool:

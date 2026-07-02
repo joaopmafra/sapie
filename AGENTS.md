@@ -1,0 +1,85 @@
+# Sapie — Agent Instructions
+
+Full-stack TypeScript knowledge management app:
+
+- **Backend**: NestJS + Firebase Admin + Firestore (`packages/api/`)
+- **Frontend**: React + Material-UI + Firebase Auth (`packages/web/`)
+- **E2E**: Playwright tests (`packages/test-e2e/`)
+- **PM / research**: `docs/pm/`, `docs/research/`
+
+## Current objective: MVP
+
+Ship a working study tool **as soon as practical** for interview prep. Full scope and
+order: [docs/plans/mvp_objective.md](docs/plans/mvp_objective.md).
+
+## Development principles (summary)
+
+We follow **true Agile** (values from the Manifesto, not Scrum-by-default), **Extreme Programming**, **Lean**, and
+**iterative** delivery. The anchor habit is simplicity (XP rule of thumb —
+see [docs/dev/xp_simplicity_is_the_key.md](docs/dev/xp_simplicity_is_the_key.md)).
+
+We strive to write tests: **Classical TDD** on the backend
+first ([docs/dev/unit_testing_strategy.md](docs/dev/unit_testing_strategy.md),
+[docs/dev/unit_testing_sapie.md](docs/dev/unit_testing_sapie.md)).
+**E2E** tests exist but are **not maintained** during this MVP push unless a story explicitly requires them — see
+[docs/dev/contributing_guidelines.md](docs/dev/contributing_guidelines.md).
+
+For the full principle set and how they apply in code review,
+use [docs/dev/development_principles.md](docs/dev/development_principles.md).
+
+## Documentation guidelines
+
+- When writing Markdown docs, prefer lists with bullets over tables — they greatly improve readability. Use tables only
+  when strictly necessary.
+- Follow the [documentation guidelines](docs/dev/documentation_guidelines.md) for where to put docs.
+
+## Developer documentation
+
+**Canonical reading order and full index:** [docs/dev/README.md](docs/dev/README.md) — use that list when ramping
+up or adding a new dev doc (keep it in sync there, not here).
+
+**Often-needed links:**
+
+- [Contributing guidelines](docs/dev/contributing_guidelines.md)
+- [AI agent guidelines](docs/dev/ai_agent_guidelines.md)
+- [Simplicity is the key](docs/dev/xp_simplicity_is_the_key.md)
+- [Iterative development](docs/dev/iterative_development.md)
+- [TDD Baby Steps](docs/dev/tdd_baby_steps.md)
+- [Documentation guidelines](docs/dev/documentation_guidelines.md)
+
+**Broader doc map** (research, PM, AI workflow): [docs/README.md](docs/README.md)
+
+## IDE MCP tools
+
+When an IDE MCP server is available alongside native agent tools:
+
+1. **Native first** — use built-in tools for file I/O, search, globbing, and shell.
+2. **IDE when unique** — use IDE tools that have no native counterpart (symbol search, run
+   config discovery, editor integration).
+3. **IDE as fallback** — retry with IDE tools when native tools produce no results.
+
+Full per-tool guidance (based on hands-on testing): [docs/dev/ide_mcp_tool_guidelines.md](docs/dev/ide_mcp_tool_guidelines.md)
+
+Key finding: this project is modeled as `JAVA_MODULE` by IntelliJ. Most IDE tools that depend on
+language-specific analysis produce poor or no results for TypeScript. Stick to native tools for TS code intelligence.
+
+## AI workflow research (OpenSpec, OpenCode, MCP)
+
+The owner is adopting practices from:
+
+- [AI development acceleration plan](docs/research/ai_workflow/ai_development_acceleration_plan.md) —
+  toolchain (OpenSpec, OpenCode, oMo, Playwright MCP), workflow, optional research ideas
+- [Claude Code roadmap → OpenCode](docs/research/ai_workflow/claude_code_roadmap_to_opencode.md) — how Claude
+  Code roadmap topics map to OpenCode (agents, skills, commands, plugins, MCP, permissions)
+
+**Adoption log:** [docs/research/ai_workflow/ai_workflow_adoption_log.md](docs/research/ai_workflow/ai_workflow_adoption_log.md) —
+checklists and a short change log for what is actually in use.
+
+### Instructions for AI agents
+
+1. **Proactively suggest** relevant items from those two documents when they would help the current task (e.g. UI work →
+   Playwright MCP + acceleration plan; setting up OpenCode → skills/agents/MCP rows in the concept map; non-trivial
+   feature → OpenSpec delta + iterative delivery). Keep suggestions **short and actionable**; do not dump the whole doc.
+2. **Offer to update** `ai_workflow_adoption_log.md` when the user says they adopted, tried, or dropped a practice (
+   check the matching item, add a bullet under **Change log** with date and one sentence).
+3. **Do not** mark items adopted without the user's confirmation.

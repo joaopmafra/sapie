@@ -19,6 +19,7 @@ Assistants: [ai_agent_guidelines.md](ai_agent_guidelines.md)
 Environment and agents:
 
 - [agentmemory setup](agentmemory_setup.md) — persistent memory (Cursor documented; OpenCode, pi, Claude Code TBD)
+- [IDE MCP tool guidelines](ide_mcp_tool_guidelines.md) — when to use IDE MCP tools vs native agent tools
 
 Firebase Emulator Suite for dev and tests is started via **Docker Compose** at the repo root
 (`compose.local-dev.yml`, `compose.test-unit.yml`, `compose.emulator.yml`, `compose.test-e2e.yml`). Rationale:
