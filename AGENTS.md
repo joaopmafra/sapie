@@ -51,17 +51,12 @@ up or adding a new dev doc (keep it in sync there, not here).
 
 ## IDE MCP tools
 
-When an IDE MCP server is available alongside native agent tools:
+Prefer native tools over IDE MCP for TypeScript work. Full rules:
+[ai_agent_guidelines.md § IDE MCP tools](docs/dev/ai_agent_guidelines.md#ide-mcp-tools) and
+[ide_mcp_tool_guidelines.md](docs/dev/ide_mcp_tool_guidelines.md).
 
-1. **Native first** — use built-in tools for file I/O, search, globbing, and shell.
-2. **IDE when unique** — use IDE tools that have no native counterpart (symbol search, run
-   config discovery, editor integration).
-3. **IDE as fallback** — retry with IDE tools when native tools produce no results.
-
-Full per-tool guidance (based on hands-on testing): [docs/dev/ide_mcp_tool_guidelines.md](docs/dev/ide_mcp_tool_guidelines.md)
-
-Key finding: this project is modeled as `JAVA_MODULE` by IntelliJ. Most IDE tools that depend on
-language-specific analysis produce poor or no results for TypeScript. Stick to native tools for TS code intelligence.
+Key finding: this project is `JAVA_MODULE` in IntelliJ — most IDE language-analysis tools
+are unreliable for TypeScript. Stick to native tools for code intelligence.
 
 ## AI workflow research (OpenSpec, OpenCode, MCP)
 

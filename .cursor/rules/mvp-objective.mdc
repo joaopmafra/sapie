@@ -9,7 +9,7 @@ Sapie's owner is on a sabbatical studying AI engineering, DSA, system design, an
 **The overriding priority is to ship a functional study tool as quickly as possible.**
 Architectural elegance is secondary to getting a working tool into daily use.
 
-Full details: `docs/research/mvp_objective.md`
+Full details: `docs/plans/mvp_objective.md`
 
 ## Implementation Priority (in order)
 
