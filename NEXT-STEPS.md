@@ -4,7 +4,7 @@
 
 ## What was implemented
 
-### Sapie Sync CLI — Phase 1 (this session, PR #27)
+### Sapie Sync CLI — Phase 1 (this session, PR #27 + follow-up fb88e63)
 
 - **New package `packages/cli/`**: `@sapie/cli` — `sapie` binary with `login`, `logout`, `pull`, `push` subcommands
 - **Auth**: email/password login via Firebase Auth REST API, token refresh, logout
@@ -13,8 +13,10 @@
 - **Pull**: recursive tree walk, writes notes (`.md/` dirs with `index.md`), folders, decks (JSON) to local workspace
 - **Push**: change detection (creates, body updates, renames, deletes), deck card CRUD, 409 conflict handling
 - **AGENTS.md + .gitignore generation** on first pull
-- **92 unit tests** (6 suites): hashing, token-store, api-client, state, pull, push
-- **Root scripts updated**: `verify-all.sh`, `lint-all.sh`, `format-all.sh`, `verify-all-test-unit.sh` now cover `packages/cli/`
+- **93 unit tests** (7 suites): hashing, token-store, api-client, state, pull, push, smoke
+- **Root scripts updated**: `verify-all.sh`, `lint-all.sh`, `format-all.sh`, `verify-all-test-unit.sh` cover `packages/cli/`
+- **Docs**: `packages/cli/AGENTS.md`, `docs/dev/sapie_cli.md`, root `AGENTS.md` updated
+- **Skills**: `.cursor/skills/sapie-cli/SKILL.md` — scaffold subcommand, add endpoint, test patterns, PR convention
 
 ### Previous sessions
 
