@@ -26,3 +26,12 @@ process.prependListener('unhandledRejection', (reason: unknown) => {
   console.error('[UNHANDLED REJECTION]', reason);
   process.exitCode = 1;
 });
+
+// Also handle the newer 'unhandled error' event pattern (nock v14+ with Node 22)
+process.prependListener('uncaughtException', (err: Error) => {
+  if (NOCK_LIFECYCLE_PATTERNS.some((p) => err.message.includes(p))) {
+    return;
+  }
+  console.error('[UNCAUGHT EXCEPTION]', err);
+  process.exitCode = 1;
+});

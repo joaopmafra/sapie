@@ -25,18 +25,25 @@ interface TestResult {
 
 // ── Fake API Server ──
 function createFakeServer() {
-  const content = new Map<string, any>();
+  const content = new Map<string, Record<string, unknown>>();
   const bodies = new Map<string, string>();
 
   const app = express();
   app.use(express.json());
   app.use(express.text({ type: 'text/*' }));
 
-  function mkContent(overrides: Record<string, any> = {}) {
+  function mkContent(overrides: Record<string, unknown> = {}) {
     const id = overrides.id || `id-${nextId++}`;
     return {
-      id, name: 'Item', type: 'note', parentId: null, ownerId: 'qa-user',
-      body: null, createdAt: NOW, updatedAt: NOW, ...overrides,
+      id,
+      name: 'Item',
+      type: 'note',
+      parentId: null,
+      ownerId: 'qa-user',
+      body: null,
+      createdAt: NOW,
+      updatedAt: NOW,
+      ...overrides,
     };
   }
 
@@ -45,7 +52,7 @@ function createFakeServer() {
   });
 
   app.get('/content/:id/children', (req, res) => {
-    const children: any[] = [];
+    const children: Record<string, unknown>[] = [];
     for (const [, c] of content) {
       if (c.parentId === req.params.id) children.push(c);
     }
@@ -59,7 +66,11 @@ function createFakeServer() {
   });
 
   app.post('/content', (req, res) => {
-    const c = mkContent({ name: req.body.name, parentId: req.body.parentId, type: req.body.type || 'note' });
+    const c = mkContent({
+      name: req.body.name,
+      parentId: req.body.parentId,
+      type: req.body.type || 'note',
+    });
     content.set(c.id, c);
     res.status(201).json(c);
   });
@@ -77,56 +88,98 @@ function createFakeServer() {
     if (!c) return res.status(404).json({ title: 'Not Found', status: 404 });
     const bodyStr = typeof req.body === 'string' ? req.body : String(req.body);
     bodies.set(req.params.id, bodyStr);
-    c.body = { mimeType: 'text/markdown', size: bodyStr.length, createdAt: NOW, updatedAt: new Date().toISOString() };
+    c.body = {
+      mimeType: 'text/markdown',
+      size: bodyStr.length,
+      createdAt: NOW,
+      updatedAt: new Date().toISOString(),
+    };
     res.json(c);
   });
 
-  app.delete('/content/:id', (_req, res) => { res.status(204).end(); });
-  app.get('/content/:deckId/cards', (_req, res) => { res.json([]); });
+  app.delete('/content/:id', (_req, res) => {
+    res.status(204).end();
+  });
+  app.get('/content/:deckId/cards', (_req, res) => {
+    res.json([]);
+  });
   app.post('/content/:deckId/cards', (req, res) => {
     res.status(201).json({
-      id: `card-${nextId++}`, deckId: req.params.deckId, ownerId: 'qa-user',
-      front: req.body.front, back: req.body.back,
-      dueDate: NOW, interval: 0, repetitions: 0,
-      lastResult: null, lastStudied: null, correctCount: 0, incorrectCount: 0,
-      createdAt: NOW, updatedAt: NOW,
+      id: `card-${nextId++}`,
+      deckId: req.params.deckId,
+      ownerId: 'qa-user',
+      front: req.body.front,
+      back: req.body.back,
+      dueDate: NOW,
+      interval: 0,
+      repetitions: 0,
+      lastResult: null,
+      lastStudied: null,
+      correctCount: 0,
+      incorrectCount: 0,
+      createdAt: NOW,
+      updatedAt: NOW,
     });
   });
   app.patch('/content/:deckId/cards/:cardId', (req, res) => {
-    res.json({ id: req.params.cardId, deckId: req.params.deckId, front: req.body.front || '', back: req.body.back || '', createdAt: NOW, updatedAt: NOW });
+    res.json({
+      id: req.params.cardId,
+      deckId: req.params.deckId,
+      front: req.body.front || '',
+      back: req.body.back || '',
+      createdAt: NOW,
+      updatedAt: NOW,
+    });
   });
-  app.delete('/content/:deckId/cards/:cardId', (_req, res) => { res.status(204).end(); });
+  app.delete('/content/:deckId/cards/:cardId', (_req, res) => {
+    res.status(204).end();
+  });
 
   return { app, content, bodies };
 }
 
 // ── Helpers ──
-function runCli(workspaceRoot: string, args: string[]): Promise<{ code: number; stdout: string; stderr: string }> {
+function runCli(
+  workspaceRoot: string,
+  args: string[]
+): Promise<{ code: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
-    execFile('node', [CLI, ...args, '--workspace', workspaceRoot], {
-      timeout: 10000,
-      env: { ...process.env, HOME: os.homedir() },
-    }, (err, stdout, stderr) => {
-      resolve({ code: err ? err.code || 1 : 0, stdout: stdout || '', stderr: stderr || '' });
-    });
+    execFile(
+      'node',
+      [CLI, ...args, '--workspace', workspaceRoot],
+      {
+        timeout: 10000,
+        env: { ...process.env, HOME: os.homedir() },
+      },
+      (err, stdout, stderr) => {
+        resolve({ code: err ? err.code || 1 : 0, stdout: stdout || '', stderr: stderr || '' });
+      }
+    );
   });
 }
 
 async function setupWorkspace(workspaceRoot: string, apiUrl: string) {
   const sapieDir = path.join(workspaceRoot, '.sapie');
   await fs.mkdir(sapieDir, { recursive: true });
-  await fs.writeFile(path.join(sapieDir, 'config.json'), JSON.stringify({
-    apiBaseUrl: apiUrl,
-    firebaseApiKey: 'qa-fake-key',
-    firebaseAuthDomain: 'qa-fake.firebaseapp.com',
-  }));
-  await fs.writeFile(path.join(sapieDir, 'auth.json'), JSON.stringify({
-    idToken: 'qa-fake-id-token',
-    refreshToken: 'qa-fake-refresh-token',
-    email: 'qa@sapie.dev',
-    localId: 'qa-user-id',
-    expiresAt: Date.now() + 86400000,
-  }), { mode: 0o600 });
+  await fs.writeFile(
+    path.join(sapieDir, 'config.json'),
+    JSON.stringify({
+      apiBaseUrl: apiUrl,
+      firebaseApiKey: 'qa-fake-key',
+      firebaseAuthDomain: 'qa-fake.firebaseapp.com',
+    })
+  );
+  await fs.writeFile(
+    path.join(sapieDir, 'auth.json'),
+    JSON.stringify({
+      idToken: 'qa-fake-id-token',
+      refreshToken: 'qa-fake-refresh-token',
+      email: 'qa@sapie.dev',
+      localId: 'qa-user-id',
+      expiresAt: Date.now() + 86400000,
+    }),
+    { mode: 0o600 }
+  );
 }
 
 // ── Main ──
@@ -151,7 +204,11 @@ async function main() {
     console.log('\n── TC-01: Help ──');
     const help = await runCli(os.tmpdir(), ['--help']);
     console.log(help.stdout.trim().split('\n').slice(0, 5).join('\n'));
-    results.push({ id: 'TC-01', name: 'Help', pass: help.stdout.includes('login') && help.stdout.includes('pull') });
+    results.push({
+      id: 'TC-01',
+      name: 'Help',
+      pass: help.stdout.includes('login') && help.stdout.includes('pull'),
+    });
 
     // ── TC-02: Pull empty root ──
     console.log('\n── TC-02: Pull empty root ──');
@@ -161,7 +218,11 @@ async function main() {
     const pull1 = await runCli(ws1, ['pull']);
     console.log(pull1.stdout.trim());
     const state1 = JSON.parse(await fs.readFile(path.join(ws1, '.sapie', 'state.json'), 'utf-8'));
-    results.push({ id: 'TC-02', name: 'Pull empty root', pass: state1.version === 1 && state1.rootId === 'root-1' });
+    results.push({
+      id: 'TC-02',
+      name: 'Pull empty root',
+      pass: state1.version === 1 && state1.rootId === 'root-1',
+    });
 
     // ── TC-03: Root dir exists ──
     console.log('\n── TC-03: Root directory ──');
@@ -172,7 +233,11 @@ async function main() {
     console.log('\n── TC-07: AGENTS.md + .gitignore ──');
     const agents = await fs.readFile(path.join(ws1, 'AGENTS.md'), 'utf-8');
     const gi = await fs.readFile(path.join(ws1, '.gitignore'), 'utf-8');
-    results.push({ id: 'TC-07', name: 'AGENTS.md + .gitignore', pass: agents.includes('Sapie Workspace') && gi.includes('.sapie/auth.json') });
+    results.push({
+      id: 'TC-07',
+      name: 'AGENTS.md + .gitignore',
+      pass: agents.includes('Sapie Workspace') && gi.includes('.sapie/auth.json'),
+    });
 
     // ── TC-08: Push create note ──
     console.log('\n── TC-08: Push — create note ──');
@@ -213,7 +278,11 @@ async function main() {
     await fs.rm(path.join(nsWs, '.sapie', 'state.json'), { force: true });
     const pns = await runCli(nsWs, ['push']);
     console.log(pns.stdout.trim());
-    results.push({ id: 'TC-13', name: 'No state', pass: pns.stdout.includes('No .sapie/state.json') });
+    results.push({
+      id: 'TC-13',
+      name: 'No state',
+      pass: pns.stdout.includes('No .sapie/state.json'),
+    });
     await fs.rm(nsWs, { recursive: true, force: true }).catch(() => {});
 
     // ── TC-14: Full round-trip ──
@@ -230,7 +299,12 @@ async function main() {
     await runCli(rtWs, ['push']);
     await runCli(rtWs, ['pull']);
     const final = await fs.readFile(path.join(rtDir, 'index.md'), 'utf-8');
-    results.push({ id: 'TC-14', name: 'Round-trip', pass: final === 'RT v2', detail: `body="${final}"` });
+    results.push({
+      id: 'TC-14',
+      name: 'Round-trip',
+      pass: final === 'RT v2',
+      detail: `body="${final}"`,
+    });
     await fs.rm(rtWs, { recursive: true, force: true }).catch(() => {});
 
     // ── TC-15: Second pull unchanged ──
@@ -246,7 +320,6 @@ async function main() {
 
     // Clean up ws1
     await fs.rm(ws1, { recursive: true, force: true }).catch(() => {});
-
   } finally {
     server.close();
   }
@@ -255,14 +328,19 @@ async function main() {
   console.log('\n' + '═'.repeat(60));
   console.log('QA RESULTS');
   console.log('═'.repeat(60));
-  let passed = 0, failed = 0;
+  let passed = 0,
+    failed = 0;
   for (const r of results) {
     const icon = r.pass ? '\x1b[32m✓\x1b[0m' : '\x1b[31m✗\x1b[0m';
     console.log(`${icon} ${r.id}: ${r.name}${r.detail ? ' — ' + r.detail : ''}`);
-    if (r.pass) passed++; else failed++;
+    if (r.pass) passed++;
+    else failed++;
   }
   console.log(`\n${passed}/${results.length} passed, ${failed} failed`);
   process.exit(failed > 0 ? 1 : 0);
 }
 
-main().catch((e) => { console.error('QA Suite crashed:', e); process.exit(1); });
+main().catch((e) => {
+  console.error('QA Suite crashed:', e);
+  process.exit(1);
+});

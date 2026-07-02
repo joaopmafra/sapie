@@ -3,6 +3,7 @@ import { CardResponse, ContentResponse, ContentType } from '../api/types';
 import { LocalCard, LocalDeck, SyncEntry } from '../state/sync-state';
 import { computeBodyHash, computeCardHash } from '../state/hashing';
 import { createEmptyState, readState, writeState } from '../state/state.service';
+import { createMarkdownService, parseBlobUrl } from '../markdown/markdown.service';
 import {
   computeLocalPath,
   ensureFolder,
@@ -87,6 +88,15 @@ export async function pull(api: ApiClient, workspaceRoot: string): Promise<PullR
           // 404 → no body yet
         }
 
+        // Transform remote blob URLs → local blobs/{blobId} paths
+        if (body) {
+          const markdownSvc = createMarkdownService();
+          body = markdownSvc.transformImageUrls(body, (url) => {
+            const parsed = parseBlobUrl(url);
+            if (parsed) return `blobs/${parsed.blobId}`;
+            return url;
+          });
+        }
         // Check if unchanged
         const bodyHash = body ? computeBodyHash(body) : null;
         const prevHash = prevState?.bodyHashByContentId[content.id];

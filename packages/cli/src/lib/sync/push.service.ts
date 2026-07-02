@@ -18,6 +18,7 @@ import {
   unsanitizeName,
   walkLocalTree,
 } from '../workspace/workspace.service';
+import { createMarkdownService } from '../markdown/markdown.service';
 
 export interface PushResult {
   created: number;
@@ -279,7 +280,19 @@ async function detectChanges(
 
     if (entry.type === 'note') {
       // Check body changes
-      const body = await readNoteBody(workspaceRoot, entry.localPath);
+      let body = await readNoteBody(workspaceRoot, entry.localPath);
+
+      // Transform local blobs/{blobId} paths → remote blob URLs for push
+      if (body) {
+        const markdownSvc = createMarkdownService();
+        body = markdownSvc.transformImageUrls(body, (url) => {
+          if (url.startsWith('blobs/')) {
+            return `/api/content/${id}/blobs/${url.slice(6)}`;
+          }
+          return url;
+        });
+      }
+
       if (hasBodyChanged(state, id, body)) {
         const expectedRevision = entry.bodyUpdatedAt ?? '';
         changes.bodyUpdates.push({
