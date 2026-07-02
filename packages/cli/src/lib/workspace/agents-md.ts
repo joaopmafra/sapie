@@ -2,7 +2,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 
 /**
- * Generate AGENTS.md at the workspace root on first pull.
+ * Generate AGENTS.md at the workspace root on first pull or init.
  * Never overwrites an existing file.
  */
 export async function generateAgentsMd(workspaceRoot: string): Promise<void> {
@@ -66,15 +66,16 @@ Edit the \`index.md\` file inside a note directory. The file is standard Markdow
 |---------|-------------|
 | \`sapie pull\` | Download content tree from Sapie |
 | \`sapie push\` | Upload local changes to Sapie |
-| \`sapie status\` | Preview changes (Phase 2) |
-| \`sapie deck\` | Manage decks (Phase 2) |
+| \`sapie status\` | Preview local changes (dry-run) |
+| \`sapie deck\` | Manage flashcard decks (create, ls, add, edit, rm) |
+| \`sapie init\` | Initialize a new workspace |
 
-## Concurrency warning
+## Concurrency
 
 **Run \`sapie pull\` before editing in the web app.**
-Metadata changes (renames, creates, deletes) are last-writer-wins in Phase 1.
-The primary safety net is \`expectedRevision\` for body bytes.
-Pessimistic locking will be added in Phase 3.
+\`sapie push\` acquires a server-side lock before modifying content.
+If a lock is held by another instance, push will abort with details.
+Use \`sapie push --abort\` to force-release a stale lock left by a crashed process.
 
 ## Git workflow
 
@@ -95,7 +96,7 @@ The \`.sapie/auth.json\` and \`.sapie/state.json\` files are gitignored automati
 }
 
 /**
- * Generate .gitignore at the workspace root on first pull.
+ * Generate .gitignore at the workspace root on first pull or init.
  * Never overwrites an existing file.
  */
 export async function generateGitignore(workspaceRoot: string): Promise<void> {

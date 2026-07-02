@@ -2,6 +2,7 @@
 
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
+import { initCommand } from './commands/init';
 import { loginCommand } from './commands/login';
 import { logoutCommand } from './commands/logout';
 import { pullCommand } from './commands/pull';
@@ -15,20 +16,62 @@ async function main(): Promise<void> {
     .scriptName('sapie')
     .usage('$0 <command> [options]')
     .command(
+      'init',
+      'Initialize a new Sapie workspace',
+      (y) =>
+        y
+          .option('workspace', {
+            type: 'string',
+            description: 'Path to create the workspace directory (default: ~/sapie-workspace)',
+          })
+          .option('api-base-url', {
+            type: 'string',
+            description: 'Sapie API base URL',
+            default: 'https://api.sapie.dev/api',
+          })
+          .option('firebase-api-key', {
+            type: 'string',
+            description: 'Firebase web API key (from Firebase Console)',
+            default: '',
+          })
+          .option('firebase-auth-domain', {
+            type: 'string',
+            description: 'Firebase Auth domain',
+            default: 'sapie-dev.firebaseapp.com',
+          })
+          .option('google-client-id', {
+            type: 'string',
+            description: 'Google OAuth web client ID (for sapie login --method google)',
+          })
+          .option('auth-emulator-host', {
+            type: 'string',
+            description: 'Firebase Auth emulator host (e.g. localhost:9099)',
+          }),
+      async (args) => {
+        const workspaceRoot = resolveWorkspaceRoot(args.workspace as string | undefined);
+        await initCommand({
+          workspaceRoot,
+          apiBaseUrl: (args['api-base-url'] as string) || 'https://api.sapie.dev/api',
+          firebaseApiKey: (args['firebase-api-key'] as string) || '',
+          firebaseAuthDomain:
+            (args['firebase-auth-domain'] as string) || 'sapie-dev.firebaseapp.com',
+          googleClientId: args['google-client-id'] as string | undefined,
+          authEmulatorHost: args['auth-emulator-host'] as string | undefined,
+        });
+      }
+    )
+    .command(
       'login',
       'Authenticate with Google or email/password',
       (y) =>
         y
           .option('method', {
             type: 'string',
-            choices: ['google', 'email'] as const,
-            default: 'google' as const,
-            description: 'Authentication method',
+            choices: ['google', 'email'],
+            default: 'google',
+            description: 'Auth method',
           })
-          .option('workspace', {
-            type: 'string',
-            description: 'Path to Sapie workspace directory',
-          }),
+          .option('workspace', {}),
       async (args) => {
         const workspaceRoot = resolveWorkspaceRoot(args.workspace as string | undefined);
         const config = loadConfig(workspaceRoot);
@@ -102,14 +145,14 @@ async function main(): Promise<void> {
       }
     )
     .command(deckCommand)
-    .demandCommand(1, 'Please specify a command: login, logout, pull, push, status, deck')
+    .demandCommand(1, 'Please specify a command: init, login, logout, pull, push, status, deck')
     .strict()
     .help()
-    .version('0.0.2')
+    .version('0.0.3')
     .parse();
 }
 
 main().catch((err) => {
-  console.error(err.message);
+  console.error(err);
   process.exit(1);
 });
