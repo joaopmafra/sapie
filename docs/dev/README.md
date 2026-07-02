@@ -42,4 +42,6 @@ Supporting material:
 - [unit_testing_strategy.md](unit_testing_strategy.md)
 - [unit_testing_sapie.md](unit_testing_sapie.md)
 
+Lessons learned: [docs/lessons/](../lessons/README.md) — cross-cutting knowledge base (one file per lesson, one-line index)
+
 Backlog structure: [pm README](../pm/README.md)
