@@ -9,8 +9,48 @@ Full-stack TypeScript knowledge management app:
 
 ## Current objective: MVP
 
-Ship a working study tool **as soon as practical** for interview prep. Full scope and
-order: [docs/plans/mvp_objective.md](docs/plans/mvp_objective.md).
+Sapie's owner is on a sabbatical studying AI engineering, DSA, system design, and DevSecOps.
+**The overriding priority is to ship a functional study tool as quickly as possible.**
+Architectural elegance is secondary to getting a working tool into daily use.
+
+Full details: [docs/plans/mvp_objective.md](docs/plans/mvp_objective.md)
+
+### Implementation priority (in order)
+
+1. ✅ Story 53 (Tasks 4–6): note editor shell + rename API
+2. ✅ TanStack Query refactor (Story 62)
+3. ✅ Note content editor with auto-save (Stories 55 → 66 → 67)
+4. ✅ Folder creation (Story 63)
+5. ✅ Blob storage model (Story 75) — replaces Story 74 attachment model
+6. Content deletion (notes + folders) — Story 64 ready
+7. Flashcard deck + card creation (attached to notes)
+8. Study mode — single deck ("I know" / "I don't know")
+9. Study result tracking (per-card)
+10. Folder-level study ("Study all" from right-click)
+11. Responsive mobile polish
+
+### Settled design decisions
+
+- **Flashcard decks are content children of notes** (`parentId = noteId`), not siblings in the folder tree.
+  **Inline images** are stored as **blobs** in GCS (`{ownerId}/content/{contentId}/blobs/{blobId}`), not in Firestore, not as content. One-step upload via `POST /api/content/:contentId/blobs`. No subcollection, no reconcile.
+  Decks are shown in the note editor's Attachments section; images are embedded in the note body.
+- **Sidebar tree shows folders and notes only.** Decks and cards are not shown in the tree.
+- **Decks store a denormalized `folderId`** (the folder of their parent note) for efficient folder-level study queries.
+- **Study data model is designed for FSRS upgrade** even though UI uses 2 buttons for now.
+  Cards store: `dueDate`, `interval`, `repetitions`, `lastResult`.
+- **TanStack Query must be implemented before the note content editor** to fix the broken
+  direct navigation bug and prevent auto-save from thrashing the sidebar tree.
+
+### Do not implement yet (deferred)
+
+Spaced repetition algorithm, per-session summaries, full-text search, offline mode, math/LaTeX,
+tags, favorites, sharing, AI-generated content.
+
+### Implement alongside MCP server (not MVP, but required before MCP goes live)
+
+Content versioning (pre-operation snapshots, soft-delete/trash, operation log, version history UI,
+markdown diff view). Full design: [docs/research/content_versioning.md](docs/research/content_versioning.md).
+The agent changeset approval flow (Phase 2 of versioning) comes after the MCP server ships.
 
 ## Development principles (summary)
 

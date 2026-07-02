@@ -5,6 +5,9 @@ alwaysApply: true
 
 # Current MVP Objective
 
+> **Authoritative source:** [AGENTS.md](../../AGENTS.md#current-objective-mvp) at repo root.
+> This file duplicates critical content for Cursor compatibility.
+
 Sapie's owner is on a sabbatical studying AI engineering, DSA, system design, and DevSecOps.
 **The overriding priority is to ship a functional study tool as quickly as possible.**
 Architectural elegance is secondary to getting a working tool into daily use.
