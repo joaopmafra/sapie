@@ -134,9 +134,19 @@ interface DeckSyncEntry extends SyncEntry {
 
 This means reformatting the JSON (e.g., IntelliJ "Reformat Code") produces an identical `cardHash`. A test must verify: parse → serialize → parse → produce same hash as original.
 
+**Note body hashes** (`bodyHashByContentId`) are computed over canonicalized bytes to avoid false-positive diffs from line-ending noise:
+
+1. Decode body bytes as UTF-8.
+2. Normalize line endings: `\r\n` → `\n`, bare `\r` → `\n`.
+3. Strip a leading UTF-8 BOM (`\uFEFF`) if present.
+4. SHA-256 the resulting string.
+
+Trailing whitespace is **not** stripped — it may be intentional markdown (two trailing spaces = line break). Phase 1.4 tests: round-trip write→read identical, CRLF→LF produces same hash, BOM-stripped produces same hash.
+
 ---
 
 ## Configuration
+
 
 ```json
 // .sapie/config.json
