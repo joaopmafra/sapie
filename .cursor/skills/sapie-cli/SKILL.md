@@ -173,7 +173,7 @@ checks run, the old entry is already marked for deletion.
 
 **Impact:** Low. Content is preserved (delete+create on server). The rename becomes two
 operations, and the note gets a new content ID. Fix: reorder change detection. Deferred
-to Phase 2.
+to Phase 3.
 
 ## PR convention
 
@@ -186,16 +186,19 @@ to Phase 2.
 | File | Purpose |
 |------|---------|
 | `src/index.ts` | yargs command router |
-| `src/commands/*.ts` | command handlers (thin shims) |
+| `src/commands/*.ts` | command handlers — login, logout, pull, push, status, deck |
 | `src/lib/api/api-client.ts` | typed axios wrapper + ApiError |
 | `src/lib/api/types.ts` | API response/request wire shapes |
-| `src/lib/auth/auth.service.ts` | Firebase Auth REST API |
+| `src/lib/auth/auth.service.ts` | Firebase Auth REST API (email + Google OAuth) |
+| `src/lib/auth/oauth-server.ts` | local HTTP callback server for Google OAuth |
 | `src/lib/auth/token-store.ts` | .sapie/auth.json I/O |
+| `src/lib/markdown/markdown.service.ts` | blob URL translation (regex-based) |
 | `src/lib/state/state.service.ts` | .sapie/state.json I/O + hash comparison |
 | `src/lib/state/hashing.ts` | SHA-256 canonical hashing |
-| `src/lib/sync/pull.service.ts` | recursive pull engine |
-| `src/lib/sync/push.service.ts` | change detection + push engine |
+| `src/lib/sync/pull.service.ts` | recursive pull engine + blob URL transform |
+| `src/lib/sync/push.service.ts` | change detection + push engine + blob URL transform |
+| `src/lib/sync/status.service.ts` | dry-run change detection |
 | `src/lib/workspace/workspace.service.ts` | filesystem I/O |
 | `src/lib/workspace/agents-md.ts` | AGENTS.md + .gitignore generator |
-| `test/setup.ts` | nock unhandled rejection suppression |
+| `test/setup.ts` | nock unhandled rejection + exception suppression |
 | `test/qa/cli-qa.ts` | manual QA test script |

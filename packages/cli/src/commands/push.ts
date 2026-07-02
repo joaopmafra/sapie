@@ -10,6 +10,7 @@ interface PushOptions {
     firebaseAuthDomain: string;
     authEmulatorHost?: string;
   };
+  abort?: boolean;
 }
 
 export async function pushCommand(opts: PushOptions): Promise<void> {
@@ -26,6 +27,13 @@ export async function pushCommand(opts: PushOptions): Promise<void> {
   if (!token) {
     console.error('✗ Not authenticated. Run `sapie login` first.');
     process.exit(1);
+  }
+
+  if (opts.abort) {
+    console.log('Force-releasing sync lock...');
+    await push(api, opts.workspaceRoot, { abort: true });
+    console.log('✓ Lock released.');
+    return;
   }
 
   console.log('Pushing to Sapie...');

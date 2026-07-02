@@ -111,3 +111,20 @@ export interface ProblemDetails {
   detail?: string;
   instance?: string;
 }
+
+/** Sync lock info returned by the lock API. */
+export interface LockInfo {
+  ownerId: string;
+  lockedAt: string;
+  expiresAt: string;
+  resourceIds: string[];
+  operation: string;
+  instanceId: string;
+  locked: boolean;
+}
+
+/** Sync lock status response. */
+export interface LockStatusResponse {
+  locked: boolean;
+  lock: LockInfo | null;
+}

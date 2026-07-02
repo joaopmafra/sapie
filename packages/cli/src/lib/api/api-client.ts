@@ -4,6 +4,8 @@ import {
   ContentResponse,
   CreateCardRequest,
   CreateContentRequest,
+  LockInfo,
+  LockStatusResponse,
   ProblemDetails,
   UpdateCardRequest,
   UpdateContentRequest,
@@ -154,5 +156,32 @@ export class ApiClient {
 
   async deleteCard(deckId: string, cardId: string): Promise<void> {
     await this.http.delete(`/content/${deckId}/cards/${cardId}`);
+  }
+
+  // ── Sync lock endpoints ──
+
+  /**
+   * Acquire a sync lock. Returns lock info on success.
+   * Throws ApiError(409) if another instance holds the lock.
+   */
+  async acquireLock(instanceId: string): Promise<LockInfo> {
+    const { data } = await this.http.post<LockInfo>('/sync/lock', { instanceId });
+    return data;
+  }
+
+  /**
+   * Release a sync lock. Pass force=true to release regardless of instance.
+   */
+  async releaseLock(instanceId: string, force: boolean = false): Promise<void> {
+    const params: Record<string, string> = force ? { force: 'true' } : { instanceId };
+    await this.http.delete('/sync/lock', { params });
+  }
+
+  /**
+   * Check current sync lock status.
+   */
+  async checkLock(): Promise<LockStatusResponse> {
+    const { data } = await this.http.get<LockStatusResponse>('/sync/lock');
+    return data;
   }
 }

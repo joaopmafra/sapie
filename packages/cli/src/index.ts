@@ -71,14 +71,20 @@ async function main(): Promise<void> {
       'push',
       'Upload local changes to Sapie',
       (y) =>
-        y.option('workspace', {
-          type: 'string',
-          description: 'Path to Sapie workspace directory',
-        }),
+        y
+          .option('workspace', {
+            type: 'string',
+            description: 'Path to Sapie workspace directory',
+          })
+          .option('abort', {
+            type: 'boolean',
+            description: 'Force-release any existing sync lock without pushing',
+            default: false,
+          }),
       async (args) => {
         const workspaceRoot = resolveWorkspaceRoot(args.workspace as string | undefined);
         const config = loadConfig(workspaceRoot);
-        await pushCommand({ workspaceRoot, config });
+        await pushCommand({ workspaceRoot, config, abort: args.abort as boolean });
       }
     )
     .command(

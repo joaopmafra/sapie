@@ -1,3 +1,4 @@
+import * as crypto from 'crypto';
 import * as path from 'path';
 import { ApiClient, ApiError } from '../api/api-client';
 import { ContentType } from '../api/types';
@@ -73,11 +74,38 @@ interface DeleteOp {
   localPath: string;
   isNote: boolean;
 }
+export interface PushOptions {
+  /** If true, force-release any existing lock instead of pushing. */
+  abort?: boolean;
+}
+
+function generateInstanceId(): string {
+  return crypto.randomUUID();
+}
 
 /**
  * Push local changes to the Sapie API.
+ * In Phase 3, acquires a pessimistic lock before pushing.
  */
-export async function push(api: ApiClient, workspaceRoot: string): Promise<PushResult> {
+export async function push(
+  api: ApiClient,
+  workspaceRoot: string,
+  opts: PushOptions = {}
+): Promise<PushResult> {
+  // Handle --abort: force-release and exit
+  if (opts.abort) {
+    await api.releaseLock('', true);
+    return {
+      created: 0,
+      updated: 0,
+      renamed: 0,
+      deleted: 0,
+      deckCardsChanged: 0,
+      conflicts: 0,
+      errors: [],
+    };
+  }
+
   const result: PushResult = {
     created: 0,
     updated: 0,
@@ -88,119 +116,153 @@ export async function push(api: ApiClient, workspaceRoot: string): Promise<PushR
     errors: [],
   };
 
-  // 1. Load state
-  const state = await readState(workspaceRoot);
-  if (!state) {
-    result.errors.push('No .sapie/state.json found — run `sapie pull` first.');
+  const instanceId = generateInstanceId();
+  // Acquire lock
+  let hasLock = false;
+  try {
+    await api.acquireLock(instanceId);
+    hasLock = true;
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 409) {
+      const problem = err.problem as Record<string, unknown> | undefined;
+      const existingInstance = problem?.instanceId ?? 'unknown';
+      const expiresAt = problem?.expiresAt ?? 'unknown';
+      result.errors.push(
+        `Lock conflict: another push is in progress (instance ${existingInstance}, expires ${expiresAt}). ` +
+          `Use --abort to force-release a stale lock.`
+      );
+      return result;
+    }
+    if (err instanceof ApiError && err.status === 404) {
+      // Lock endpoint not available — proceed without locking (backward compat)
+    } else {
+      result.errors.push(`Failed to acquire lock: ${err instanceof Error ? err.message : err}`);
+      return result;
+    }
+  }
+  try {
+    // 1. Load state
+    const state = await readState(workspaceRoot);
+    if (!state) {
+      result.errors.push('No .sapie/state.json found — run `sapie pull` first.');
+      return result;
+    }
+
+    // 2. Detect changes
+    const changes = await detectChanges(api, workspaceRoot, state);
+
+    // 3. Apply: creates first
+    for (const op of changes.creates) {
+      try {
+        const created = await api.createContent({
+          name: op.name,
+          parentId: op.parentId,
+          type: op.type,
+        });
+
+        // Add entry to state
+        state.entries[created.id] = {
+          id: created.id,
+          type: op.type === ContentType.DIRECTORY ? 'directory' : 'note',
+          name: created.name,
+          parentId: created.parentId,
+          updatedAt: created.updatedAt,
+          bodyUpdatedAt: created.body?.updatedAt ?? null,
+          localPath: op.localPath,
+        };
+        result.created++;
+      } catch (err) {
+        result.errors.push(
+          `Failed to create ${op.localPath}: ${err instanceof Error ? err.message : err}`
+        );
+      }
+    }
+
+    // 4. Renames
+    for (const op of changes.renames) {
+      try {
+        const updated = await api.patchContent(op.id, { name: op.newName });
+        const entry = state.entries[op.id];
+        if (entry) {
+          entry.name = updated.name;
+          entry.updatedAt = updated.updatedAt;
+        }
+        result.renamed++;
+      } catch (err) {
+        result.errors.push(
+          `Failed to rename ${op.localPath}: ${err instanceof Error ? err.message : err}`
+        );
+      }
+    }
+
+    // 5. Body updates
+    for (const op of changes.bodyUpdates) {
+      try {
+        const updated = await api.putBody(op.id, op.body, 'text/markdown', op.expectedRevision);
+        const entry = state.entries[op.id];
+        if (entry) {
+          entry.bodyUpdatedAt = updated.body?.updatedAt ?? null;
+          entry.updatedAt = updated.updatedAt;
+        }
+        updateBodyHash(state, op.id, op.body);
+        result.updated++;
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 409) {
+          result.conflicts++;
+          result.errors.push(
+            `Conflict on ${op.localPath}: body was modified remotely — run \`sapie pull\` to resolve.`
+          );
+        } else {
+          result.errors.push(
+            `Failed to update ${op.localPath}: ${err instanceof Error ? err.message : err}`
+          );
+        }
+      }
+    }
+
+    // 6. Deck card changes
+    for (const change of changes.deckCardChanges) {
+      try {
+        await syncDeckCards(api, change);
+        result.deckCardsChanged++;
+      } catch (err) {
+        result.errors.push(
+          `Failed to sync deck cards in ${change.localPath}: ${err instanceof Error ? err.message : err}`
+        );
+      }
+    }
+
+    // 7. Deletes (soft-delete)
+    for (const op of changes.deletes) {
+      try {
+        const cascade = op.isNote;
+        await api.deleteContent(op.id, cascade);
+        delete state.entries[op.id];
+        if (op.isNote) {
+          delete state.bodyHashByContentId[op.id];
+        }
+        result.deleted++;
+      } catch (err) {
+        result.errors.push(
+          `Failed to delete ${op.localPath}: ${err instanceof Error ? err.message : err}`
+        );
+      }
+    }
+
+    // 8. Update state
+    state.lastSyncAt = new Date().toISOString();
+    await writeState(workspaceRoot, state);
+
     return result;
-  }
-
-  // 2. Detect changes
-  const changes = await detectChanges(api, workspaceRoot, state);
-
-  // 3. Apply: creates first
-  for (const op of changes.creates) {
-    try {
-      const created = await api.createContent({
-        name: op.name,
-        parentId: op.parentId,
-        type: op.type,
-      });
-
-      // Add entry to state
-      state.entries[created.id] = {
-        id: created.id,
-        type: op.type === ContentType.DIRECTORY ? 'directory' : 'note',
-        name: created.name,
-        parentId: created.parentId,
-        updatedAt: created.updatedAt,
-        bodyUpdatedAt: created.body?.updatedAt ?? null,
-        localPath: op.localPath,
-      };
-      result.created++;
-    } catch (err) {
-      result.errors.push(
-        `Failed to create ${op.localPath}: ${err instanceof Error ? err.message : err}`
-      );
-    }
-  }
-
-  // 4. Renames
-  for (const op of changes.renames) {
-    try {
-      const updated = await api.patchContent(op.id, { name: op.newName });
-      const entry = state.entries[op.id];
-      if (entry) {
-        entry.name = updated.name;
-        entry.updatedAt = updated.updatedAt;
-      }
-      result.renamed++;
-    } catch (err) {
-      result.errors.push(
-        `Failed to rename ${op.localPath}: ${err instanceof Error ? err.message : err}`
-      );
-    }
-  }
-
-  // 5. Body updates
-  for (const op of changes.bodyUpdates) {
-    try {
-      const updated = await api.putBody(op.id, op.body, 'text/markdown', op.expectedRevision);
-      const entry = state.entries[op.id];
-      if (entry) {
-        entry.bodyUpdatedAt = updated.body?.updatedAt ?? null;
-        entry.updatedAt = updated.updatedAt;
-      }
-      updateBodyHash(state, op.id, op.body);
-      result.updated++;
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 409) {
-        result.conflicts++;
-        result.errors.push(
-          `Conflict on ${op.localPath}: body was modified remotely — run \`sapie pull\` to resolve.`
-        );
-      } else {
-        result.errors.push(
-          `Failed to update ${op.localPath}: ${err instanceof Error ? err.message : err}`
-        );
+  } finally {
+    if (hasLock) {
+      try {
+        await api.releaseLock(instanceId);
+      } catch {
+        // Lock release failure is non-fatal
       }
     }
   }
-
-  // 6. Deck card changes
-  for (const change of changes.deckCardChanges) {
-    try {
-      await syncDeckCards(api, change);
-      result.deckCardsChanged++;
-    } catch (err) {
-      result.errors.push(
-        `Failed to sync deck cards in ${change.localPath}: ${err instanceof Error ? err.message : err}`
-      );
-    }
-  }
-
-  // 7. Deletes (soft-delete)
-  for (const op of changes.deletes) {
-    try {
-      const cascade = op.isNote;
-      await api.deleteContent(op.id, cascade);
-      delete state.entries[op.id];
-      if (op.isNote) {
-        delete state.bodyHashByContentId[op.id];
-      }
-      result.deleted++;
-    } catch (err) {
-      result.errors.push(
-        `Failed to delete ${op.localPath}: ${err instanceof Error ? err.message : err}`
-      );
-    }
-  }
-
-  // 8. Update state
-  state.lastSyncAt = new Date().toISOString();
-  await writeState(workspaceRoot, state);
-
-  return result;
 }
 
 async function detectChanges(
