@@ -211,8 +211,12 @@ Fetches the entire content tree and writes to the local workspace.
 4. Create local directory structure.
 5. Generate `AGENTS.md` and `.gitignore` if absent (first run only — never overwrite user edits).
 6. Write `.sapie/state.json`.
-7. Report: `✓ Pulled 3 folders, 12 notes, 2 decks (5 new, 12 unchanged)`.
-
+7. Report summary. If collisions occurred, append a warning after the main report:
+   ```
+   ✓ Pulled 3 folders, 12 notes, 2 decks (5 new, 12 unchanged)
+   ⚠ 1 collision: folder 'Foo.md' dropped — note 'Foo' took precedence.
+     Rename the conflicting folder in Sapie and re-pull to recover it.
+   ```
 **First run:** Creates workspace directory + `.sapie/` if needed.
 
 **Note on the API:** `GET /:id/children` and `POST /api/content` Swagger summaries say "notes and folders" but both endpoints **actually handle decks** — the implementation already supports `ContentType.DECK`. The CLI treats them as such; the Swagger text is stale (a separate repo chore).
