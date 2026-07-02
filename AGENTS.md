@@ -98,6 +98,19 @@ Prefer native tools over IDE MCP for TypeScript work. Full rules:
 Key finding: this project is `JAVA_MODULE` in IntelliJ — most IDE language-analysis tools
 are unreliable for TypeScript. Stick to native tools for code intelligence.
 
+## Agent memory (MCP)
+
+Persistent memory via **agentmemory** MCP server (`memory_recall`, `memory_save`, etc.).
+Daemon runs at `http://127.0.0.1:3111`.
+
+- **Session start** (non-trivial work): call `memory_recall` with project name, feature area,
+  or keywords. Use returned context; don't re-ask for stored preferences.
+- **During work**: call `memory_save` for durable knowledge — architecture choices,
+  conventions, commands, gotchas. Prefer facts the next session needs.
+- **Session end**: save any unsaved durable knowledge.
+
+Scope: **sapie** project. Never store secrets.
+
 ## AI workflow research (OpenSpec, OpenCode, MCP)
 
 The owner is adopting practices from:
