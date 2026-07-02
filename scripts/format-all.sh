@@ -14,3 +14,9 @@ cd packages/web
 pnpm run format
 cd ../..
 printf "OK\n\n"
+
+echo "Formatting packages/cli..."
+cd packages/cli
+pnpm run format
+cd ../..
+printf "OK\n\n"
