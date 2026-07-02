@@ -57,7 +57,9 @@ A new package `packages/cli/` — `@sapie/cli` — that synchronizes the user's 
 
 ### `.md/` directory collision
 
-Content names permit `.` (dots). A folder named `Foo.md` and a note named `Foo` would both map to the path `Foo.md/`. This is rare but unambiguous in practice: a note's `Foo.md/` directory contains `index.md`; a folder's `Foo.md/` directory contains other content. The CLI uses **the presence of `index.md`** as the note discriminator when ambiguity is possible. On push, the CLI detects the collision if a local directory named `Foo.md/` has no `index.md` but the remote has a note named `Foo` — it skips the path and reports a collision. The user renames one.
+Content names permit `.` (dots). A folder named `Foo.md` and a note named `Foo` would both map to the path `Foo.md/`. The resolution rule: **notes win.** If both a folder `Foo.md/` and a note `Foo` exist in the same remote parent, pull writes the note as `Foo.md/index.md` and reports the folder as a conflict — the user must rename the folder in Sapie and pull again. On push, the same rule applies: if a local directory `Foo.md/` has no `index.md` but the remote has a note `Foo` at the same level, the CLI skips the path and reports a collision.
+
+In normal usage this is extremely rare (who names a folder `Something.md`?). The `index.md` presence is the discriminator: a directory with `index.md` is a note; without one, it's a folder.
 
 ### Markdown Link Translation (Phase 2)
 
@@ -102,7 +104,7 @@ interface SyncState {
   version: 1;
   lastSyncAt: string;                   // ISO 8601
   rootId: string;                       // Sapie root folder ID
-  bodyHashByContentId: Record<string, string>;  // SHA-256 of last-synced body bytes
+  bodyHashByContentId: Record<string, string>;  // SHA-256 of last-synced body bytes (LF-normalized)
   entries: Record<string, SyncEntry>;             // keyed by content ID
 }
 
@@ -118,11 +120,19 @@ interface SyncEntry {
 
 // Deck entries carry card tracking for diff detection:
 interface DeckSyncEntry extends SyncEntry {
-  type: 'deck';
   cardIds: string[];                    // ordered list of card IDs
-  cardHash: string;                     // SHA-256 of JSON cards array
+  cardHash: string;                     // SHA-256 of canonical card data (see below)
 }
 ```
+
+**`cardHash` canonicalization:** To avoid false-positive diffs when a JSON formatter re-serializes the deck file (whitespace, key order), the hash is computed over a **canonical representation**, not the raw file bytes:
+
+1. Extract `(id, front, back)` for each card (ignore study state fields).
+2. Sort by `id` (nulls sort last, then by `front`, then `back` for deterministic tie-breaking on new cards).
+3. Join each tuple with `\t` (tab), join tuples with `\n`.
+4. SHA-256 the resulting string.
+
+This means reformatting the JSON (e.g., IntelliJ "Reformat Code") produces an identical `cardHash`. A test must verify: parse → serialize → parse → produce same hash as original.
 
 ---
 
@@ -208,10 +218,11 @@ Detects local changes and pushes to the API.
    - New file/dir → `POST /api/content`
    - Modified `index.md` (content hash changed) → `PUT /api/content/:id/body?expectedRevision=...`
    - First body upload (local has content, state has `bodyUpdatedAt: null`) → `PUT …/body?expectedRevision=""`
-   - Renamed directory → `PATCH /api/content/:id`
+   - Renamed directory → `PATCH /api/content/:id` with `{ name }`
+   - Moved to different parent (local parent dir maps to a different `parentId` than state) → `PATCH /api/content/:id` with `{ parentId, name }`
    - Deleted file/dir → `DELETE /api/content/:id?cascade=true` (soft-delete — GCS bytes are not purged)
    - Deck card changes → card CRUD (see [Deck & Card Syncing](#deck--card-syncing))
-3. **Apply in order:** creates → renames → body updates → card changes → deletes.
+3. **Apply in order:** creates → renames & moves → body updates → card changes → deletes.
 4. **Release lock** — `DELETE /api/sync/lock`. (Phase 3)
 5. **Update state** — write `.sapie/state.json`.
 6. Report: `✓ Pushed: 2 created, 3 updated, 1 renamed, 1 deleted, 2 conflicts`.
@@ -220,7 +231,8 @@ Detects local changes and pushes to the API.
 1. Existence vs. state (new/deleted).
 2. Content hash (SHA-256) vs. `bodyHashByContentId` in state.
 3. mtime vs. `lastSyncAt` (fallback).
-4. Name mismatch.
+4. Name mismatch (rename).
+5. Parent mismatch — local parent dir's content ID differs from `entry.parentId` (move).
 
 **Concurrency gap in Phase 1–2:** `expectedRevision` guards body bytes only. **Renames, creates, and deletes are last-writer-wins** — a concurrent web rename between `pull` and `push` is silently clobbered. This is acceptable for a single-user tool where the user knows when they're editing in the web app vs. CLI. The real mitigation is Phase 3 pessimistic locking. This gap is documented in `AGENTS.md` ("run `sapie pull` before editing in the web app").
 
@@ -235,6 +247,7 @@ $ sapie status
 Changes to push:
   + AI Engineering/GPT Architecture.md/            (new note)
   ~ DSA/Arrays.md/index.md                         (modified body)
+  → DSA/Data Structures/Arrays.md/                 (moved to different folder)
   ~ DSA/Linked Lists.md/ → DSA/Lists.md/           (renamed)
   + DSA/Arrays.md/decks/Ch1 Questions.json         (new deck)
   ~ DSA/Arrays.md/decks/Ch1 Questions.json         (cards: +2 −1)
