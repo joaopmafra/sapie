@@ -4,31 +4,32 @@
 
 ### This session
 
-- **CLI Phase 2**: Google Sign-In, MarkdownService (blob URL translation), `sapie status`, `sapie deck` subcommands
-- **Branch**: `feat/cli-phase2` (feature branch from main)
-- **Nock fix**: Updated `test/setup.ts` to suppress nock v14 `uncaughtException` events (pre-existing issue with IPv6/lifecycle artifacts)
+- **CLI Phase 3**: Pessimistic locking (API endpoints + CLI integration), parallel body downloads on pull
+- **Branch**: `feat/cli-phase3` (feature branch from main)
+- **Docs cleanup**: Updated `packages/cli/AGENTS.md` and `.cursor/skills/sapie-cli/SKILL.md` with Phase 2 additions
 
 ## What was implemented
 
-### Sapie Sync CLI — Phase 2 (this session, branch `feat/cli-phase2`)
+### Sapie Sync CLI — Phase 3 (this session, branch `feat/cli-phase3`)
 
-- **Google Sign-In**: `sapie login --method google` starts OAuth callback server, opens browser, exchanges auth code for Firebase tokens. Requires `googleClientId` in `.sapie/config.json`. `--method email` fallback for headless/CI.
-- **MarkdownService**: Regex-based blob URL translation (`transformImageUrls`, `findBlobUrls`, `validate`, `parseBlobUrl`). Integrated into pull (remote→local) and push (local→remote). Uses pure regex instead of mdast (ESM incompatible with CJS tsconfig). Service class is indirection layer for future ESM migration.
-- **`sapie status`**: Dry-run change detection showing creates, modifies, renames, moves, deletes, deck card changes. Reuses push change detection logic.
-- **`sapie deck`**: Subcommands `create`, `ls`, `add`, `edit`, `rm` for local flashcard deck management. Offline-only (no API calls).
-- **Config**: Added `googleClientId` and `authEmulatorHost` to `CliConfig`.
-- **118 unit tests** (8 suites): hashing, token-store, api-client, state, pull, push, smoke, markdown
-- **QA verified**: All commands display help, deck create/ls/add/edit/rm round-trip works, status reports auth requirement
+- **Lock API endpoints** (`packages/api/src/sync/`): `POST /api/sync/lock`, `DELETE /api/sync/lock`, `GET /api/sync/lock`. Single-user pessimistic locking with 5-min auto-expiry, Firestore-backed. Force-release via `?force=true` for stale lock cleanup. 9 controller tests.
+- **Lock integration in push**: Acquires lock before change detection, releases in `finally`. Handles 409 (conflict → abort with details), 404 (endpoint not available → proceed without locking for backward compat). `--abort` flag on `sapie push` for force-release.
+- **Parallel body downloads on pull**: Two-pass strategy — BFS discovery collects note metadata, then parallel body downloads with concurrency cap (5). Same results as sequential pull; faster on multi-note trees.
+- **Docs**: `packages/cli/AGENTS.md` updated with `status`, `deck` commands + all Phase 2 services + full test file list. `.cursor/skills/sapie-cli/SKILL.md` updated with Phase 3 deferral notes + expanded key files table.
 
-### Sapie Sync CLI — Phase 1 (previous session, PR #27 + follow-up fb88e63)
+### Sapie Sync CLI — Phase 2 (previous session, PR #28)
 
-- **New package `packages/cli/`**: `@sapie/cli` — `sapie` binary with `login`, `logout`, `pull`, `push` subcommands
+- **Google Sign-In**: `sapie login --method google` starts OAuth callback server, opens browser, exchanges auth code for Firebase tokens. Requires `googleClientId` in `.sapie/config.json`.
+- **MarkdownService**: Regex-based blob URL translation (`transformImageUrls`, `findBlobUrls`, `validate`, `parseBlobUrl`). Integrated into pull and push.
+- **`sapie status`**: Dry-run change detection. **`sapie deck`**: Subcommands `create`, `ls`, `add`, `edit`, `rm`.
+
+### Sapie Sync CLI — Phase 1 (PR #27)
+
+- **New package `packages/cli/`**: `sapie` binary with `login`, `logout`, `pull`, `push` subcommands
 - **Auth**: email/password login via Firebase Auth REST API, token refresh, logout
-- **API client**: typed HTTP wrapper (axios) with Bearer token injection, ApiError (RFC 7807)
+- **API client**: typed HTTP wrapper (axios) with Bearer token injection
 - **State management**: `.sapie/state.json` read/write, SHA-256 content hashing
-- **Pull**: recursive tree walk, writes notes/folders/decks to local workspace
-- **Push**: change detection, CRUD, 409 conflict handling
-- **AGENTS.md + .gitignore generation** on first pull
+- **Pull/Push**: recursive tree walk, change detection, CRUD, 409 conflict handling
 
 ---
 
@@ -38,26 +39,27 @@
 ✅  Story 53–84    — All MVP stories plus secondary study paths
 ✅  CLI Phase 1    — Sapie Sync CLI (pull, push, login, logout)
 ✅  CLI Phase 2    — Google Sign-In, MarkdownService, status, deck
+✅  CLI Phase 3    — Pessimistic locking, parallel body downloads
 ```
 
-**All MVP work is complete. CLI Phase 2 adds Google auth, blob URL translation, status, and deck commands.**
+**All three CLI phases are complete.** Shared packages (`@sapie/markdown`, `@sapie/validation`) deferred until a second consumer exists.
 
 ---
 
 ## Outstanding
 
-- **CLI Phase 3**: pessimistic locking, parallel body downloads, shared packages (`@sapie/markdown`, `@sapie/validation`)
-- **Additional tests**: Google auth tests, status service tests, deck command tests (delegated to subagents)
-- **E2E tests**: Not maintained during MVP push.
-- **Blob/image sync**: URL translation infrastructure is in place; binary blob download/upload deferred.
-- **Google Sign-In real auth testing**: Requires valid `googleClientId` from Firebase Console.
-- **Knowledge-area filtering**: Deferred to future story.
-- **FSRS 4-button grading**: Schema-compatible upgrade deferred.
+- **Shared packages**: `@sapie/markdown` and `@sapie/validation` extraction — deferred until API needs them (second consumer)
+- **MarkdownService AST upgrade**: Regex → mdast — blocked until CLI tsconfig switches to ESM or a bundler is added
+- **Blob/image sync**: URL translation infrastructure is in place; binary blob download/upload deferred
+- **Google Sign-In real auth testing**: Requires valid `googleClientId` from Firebase Console
+- **Lock-aware web UI middleware**: API rejects web writes while a CLI lock is held — deferred (tracked in `docs/research/sapie_sync_locking_roadmap.md`)
+- **FSRS 4-button grading**: Schema-compatible upgrade deferred
 
 ## Known issues
 
-- **Nock v14 lifecycle**: `pnpm test` (all suites together) may fail with `ECONNREFUSED` from nock IPv6/lifecycle artifacts. Individual suites pass. `test/setup.ts` has been updated to suppress these but the underlying nock bug remains. Tracked in nock v14 issue tracker.
-- **MarkdownService regex**: Uses regex instead of AST parsing (ESM incompatibility). Works correctly for standard markdown images but does not distinguish code blocks from regular text. Acceptable for MVP; full AST parser planned for Phase 3 `@sapie/markdown` extraction.
+- **Nock v14 lifecycle**: `pnpm test` (all suites together) may fail with `ECONNREFUSED` from nock IPv6/lifecycle artifacts. Individual suites pass. `test/setup.ts` suppresses these.
+- **MarkdownService regex**: Uses regex instead of AST parsing (ESM incompatibility). Does not distinguish code blocks from regular text. Acceptable for MVP.
+- **Lock not required for push**: When the lock API endpoint returns 404 (not yet deployed), push proceeds without locking. This is intentional backward compatibility.
 
 ## Key design docs
 
@@ -69,11 +71,11 @@
 
 | Purpose | Container | Auth | Firestore | Storage | UI |
 |---------|-----------|------|-----------|---------|----|
-| API unit tests | `sapie-firebase-test-emulator` | 9098 | — | 9199 | 4001 |
+| API unit tests | `sapie-firebase-test-emulator` | 9098 | 8181 | 9199 | 4001 |
 | Local dev | `sapie-firebase-local-dev` | 9100 | 9200 | 9199 | 4002 |
 | CLI unit tests | — (nock + real fs, no emulator) | — | — | — | — |
 
-Backend tests: `cd packages/api && pnpm test` (108 tests, 9 suites)
+Backend tests: `cd packages/api && pnpm test` (121 tests, 11 suites)
 Web tests: `cd packages/web && pnpm test` (71 tests, 17 suites)
-CLI tests: `cd packages/cli && pnpm test` (118 tests, 8 suites)
+CLI tests: `cd packages/cli && pnpm test` (141 tests, 11 suites)
 Full verify: `pnpm run verify`

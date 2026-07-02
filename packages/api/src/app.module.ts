@@ -5,6 +5,7 @@ import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth';
 import { ContentModule } from './content';
 import { CardModule } from './cards/card.module';
+import { SyncModule } from './sync/sync.module';
 import { StudyModule } from './study/study.module';
 import { FirebaseAdminModule } from './firebase';
 import * as process from 'node:process';
@@ -23,6 +24,7 @@ import * as process from 'node:process';
     ContentModule,
     CardModule,
     StudyModule,
+    SyncModule,
   ],
   controllers: [AppController],
 })

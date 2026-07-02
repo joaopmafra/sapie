@@ -21,8 +21,22 @@ export interface PullResult {
   collisions: string[];
 }
 
+interface NoteTask {
+  id: string;
+  localPath: string;
+  name: string;
+  parentId: string | null;
+  updatedAt: string;
+  bodyUpdatedAt: string | null;
+}
+
+interface NoteBodyResult extends NoteTask {
+  body: string | null;
+}
+
 /**
  * Pull the entire content tree from Sapie and write to the local workspace.
+ * Two-pass: BFS discovery (sequential) then parallel body downloads (concurrency-capped).
  */
 export async function pull(api: ApiClient, workspaceRoot: string): Promise<PullResult> {
   const result: PullResult = {
@@ -44,7 +58,9 @@ export async function pull(api: ApiClient, workspaceRoot: string): Promise<PullR
   // 2. Load existing state
   const prevState = await readState(workspaceRoot);
 
-  // 3. Recursively walk the tree (BFS)
+  // 3. First pass: BFS to discover all content, write folder structure and decks
+  const noteTasks: NoteTask[] = [];
+
   const queue: Array<{ content: ContentResponse; localPath: string }> = [
     { content: root, localPath: rootLocalPath },
   ];
@@ -80,45 +96,17 @@ export async function pull(api: ApiClient, workspaceRoot: string): Promise<PullR
       case ContentType.NOTE: {
         result.notes++;
 
-        // Fetch body
-        let body: string | null = null;
-        try {
-          body = await api.getBody(content.id);
-        } catch {
-          // 404 → no body yet
-        }
-
-        // Transform remote blob URLs → local blobs/{blobId} paths
-        if (body) {
-          const markdownSvc = createMarkdownService();
-          body = markdownSvc.transformImageUrls(body, (url) => {
-            const parsed = parseBlobUrl(url);
-            if (parsed) return `blobs/${parsed.blobId}`;
-            return url;
-          });
-        }
-        // Check if unchanged
-        const bodyHash = body ? computeBodyHash(body) : null;
-        const prevHash = prevState?.bodyHashByContentId[content.id];
-        if (prevHash !== undefined && prevHash === bodyHash) {
-          result.unchanged++;
-        } else {
-          result.created++;
-        }
-
-        await writeNoteBody(workspaceRoot, localPath, body);
-
-        entries[content.id] = {
+        // Defer body download — collect metadata only
+        noteTasks.push({
           id: content.id,
-          type: 'note',
+          localPath,
           name: content.name,
           parentId: content.parentId,
           updatedAt: content.updatedAt,
           bodyUpdatedAt: content.body?.updatedAt ?? null,
-          localPath,
-        };
+        });
 
-        // Fetch children (decks)
+        // Fetch children (decks) — these are lightweight, do inline
         const children = await api.listChildren(content.id);
         for (const child of children) {
           if (child.type === ContentType.DECK) {
@@ -152,19 +140,68 @@ export async function pull(api: ApiClient, workspaceRoot: string): Promise<PullR
     }
   }
 
-  // 4. Build and write state
+  // 4. Second pass: download all note bodies in parallel batches
+  const CONCURRENCY = 5;
+  for (let i = 0; i < noteTasks.length; i += CONCURRENCY) {
+    const batch = noteTasks.slice(i, i + CONCURRENCY);
+    const bodyResults: NoteBodyResult[] = await Promise.all(
+      batch.map(async (task): Promise<NoteBodyResult> => {
+        let body: string | null = null;
+        try {
+          body = await api.getBody(task.id);
+        } catch {
+          // 404 → no body yet
+        }
+
+        // Transform remote blob URLs → local blobs/{blobId} paths
+        if (body) {
+          const markdownSvc = createMarkdownService();
+          body = markdownSvc.transformImageUrls(body, (url) => {
+            const parsed = parseBlobUrl(url);
+            if (parsed) return `blobs/${parsed.blobId}`;
+            return url;
+          });
+        }
+
+        return { ...task, body };
+      })
+    );
+
+    // Write bodies sequentially within the batch (fs-safe)
+    for (const task of bodyResults) {
+      const bodyHash = task.body ? computeBodyHash(task.body) : null;
+      const prevHash = prevState?.bodyHashByContentId[task.id];
+      if (prevHash !== undefined && prevHash === bodyHash) {
+        result.unchanged++;
+      } else {
+        result.created++;
+      }
+
+      await writeNoteBody(workspaceRoot, task.localPath, task.body);
+
+      entries[task.id] = {
+        id: task.id,
+        type: 'note' as const,
+        name: task.name,
+        parentId: task.parentId,
+        updatedAt: task.updatedAt,
+        bodyUpdatedAt: task.bodyUpdatedAt,
+        localPath: task.localPath,
+      };
+    }
+  }
+
+  // 5. Build and write state
   const state = createEmptyState(root.id);
   state.lastSyncAt = new Date().toISOString();
   state.entries = entries;
 
-  // Populate body hashes from written files (skip notes with bodyUpdatedAt: null — they had no body)
+  // Populate body hashes from written files (skip notes with bodyUpdatedAt: null)
   for (const [id, entry] of Object.entries(entries)) {
-    if (entry.type === 'note') {
-      if (entry.bodyUpdatedAt !== null) {
-        const writtenBody = await readNoteBody(workspaceRoot, entry.localPath);
-        if (writtenBody !== null) {
-          state.bodyHashByContentId[id] = computeBodyHash(writtenBody);
-        }
+    if (entry.type === 'note' && entry.bodyUpdatedAt !== null) {
+      const body = await readNoteBody(workspaceRoot, entry.localPath);
+      if (body !== null) {
+        state.bodyHashByContentId[id] = computeBodyHash(body);
       }
     }
   }

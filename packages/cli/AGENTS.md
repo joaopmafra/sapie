@@ -7,16 +7,19 @@ Full design: [docs/research/sapie_sync_cli_proposal.md](../../docs/research/sapi
 
 ## Architecture
 
-- **Entry point**: `src/index.ts` — yargs command router (`login`, `logout`, `pull`, `push`)
+- **Entry point**: `src/index.ts` — yargs command router (`login`, `logout`, `pull`, `push`, `status`, `deck`)
 - **Commands**: thin shims in `src/commands/` — parse args, wire services, report results
 - **Services** (the real logic):
   - `lib/api/api-client.ts` — typed axios wrapper with Firebase token injection, error handling
-  - `lib/auth/auth.service.ts` — Firebase Auth REST API (email/password sign-in, token refresh)
+  - `lib/auth/auth.service.ts` — Firebase Auth REST API (email/password + Google OAuth sign-in)
+  - `lib/auth/oauth-server.ts` — local HTTP callback server for Google OAuth flow
   - `lib/auth/token-store.ts` — read/write `.sapie/auth.json` (600 perms, gitignored)
+  - `lib/markdown/markdown.service.ts` — blob URL translation (regex-based, mdast-indirection layer)
   - `lib/state/state.service.ts` — read/write `.sapie/state.json`, hash comparison
   - `lib/state/hashing.ts` — SHA-256 canonical hashing (LF-normalized bodies, sorted card data)
-  - `lib/sync/pull.service.ts` — recursive tree walk, write to disk
-  - `lib/sync/push.service.ts` — change detection, CRUD orchestration
+  - `lib/sync/pull.service.ts` — recursive tree walk, write to disk, blob URL transform
+  - `lib/sync/push.service.ts` — change detection, CRUD orchestration, blob URL transform
+  - `lib/sync/status.service.ts` — dry-run change detection (reuses push logic)
   - `lib/workspace/workspace.service.ts` — filesystem I/O (notes as `.md/` dirs, decks as JSON)
   - `lib/workspace/agents-md.ts` — AGENTS.md + .gitignore generation on first pull
 - **No Firebase SDK** — auth is pure REST. API client is plain axios.
@@ -47,16 +50,18 @@ Notes win if a folder and note would collide on the same path.
   Fakes only at external boundaries (HTTP via nock, filesystem via `os.tmpdir()`).
 - **nock for HTTP mocking** — creates fake HTTP interceptors per test, cleaned up in `afterEach`.
   Known gotcha: nock v14 emits async `ECONNREFUSED` after suite completes when interceptors
-  are removed while axios keep-alive is pending. Suppressed via `test/setup.ts` pattern.
-- **Real fs** — tests write to `os.tmpdir()` subdirectories, cleaned up in `afterEach`.
-- **No emulator needed** — CLI tests don't touch Firebase. `pnpm test` runs standalone.
 - **Test files** in `test/`:
   - `test/state/hashing.spec.ts` — 24 pure-function tests
   - `test/state/state.service.spec.ts` — 22 tests (fs round-trip + hash detection)
   - `test/auth/token-store.spec.ts` — 10 tests (fs round-trip)
+  - `test/auth/google-auth.spec.ts` — 5 tests (OAuth server lifecycle)
   - `test/api/api-client.spec.ts` — 20 tests (nock HTTP boundary)
+  - `test/markdown/markdown.service.spec.ts` — 25 tests (blob URL transform, validate, find)
   - `test/sync/pull.service.spec.ts` — 7 integration tests (nock + fs)
   - `test/sync/push.service.spec.ts` — 9 integration tests (nock + fs)
+  - `test/sync/status.service.spec.ts` — 9 tests (change detection, format output)
+  - `test/commands/deck.spec.ts` — 9 tests (deck subcommands)
+  - `test/smoke/cli.spec.ts` — 1 smoke test (Express fake server)
 
 ## Adding a new subcommand
 

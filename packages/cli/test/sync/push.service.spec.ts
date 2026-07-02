@@ -124,17 +124,19 @@ describe('push', () => {
   });
   let api: ApiClient;
 
+  /** Mock the lock endpoints to simulate API not supporting locks (Phase 3 compat). */
+  function nockNoLock(): void {
+    nock(API_BASE).post('/sync/lock').reply(404);
+    nock(API_BASE).delete('/sync/lock').query(true).reply(204);
+  }
+
   beforeEach(() => {
     workspaceRoot = path.join(
       os.tmpdir(),
       `sapie-push-test-${Date.now()}-${Math.random().toString(36).slice(2)}`
     );
     api = new ApiClient(API_BASE);
-  });
-
-  afterEach(async () => {
-    nock.cleanAll();
-    await fs.rm(workspaceRoot, { recursive: true, force: true });
+    nockNoLock();
   });
 
   // ── Test 1: No state file ────────────────────────────────────────
