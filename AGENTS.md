@@ -78,6 +78,12 @@ use [docs/dev/development_principles.md](docs/dev/development_principles.md).
 **Canonical reading order and full index:** [docs/dev/README.md](docs/dev/README.md) — use that list when ramping
 up or adding a new dev doc (keep it in sync there, not here).
 
+**Package-scoped instructions:**
+
+- [packages/api/AGENTS.md](packages/api/AGENTS.md) — NestJS backend conventions
+- [packages/web/AGENTS.md](packages/web/AGENTS.md) — React frontend conventions
+- [packages/test-e2e/AGENTS.md](packages/test-e2e/AGENTS.md) — Playwright E2E conventions
+
 **Often-needed links:**
 
 - [Contributing guidelines](docs/dev/contributing_guidelines.md)
