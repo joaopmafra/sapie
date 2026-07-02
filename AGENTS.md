@@ -83,6 +83,7 @@ up or adding a new dev doc (keep it in sync there, not here).
 - [packages/api/AGENTS.md](packages/api/AGENTS.md) — NestJS backend conventions
 - [packages/web/AGENTS.md](packages/web/AGENTS.md) — React frontend conventions
 - [packages/test-e2e/AGENTS.md](packages/test-e2e/AGENTS.md) — Playwright E2E conventions
+- [packages/cli/AGENTS.md](packages/cli/AGENTS.md) — Sapie Sync CLI conventions
 
 **Often-needed links:**
 
