@@ -12,7 +12,7 @@ cd packages/cli
 pnpm install
 pnpm run build          # tsc
 pnpm run dev            # tsx src/index.ts <command>
-pnpm test               # jest (92 tests, 6 suites)
+pnpm test               # jest (93 tests, 7 suites)
 pnpm run verify:all     # types + lint + format
 ```
 
@@ -30,32 +30,38 @@ Fakes only at external boundaries:
 
 | Boundary | Fake |
 |----------|------|
-| HTTP (Sapie API) | nock interceptors |
+| HTTP (Sapie API) — unit tests | nock interceptors |
+| HTTP (Sapie API) — integration tests | Express fake server |
 | Filesystem | `os.tmpdir()` subdirectories |
 
-**No Firebase emulator needed.** CLI tests run standalone against `nock` + real fs.
+**No Firebase emulator needed.** CLI tests run standalone against nock/Express + real fs.
 
 ### Test files
 
-| File | Tests | Style |
-|------|-------|-------|
-| `test/state/hashing.spec.ts` | 24 | Pure functions |
-| `test/state/state.service.spec.ts` | 22 | fs round-trip + hash detection |
-| `test/auth/token-store.spec.ts` | 10 | fs round-trip |
-| `test/api/api-client.spec.ts` | 20 | nock HTTP boundary |
-| `test/sync/pull.service.spec.ts` | 7 | nock + fs integration |
-| `test/sync/push.service.spec.ts` | 9 | nock + fs integration |
-| `test/smoke/cli.spec.ts` | 1 | End-to-end binary call + round-trip |
+| File | Tests | Style | HTTP fake |
+|------|-------|-------|------------|
+| `test/state/hashing.spec.ts` | 24 | Pure functions | — |
+| `test/state/state.service.spec.ts` | 22 | fs round-trip | — |
+| `test/auth/token-store.spec.ts` | 10 | fs round-trip | — |
+| `test/api/api-client.spec.ts` | 20 | HTTP boundary | nock |
+| `test/sync/pull.service.spec.ts` | 7 | Integration | nock |
+| `test/sync/push.service.spec.ts` | 9 | Integration | nock |
+| `test/smoke/cli.spec.ts` | 1 | E2E round-trip | Express |
+| `test/qa/cli-qa.ts` | — | Manual QA script | Express |
 
-### Nock vs Express trade-off
+### HTTP faking: Express preferred for integration tests
 
-Integration tests (`pull`, `push`) use **nock** for HTTP mocking. Nock v14 has a known async
-lifecycle issue: interceptors emit `ECONNREFUSED` as unhandled rejections when removed while
-axios keep-alive connections are pending. `test/setup.ts` suppresses these specific patterns.
+**Use Express for service-level integration tests** (pull, push, smoke). Stand up
+`app.listen(0, '127.0.0.1')`, write inline handlers. This is the pattern used by
+`test/smoke/cli.spec.ts` and `test/qa/cli-qa.ts`.
 
-If nock becomes too painful for a new test, switch to **Express**:
-stand up `app.listen(0, '127.0.0.1')`, write inline handlers, use a real TCP connection.
-This avoids the async cleanup issue at the cost of slightly more setup boilerplate.
+Nock is acceptable for unit-level api-client tests (single HTTP boundary). It has
+two known gotchas documented in `packages/cli/AGENTS.md`:
+
+1. **Async lifecycle:** emits `ECONNREFUSED` as unhandled rejection when interceptors
+   are removed while axios keep-alive is pending. Suppressed via `test/setup.ts`.
+2. **`disableNetConnect('127.0.0.1')` does NOT cover `localhost`** — `localhost` can
+   resolve to IPv6 `::1`. Use `127.0.0.1` everywhere, or skip `disableNetConnect`.
 
 ## Canonical hash rules
 
@@ -77,6 +83,22 @@ A test verifies: parse JSON → serialize → parse → same hash as original (r
 3. Add API endpoints to `lib/api/api-client.ts` if needed
 4. Write tests in `test/<area>/<name>.spec.ts`
 5. Run `pnpm test && pnpm verify:all`
+
+## Known issues
+
+### Rename detection: delete+create instead of rename+patch
+
+When a note directory is renamed on disk (e.g., `Old.md` → `New.md`), the push service
+detects it as **delete + create** rather than a single **rename** PATCH.
+
+**Root cause:** change detection runs creates first, deletes second, renames third —
+by the time rename checks run, the old entry is already marked for deletion.
+
+**Impact:** Low. Content is preserved (delete+create on server). The rename becomes two
+operations instead of one, and the note gets a new content ID on the server.
+
+**Fix:** reorder change detection to run renames before creates/deletes. Deferred to
+Phase 2 or a follow-up.
 
 ## Local workspace structure
 

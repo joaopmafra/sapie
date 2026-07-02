@@ -87,7 +87,7 @@ describe('token-store', () => {
 });
 ```
 
-### HTTP boundary tests (api-client)
+### HTTP boundary tests (api-client) — use nock
 ```typescript
 // test/api/api-client.spec.ts — nock at the HTTP boundary
 import nock from 'nock';
@@ -106,52 +106,49 @@ describe('ApiClient', () => {
 });
 ```
 
-### Integration tests (pull, push)
+### Integration tests (pull, push, smoke) — prefer Express
+
+**Express is preferred for integration tests.** It avoids nock's async lifecycle issues:
+
 ```typescript
-// test/sync/pull.service.spec.ts — nock + real fs
-import nock from 'nock';
-import { pull } from '../../src/lib/sync/pull.service';
+// test/smoke/cli.spec.ts — Express fake server
+import express from 'express';
 
-describe('pull', () => {
-  let api: ApiClient;
-  let workspaceRoot: string;
-  beforeEach(async () => {
-    workspaceRoot = path.join(os.tmpdir(), `test-${Date.now()}-${Math.random()}`);
-    await fs.mkdir(workspaceRoot);
-    api = new ApiClient('http://localhost:19999');
-  });
-  afterEach(() => { nock.cleanAll(); });
+beforeAll(async () => {
+  const app = express();
+  app.get('/content/root', (_, res) => res.json({ id: 'root-1', type: 'directory', ... }));
+  app.get('/content/:id/children', (req, res) => { /* ... */ });
+  // ... more routes ...
 
-  it('pulls an empty root', async () => {
-    nock('http://localhost:19999').get('/content/root').reply(200, { id: 'r', type: 'directory', ... });
-    nock('http://localhost:19999').get('/content/r/children').reply(200, []);
-    const result = await pull(api, workspaceRoot);
-    expect(result.folders).toBe(1);
+  return new Promise<void>((resolve) => {
+    server = app.listen(0, '127.0.0.1', () => resolve());
   });
 });
+
+afterAll(() => { server.close(); });
 ```
 
-## Nock gotcha
+Nock is acceptable for unit-level api-client tests (single HTTP boundary).
 
-Nock v14 emits async `ECONNREFUSED` / `NetConnectNotAllowedError` as unhandled rejections
-when interceptors are removed (`nock.cleanAll()`) while axios keep-alive connections are pending.
-These fire after test suite completion and can crash the test runner.
+### Nock gotchas
 
-**Mitigation**: `test/setup.ts` installs a `process.prependListener('unhandledRejection')`
-that suppresses only these nock lifecycle patterns. All other unhandled rejections still fail
-the suite via `process.exitCode = 1`.
+1. **Async lifecycle:** nock v14 emits `ECONNREFUSED` as unhandled rejections when
+   interceptors are removed while axios keep-alive connections are pending.
+   `test/setup.ts` suppresses these specific patterns.
 
-**If nock becomes too painful** for a new integration test, switch to Express:
-```typescript
-import express from 'express';
-const app = express();
-app.get('/content/root', (_, res) => res.json({ id: 'r', ... }));
-const server = app.listen(0, '127.0.0.1');
-const port = (server.address() as any).port;
-const api = new ApiClient(`http://127.0.0.1:${port}`);
-// ... test ...
-server.close();
-```
+2. **`disableNetConnect('127.0.0.1')` does NOT cover `localhost`** — `localhost` can
+   resolve to IPv6 `::1`. Use `127.0.0.1` everywhere, or skip `disableNetConnect`.
+
+### QA testing pattern (manual)
+
+When testing the full CLI binary against a fake server:
+
+1. Stand up Express on `app.listen(0, '127.0.0.1')`
+2. Write `.sapie/config.json` + `.sapie/auth.json` (fake token, future expiry)
+3. Run `node dist/index.js <cmd> --workspace <tmpdir>` via `child_process.execFile`
+4. Read state.json and filesystem to verify results
+
+See `test/qa/cli-qa.ts` for the full example. No real Firebase credentials needed.
 
 ## Canonical hash rules
 
@@ -164,6 +161,19 @@ server.close();
 2. Join tuples with `\t`, join lines with `\n`. SHA-256.
 
 A test must verify: parse JSON → serialize → parse → same hash as original (reformat-proof).
+
+## Known issues
+
+### Rename detection: delete+create instead of rename+patch
+
+When a note directory is renamed on disk (e.g., `Old.md` → `New.md`), the push service
+detects it as **delete + create** rather than a single **rename** PATCH. Root cause:
+change detection runs creates first, deletes second, renames third — by the time rename
+checks run, the old entry is already marked for deletion.
+
+**Impact:** Low. Content is preserved (delete+create on server). The rename becomes two
+operations, and the note gets a new content ID. Fix: reorder change detection. Deferred
+to Phase 2.
 
 ## PR convention
 
@@ -188,3 +198,4 @@ A test must verify: parse JSON → serialize → parse → same hash as original
 | `src/lib/workspace/workspace.service.ts` | filesystem I/O |
 | `src/lib/workspace/agents-md.ts` | AGENTS.md + .gitignore generator |
 | `test/setup.ts` | nock unhandled rejection suppression |
+| `test/qa/cli-qa.ts` | manual QA test script |

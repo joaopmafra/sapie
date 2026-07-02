@@ -91,22 +91,35 @@ These are the rules that make diffs consistent across JSON reformatting and OS l
 
 ## Nock vs Express for integration tests
 
-For the `pull.service.spec.ts` and `push.service.spec.ts` integration tests, we use **nock**
-because it's zero-config and fast. However, nock v14 has a known async lifecycle issue:
-interceptors emit `ECONNREFUSED` as an unhandled rejection when removed while axios keep-alive
-connections are pending. The `test/setup.ts` file suppresses these specific patterns.
+**Express is preferred for service-level integration tests** (pull, push, smoke).
+Stand up `app.listen(0, '127.0.0.1')` with a random port per suite, write inline
+handlers. This avoids nock's async lifecycle issue entirely and is the pattern used
+by `test/smoke/cli.spec.ts` and `test/qa/cli-qa.ts`.
 
-If nock becomes too painful for future tests, the proposal offers **Express** as a fallback:
-stand up `app.listen(0, '127.0.0.1')` with a random port per suite, write inline
-`app.get(...)` handlers, and use a real TCP connection. This avoids the async cleanup issue
-entirely at the cost of slightly more setup boilerplate.
+Nock is acceptable for unit-level api-client tests (single HTTP boundary, one
+interceptor per test, no cross-suite interference).
 
-## PR slicing convention
+### Nock gotchas
 
-- **One PR per phase** (Phase 1, Phase 2, Phase 3) — each is a coherent vertical slice.
-- Within a phase, group related sub-tasks (e.g., auth + api-client + state = one PR,
-  pull + push = another). The proposal's sub-task numbering suggests natural seams.
-- Each PR must pass `pnpm run verify` on the CLI package AND the root `pnpm run verify`
-  before merging.
-- Commit format: `type(scope): description` — e.g., `feat(cli): add pull command`,
-  `fix(cli): nock lifecycle cleanup`.
+1. **Async lifecycle:** nock v14 emits `ECONNREFUSED` as unhandled rejections when
+   interceptors are removed while axios keep-alive connections are pending. Suppressed
+   via `test/setup.ts`. Only manifests when multiple nock-using suites run together.
+
+2. **`disableNetConnect('127.0.0.1')` does NOT cover `localhost`.** `localhost` can
+   resolve to IPv6 `::1` while `enableNetConnect` only allows IPv4. Either use
+   `127.0.0.1` in both the client URL and `enableNetConnect`, or skip `disableNetConnect`.
+
+## Known issues
+
+### Rename detection: delete+create instead of rename+patch
+
+When a note directory is renamed to a completely different path (e.g., `Old.md` →
+`New.md`), the push service detects it as **delete + create** rather than a **rename**.
+Root cause: change detection runs creates first, deletes second, renames third — by the
+time rename checks run, the old entry is already marked for deletion.
+
+**Impact:** Low. Content is preserved (delete+create on server). The rename becomes two
+operations instead of one, and the note gets a new content ID. Fix: reorder change
+detection to run renames before creates/deletes.
+
+**Tracked in:** `docs/pm/test_plans/sapie_cli_phase1_qa.md` §Known issue.

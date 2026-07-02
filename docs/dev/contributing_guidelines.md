@@ -38,6 +38,20 @@ files; assistants ask the user).
 - Update docs touched by your change.
 - Do not commit broken code or skip `./scripts/verify-all.sh` failures without fixing or agreeing a deferral.
 
+
+### Adding a new package
+
+When adding a new package to the monorepo (`packages/<name>/`), update these root scripts
+so the quality gates cover it:
+
+- `scripts/verify-all.sh` — add verify:all block
+- `scripts/lint-all.sh` — add lint block
+- `scripts/format-all.sh` — add format block
+- `scripts/verify-all-test-unit.sh` — add verify + test blocks
+- Root `package.json` — add `test:<name>` script
+- Root `AGENTS.md` — add to "Package-scoped instructions" list
+
+Also add a `packages/<name>/AGENTS.md` following the pattern of existing package AGENTS.md files.
 ### Technical references
 
 - [Web](../../packages/web/README.md) · [API](../../packages/api/README.md) · [E2E](../../packages/test-e2e/README.md)
