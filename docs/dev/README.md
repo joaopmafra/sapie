@@ -1,9 +1,13 @@
 # Developer documentation
 
-**Goal:** ship the [MVP](../plans/mvp_objective.md) quickly. Shared context for tools (e.g. Cursor).
+**Goal:** ship the [MVP](../plans/mvp_objective.md) quickly.
 
-**This file is the canonical ordered index** of `docs/dev/` for humans and assistants. When you add or reorder dev docs,
-update this list first; `.cursor/rules/general.mdc` points here so the two do not drift.
+**For AI agents:** start at [AGENTS.md](../../AGENTS.md) at the repo root — the single entry point
+for project context, principles, and key decisions. `.cursor/rules/*.mdc` files are Cursor-compatible
+shims that duplicate critical rules; AGENTS.md is authoritative.
+
+**This file is the canonical ordered index** of `docs/dev/` for human contributors.
+When you add or reorder dev docs, update this list; keep AGENTS.md in sync for new top-level sections.
 
 Suggested reading order:
 
@@ -19,6 +23,7 @@ Assistants: [ai_agent_guidelines.md](ai_agent_guidelines.md)
 Environment and agents:
 
 - [agentmemory setup](agentmemory_setup.md) — persistent memory (Cursor documented; OpenCode, pi, Claude Code TBD)
+- [IDE MCP tool guidelines](ide_mcp_tool_guidelines.md) — when to use IDE MCP tools vs native agent tools
 
 Firebase Emulator Suite for dev and tests is started via **Docker Compose** at the repo root
 (`compose.local-dev.yml`, `compose.test-unit.yml`, `compose.emulator.yml`, `compose.test-e2e.yml`). Rationale:

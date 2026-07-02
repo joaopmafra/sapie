@@ -78,6 +78,19 @@ scope.
 For test philosophy (Classical TDD on the API, E2E not maintained for MVP unless a story says otherwise), see
 [contributing_guidelines.md](contributing_guidelines.md#testing-expectations) and
 [unit_testing_sapie.md — controller-first, avoid mockist service specs](unit_testing_sapie.md#avoid-mockist-service-specs-for-orchestration-code).
+
+## IDE MCP tools
+
+When an IDE MCP server (IntelliJ) is available, follow the tool selection rules in
+[ide_mcp_tool_guidelines.md](ide_mcp_tool_guidelines.md). Summary:
+
+- **Native first** for file I/O, search, and shell — IDE tools give poor results for TypeScript in this project.
+- **IDE when unique** — symbol search, run config discovery, editor integration.
+- **IDE as fallback** — retry with IDE tools when native tools produce no results.
+
+Key finding: this project is `JAVA_MODULE` in IntelliJ. Most IDE language-analysis tools
+(diagnostics, symbol docs, build, format) are unreliable for TypeScript.
+
 ## Browser testing (OMP built-in browser)
 
 For user-visible changes and API smoke tests, use the OMP `browser` tool:
@@ -128,10 +141,8 @@ When a story adds, removes, or changes API routes:
 
 ## Test infrastructure quick reference
 
-| Purpose | Container | Auth port | Storage port |
-|---|------|------|---|
-| API unit tests | `sapie-firebase-test-emulator` | 9098 | 9199 |
-| Local dev | `sapie-firebase-local-dev` | 9100 | 9199 |
+- **API unit tests** — container `sapie-firebase-test-emulator`, auth port `9098`, storage port `9199`
+- **Local dev** — container `sapie-firebase-local-dev`, auth port `9100`, storage port `9199`
 
 ```bash
 docker ps --filter "name=sapie"  # check running stacks
