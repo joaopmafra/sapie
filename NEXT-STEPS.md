@@ -2,6 +2,11 @@
 
 **Session:** 2026-07-02
 
+### This session
+
+- **Cleanup**: Created `packages/cli/.gitignore` (covers `dist/`, `*.tsbuildinfo`), untracked `packages/cli/tsconfig.tsbuildinfo` from git (commit `c4aceda`)
+- **Phase 2 QA test plan**: Drafted at `docs/pm/test_plans/sapie_cli_phase2_qa.md`, committed on local branch `feat/cli-phase2-google-signin` (NOT pushed, NOT PR'd). Branch kept locally for reference.
+
 ## What was implemented
 
 ### Sapie Sync CLI — Phase 1 (this session, PR #27 + follow-up fb88e63)
@@ -37,9 +42,13 @@
 
 ---
 
+## Parked (local branches, not merged)
+
+- **`feat/cli-phase2-google-signin`**: Contains Phase 2 QA test plan at `docs/pm/test_plans/sapie_cli_phase2_qa.md`. Branch kept for reference; NOT pushed, NOT PR'd.
+
 ## Outstanding
 
-- **CLI Phase 2**: Google Sign-In, markdown link translation, `sapie status`, `sapie deck` subcommands
+- **CLI Phase 2**: Google Sign-In, markdown link translation, `sapie status`, `sapie deck` subcommands. QA test plan parked on local branch (see above). Next session: create fresh feature branch from main, implement per plan.
 - **CLI Phase 3**: pessimistic locking, parallel body downloads, shared packages (`@sapie/markdown`, `@sapie/validation`)
 - **E2E tests**: Not maintained during MVP push.
 - **Knowledge-area filtering**: Deferred to future story.
