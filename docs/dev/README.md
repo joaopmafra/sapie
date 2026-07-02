@@ -1,9 +1,13 @@
 # Developer documentation
 
-**Goal:** ship the [MVP](../plans/mvp_objective.md) quickly. Shared context for tools (e.g. Cursor).
+**Goal:** ship the [MVP](../plans/mvp_objective.md) quickly.
 
-**This file is the canonical ordered index** of `docs/dev/` for humans and assistants. When you add or reorder dev docs,
-update this list first; `.cursor/rules/general.mdc` points here so the two do not drift.
+**For AI agents:** start at [AGENTS.md](../../AGENTS.md) at the repo root — the single entry point
+for project context, principles, and key decisions. `.cursor/rules/*.mdc` files are Cursor-compatible
+shims that duplicate critical rules; AGENTS.md is authoritative.
+
+**This file is the canonical ordered index** of `docs/dev/` for human contributors.
+When you add or reorder dev docs, update this list; keep AGENTS.md in sync for new top-level sections.
 
 Suggested reading order:
 

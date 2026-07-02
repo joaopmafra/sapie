@@ -141,10 +141,8 @@ When a story adds, removes, or changes API routes:
 
 ## Test infrastructure quick reference
 
-| Purpose | Container | Auth port | Storage port |
-|---|------|------|---|
-| API unit tests | `sapie-firebase-test-emulator` | 9098 | 9199 |
-| Local dev | `sapie-firebase-local-dev` | 9100 | 9199 |
+- **API unit tests** — container `sapie-firebase-test-emulator`, auth port `9098`, storage port `9199`
+- **Local dev** — container `sapie-firebase-local-dev`, auth port `9100`, storage port `9199`
 
 ```bash
 docker ps --filter "name=sapie"  # check running stacks
