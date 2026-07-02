@@ -6,6 +6,8 @@ import { loginCommand } from './commands/login';
 import { logoutCommand } from './commands/logout';
 import { pullCommand } from './commands/pull';
 import { pushCommand } from './commands/push';
+import { statusCommand } from './commands/status';
+import { deckCommand } from './commands/deck';
 import { loadConfig, resolveWorkspaceRoot } from './lib/config';
 
 async function main(): Promise<void> {
@@ -14,16 +16,27 @@ async function main(): Promise<void> {
     .usage('$0 <command> [options]')
     .command(
       'login',
-      'Authenticate with email and password',
+      'Authenticate with Google or email/password',
       (y) =>
-        y.option('workspace', {
-          type: 'string',
-          description: 'Path to Sapie workspace directory',
-        }),
+        y
+          .option('method', {
+            type: 'string',
+            choices: ['google', 'email'] as const,
+            default: 'google' as const,
+            description: 'Authentication method',
+          })
+          .option('workspace', {
+            type: 'string',
+            description: 'Path to Sapie workspace directory',
+          }),
       async (args) => {
         const workspaceRoot = resolveWorkspaceRoot(args.workspace as string | undefined);
         const config = loadConfig(workspaceRoot);
-        await loginCommand({ workspaceRoot, config });
+        await loginCommand({
+          workspaceRoot,
+          config,
+          method: args.method as 'google' | 'email',
+        });
       }
     )
     .command(
@@ -68,10 +81,25 @@ async function main(): Promise<void> {
         await pushCommand({ workspaceRoot, config });
       }
     )
-    .demandCommand(1, 'Please specify a command: login, logout, pull, push')
+    .command(
+      'status',
+      'Show local changes (dry-run)',
+      (y) =>
+        y.option('workspace', {
+          type: 'string',
+          description: 'Path to Sapie workspace directory',
+        }),
+      async (args) => {
+        const workspaceRoot = resolveWorkspaceRoot(args.workspace as string | undefined);
+        const config = loadConfig(workspaceRoot);
+        await statusCommand({ workspaceRoot, config });
+      }
+    )
+    .command(deckCommand)
+    .demandCommand(1, 'Please specify a command: login, logout, pull, push, status, deck')
     .strict()
     .help()
-    .version('0.0.1')
+    .version('0.0.2')
     .parse();
 }
 

@@ -4,16 +4,37 @@ import { AuthService } from '../lib/auth/auth.service';
 interface LoginOptions {
   workspaceRoot: string;
   config: Config;
+  method: 'google' | 'email';
 }
 
 interface Config {
   apiBaseUrl: string;
   firebaseApiKey: string;
+  firebaseAuthDomain: string;
+  googleClientId?: string;
+  authEmulatorHost?: string;
 }
-
 export async function loginCommand(opts: LoginOptions): Promise<void> {
-  const authService = new AuthService({ apiKey: opts.config.firebaseApiKey });
+  const authService = new AuthService({
+    apiKey: opts.config.firebaseApiKey,
+    authDomain: opts.config.firebaseAuthDomain,
+    googleClientId: opts.config.googleClientId,
+    authEmulatorHost: opts.config.authEmulatorHost,
+  });
 
+  if (opts.method === 'google') {
+    try {
+      const tokens = await authService.signInWithGoogle(opts.workspaceRoot);
+      console.log(`✓ Logged in as ${tokens.email}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`✗ Google sign-in failed: ${message}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  // Email/password flow
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,

@@ -6,6 +6,8 @@ export interface CliConfig {
   apiBaseUrl: string;
   firebaseApiKey: string;
   firebaseAuthDomain: string;
+  googleClientId?: string;
+  authEmulatorHost?: string;
 }
 
 const DEFAULT_WORKSPACE = path.join(os.homedir(), 'sapie-workspace');
@@ -23,12 +25,16 @@ export function loadConfig(workspaceRoot: string): CliConfig {
       apiBaseUrl: parsed.apiBaseUrl || 'https://api.sapie.dev/api',
       firebaseApiKey: parsed.firebaseApiKey || '',
       firebaseAuthDomain: parsed.firebaseAuthDomain || 'sapie-dev.firebaseapp.com',
+      googleClientId: parsed.googleClientId || undefined,
+      authEmulatorHost: parsed.authEmulatorHost || undefined,
     };
   } catch {
     return {
       apiBaseUrl: 'https://api.sapie.dev/api',
       firebaseApiKey: '',
       firebaseAuthDomain: 'sapie-dev.firebaseapp.com',
+      googleClientId: undefined,
+      authEmulatorHost: undefined,
     };
   }
 }

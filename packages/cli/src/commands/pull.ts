@@ -8,11 +8,17 @@ interface PullOptions {
   config: {
     apiBaseUrl: string;
     firebaseApiKey: string;
+    firebaseAuthDomain: string;
+    authEmulatorHost?: string;
   };
 }
 
 export async function pullCommand(opts: PullOptions): Promise<void> {
-  const authService = new AuthService({ apiKey: opts.config.firebaseApiKey });
+  const authService = new AuthService({
+    apiKey: opts.config.firebaseApiKey,
+    authDomain: opts.config.firebaseAuthDomain,
+    authEmulatorHost: opts.config.authEmulatorHost,
+  });
   const api = new ApiClient(opts.config.apiBaseUrl);
 
   api.setTokenProvider(() => authService.getValidToken(opts.workspaceRoot));
