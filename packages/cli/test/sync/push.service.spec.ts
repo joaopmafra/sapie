@@ -160,6 +160,7 @@ describe('push', () => {
       lastSyncAt: '2024-06-01T00:00:00.000Z',
       rootId: rootEntry.id,
       bodyHashByContentId: {},
+      blobHashByContentId: {},
       entries: { [rootEntry.id]: rootEntry },
     };
     await createStateFile(workspaceRoot, state);
@@ -203,6 +204,7 @@ describe('push', () => {
       lastSyncAt: '2024-06-01T00:00:00.000Z',
       rootId: rootEntry.id,
       bodyHashByContentId: { [noteEntry.id]: oldHash },
+      blobHashByContentId: {},
       entries: {
         [rootEntry.id]: rootEntry,
         [noteEntry.id]: noteEntry,
@@ -244,6 +246,7 @@ describe('push', () => {
       lastSyncAt: '2024-06-01T00:00:00.000Z',
       rootId: rootEntry.id,
       bodyHashByContentId: {},
+      blobHashByContentId: {},
       entries: {
         [rootEntry.id]: rootEntry,
         [noteEntry.id]: noteEntry,
@@ -288,6 +291,7 @@ describe('push', () => {
       lastSyncAt: '2024-06-01T00:00:00.000Z',
       rootId: rootEntry.id,
       bodyHashByContentId: { [noteEntry.id]: renameBodyHash },
+      blobHashByContentId: {},
       entries: {
         [rootEntry.id]: rootEntry,
         [noteEntry.id]: noteEntry,
@@ -326,6 +330,7 @@ describe('push', () => {
       lastSyncAt: '2024-06-01T00:00:00.000Z',
       rootId: rootEntry.id,
       bodyHashByContentId: { [noteEntry.id]: 'some-hash' },
+      blobHashByContentId: {},
       entries: {
         [rootEntry.id]: rootEntry,
         [noteEntry.id]: noteEntry,
@@ -366,6 +371,7 @@ describe('push', () => {
       lastSyncAt: '2024-06-01T00:00:00.000Z',
       rootId: rootEntry.id,
       bodyHashByContentId: { [noteEntry.id]: oldHash },
+      blobHashByContentId: {},
       entries: {
         [rootEntry.id]: rootEntry,
         [noteEntry.id]: noteEntry,
@@ -418,6 +424,7 @@ describe('push', () => {
       lastSyncAt: '2024-06-01T00:00:00.000Z',
       rootId: rootEntry.id,
       bodyHashByContentId: { [noteEntry.id]: noteBodyHash },
+      blobHashByContentId: {},
       entries: {
         [rootEntry.id]: rootEntry,
         [noteEntry.id]: noteEntry,
@@ -507,6 +514,7 @@ describe('push', () => {
         [updateEntry.id]: oldHash,
         [renameEntry.id]: renameBodyHash,
       },
+      blobHashByContentId: {},
       entries: {
         [rootEntry.id]: rootEntry,
         [updateEntry.id]: updateEntry,

@@ -45,6 +45,12 @@ export interface MarkdownService {
    * - orphan_blob: blob URLs whose blobId is not in `knownBlobIds` (when provided)
    */
   validate(markdown: string, knownBlobIds?: Set<string>): ValidationIssue[];
+
+  /**
+   * Find all local blob references (blobs/{blobId}) in markdown image URLs.
+   * Returns deduplicated blobIds.
+   */
+  findLocalBlobRefs(markdown: string): string[];
 }
 
 export function createMarkdownService(): MarkdownService {
@@ -79,6 +85,23 @@ export function createMarkdownService(): MarkdownService {
       return results;
     },
 
+    findLocalBlobRefs(markdown) {
+      const seen = new Set<string>();
+      const results: string[] = [];
+      let match: RegExpExecArray | null;
+      IMAGE_RE.lastIndex = 0;
+      while ((match = IMAGE_RE.exec(markdown)) !== null) {
+        const url = match[2];
+        if (url.startsWith('blobs/')) {
+          const blobId = url.slice(6);
+          if (!seen.has(blobId)) {
+            seen.add(blobId);
+            results.push(blobId);
+          }
+        }
+      }
+      return results;
+    },
     validate(markdown, knownBlobIds) {
       const issues: ValidationIssue[] = [];
 

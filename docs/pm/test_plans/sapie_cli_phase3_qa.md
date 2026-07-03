@@ -77,6 +77,58 @@ TOKEN=$(curl -s -X POST "http://localhost:9100/identitytoolkit.googleapis.com/v1
   -d '{"email":"test@example.com","password":"test1234","returnSecureToken":true}' | python3 -c "import sys,json; print(json.load(sys.stdin)['idToken'])")
 ```
 
+### 0.5 Seed test data (fast path — creates a full study workspace)
+
+Instead of manually creating notes and decks, use the seed tool to populate a rich
+workspace with folders, notes, decks, and flash cards in one command:
+
+```bash
+cd ~/dev/joaopmafra/apps/knowledge-management/sapie
+npx tsx scripts/seed-dev-data.ts
+```
+
+**What it creates:**
+
+```
+My Contents/
+├── Computer Science/          [knowledge-area]
+│   ├── Data Structures/       [content-root]
+│   │   ├── Arrays.md          [note, 3-card deck]
+│   │   └── Linked Lists.md    [note]
+│   ├── Algorithms/            [content-root]
+│   │   ├── Sorting.md         [note, 4-card deck]
+│   │   └── Searching.md       [note]
+│   └── System Design/         [content-root]
+│       └── Scalability.md     [note]
+└── Mathematics/               [knowledge-area]
+    └── Linear Algebra/        [content-root]
+        └── Matrices.md        [note]
+```
+
+**Flags:**
+- `--dry-run` — print the tree without creating anything
+- `--no-emulator` — point at production (default: local emulators)
+
+**Idempotent:** safe to re-run — skips content whose name already exists under the
+same parent.
+
+After seeding, pull the data into a local workspace:
+
+```bash
+export TEST_WS=$(mktemp -d)
+sapie init --folder "$TEST_WS" --url localhost
+cd "$TEST_WS"
+sapie login --auth email   # test@example.com / test123456
+sapie pull
+```
+
+Skip sections 0.3 and 0.4 if using this approach. The seed tool creates its own test
+user (`test@example.com` / `test123456`), so the manual user creation in 0.4 is
+unnecessary.
+
+For the seed tool's design and migration path to `qa/`, see
+[docs/dev/dev_tooling_infrastructure.md](../../dev/dev_tooling_infrastructure.md).
+
 ---
 
 ## 1. Lock API Endpoints (Backend)
@@ -191,6 +243,11 @@ curl -s -X POST http://localhost:3000/api/sync/lock \
 
 ### 2.1 Setup: pull first
 
+If you used the seed tool (section 0.5), your workspace already has 6 notes, 6 folders,
+2 decks, and 7 cards after `sapie pull`. Skip the manual content creation below.
+
+If setting up manually:
+
 ```bash
 sapie login --auth email
 # Enter: test@example.com / test1234
@@ -198,7 +255,8 @@ sapie login --auth email
 sapie pull
 ```
 
-**Expected:** Login succeeds. Pull creates `My Contents/` directory.
+**Expected:** Login succeeds. Pull creates `My Contents/` directory (empty if no seed
+data was created; populated with the tree from section 0.5 if seeded).
 
 ### 2.2 Push with lock (happy path)
 
@@ -432,6 +490,7 @@ rm -rf "$TEST_WS"
 
 | # | Test | Status | Notes |
 |---|------|--------|-------|
+| 0.5 | Seed test data | ⬜ | |
 | 1.1 | Acquire lock (201) | ⬜ | |
 | 1.2 | Acquire lock (409 conflict) | ⬜ | |
 | 1.3 | Check lock status | ⬜ | |

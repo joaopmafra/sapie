@@ -24,6 +24,7 @@ function makeState(overrides: Partial<SyncState> = {}): SyncState {
     lastSyncAt: new Date().toISOString(),
     rootId: 'root-1',
     bodyHashByContentId: {},
+    blobHashByContentId: {},
     entries: {},
     ...overrides,
   };
@@ -67,6 +68,7 @@ describe('writeState / readState round-trip', () => {
   it('writes state and reads it back identically', async () => {
     const original = makeState({
       bodyHashByContentId: { c1: 'abc123' },
+      blobHashByContentId: {},
       entries: {
         e1: makeEntry({ id: 'e1', name: 'notes', type: 'directory' }),
       },

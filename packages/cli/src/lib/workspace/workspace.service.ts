@@ -7,6 +7,8 @@ import { LocalDeck } from '../state/sync-state';
 const CONTENT_DIR_NAME_BLACKLIST = /^\./;
 const CONTENT_NAME_BLACKLIST = /[\\/:*?"<>|]/g;
 const SAFE_REPLACEMENT = '_';
+/** Substructure directories that should never be treated as content items. */
+const CONTAINER_DIR_NAMES = new Set(['blobs', 'decks']);
 
 /** Sanitize a content name for use as a filesystem name. */
 export function sanitizeName(name: string, type: ContentType): string {
@@ -129,6 +131,75 @@ export async function listDeckFiles(
   }
 }
 
+// ── Blob file I/O ──
+
+/** Ensure the blobs/ directory exists for a note. */
+export async function ensureBlobsDir(workspaceRoot: string, noteLocalPath: string): Promise<void> {
+  await fsp.mkdir(path.join(workspaceRoot, noteLocalPath, 'blobs'), {
+    recursive: true,
+  });
+}
+
+/** Write a blob file to {noteLocalPath}/blobs/{blobId}.{ext}. Creates blobs/ dir if needed. */
+export async function writeBlob(
+  workspaceRoot: string,
+  noteLocalPath: string,
+  blobId: string,
+  ext: string,
+  data: Buffer
+): Promise<void> {
+  const extWithDot = ext.startsWith('.') ? ext : `.${ext}`;
+  const blobDir = path.join(workspaceRoot, noteLocalPath, 'blobs');
+  await fsp.mkdir(blobDir, { recursive: true });
+  await fsp.writeFile(path.join(blobDir, `${blobId}${extWithDot}`), data);
+}
+
+/** Read a blob file given its blobId (searches for {blobId}.* in blobs/). Returns null if not found. */
+export async function readBlob(
+  workspaceRoot: string,
+  noteLocalPath: string,
+  blobId: string
+): Promise<{ data: Buffer; ext: string } | null> {
+  const blobDir = path.join(workspaceRoot, noteLocalPath, 'blobs');
+  try {
+    const entries = await fsp.readdir(blobDir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isFile()) continue;
+      const nameWithoutExt = entry.name.includes('.')
+        ? entry.name.slice(0, entry.name.indexOf('.'))
+        : entry.name;
+      if (nameWithoutExt === blobId) {
+        const ext = path.extname(entry.name);
+        const data = await fsp.readFile(path.join(blobDir, entry.name));
+        return { data, ext };
+      }
+    }
+  } catch {
+    // Directory doesn't exist or can't be read — no blobs
+  }
+  return null;
+}
+
+/** List all blob files in a note's blobs/ directory. Returns [{ blobId, ext }]. */
+export async function listBlobFiles(
+  workspaceRoot: string,
+  noteLocalPath: string
+): Promise<Array<{ blobId: string; ext: string }>> {
+  const blobDir = path.join(workspaceRoot, noteLocalPath, 'blobs');
+  try {
+    const entries = await fsp.readdir(blobDir, { withFileTypes: true });
+    return entries
+      .filter((e) => e.isFile())
+      .map((e) => {
+        const ext = path.extname(e.name);
+        const blobId = e.name.includes('.') ? e.name.slice(0, e.name.indexOf('.')) : e.name;
+        return { blobId, ext };
+      });
+  } catch {
+    return [];
+  }
+}
+
 /** Walk the local filesystem tree and return discovered paths. */
 export async function walkLocalTree(
   workspaceRoot: string
@@ -154,7 +225,7 @@ async function walkDir(
 
   for (const entry of entries) {
     if (CONTENT_DIR_NAME_BLACKLIST.test(entry.name)) continue;
-    if (!entry.isDirectory()) continue;
+    if (CONTAINER_DIR_NAMES.has(entry.name)) continue;
 
     const childPath = relativePath ? path.join(relativePath, entry.name) : entry.name;
 

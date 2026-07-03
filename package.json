@@ -19,6 +19,7 @@
     "deploy": "scripts/build-deploy-all.sh",
     "deploy:dev": "firebase deploy --project dev",
     "deploy:staging": "firebase deploy --project staging",
-    "deploy:prod": "firebase deploy --project prod"
+    "deploy:prod": "firebase deploy --project prod",
+    "seed": "pnpm dlx tsx scripts/seed-dev-data.ts"
   }
 }

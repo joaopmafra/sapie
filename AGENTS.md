@@ -40,7 +40,12 @@ Full details: [docs/plans/mvp_objective.md](docs/plans/mvp_objective.md)
   Cards store: `dueDate`, `interval`, `repetitions`, `lastResult`.
 - **TanStack Query must be implemented before the note content editor** to fix the broken
   direct navigation bug and prevent auto-save from thrashing the sidebar tree.
-
+- **`scripts/seed-dev-data.ts` is the canonical dev data tool.** When a new feature ships that
+  adds a content type, tag, property, or relationship, update the seed tree in that file.
+  The tree is the single source of truth for manual test data. Runs against Firebase Emulators
+  (not the CLI), mimicking the web app's API patterns. See
+  [docs/dev/dev_tooling_infrastructure.md](docs/dev/dev_tooling_infrastructure.md) for the
+  migration path to `qa/`.
 ### Do not implement yet (deferred)
 
 Spaced repetition algorithm, per-session summaries, full-text search, offline mode, math/LaTeX,

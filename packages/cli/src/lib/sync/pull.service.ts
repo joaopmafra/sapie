@@ -1,17 +1,19 @@
 import { ApiClient } from '../api/api-client';
 import { CardResponse, ContentResponse, ContentType } from '../api/types';
 import { LocalCard, LocalDeck, SyncEntry } from '../state/sync-state';
-import { computeBodyHash, computeCardHash } from '../state/hashing';
+import { computeBlobHash, computeBodyHash, computeCardHash } from '../state/hashing';
 import { createEmptyState, readState, writeState } from '../state/state.service';
 import { createMarkdownService, parseBlobUrl } from '../markdown/markdown.service';
 import {
   computeLocalPath,
   ensureFolder,
+  readBlob,
   readNoteBody,
+  writeBlob,
   writeDeck,
   writeNoteBody,
 } from '../workspace/workspace.service';
-
+import { contentTypeToExtension } from '../blob/content-type';
 export interface PullResult {
   folders: number;
   notes: number;
@@ -19,6 +21,8 @@ export interface PullResult {
   created: number;
   unchanged: number;
   collisions: string[];
+  blobs: number;
+  blobsDownloaded: number;
 }
 
 interface NoteTask {
@@ -32,6 +36,7 @@ interface NoteTask {
 
 interface NoteBodyResult extends NoteTask {
   body: string | null;
+  blobUpdates: Array<{ contentId: string; blobId: string; hash: string }>;
 }
 
 /**
@@ -46,6 +51,8 @@ export async function pull(api: ApiClient, workspaceRoot: string): Promise<PullR
     created: 0,
     unchanged: 0,
     collisions: [],
+    blobs: 0,
+    blobsDownloaded: 0,
   };
 
   // 1. Get root
@@ -140,30 +147,79 @@ export async function pull(api: ApiClient, workspaceRoot: string): Promise<PullR
     }
   }
 
-  // 4. Second pass: download all note bodies in parallel batches
   const CONCURRENCY = 5;
+  const blobStateUpdates: Array<{ contentId: string; blobId: string; hash: string }> = [];
+
   for (let i = 0; i < noteTasks.length; i += CONCURRENCY) {
     const batch = noteTasks.slice(i, i + CONCURRENCY);
     const bodyResults: NoteBodyResult[] = await Promise.all(
       batch.map(async (task): Promise<NoteBodyResult> => {
         let body: string | null = null;
+        const blobUpdates: Array<{ contentId: string; blobId: string; hash: string }> = [];
+        // Track extensions for URL transform
+        const blobExtByBlobId = new Map<string, string>();
         try {
           body = await api.getBody(task.id);
         } catch {
           // 404 → no body yet
         }
 
-        // Transform remote blob URLs → local blobs/{blobId} paths
         if (body) {
+          // Download blobs BEFORE transforming URLs (findBlobUrls matches /api/content/... patterns)
           const markdownSvc = createMarkdownService();
+          const blobRefs = markdownSvc.findBlobUrls(body);
+          result.blobs += blobRefs.length;
+
+          for (const ref of blobRefs) {
+            const prevHash = prevState?.blobHashByContentId[ref.contentId]?.[ref.blobId];
+            try {
+              const downloaded = await api.getBlob(ref.contentId, ref.blobId);
+              if (downloaded) {
+                const hash = computeBlobHash(downloaded.data);
+                const ext = contentTypeToExtension(downloaded.contentType);
+                blobExtByBlobId.set(ref.blobId, ext);
+                if (hash !== prevHash) {
+                  await writeBlob(workspaceRoot, task.localPath, ref.blobId, ext, downloaded.data);
+                  result.blobsDownloaded++;
+                  blobUpdates.push({
+                    contentId: ref.contentId,
+                    blobId: ref.blobId,
+                    hash,
+                  });
+                } else if (prevHash !== undefined) {
+                  // Unchanged blob — still need to write it (it may not exist locally)
+                  // Extension already tracked via blobExtByBlobId
+                }
+              }
+            } catch {
+              // Blob download failed — skip, will retry on next pull
+            }
+          }
+
+          // For unchanged blobs not downloaded this run, look up extension from disk
+          if (prevState) {
+            for (const ref of blobRefs) {
+              if (!blobExtByBlobId.has(ref.blobId)) {
+                const blobFile = await readBlob(workspaceRoot, task.localPath, ref.blobId);
+                if (blobFile) {
+                  blobExtByBlobId.set(ref.blobId, blobFile.ext);
+                }
+              }
+            }
+          }
+
+          // Transform remote blob URLs → local blobs/{blobId}.{ext} paths
           body = markdownSvc.transformImageUrls(body, (url) => {
             const parsed = parseBlobUrl(url);
-            if (parsed) return `blobs/${parsed.blobId}`;
+            if (parsed) {
+              const ext = blobExtByBlobId.get(parsed.blobId) ?? '';
+              return `blobs/${parsed.blobId}${ext}`;
+            }
             return url;
           });
         }
 
-        return { ...task, body };
+        return { ...task, body, blobUpdates };
       })
     );
 
@@ -178,6 +234,7 @@ export async function pull(api: ApiClient, workspaceRoot: string): Promise<PullR
       }
 
       await writeNoteBody(workspaceRoot, task.localPath, task.body);
+      blobStateUpdates.push(...task.blobUpdates);
 
       entries[task.id] = {
         id: task.id,
@@ -204,6 +261,14 @@ export async function pull(api: ApiClient, workspaceRoot: string): Promise<PullR
         state.bodyHashByContentId[id] = computeBodyHash(body);
       }
     }
+  }
+
+  // Populate blob hashes from downloaded blobs
+  for (const update of blobStateUpdates) {
+    if (!state.blobHashByContentId[update.contentId]) {
+      state.blobHashByContentId[update.contentId] = {};
+    }
+    state.blobHashByContentId[update.contentId][update.blobId] = update.hash;
   }
 
   await writeState(workspaceRoot, state);
