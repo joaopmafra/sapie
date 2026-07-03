@@ -68,7 +68,7 @@ Edit the \`index.md\` file inside a note directory. The file is standard Markdow
 | \`sapie push\` | Upload local changes to Sapie |
 | \`sapie status\` | Preview local changes (dry-run) |
 | \`sapie deck\` | Manage flashcard decks (create, ls, add, edit, rm) |
-| \`sapie init\` | Initialize a new workspace |
+| \`sapie init --url <env>\` | Initialize a new workspace (defaults to CWD; use \`--folder\` for elsewhere) |
 
 ## Concurrency
 

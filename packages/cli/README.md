@@ -19,25 +19,29 @@ sapie --version
 ## Quick start
 
 ```bash
-# 1. Create a workspace (defaults to ~/sapie-workspace; use --workspace . to init here)
-sapie init --firebase-api-key "<your-firebase-web-api-key>"
+# 1. Initialize workspace in current directory (use --folder for a different path)
+sapie init --url localhost --auth email
 
-# 2. cd into it (or skip if you used --workspace .)
-cd ~/sapie-workspace
+# Enter email/password when prompted (Google OAuth is the default: --auth google)
 
-# 3. Log in
-sapie login --method email
-
-# 4. Pull your content
+# 2. Pull your content
 sapie pull
 
-# 5. Edit files locally, then push changes back
+# 3. Edit files locally, then push changes back
 sapie push
 ```
 
 When running commands from inside a workspace (a directory containing `.sapie/config.json`),
 the `--workspace` flag is optional — the CLI auto-detects the workspace root by walking up
 from the current directory. You can always override with `--workspace <path>`.
+
+### Environment URLs
+
+| `--url` value | Environment | Auth |
+|---|---|---|
+| `localhost` | Local dev (emulators) | Email/password via emulator |
+| `sapie-b09be.web.app` | Staging | Email/password or Google OAuth |
+| (default) or `sapie.app` | Production | Email/password or Google OAuth |
 
 To unlink later:
 
@@ -50,8 +54,8 @@ pnpm unlink --global
 
 | Command | Description |
 |---------|-------------|
-| `sapie init` | Initialize a new workspace (creates `.sapie/config.json`, `AGENTS.md`, `.gitignore`) |
-| `sapie login` | Authenticate with Google (`--method google`) or email/password (`--method email`) |
+| `sapie init` | Initialize a new workspace in CWD (`--folder <dir>` for elsewhere, `--url <env>` for config, `--auth <google\|email>` for auth method) |
+| `sapie login` | Authenticate with Google (`--auth google`) or email/password (`--auth email`) |
 | `sapie logout` | Clear stored credentials |
 | `sapie pull` | Download content tree from Sapie |
 | `sapie push` | Upload local changes to Sapie |
@@ -62,7 +66,7 @@ Run `sapie <command> --help` for options.
 
 ## Workspace auto-detection
 
-All commands (except `init`) automatically detect the workspace root by searching upward
+All commands automatically detect the workspace root by searching upward
 from the current directory for `.sapie/config.json`. The `--workspace` flag overrides this.
 
 This means you can run commands from anywhere inside your workspace tree without repeating

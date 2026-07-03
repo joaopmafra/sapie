@@ -50,11 +50,7 @@ sapie --version
 ```bash
 export TEST_WS=$(mktemp -d)
 
-sapie init --workspace "$TEST_WS" \
-  --api-base-url "http://localhost:3000/api" \
-  --firebase-api-key "fake-api-key" \
-  --firebase-auth-domain "sapie-dev.firebaseapp.com" \
-  --auth-emulator-host "localhost:9100"
+sapie init --folder "$TEST_WS" --url localhost
 ```
 
 **Expected:** Creates `.sapie/config.json`, `AGENTS.md`, and `.gitignore` in `$TEST_WS`.
@@ -196,7 +192,7 @@ curl -s -X POST http://localhost:3000/api/sync/lock \
 ### 2.1 Setup: pull first
 
 ```bash
-sapie login --method email
+sapie login --auth email
 # Enter: test@example.com / test1234
 
 sapie pull
@@ -272,10 +268,10 @@ sapie pull
 
 ## 4. CLI — Regression
 
-### 4.1 `sapie login --method email`
+### 4.1 `sapie login --auth email`
 
 ```bash
-sapie login --method email
+sapie login --auth email
 # test@example.com / test1234
 ```
 
@@ -315,9 +311,7 @@ sapie deck ls "$NOTE/decks/QA Deck.json"
 
 ```bash
 export FRESH_WS=$(mktemp -d)
-sapie init --workspace "$FRESH_WS" \
-  --api-base-url "http://localhost:3000/api" \
-  --firebase-api-key "fake-api-key"
+sapie init --folder "$FRESH_WS" --url localhost
 
 # Verify files were created
 ls -la "$FRESH_WS/.sapie/config.json"
@@ -325,16 +319,13 @@ ls -la "$FRESH_WS/AGENTS.md"
 ls -la "$FRESH_WS/.gitignore"
 
 # Verify idempotency — second run should skip existing files
-sapie init --workspace "$FRESH_WS" \
-  --api-base-url "http://localhost:3000/api" \
-  --firebase-api-key "fake-api-key"
+sapie init --folder "$FRESH_WS" --url localhost
 
 # Cleanup
 rm -rf "$FRESH_WS"
 ```
 
 **Expected:** First run creates all three files. Second run prints "already exists — skipping" for each.
-
 ### 4.6 Help text
 
 ```bash
