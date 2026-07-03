@@ -16,28 +16,34 @@ sapie/
 └── README.md         # This file
 ```
 
-## Architecture
+## Quick start
 
-- **Frontend**: React 19 with TypeScript, Material-UI, and Vite
-- **Backend**: NestJS API with TypeScript
-- **Authentication**: Firebase Auth with FirebaseUI for login/logout flows
-- **Deployment**: Firebase Hosting (web) + Firebase Functions (API)
-- **Development**: Firebase Emulator Suite for local development
-- **Package Management**: Each package managed independently with PNPM (
-  see [Firebase and monorepo tooling](#firebase-and-monorepo-tooling))
-- **Code Quality**: ESLint + Prettier integration across all packages
-- **CI/CD Pipeline**: NOT IMPLEMENTED YET
+```bash
+# 1. Initialize workspace in current directory (use --folder for a different path)
+sapie init --url localhost --auth email
 
-## Environments
+# Enter email/password when prompted (Google OAuth is the default: --auth google)
 
-| Environment | Firebase Project | Web/API Runtime   | Firebase Services | Purpose                                   |
-|-------------|------------------|-------------------|-------------------|-------------------------------------------|
-| emulator    | `demo-emulator`  | Firebase Emulator | Auth emulator     | Full emulator development (default)       |
-| test-e2e    | `demo-test-e2e`  | Firebase Emulator | Auth emulator     | Automated testing                         |
-| local-dev   | `demo-local-dev` | Local servers     | Auth emulator     | Development with local servers + emulator |
-| development | `sapie-dev`      | Firebase hosting  | Real Firebase     | Development deployment                    |
-| staging     | `sapie-staging`  | Firebase hosting  | Real Firebase     | Pre-production validation                 |
-| production  | `sapie-prod`     | Firebase hosting  | Real Firebase     | Live application                          |
+# 2. Pull your content
+sapie pull
+
+# 3. Edit files locally, then push changes back
+sapie push
+```
+
+When running commands from inside a workspace (a directory containing `.sapie/config.json`),
+the `--workspace` flag is optional — the CLI auto-detects the workspace root by walking up
+from the current directory. You can always override with `--workspace <path>`.
+
+### Environment URLs
+
+| `--url` value | Environment | Auth |
+|---|---|---|
+| `localhost` | Local dev (emulators) | Email/password via emulator |
+| `sapie-b09be.web.app` | Staging | Email/password or Google OAuth |
+| (default) or `sapie.app` | Production | Email/password or Google OAuth |
+
+To unlink later:
 
 ## Development Principles
 
@@ -49,7 +55,7 @@ For how we work (MVP goal, principles, contributing), see **[Developer documenta
 ## Firebase and monorepo tooling
 
 Firebase’s **Hosting** and **Cloud Functions** workflows (CLI, emulators, and deploy) assume dependencies can be
-resolved in a **classic layout** next to the built function code (for Sapie: under `packages/api/`). Tooling does
+| `sapie login` | Authenticate with Google (`--auth google`) or email/password (`--auth email`) |
 **not** reliably support a **root-level PNPM/Yarn/npm workspace** with a **single root lockfile** and symlinked or
 virtual-store `node_modules` the way typical monorepos do. Similar limitations apply to other workspace-centric
 layouts: the Functions runtime and packaging step are not first-class monorepo citizens.

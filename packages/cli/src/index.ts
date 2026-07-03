@@ -10,6 +10,9 @@ import { pushCommand } from './commands/push';
 import { statusCommand } from './commands/status';
 import { deckCommand } from './commands/deck';
 import { loadConfig, resolveWorkspaceRoot } from './lib/config';
+import { resolveEnvironment } from './lib/environments';
+import * as path from 'path';
+import * as fs from 'fs';
 
 async function main(): Promise<void> {
   yargs(hideBin(process.argv))
@@ -20,43 +23,46 @@ async function main(): Promise<void> {
       'Initialize a new Sapie workspace',
       (y) =>
         y
-          .option('workspace', {
+          .option('folder', {
+            alias: 'f',
             type: 'string',
-            description: 'Path to create the workspace directory (default: ~/sapie-workspace)',
+            description: 'Target directory (default: current directory)',
           })
-          .option('api-base-url', {
+          .option('url', {
+            alias: 'u',
             type: 'string',
-            description: 'Sapie API base URL',
-            default: 'https://api.sapie.dev/api',
+            default: 'https://sapie.app',
+            description: 'Sapie server URL (localhost, sapie-b09be.web.app, or custom)',
           })
-          .option('firebase-api-key', {
+          .option('auth', {
+            alias: 'a',
             type: 'string',
-            description: 'Firebase web API key (from Firebase Console)',
-            default: '',
-          })
-          .option('firebase-auth-domain', {
-            type: 'string',
-            description: 'Firebase Auth domain',
-            default: 'sapie-dev.firebaseapp.com',
-          })
-          .option('google-client-id', {
-            type: 'string',
-            description: 'Google OAuth web client ID (for sapie login --method google)',
-          })
-          .option('auth-emulator-host', {
-            type: 'string',
-            description: 'Firebase Auth emulator host (e.g. localhost:9099)',
+            choices: ['google', 'email'],
+            default: 'google',
+            description: 'Authentication method',
           }),
       async (args) => {
-        const workspaceRoot = resolveWorkspaceRoot(args.workspace as string | undefined);
+        const targetDir = path.resolve((args.folder as string) || process.cwd());
+
+        const IGNORE_FILES: Record<string, true> = {
+          '.git': true,
+          '.sapie': true,
+          'AGENTS.md': true,
+          '.gitignore': true,
+        };
+        if (fs.existsSync(targetDir)) {
+          const entries = fs.readdirSync(targetDir).filter((f: string) => !IGNORE_FILES[f]);
+          if (entries.length > 0) {
+            console.error(`✗ Directory not empty: ${targetDir}`);
+            process.exit(1);
+          }
+        }
+
+        const envConfig = resolveEnvironment(args.url as string);
         await initCommand({
-          workspaceRoot,
-          apiBaseUrl: (args['api-base-url'] as string) || 'https://api.sapie.dev/api',
-          firebaseApiKey: (args['firebase-api-key'] as string) || '',
-          firebaseAuthDomain:
-            (args['firebase-auth-domain'] as string) || 'sapie-dev.firebaseapp.com',
-          googleClientId: args['google-client-id'] as string | undefined,
-          authEmulatorHost: args['auth-emulator-host'] as string | undefined,
+          targetDir,
+          envConfig,
+          authMethod: args.auth as 'google' | 'email',
         });
       }
     )
@@ -65,20 +71,33 @@ async function main(): Promise<void> {
       'Authenticate with Google or email/password',
       (y) =>
         y
-          .option('method', {
+          .option('auth', {
+            alias: 'a',
             type: 'string',
             choices: ['google', 'email'],
             default: 'google',
-            description: 'Auth method',
+            description: 'Authentication method',
           })
-          .option('workspace', {}),
+          .option('workspace', {
+            type: 'string',
+            description:
+              'Path to Sapie workspace directory (auto-detected from .sapie/config.json if not provided)',
+          })
+          .option('url', {
+            alias: 'u',
+            type: 'string',
+            description:
+              'Sapie server URL — overrides config (localhost, sapie-b09be.web.app, or custom)',
+          }),
       async (args) => {
         const workspaceRoot = resolveWorkspaceRoot(args.workspace as string | undefined);
-        const config = loadConfig(workspaceRoot);
+        const config = args.url
+          ? resolveEnvironment(args.url as string)
+          : loadConfig(workspaceRoot);
         await loginCommand({
           workspaceRoot,
           config,
-          method: args.method as 'google' | 'email',
+          method: args.auth as 'google' | 'email',
         });
       }
     )
@@ -88,7 +107,7 @@ async function main(): Promise<void> {
       (y) =>
         y.option('workspace', {
           type: 'string',
-          description: 'Path to Sapie workspace directory',
+          description: 'Path to Sapie workspace directory (auto-detected if not provided)',
         }),
       async (args) => {
         const workspaceRoot = resolveWorkspaceRoot(args.workspace as string | undefined);
@@ -102,7 +121,7 @@ async function main(): Promise<void> {
       (y) =>
         y.option('workspace', {
           type: 'string',
-          description: 'Path to Sapie workspace directory',
+          description: 'Path to Sapie workspace directory (auto-detected if not provided)',
         }),
       async (args) => {
         const workspaceRoot = resolveWorkspaceRoot(args.workspace as string | undefined);
@@ -117,7 +136,7 @@ async function main(): Promise<void> {
         y
           .option('workspace', {
             type: 'string',
-            description: 'Path to Sapie workspace directory',
+            description: 'Path to Sapie workspace directory (auto-detected if not provided)',
           })
           .option('abort', {
             type: 'boolean',
@@ -136,7 +155,7 @@ async function main(): Promise<void> {
       (y) =>
         y.option('workspace', {
           type: 'string',
-          description: 'Path to Sapie workspace directory',
+          description: 'Path to Sapie workspace directory (auto-detected if not provided)',
         }),
       async (args) => {
         const workspaceRoot = resolveWorkspaceRoot(args.workspace as string | undefined);
@@ -148,7 +167,8 @@ async function main(): Promise<void> {
     .demandCommand(1, 'Please specify a command: init, login, logout, pull, push, status, deck')
     .strict()
     .help()
-    .version('0.0.3')
+    .alias('help', 'h')
+    .version('0.0.4')
     .parse();
 }
 

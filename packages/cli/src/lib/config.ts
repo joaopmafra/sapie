@@ -40,9 +40,31 @@ export function loadConfig(workspaceRoot: string): CliConfig {
 }
 
 /**
+ * Walk up from the current working directory looking for a .sapie/config.json.
+ * Returns the workspace root directory (the parent of .sapie), or null if not found.
+ */
+export function detectWorkspaceRoot(): string | null {
+  let dir = process.cwd();
+  for (let i = 0; i < 50; i++) {
+    const configPath = path.join(dir, '.sapie', 'config.json');
+    try {
+      fs.accessSync(configPath, fs.constants.R_OK);
+      return dir;
+    } catch {
+      // not here, try parent
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return null;
+}
+
+/**
  * Get the workspace root path.
  * Defaults to ~/sapie-workspace, overridable via --workspace flag.
  */
 export function resolveWorkspaceRoot(workspaceFlag?: string): string {
-  return workspaceFlag || DEFAULT_WORKSPACE;
+  if (workspaceFlag) return workspaceFlag;
+  return detectWorkspaceRoot() || DEFAULT_WORKSPACE;
 }

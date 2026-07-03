@@ -1,6 +1,5 @@
-import * as readline from 'readline';
 import { AuthService } from '../lib/auth/auth.service';
-
+import { promptEmailPassword } from '../lib/auth/prompt-email-password';
 interface LoginOptions {
   workspaceRoot: string;
   config: Config;
@@ -14,6 +13,7 @@ interface Config {
   googleClientId?: string;
   authEmulatorHost?: string;
 }
+
 export async function loginCommand(opts: LoginOptions): Promise<void> {
   const authService = new AuthService({
     apiKey: opts.config.firebaseApiKey,
@@ -35,20 +35,7 @@ export async function loginCommand(opts: LoginOptions): Promise<void> {
   }
 
   // Email/password flow
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  const email = await new Promise<string>((resolve) => {
-    rl.question('Email: ', resolve);
-  });
-
-  const password = await new Promise<string>((resolve) => {
-    rl.question('Password: ', resolve);
-  });
-
-  rl.close();
+  const { email, password } = await promptEmailPassword();
 
   try {
     const tokens = await authService.signInWithPassword(opts.workspaceRoot, email, password);
