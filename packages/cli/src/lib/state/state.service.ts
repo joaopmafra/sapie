@@ -1,6 +1,6 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { computeBodyHash } from './hashing';
+import { computeBlobHash, computeBodyHash } from './hashing';
 import { SyncEntry, SyncState } from './sync-state';
 
 const STATE_DIR = '.sapie';
@@ -13,6 +13,7 @@ export function createEmptyState(rootId: string): SyncState {
     lastSyncAt: new Date().toISOString(),
     rootId,
     bodyHashByContentId: {},
+    blobHashByContentId: {},
     entries: {},
   };
 }
@@ -59,6 +60,28 @@ export function updateBodyHash(state: SyncState, contentId: string, body: string
     delete state.bodyHashByContentId[contentId];
   } else {
     state.bodyHashByContentId[contentId] = computeBodyHash(body);
+  }
+}
+
+/** Update a blob hash in state. Pass bytes=null to remove the hash. Cleans up empty inner objects. */
+export function updateBlobHash(
+  state: SyncState,
+  contentId: string,
+  blobId: string,
+  bytes: Buffer | null
+): void {
+  if (bytes === null) {
+    if (state.blobHashByContentId[contentId]) {
+      delete state.blobHashByContentId[contentId][blobId];
+      if (Object.keys(state.blobHashByContentId[contentId]).length === 0) {
+        delete state.blobHashByContentId[contentId];
+      }
+    }
+  } else {
+    if (!state.blobHashByContentId[contentId]) {
+      state.blobHashByContentId[contentId] = {};
+    }
+    state.blobHashByContentId[contentId][blobId] = computeBlobHash(bytes);
   }
 }
 

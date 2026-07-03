@@ -15,7 +15,7 @@ Suggested reading order:
 2. [Development principles](development_principles.md)
 3. [Development environment setup](development_environment_setup.md) — machine setup, run Sapie, verify
 4. [Contributing guidelines](contributing_guidelines.md) — workflow, verify scripts, testing expectations
-5. [Iterative development](iterative_development.md) — vertical slices, Gall’s law, Kniberg MVP diagram
+5. [Iterative development](iterative_development.md) — vertical slices, Gall's law, Kniberg MVP diagram
 6. [Documentation guidelines](documentation_guidelines.md) — where to put docs
 
 Assistants: [ai_agent_guidelines.md](ai_agent_guidelines.md)
@@ -37,6 +37,7 @@ Supporting material:
 - [Firebase — new hosted environment (project)](firebase_environment_setup.md) — create Auth, Firestore, Storage; CLI
   alias; deploy; IAM + bucket CORS checklist
 - [Content naming — metadata vs content body](content_naming.md) — Firestore **content** vs Storage **content body**
+- [Dev tooling infrastructure](dev_tooling_infrastructure.md) — seed data script, E2E fixtures, migration path to `qa/`
 - [xp_simplicity_is_the_key.md](xp_simplicity_is_the_key.md)
 - [tdd_baby_steps.md](tdd_baby_steps.md)
 - [unit_testing_strategy.md](unit_testing_strategy.md)

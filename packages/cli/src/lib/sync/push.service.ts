@@ -1,8 +1,9 @@
 import * as crypto from 'crypto';
+import * as fsp from 'fs/promises';
 import * as path from 'path';
 import { ApiClient, ApiError } from '../api/api-client';
 import { ContentType } from '../api/types';
-import { computeCardHash } from '../state/hashing';
+import { computeBlobHash, computeCardHash } from '../state/hashing';
 import {
   findEntryByPath,
   hasBodyChanged,
@@ -12,7 +13,9 @@ import {
 } from '../state/state.service';
 import { LocalCard, SyncEntry, SyncState } from '../state/sync-state';
 import {
+  listBlobFiles,
   listDeckFiles,
+  readBlob,
   readDeck,
   readNoteBody,
   sanitizeName,
@@ -20,7 +23,7 @@ import {
   walkLocalTree,
 } from '../workspace/workspace.service';
 import { createMarkdownService } from '../markdown/markdown.service';
-
+import { extensionToContentType } from '../blob/content-type';
 export interface PushResult {
   created: number;
   updated: number;
@@ -29,6 +32,7 @@ export interface PushResult {
   deckCardsChanged: number;
   conflicts: number;
   errors: string[];
+  blobsUploaded: number;
 }
 
 interface ChangeSet {
@@ -37,8 +41,8 @@ interface ChangeSet {
   bodyUpdates: BodyUpdateOp[];
   deckCardChanges: DeckCardChange[];
   deletes: DeleteOp[];
+  blobUploads: BlobUploadOp[];
 }
-
 interface CreateOp {
   localPath: string;
   name: string;
@@ -74,9 +78,20 @@ interface DeleteOp {
   localPath: string;
   isNote: boolean;
 }
+
+interface BlobUploadOp {
+  noteId: string;
+  localName: string;
+  ext: string;
+  data: Buffer;
+  noteLocalPath: string;
+}
 export interface PushOptions {
   /** If true, force-release any existing lock instead of pushing. */
   abort?: boolean;
+}
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function generateInstanceId(): string {
@@ -103,6 +118,7 @@ export async function push(
       deckCardsChanged: 0,
       conflicts: 0,
       errors: [],
+      blobsUploaded: 0,
     };
   }
 
@@ -114,6 +130,7 @@ export async function push(
     deckCardsChanged: 0,
     conflicts: 0,
     errors: [],
+    blobsUploaded: 0,
   };
 
   const instanceId = generateInstanceId();
@@ -195,7 +212,61 @@ export async function push(
       }
     }
 
-    // 5. Body updates
+    // 4b. Blob uploads (must precede body updates — may modify BodyUpdateOp.body)
+    for (const op of changes.blobUploads) {
+      try {
+        const mimeType = extensionToContentType(op.ext);
+        const uploaded = await api.uploadBlob(op.noteId, op.data, mimeType);
+        const newBlobId = uploaded.blobId;
+
+        // If API returned a different blobId, remap locally
+        if (newBlobId !== op.localName) {
+          const oldPath = path.join(
+            workspaceRoot,
+            op.noteLocalPath,
+            'blobs',
+            `${op.localName}${op.ext}`
+          );
+          const newPath = path.join(
+            workspaceRoot,
+            op.noteLocalPath,
+            'blobs',
+            `${newBlobId}${op.ext}`
+          );
+          try {
+            await fsp.rename(oldPath, newPath);
+          } catch {
+            // Rename failed — non-fatal, blob was uploaded
+          }
+        }
+
+        // Update blob hash in state
+        if (!state.blobHashByContentId[op.noteId]) {
+          state.blobHashByContentId[op.noteId] = {};
+        }
+        state.blobHashByContentId[op.noteId][newBlobId] = computeBlobHash(op.data);
+        if (newBlobId !== op.localName) {
+          delete state.blobHashByContentId[op.noteId][op.localName];
+        }
+
+        // Update BodyUpdateOp.body in memory: replace local ref → remote URL
+        for (const bodyOp of changes.bodyUpdates) {
+          if (bodyOp.id === op.noteId) {
+            bodyOp.body = bodyOp.body.replace(
+              new RegExp(`blobs/${escapeRegex(op.localName)}\\b`, 'g'),
+              `/api/content/${op.noteId}/blobs/${newBlobId}`
+            );
+          }
+        }
+
+        result.blobsUploaded++;
+      } catch (err) {
+        result.errors.push(
+          `Failed to upload blob ${op.localName} in ${op.noteLocalPath}: ${err instanceof Error ? err.message : err}`
+        );
+      }
+    }
+
     for (const op of changes.bodyUpdates) {
       try {
         const updated = await api.putBody(op.id, op.body, 'text/markdown', op.expectedRevision);
@@ -276,13 +347,13 @@ async function detectChanges(
     bodyUpdates: [],
     deckCardChanges: [],
     deletes: [],
+    blobUploads: [],
   };
 
   const localTree = await walkLocalTree(workspaceRoot);
 
   // Build set of local paths
   const localPaths = new Set(localTree.map((t) => t.localPath));
-
   // Detect creates: paths in local but not in state
   for (const item of localTree) {
     const entry = findEntryByPath(state, item.localPath);
@@ -341,21 +412,75 @@ async function detectChanges(
     if (!localPaths.has(entry.localPath)) continue; // already handled as delete
 
     if (entry.type === 'note') {
-      // Check body changes
+      // Read body
       let body = await readNoteBody(workspaceRoot, entry.localPath);
+      let hasBlobUploads = false;
 
-      // Transform local blobs/{blobId} paths → remote blob URLs for push
       if (body) {
         const markdownSvc = createMarkdownService();
+
+        // Detect local blob refs before URL transform
+        const localBlobRefs = markdownSvc.findLocalBlobRefs(body);
+
+        // Detect blob changes and build upload ops
+        for (const blobName of localBlobRefs) {
+          const blobFile = await readBlob(workspaceRoot, entry.localPath, blobName);
+          if (blobFile) {
+            const hash = computeBlobHash(blobFile.data);
+            const prevHash = state.blobHashByContentId[id]?.[blobName];
+            if (hash !== prevHash) {
+              changes.blobUploads.push({
+                noteId: id,
+                localName: blobName,
+                ext: blobFile.ext,
+                data: blobFile.data,
+                noteLocalPath: entry.localPath,
+              });
+              hasBlobUploads = true;
+            }
+          }
+        }
+
+        // Check for orphan blobs on disk (warn, don't upload)
+        const diskBlobs = await listBlobFiles(workspaceRoot, entry.localPath);
+        const refSet = new Set(localBlobRefs);
+        for (const diskBlob of diskBlobs) {
+          if (!refSet.has(diskBlob.blobId)) {
+            // Orphan — warn, don't upload (plan decision)
+          }
+        }
+
+        // Conditional URL transform: only transform blobs that are known-unchanged
         body = markdownSvc.transformImageUrls(body, (url) => {
           if (url.startsWith('blobs/')) {
-            return `/api/content/${id}/blobs/${url.slice(6)}`;
+            const localName = url.slice(6);
+            const blobHash = state.blobHashByContentId[id]?.[localName];
+            if (blobHash !== undefined) {
+              // Known blob — check if unchanged
+              const refSetCheck = new Set(localBlobRefs);
+              if (refSetCheck.has(localName)) {
+                // This blob is referenced; check if hash still matches
+                // We already compared above. If hash matches (no BlobUploadOp), transform.
+                const hasUpload = changes.blobUploads.some(
+                  (op) => op.noteId === id && op.localName === localName
+                );
+                if (!hasUpload) {
+                  return `/api/content/${id}/blobs/${localName}`;
+                }
+              } else {
+                // Not referenced but known — transform (safety)
+                return `/api/content/${id}/blobs/${localName}`;
+              }
+            }
+            // New/modified blob or no state → leave as-is, blob upload phase will fix
           }
           return url;
         });
       }
 
-      if (hasBodyChanged(state, id, body)) {
+      // Force body update if blobs changed (body text may need new blobId refs)
+      const bodyChanged = hasBodyChanged(state, id, body);
+      if (bodyChanged || hasBlobUploads) {
         const expectedRevision = entry.bodyUpdatedAt ?? '';
         changes.bodyUpdates.push({
           id,

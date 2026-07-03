@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import {
+  BlobUploadResponse,
   CardResponse,
   ContentResponse,
   CreateCardRequest,
@@ -10,7 +11,6 @@ import {
   UpdateCardRequest,
   UpdateContentRequest,
 } from './types';
-
 /**
  * Typed API error wrapping Problem Details (RFC 7807).
  */
@@ -128,6 +128,46 @@ export class ApiClient {
 
   async deleteContent(id: string, cascade: boolean = true): Promise<void> {
     await this.http.delete(`/content/${id}`, { params: { cascade } });
+  }
+
+  // ── Blob endpoints ──
+
+  /**
+   * Download a blob's raw bytes and content-type.
+   * Returns null if the blob doesn't exist (404).
+   */
+  async getBlob(
+    contentId: string,
+    blobId: string
+  ): Promise<{ data: Buffer; contentType: string } | null> {
+    try {
+      const response = await this.http.get(`/content/${contentId}/blobs/${blobId}`, {
+        responseType: 'arraybuffer',
+      });
+      const contentType =
+        (response.headers['content-type'] as string) ?? 'application/octet-stream';
+      return { data: Buffer.from(response.data as ArrayBuffer), contentType };
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        return null;
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Upload blob bytes. Returns the API-assigned blobId and URL path.
+   * Max 2 MiB (enforced by API — returns 413 on excess).
+   */
+  async uploadBlob(
+    contentId: string,
+    blob: Buffer,
+    contentType: string
+  ): Promise<BlobUploadResponse> {
+    const { data } = await this.http.post<BlobUploadResponse>(`/content/${contentId}/blobs`, blob, {
+      headers: { 'Content-Type': contentType },
+    });
+    return data;
   }
 
   // ── Card endpoints ──

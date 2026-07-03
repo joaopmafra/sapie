@@ -128,3 +128,9 @@ export interface LockStatusResponse {
   locked: boolean;
   lock: LockInfo | null;
 }
+
+/** Blob upload response from POST /api/content/:contentId/blobs */
+export interface BlobUploadResponse {
+  blobId: string;
+  url: string;
+}

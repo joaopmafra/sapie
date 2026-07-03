@@ -7,6 +7,8 @@ export interface SyncState {
   lastSyncAt: string;
   rootId: string;
   bodyHashByContentId: Record<string, string>;
+  /** SHA-256 of blob bytes keyed by contentId → blobId → hex digest. */
+  blobHashByContentId: Record<string, Record<string, string>>;
   entries: Record<string, SyncEntry>;
 }
 

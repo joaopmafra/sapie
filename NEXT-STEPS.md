@@ -63,6 +63,7 @@ Stories 71 (inline images), 74 (attachment model), 75 (blob storage) were supers
 Story 70 (URL-driven sidebar selection) is implemented.
 
 **All three CLI phases are complete.** Shared packages (`@sapie/markdown`, `@sapie/validation`) deferred until a second consumer exists.
+
 ## Outstanding
 
 - **Story 64 — Content deletion**: Next MVP priority. Backend: add `deleted`/`deletedAt`/`deletedBy` to `ContentDocument`, filter queries, `DELETE /api/content/:id` soft-delete endpoint with cascade. Frontend: `useDeleteContent()` hook (TODO marker exists in `content-hooks.ts`), delete button in editor, right-click delete in tree, `ConfirmDeleteDialog`, navigate away after deletion. Full tasks in `docs/pm/5-done/64-story-content_deletion.md`.

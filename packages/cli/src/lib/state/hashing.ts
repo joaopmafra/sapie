@@ -47,3 +47,11 @@ export function computeBodyHash(content: string | Buffer): string {
 function sha256(input: string): string {
   return crypto.createHash('sha256').update(input, 'utf-8').digest('hex');
 }
+
+/**
+ * Compute SHA-256 hash of raw blob bytes.
+ * Unlike computeBodyHash, this does NOT normalize line endings — blobs are binary data.
+ */
+export function computeBlobHash(data: Buffer): string {
+  return crypto.createHash('sha256').update(data).digest('hex');
+}
