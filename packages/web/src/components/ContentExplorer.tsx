@@ -461,6 +461,7 @@ const ContentExplorer: React.FC = () => {
         message={deleteDialogMessage}
         onCancel={() => setDeleteDialogTarget(null)}
         onConfirm={() => {
+          if (!deleteDialogTarget) return;
           deleteContent.mutate(
             {
               id: deleteDialogTarget.id,
