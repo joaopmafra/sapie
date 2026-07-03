@@ -4,49 +4,44 @@
 
 ### This session
 
-- **PR #30 merged**: CLI init/auth simplification (`--url`/`--auth` flags, `-f`/`-u`/`-a` short opts, CWD default, `-h` fix, shared `promptEmailPassword()`, `environments.ts`). 10 files, +288/−123. Merged to `main`.
-- **Investigated blob sync gap**: Only markdown URL rewriting exists (`blobs/{blobId}` ↔ `/api/content/{id}/blobs/{blobId}`). Binary blob download/upload is NOT implemented — deferred in the CLI proposal.
-- **Audited Phase 3 status**: Locking + parallel pull done (PR #29). Shared package extraction (`@sapie/markdown`, `@sapie/validation`) not started.
+- **PR #30 merged**: CLI init/auth simplification.
+- **PR #31 merged**: CLI blob/image sync for pull and push, dev seed tool, blob URL extension fix. 21 files, +1947/−22.
+- **Investigated blob sync gap → implemented**: Binary blob download on pull, upload on push, blob hash tracking in state.
+- **Dev seed tool**: `scripts/seed-dev-data.ts` + `pnpm seed` command — creates a full study workspace via Firebase Emulators.
 
 ---
 
 ## What was implemented
 
-### Sapie Sync CLI — init/auth simplification (this session, PR #30)
+### Sapie Sync CLI — blob/image sync (this session, PR #31)
 
-- **`sapie init`**: `--url`/`-u` for API URL, `--auth`/`-a` for auth method, `--folder`/`-f` for workspace path. CWD used as default workspace folder when no `--folder` given. `-h` shortcut for `--help` restored.
-- **Shared auth prompt**: `promptEmailPassword()` extracted to `packages/cli/src/lib/auth/prompt-email-password.ts`, used by both `init` and `login`.
-- **Environments**: `packages/cli/src/lib/environments.ts` with known Firebase configs (staging missing `googleClientId`, prod missing Firebase key).
-- **Docs**: Updated `packages/cli/README.md`, `docs/pm/test_plans/sapie_cli_phase3_qa.md`, `docs/research/api_key_authentication.md`.
+- **Blob download (pull):** Binary blob bytes downloaded alongside note bodies. Extension tracked and included in local markdown references (`blobs/{id}.png` not `blobs/{id}`).
+- **Blob upload (push):** New/changed blobs detected and uploaded. URL transform is conditional (only known-unchanged blobs get remote URLs). BodyUpdateOp.body updated in-memory after upload.
+- **Blob hash tracking:** `blobHashByContentId[contentId][blobId]` in state. `computeBlobHash()` for raw SHA-256 (no line-ending normalization).
+- **`walkDir` fix:** Skips `blobs/` and `decks/` directories.
+- **`findLocalBlobRefs()`** in MarkdownService.
+- **Content-type mapping:** `packages/cli/src/lib/blob/content-type.ts`.
+- **Tests:** 12 new integration tests (6 pull-blobs, 6 push-blobs). 148 total CLI tests (12 suites).
+- **Dev seed tool:** `scripts/seed-dev-data.ts` — standalone script using Firebase Emulators (not CLI ApiClient). `pnpm seed` command. Design doc at `docs/dev/dev_tooling_infrastructure.md`. Maintenance contract in root AGENTS.md.
+- **Docs:** QA test plan updated with seed tool section. `docs/dev/dev_tooling_infrastructure.md` captures migration path to `qa/`.
 
-### Sapie Sync CLI — Phase 3 (previous session, PR #29)
+### Sapie Sync CLI — init/auth simplification (PR #30)
 
-- **Lock API endpoints** (`packages/api/src/sync/`): `POST /api/sync/lock`, `DELETE /api/sync/lock`, `GET /api/sync/lock`. Single-user pessimistic locking with 5-min auto-expiry, Firestore-backed. Force-release via `?force=true` for stale lock cleanup. 9 controller tests.
-- **Lock integration in push**: Acquires lock before change detection, releases in `finally`. Handles 409 (conflict → abort with details), 404 (endpoint not available → proceed without locking for backward compat). `--abort` flag on `sapie push` for force-release.
-- **Parallel body downloads on pull**: Two-pass strategy — BFS discovery collects note metadata, then parallel body downloads with concurrency cap (5). Same results as sequential pull; faster on multi-note trees.
-- **Docs**: `packages/cli/AGENTS.md` updated with `status`, `deck` commands + all Phase 2 services + full test file list. `.cursor/skills/sapie-cli/SKILL.md` updated with Phase 3 deferral notes + expanded key files table.
+- **`sapie init`**: `--url`/`-u` for API URL, `--auth`/`-a` for auth method, `--folder`/`-f` for workspace path.
 
-### Sapie Sync CLI — Phase 2 (PR #28)
+### Sapie Sync CLI — Phase 3 (PR #29)
 
-- **Google Sign-In**: `sapie login --method google` starts OAuth callback server, opens browser, exchanges auth code for Firebase tokens. Requires `googleClientId` in `.sapie/config.json`.
-- **MarkdownService**: Regex-based blob URL translation (`transformImageUrls`, `findBlobUrls`, `validate`, `parseBlobUrl`). Integrated into pull and push.
-- **`sapie status`**: Dry-run change detection. **`sapie deck`**: Subcommands `create`, `ls`, `add`, `edit`, `rm`.
+- **Lock API endpoints + lock-integrated push + parallel pull.**
 
-### Sapie Sync CLI — Phase 1 (PR #27)
+### Sapie Sync CLI — Phases 1–2 (PRs #27, #28)
 
-- **New package `packages/cli/`**: `sapie` binary with `login`, `logout`, `pull`, `push` subcommands
-- **Auth**: email/password login via Firebase Auth REST API, token refresh, logout
-- **API client**: typed HTTP wrapper (axios) with Bearer token injection
-- **State management**: `.sapie/state.json` read/write, SHA-256 content hashing
-- **Pull/Push**: recursive tree walk, change detection, CRUD, 409 conflict handling
-
+- CLI binary, auth, pull/push, MarkdownService, status, deck.
 
 ---
 
 ## MVP progress
 
-Stories 53–75 are implemented (note editor, TanStack Query, folder creation, blob storage).
-CLI phases 1–3 are complete. The remaining MVP priority order:
+Stories 53–75 are implemented. CLI blob sync is complete. The remaining MVP priority order:
 
 | Priority | Feature | Story | Status |
 |----------|---------|-------|--------|
@@ -56,31 +51,61 @@ CLI phases 1–3 are complete. The remaining MVP priority order:
 | 4 | Content roots + tags | 81 | story in 5-done, not yet implemented |
 | 5 | Study dashboard + due cards | 82 | story in 5-done, not yet implemented |
 | 6 | Spaced repetition + result tracking | 83 | story in 5-done, not yet implemented |
-| 7 | Secondary study paths (single deck, folder-level) | 78–80, 84 | story in 5-done, not yet implemented |
-| 8 | Responsive mobile polish | — | cross-cutting, deferred |
+| 7 | Secondary study paths (single deck, folder-level) | 78–80, 84 | stories in 5-done, not yet implemented |
 
-Stories 71 (inline images), 74 (attachment model), 75 (blob storage) were superseded/replaced by Story 75's blob storage model.
-Story 70 (URL-driven sidebar selection) is implemented.
+**Done:** Stories 53–75, CLI blob sync, CLI phases 1–3, dev seed tool.
 
-**All three CLI phases are complete.** Shared packages (`@sapie/markdown`, `@sapie/validation`) deferred until a second consumer exists.
+---
+
+## Postponed (not for MVP today)
+
+| Item | Reason |
+|------|--------|
+| Responsive mobile polish | Cross-cutting, non-blocking for core study flow |
+| Shared packages (`@sapie/markdown`, `@sapie/validation`) | Deferred until a second consumer exists |
+| MarkdownService AST upgrade | Blocked on ESM tsconfig; regex is sufficient for MVP |
+| Prod Firebase key (`sapie.app`) | Not yet provisioned |
+| API key auth | Not started; separate from study flow |
+| Google Sign-In real auth testing | Requires valid `googleClientId` |
+| Lock-aware web UI middleware | Deferred (see locking roadmap) |
+| FSRS 4-button grading | Schema-compatible upgrade deferred |
+
+---
+
+## Next implementation cycle (MVP completion)
+
+### Target: complete Stories 64, 76, 77, 81, 82, 83, 78-80, 84
+
+**Phase A — Content deletion (Story 64)**
+
+Backend: `deleted`/`deletedAt`/`deletedBy` fields on `ContentDocument`, filter queries, `DELETE /api/content/:id` soft-delete with cascade. Frontend: `useDeleteContent()` hook, delete button in editor, right-click delete in tree, `ConfirmDeleteDialog`, navigate away after deletion.
+
+**Phase B — Flashcard decks + cards (Stories 76, 77)**
+
+Deck CRUD: create/edit/delete decks attached to notes. Card CRUD: add/edit/delete cards within decks. Frontend: deck panel in note editor, card list with add/edit/delete.
+
+**Phase C — Content roots + tags (Story 81)**
+
+Backend: tag support on folders, content root concept. Frontend: tag display in tree, tag-based filtering.
+
+**Phase D — Study mode (Stories 78–80, 82–84)**
+
+Study dashboard showing due cards. Single-deck study with "I know" / "I don't know" buttons. Study result tracking per card. Folder-level study ("Study all" from context menu). Spaced repetition scheduling.
+
+---
 
 ## Outstanding
 
-- **Story 64 — Content deletion**: Next MVP priority. Backend: add `deleted`/`deletedAt`/`deletedBy` to `ContentDocument`, filter queries, `DELETE /api/content/:id` soft-delete endpoint with cascade. Frontend: `useDeleteContent()` hook (TODO marker exists in `content-hooks.ts`), delete button in editor, right-click delete in tree, `ConfirmDeleteDialog`, navigate away after deletion. Full tasks in `docs/pm/5-done/64-story-content_deletion.md`.
-- **Shared packages**: `@sapie/markdown` and `@sapie/validation` extraction — deferred until API needs them (second consumer). Phase 3 tasks 3.4/3.5 not started.
-- **Blob/image sync for CLI**: Only URL rewriting exists (Phase 2). Binary download/upload NOT implemented. Missing: `ApiClient.getBlob()`/`uploadBlob()`, `writeBlob()`/`readBlob()` in workspace service, download loop in `pull.service.ts` after body write, upload detection in `push.service.ts` change detection, blob hash in `.sapie/state.json`. API blob endpoints are live (`GET/POST /api/content/:contentId/blobs`). Listed as "Deferred (not a phase)" in the CLI proposal.
-- **MarkdownService AST upgrade**: Regex → mdast — blocked until CLI tsconfig switches to ESM or a bundler is added
-- **Google Sign-In real auth testing**: Requires valid `googleClientId` from Firebase Console (staging `ENVIRONMENTS` entry has empty string)
-- **Prod Firebase key**: `sapie.app` entry in `environments.ts` has empty string for `firebaseApiKey`
-- **API key auth (Story 76 context)**: `sapie login --api-key` + web UI + `ApiKeyGuard` — not started
-- **Lock-aware web UI middleware**: API rejects web writes while a CLI lock is held — deferred (tracked in `docs/research/sapie_sync_locking_roadmap.md`)
-- **FSRS 4-button grading**: Schema-compatible upgrade deferred
+- **Story 64 — Content deletion**: Next MVP priority. Full tasks in `docs/pm/5-done/64-story-content_deletion.md`.
+- **Stories 76–84**: Flashcard decks, cards, study mode — stories in `docs/pm/5-done/`.
+- **Lock-aware web UI middleware**: Deferred.
+- **FSRS 4-button grading**: Deferred.
 
 ## Known issues
 
-- **Nock v14 lifecycle**: `pnpm test` (all suites together) may fail with `ECONNREFUSED` from nock IPv6/lifecycle artifacts. Individual suites pass. `test/setup.ts` suppresses these.
-- **MarkdownService regex**: Uses regex instead of AST parsing (ESM incompatibility). Does not distinguish code blocks from regular text. Acceptable for MVP.
-- **Lock not required for push**: When the lock API endpoint returns 404 (not yet deployed), push proceeds without locking. This is intentional backward compatibility.
+- **Nock v14 lifecycle**: `pnpm test` (all suites) may fail with `ECONNREFUSED`. Individual suites pass. `test/setup.ts` suppresses these.
+- **MarkdownService regex**: Uses regex instead of AST parsing (ESM incompatibility). Acceptable for MVP.
+- **Lock not required for push**: When lock API returns 404, push proceeds without locking (backward compat).
 
 ## Key design docs
 
@@ -88,6 +113,7 @@ Story 70 (URL-driven sidebar selection) is implemented.
 - [Study dashboard design](docs/research/study_mode/study_dashboard_design.md)
 - [MVP objective](docs/plans/mvp_objective.md)
 - [Content deletion story](docs/pm/5-done/64-story-content_deletion.md)
+- [Dev tooling infrastructure](docs/dev/dev_tooling_infrastructure.md)
 
 ## Test infrastructure
 
@@ -99,5 +125,5 @@ Story 70 (URL-driven sidebar selection) is implemented.
 
 Backend tests: `cd packages/api && pnpm test` (121 tests, 11 suites)
 Web tests: `cd packages/web && pnpm test` (71 tests, 17 suites)
-CLI tests: `cd packages/cli && pnpm test` (136 tests, 10 suites)
+CLI tests: `cd packages/cli && pnpm test` (148 tests, 12 suites)
 Full verify: `pnpm run verify`
