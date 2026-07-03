@@ -59,6 +59,12 @@ sapie init --workspace "$TEST_WS" \
 
 **Expected:** Creates `.sapie/config.json`, `AGENTS.md`, and `.gitignore` in `$TEST_WS`.
 
+Then enter the workspace so all subsequent commands auto-detect it:
+
+```bash
+cd "$TEST_WS"
+```
+
 ### 0.4 Create a test user in the Auth emulator
 
 The local dev emulator has Auth on port 9100. Use the Firebase Auth REST API:
@@ -190,10 +196,10 @@ curl -s -X POST http://localhost:3000/api/sync/lock \
 ### 2.1 Setup: pull first
 
 ```bash
-sapie login --workspace "$TEST_WS" --method email
+sapie login --method email
 # Enter: test@example.com / test1234
 
-sapie pull --workspace "$TEST_WS"
+sapie pull
 ```
 
 **Expected:** Login succeeds. Pull creates `My Contents/` directory.
@@ -204,7 +210,7 @@ sapie pull --workspace "$TEST_WS"
 mkdir -p "$TEST_WS/My Contents/Test Note.md"
 echo "# Hello from QA" > "$TEST_WS/My Contents/Test Note.md/index.md"
 
-sapie push --workspace "$TEST_WS"
+sapie push
 ```
 
 **Expected:** `✓ Pushed: 1 created, 0 updated, 0 renamed, 0 deleted, 0 deck card changes`. Lock is released afterwards.
@@ -219,7 +225,7 @@ curl -s -X POST http://localhost:3000/api/sync/lock \
   -d '{"instanceId":"another-cli"}' > /dev/null
 
 # Try pushing
-sapie push --workspace "$TEST_WS"
+sapie push
 ```
 
 **Expected:** Error: "Lock conflict: another push is in progress (instance another-cli, expires ...). Use --abort to force-release a stale lock." No changes pushed.
@@ -227,7 +233,7 @@ sapie push --workspace "$TEST_WS"
 ### 2.4 Push --abort (force-release stale lock)
 
 ```bash
-sapie push --workspace "$TEST_WS" --abort
+sapie push --abort
 ```
 
 **Expected:** "Force-releasing sync lock..." → "✓ Lock released."
@@ -235,7 +241,7 @@ sapie push --workspace "$TEST_WS" --abort
 ### 2.5 Push after --abort (lock cleared)
 
 ```bash
-sapie push --workspace "$TEST_WS"
+sapie push
 ```
 
 **Expected:** Push succeeds normally.
@@ -249,7 +255,7 @@ sapie push --workspace "$TEST_WS"
 ```bash
 rm -rf "$TEST_WS/My Contents"
 rm -f "$TEST_WS/.sapie/state.json"
-sapie pull --workspace "$TEST_WS"
+sapie pull
 ```
 
 **Expected:** Pull completes. All notes have `index.md`. State file created.
@@ -257,7 +263,7 @@ sapie pull --workspace "$TEST_WS"
 ### 3.2 Pull idempotency
 
 ```bash
-sapie pull --workspace "$TEST_WS"
+sapie pull
 ```
 
 **Expected:** Second pull reports 0 created, all unchanged (if no remote changes).
@@ -269,7 +275,7 @@ sapie pull --workspace "$TEST_WS"
 ### 4.1 `sapie login --method email`
 
 ```bash
-sapie login --workspace "$TEST_WS" --method email
+sapie login --method email
 # test@example.com / test1234
 ```
 
@@ -278,7 +284,7 @@ sapie login --workspace "$TEST_WS" --method email
 ### 4.2 `sapie logout`
 
 ```bash
-sapie logout --workspace "$TEST_WS"
+sapie logout
 ```
 
 **Expected:** "Logged out."
@@ -286,7 +292,7 @@ sapie logout --workspace "$TEST_WS"
 ### 4.3 `sapie status`
 
 ```bash
-sapie status --workspace "$TEST_WS"
+sapie status
 ```
 
 **Expected:** Dry-run change report. Clean workspace → "No changes" or equivalent.
@@ -295,13 +301,13 @@ sapie status --workspace "$TEST_WS"
 
 ```bash
 NOTE="My Contents/Test Note.md/"
-sapie deck create "$NOTE" --name "QA Deck" --workspace "$TEST_WS"
-sapie deck ls "$NOTE/decks/QA Deck.json" --workspace "$TEST_WS"
-sapie deck add "$NOTE/decks/QA Deck.json" --front "Q1" --back "A1" --workspace "$TEST_WS"
-sapie deck add "$NOTE/decks/QA Deck.json" --front "Q2" --back "A2" --workspace "$TEST_WS"
-sapie deck edit "$NOTE/decks/QA Deck.json" --index 0 --front "Updated Q" --workspace "$TEST_WS"
-sapie deck rm "$NOTE/decks/QA Deck.json" --index 1 --workspace "$TEST_WS"
-sapie deck ls "$NOTE/decks/QA Deck.json" --workspace "$TEST_WS"
+sapie deck create "$NOTE" --name "QA Deck"
+sapie deck ls "$NOTE/decks/QA Deck.json"
+sapie deck add "$NOTE/decks/QA Deck.json" --front "Q1" --back "A1"
+sapie deck add "$NOTE/decks/QA Deck.json" --front "Q2" --back "A2"
+sapie deck edit "$NOTE/decks/QA Deck.json" --index 0 --front "Updated Q"
+sapie deck rm "$NOTE/decks/QA Deck.json" --index 1
+sapie deck ls "$NOTE/decks/QA Deck.json"
 ```
 
 **Expected:** Each subcommand succeeds. Final `ls` shows 1 card ("Updated Q" / "A1").
@@ -368,10 +374,10 @@ Open http://localhost:5173. Log in with test@example.com / test1234.
 ### 6.1 Web → CLI → Web
 
 1. In web: create note "RoundTrip" with body `# E2E Test`
-2. `sapie pull --workspace "$TEST_WS"`
+2. `sapie pull`
 3. Verify `$TEST_WS/My Contents/RoundTrip.md/index.md` contains `# E2E Test`
 4. Edit local file: change to `# E2E Test — Modified`
-5. `sapie push --workspace "$TEST_WS"`
+5. `sapie push`
 6. Refresh web → open "RoundTrip"
 
 **Expected:** Web shows "E2E Test — Modified"
@@ -379,9 +385,9 @@ Open http://localhost:5173. Log in with test@example.com / test1234.
 ### 6.2 CLI → Web → CLI (delete)
 
 1. Delete `$TEST_WS/My Contents/RoundTrip.md/` directory
-2. `sapie push --workspace "$TEST_WS"`
+2. `sapie push`
 3. Verify note gone from web sidebar
-4. `sapie pull --workspace "$TEST_WS"`
+4. `sapie pull`
 5. Verify `RoundTrip.md/` NOT recreated locally
 
 **Expected:** Deletion propagates local → remote → local stays deleted.
@@ -394,7 +400,7 @@ Open http://localhost:5173. Log in with test@example.com / test1234.
 
 ```bash
 rm -f "$TEST_WS/.sapie/state.json"
-sapie push --workspace "$TEST_WS"
+sapie push
 ```
 
 **Expected:** "No .sapie/state.json found — run `sapie pull` first."
@@ -402,10 +408,10 @@ sapie push --workspace "$TEST_WS"
 ### 7.2 Push/Pull/Status without authentication
 
 ```bash
-sapie logout --workspace "$TEST_WS"
-sapie push --workspace "$TEST_WS"
-sapie pull --workspace "$TEST_WS"
-sapie status --workspace "$TEST_WS"
+sapie logout
+sapie push
+sapie pull
+sapie status
 ```
 
 **Expected:** Each shows "Not authenticated. Run `sapie login` first."

@@ -71,7 +71,11 @@ async function main(): Promise<void> {
             default: 'google',
             description: 'Auth method',
           })
-          .option('workspace', {}),
+          .option('workspace', {
+            type: 'string',
+            description:
+              'Path to Sapie workspace directory (auto-detected from .sapie/config.json if not provided)',
+          }),
       async (args) => {
         const workspaceRoot = resolveWorkspaceRoot(args.workspace as string | undefined);
         const config = loadConfig(workspaceRoot);
@@ -88,7 +92,7 @@ async function main(): Promise<void> {
       (y) =>
         y.option('workspace', {
           type: 'string',
-          description: 'Path to Sapie workspace directory',
+          description: 'Path to Sapie workspace directory (auto-detected if not provided)',
         }),
       async (args) => {
         const workspaceRoot = resolveWorkspaceRoot(args.workspace as string | undefined);
@@ -102,7 +106,7 @@ async function main(): Promise<void> {
       (y) =>
         y.option('workspace', {
           type: 'string',
-          description: 'Path to Sapie workspace directory',
+          description: 'Path to Sapie workspace directory (auto-detected if not provided)',
         }),
       async (args) => {
         const workspaceRoot = resolveWorkspaceRoot(args.workspace as string | undefined);
@@ -117,7 +121,7 @@ async function main(): Promise<void> {
         y
           .option('workspace', {
             type: 'string',
-            description: 'Path to Sapie workspace directory',
+            description: 'Path to Sapie workspace directory (auto-detected if not provided)',
           })
           .option('abort', {
             type: 'boolean',
@@ -136,7 +140,7 @@ async function main(): Promise<void> {
       (y) =>
         y.option('workspace', {
           type: 'string',
-          description: 'Path to Sapie workspace directory',
+          description: 'Path to Sapie workspace directory (auto-detected if not provided)',
         }),
       async (args) => {
         const workspaceRoot = resolveWorkspaceRoot(args.workspace as string | undefined);
@@ -148,7 +152,7 @@ async function main(): Promise<void> {
     .demandCommand(1, 'Please specify a command: init, login, logout, pull, push, status, deck')
     .strict()
     .help()
-    .version('0.0.3')
+    .version('0.0.4')
     .parse();
 }
 

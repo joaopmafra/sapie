@@ -19,18 +19,25 @@ sapie --version
 ## Quick start
 
 ```bash
-# 1. Create a workspace
+# 1. Create a workspace (defaults to ~/sapie-workspace; use --workspace . to init here)
 sapie init --firebase-api-key "<your-firebase-web-api-key>"
 
-# 2. Log in
+# 2. cd into it (or skip if you used --workspace .)
+cd ~/sapie-workspace
+
+# 3. Log in
 sapie login --method email
 
-# 3. Pull your content
+# 4. Pull your content
 sapie pull
 
-# 4. Edit files locally, then push changes back
+# 5. Edit files locally, then push changes back
 sapie push
 ```
+
+When running commands from inside a workspace (a directory containing `.sapie/config.json`),
+the `--workspace` flag is optional — the CLI auto-detects the workspace root by walking up
+from the current directory. You can always override with `--workspace <path>`.
 
 To unlink later:
 
@@ -52,6 +59,20 @@ pnpm unlink --global
 | `sapie deck` | Manage flashcard decks (create, ls, add, edit, rm) |
 
 Run `sapie <command> --help` for options.
+
+## Workspace auto-detection
+
+All commands (except `init`) automatically detect the workspace root by searching upward
+from the current directory for `.sapie/config.json`. The `--workspace` flag overrides this.
+
+This means you can run commands from anywhere inside your workspace tree without repeating
+`--workspace` each time:
+
+```bash
+cd ~/sapie-workspace/My\ Contents/SomeNote.md/
+sapie deck ls decks/MyDeck.json   # auto-detects workspace root
+sapie status                       # works from any subdirectory
+```
 
 ## Local workspace structure
 

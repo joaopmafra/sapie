@@ -16,21 +16,28 @@ sapie/
 └── README.md         # This file
 ```
 
-## Architecture
+## Quick start
 
-- **Frontend**: React 19 with TypeScript, Material-UI, and Vite
-- **Backend**: NestJS API with TypeScript
-- **Authentication**: Firebase Auth with FirebaseUI for login/logout flows
-- **Deployment**: Firebase Hosting (web) + Firebase Functions (API)
-- **Development**: Firebase Emulator Suite for local development
-- **Package Management**: Each package managed independently with PNPM (
-  see [Firebase and monorepo tooling](#firebase-and-monorepo-tooling))
-- **Code Quality**: ESLint + Prettier integration across all packages
-- **CI/CD Pipeline**: NOT IMPLEMENTED YET
+```bash
+# 1. Create a workspace (defaults to ~/sapie-workspace; use --workspace . to init here)
+sapie init --firebase-api-key "<your-firebase-web-api-key>"
 
-## Environments
+# 2. cd into it (or skip if you used --workspace .)
+cd ~/sapie-workspace
 
-| Environment | Firebase Project | Web/API Runtime   | Firebase Services | Purpose                                   |
+# 3. Log in
+sapie login --method email
+
+# 4. Pull your content
+sapie pull
+
+# 5. Edit files locally, then push changes back
+sapie push
+```
+
+When running commands from inside a workspace (a directory containing `.sapie/config.json`),
+the `--workspace` flag is optional — the CLI auto-detects the workspace root by walking up
+from the current directory. You can always override with `--workspace <path>`.
 |-------------|------------------|-------------------|-------------------|-------------------------------------------|
 | emulator    | `demo-emulator`  | Firebase Emulator | Auth emulator     | Full emulator development (default)       |
 | test-e2e    | `demo-test-e2e`  | Firebase Emulator | Auth emulator     | Automated testing                         |

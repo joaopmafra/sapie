@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fsp from 'fs/promises';
 import type { Argv } from 'yargs';
 import { LocalDeck, LocalCard } from '../lib/state/sync-state';
+import { detectWorkspaceRoot } from '../lib/config';
 
 function readDeckFile(deckPath: string): LocalDeck {
   if (!fs.existsSync(deckPath)) {
@@ -15,6 +16,16 @@ function readDeckFile(deckPath: string): LocalDeck {
 
 function writeDeckFile(deckPath: string, deck: LocalDeck): void {
   fs.writeFileSync(deckPath, JSON.stringify(deck, null, 2), 'utf-8');
+}
+
+/**
+ * Resolve a deck path relative to the workspace root (when inside a workspace
+ * or --workspace is given) or relative to CWD otherwise.
+ */
+function resolveDeckPath(deckPathArg: string, explicitWorkspace?: string): string {
+  const ws = explicitWorkspace || detectWorkspaceRoot();
+  if (ws) return path.resolve(ws, deckPathArg);
+  return deckPathArg;
 }
 
 async function handleCreate(args: { notePath: string; name: string }): Promise<void> {
@@ -131,7 +142,8 @@ export const deckCommand = {
     y
       .option('workspace', {
         type: 'string' as const,
-        description: 'Path to Sapie workspace directory (default: CWD)',
+        description:
+          'Path to Sapie workspace directory (auto-detected from .sapie/config.json if not provided)',
       })
       .command(
         'create <notePath>',
@@ -149,10 +161,10 @@ export const deckCommand = {
               description: 'Deck name',
             }),
         (args) => {
-          const ws = (args.workspace as string) || '';
-          const notePath = ws
-            ? path.resolve(ws, args.notePath as string)
-            : (args.notePath as string);
+          const notePath = resolveDeckPath(
+            args.notePath as string,
+            args.workspace as string | undefined
+          );
           handleCreate({ notePath, name: args.name as string });
         }
       )
@@ -166,10 +178,10 @@ export const deckCommand = {
             description: 'Path to the deck JSON file (e.g. folder/MyNote.md/decks/mycards.json)',
           }),
         (args) => {
-          const ws = (args.workspace as string) || '';
-          const deckPath = ws
-            ? path.resolve(ws, args.deckPath as string)
-            : (args.deckPath as string);
+          const deckPath = resolveDeckPath(
+            args.deckPath as string,
+            args.workspace as string | undefined
+          );
           handleList({ deckPath });
         }
       )
@@ -194,10 +206,10 @@ export const deckCommand = {
               description: 'Back side text (answer)',
             }),
         (args) => {
-          const ws = (args.workspace as string) || '';
-          const deckPath = ws
-            ? path.resolve(ws, args.deckPath as string)
-            : (args.deckPath as string);
+          const deckPath = resolveDeckPath(
+            args.deckPath as string,
+            args.workspace as string | undefined
+          );
           handleAdd({ deckPath, front: args.front as string, back: args.back as string });
         }
       )
@@ -225,10 +237,10 @@ export const deckCommand = {
               description: 'New back side text',
             }),
         (args) => {
-          const ws = (args.workspace as string) || '';
-          const deckPath = ws
-            ? path.resolve(ws, args.deckPath as string)
-            : (args.deckPath as string);
+          const deckPath = resolveDeckPath(
+            args.deckPath as string,
+            args.workspace as string | undefined
+          );
           handleEdit({
             deckPath,
             index: args.index as number,
@@ -253,10 +265,10 @@ export const deckCommand = {
               description: 'Card index (0-based)',
             }),
         (args) => {
-          const ws = (args.workspace as string) || '';
-          const deckPath = ws
-            ? path.resolve(ws, args.deckPath as string)
-            : (args.deckPath as string);
+          const deckPath = resolveDeckPath(
+            args.deckPath as string,
+            args.workspace as string | undefined
+          );
           handleRemove({ deckPath, index: args.index as number });
         }
       ),
