@@ -5,6 +5,8 @@ import {
   CreateLink,
   InsertCodeBlock,
   InsertImage,
+  InsertTable,
+  InsertThematicBreak,
   ListsToggle,
   Separator,
   UndoRedo,
@@ -16,6 +18,10 @@ import {
   linkPlugin,
   listsPlugin,
   markdownShortcutPlugin,
+  quotePlugin,
+  searchPlugin,
+  tablePlugin,
+  thematicBreakPlugin,
   toolbarPlugin,
   type MDXEditorMethods,
 } from '@mdxeditor/editor';
@@ -73,6 +79,9 @@ export const RichNoteBodyEditor = forwardRef<
     () => [
       headingsPlugin(),
       listsPlugin(),
+      quotePlugin(),
+      tablePlugin(),
+      thematicBreakPlugin(),
       linkPlugin(),
       linkDialogPlugin(),
       ...(imageUploadHandler != null
@@ -99,6 +108,7 @@ export const RichNoteBodyEditor = forwardRef<
         autoLoadLanguageSupport: true,
       }),
       markdownShortcutPlugin(),
+      searchPlugin(),
       toolbarPlugin({
         toolbarContents: () => (
           <>
@@ -118,6 +128,10 @@ export const RichNoteBodyEditor = forwardRef<
                 <Separator />
               </>
             ) : null}
+            <InsertTable />
+            <Separator />
+            <InsertThematicBreak />
+            <Separator />
             <InsertCodeBlock />
           </>
         ),
