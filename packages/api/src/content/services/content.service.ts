@@ -11,7 +11,7 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { nanoid } from 'nanoid';
-import { Content, ContentType } from '../entities/content.entity';
+import { Content, ContentType, Note } from '../entities/content.entity';
 import { ContentRepository } from '../repositories/content-repository.service';
 import { CONTENT_BODY_MAX_BYTES } from '../constants/content-body-limits';
 import {
@@ -24,6 +24,7 @@ import {
   type ContentBodyReadService,
 } from './content-body-read.service';
 import { ContentBodyStorageService } from './content-body-storage.service';
+
 
 import { CardService } from '../../cards/services/card.service';
 
@@ -41,7 +42,7 @@ export class ContentService {
     @Inject(CONTENT_BODY_READ_SERVICE)
     private readonly contentBodyReadService: ContentBodyReadService,
     @Inject(forwardRef(() => CardService))
-    private readonly cardService: CardService
+    private readonly cardService: CardService,
   ) {}
 
   async findByParentIdAndOwnerId(parentId: string, ownerId: string): Promise<Content[]> {
@@ -117,11 +118,11 @@ export class ContentService {
     }
 
     if (contentType === ContentType.DECK) {
-      // Denormalize folderId from the parent note's parent folder
+      // Denormalize directoryId from the parent note's parent directory
       return this.contentRepository.addDeck({
         name,
         parentId,
-        folderId: parent.parentId!,
+        directoryId: parent.parentId!,
         ownerId,
         createdAt: now,
         updatedAt: now,
@@ -210,10 +211,11 @@ export class ContentService {
       throw new ForbiddenException('User does not own this content');
     }
 
-    if (existing.type === ContentType.DIRECTORY) {
-      throw new BadRequestException('Body storage is not applicable for directories');
+    if (existing.type === ContentType.DIRECTORY || existing.type === ContentType.DECK) {
+      throw new BadRequestException('Body storage is not applicable for directories or decks');
     }
 
+    // Narrowed to Note after the guard above
     if (!existing.body?.uri || existing.body.size == null) {
       throw new NotFoundException('Content has no stored body yet');
     }
@@ -242,10 +244,11 @@ export class ContentService {
       throw new ForbiddenException('User does not own this content');
     }
 
-    if (existing.type === ContentType.DIRECTORY) {
-      throw new BadRequestException('Body storage is not applicable for directories');
+    if (existing.type === ContentType.DIRECTORY || existing.type === ContentType.DECK) {
+      throw new BadRequestException('Body storage is not applicable for directories or decks');
     }
 
+    // Narrowed to Note after the guard above
     if (!existing.body?.uri || existing.body.size == null) {
       throw new NotFoundException('Content has no stored body yet');
     }
@@ -281,11 +284,11 @@ export class ContentService {
       throw new ForbiddenException('User does not own this content');
     }
 
-    if (existing.type === ContentType.DIRECTORY) {
-      throw new BadRequestException('Body storage is not applicable for directories');
+    if (existing.type === ContentType.DIRECTORY || existing.type === ContentType.DECK) {
+      throw new BadRequestException('Body storage is not applicable for directories or decks');
     }
 
-    if (existing.type === ContentType.NOTE) {
+    if (existing.type === 'note') {
       this.assertExpectedRevision(existing, expectedRevision);
     }
 
@@ -321,7 +324,7 @@ export class ContentService {
     return updated;
   }
 
-  private assertExpectedRevision(existing: Content, expectedRevision?: string): void {
+  private assertExpectedRevision(existing: Note, expectedRevision?: string): void {
     if (expectedRevision === undefined) {
       throw new BadRequestException(
         'Request must include `expectedRevision` query parameter (use empty string when the note has no body yet).'
@@ -337,7 +340,7 @@ export class ContentService {
   /**
    * Validates the content is a non-deleted note owned by the caller, returns it (or throws).
    */
-  private async assertNoteOwnedByUser(contentId: string, ownerId: string): Promise<Content> {
+  private async assertNoteOwnedByUser(contentId: string, ownerId: string): Promise<Note> {
     const content = await this.contentRepository.findById(contentId);
     if (!content) {
       throw new NotFoundException(`Content with ID ${contentId} not found`);
@@ -348,7 +351,7 @@ export class ContentService {
     if (content.deleted) {
       throw new NotFoundException(`Content with ID ${contentId} not found`);
     }
-    if (content.type !== ContentType.NOTE) {
+    if (content.type !== 'note') {
       throw new BadRequestException('Blobs can only be attached to note-type content');
     }
     return content;
@@ -426,15 +429,15 @@ export class ContentService {
     for (const root of roots) {
       // Collect all descendant folder IDs + the root itself
       const descendantIds = await this.contentRepository.findAllDescendantIds(root.id, ownerId);
-      const folderIds = [root.id, ...descendantIds];
+      const directoryIds = [root.id, ...descendantIds];
 
       // Find all non-deleted decks under those folders
-      const decks = await this.contentRepository.findDecksByFolderIds(folderIds, ownerId);
+      const decks = await this.contentRepository.findDecksByDirectoryIds(directoryIds, ownerId);
 
       // Count due cards for each deck
       let dueCardCount = 0;
       for (const deck of decks) {
-        const count = await this.cardService.countDueCards(deck.id);
+        const count = await this.cardService.countDueCards(deck.id, ownerId);
         dueCardCount += count;
       }
 

@@ -24,7 +24,7 @@ export interface ContentResponse {
   type: ContentType;
   parentId: string | null;
   ownerId: string;
-  folderId?: string | null;
+  directoryId?: string | null;
   body?: ContentBodySummaryResponse | null;
   tags?: string[] | null;
   createdAt: string;

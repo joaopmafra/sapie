@@ -8,7 +8,7 @@ import {
 import { Card } from '../entities/card.entity';
 import { CardRepository } from '../repositories/card-repository.service';
 import { ContentRepository } from '../../content/repositories/content-repository.service';
-import { ContentType } from '../../content/entities/content.entity';
+import { StudyResultRepository } from '../../study/repositories/study-result-repository.service';
 
 @Injectable()
 export class CardService {
@@ -16,17 +16,20 @@ export class CardService {
 
   constructor(
     private readonly cardRepository: CardRepository,
-    private readonly contentRepository: ContentRepository
+    private readonly contentRepository: ContentRepository,
+    private readonly studyResultRepository: StudyResultRepository,
   ) {}
-
   async createCard(deckId: string, ownerId: string, front: string, back: string): Promise<Card> {
-    const deck = await this.validateDeckOwnership(deckId, ownerId);
+    await this.validateDeckOwnership(deckId, ownerId);
 
-    if (deck.type !== ContentType.DECK) {
-      throw new BadRequestException(`Content with ID ${deckId} is not a deck`);
-    }
+    const position = await this.cardRepository.getNextPosition(deckId);
 
-    return this.cardRepository.addCard({ deckId, ownerId, front, back });
+    const card = await this.cardRepository.addCard({ deckId, ownerId, front, back, position });
+
+    // Create initial study result so the card shows up as "due immediately"
+    await this.studyResultRepository.findOrCreate(card.id, ownerId);
+
+    return card;
   }
 
   async getCards(deckId: string, ownerId: string): Promise<Card[]> {
@@ -44,8 +47,8 @@ export class CardService {
   ): Promise<Card> {
     await this.validateDeckOwnership(deckId, ownerId);
 
-    const card = await this.cardRepository.findById(cardId, deckId);
-    if (!card || card.deleted) {
+    const card = await this.cardRepository.findById(cardId);
+    if (!card || card.deleted || card.deckId !== deckId) {
       throw new NotFoundException(`Card with ID ${cardId} not found in deck ${deckId}`);
     }
 
@@ -55,9 +58,9 @@ export class CardService {
     if (front !== undefined) updates.front = front;
     if (back !== undefined) updates.back = back;
 
-    await this.cardRepository.updateCard(deckId, cardId, updates);
+    await this.cardRepository.updateCard(cardId, updates);
 
-    const updated = await this.cardRepository.findById(cardId, deckId);
+    const updated = await this.cardRepository.findById(cardId);
     if (!updated) {
       throw new NotFoundException(`Card with ID ${cardId} not found after update`);
     }
@@ -68,47 +71,41 @@ export class CardService {
   async deleteCard(deckId: string, cardId: string, ownerId: string): Promise<void> {
     await this.validateDeckOwnership(deckId, ownerId);
 
-    const card = await this.cardRepository.findById(cardId, deckId);
-    if (!card || card.deleted) {
+    const card = await this.cardRepository.findById(cardId);
+    if (!card || card.deleted || card.deckId !== deckId) {
       throw new NotFoundException(`Card with ID ${cardId} not found in deck ${deckId}`);
     }
 
-    await this.cardRepository.softDeleteCard(deckId, cardId, new Date());
+    await this.cardRepository.softDeleteCard(cardId, new Date());
   }
 
+  /** Soft-deletes all non-deleted cards for a deck. */
   async deleteCardsForDeck(deckId: string): Promise<void> {
-    await this.cardRepository.deleteCardsByDeckId(deckId);
-  }
-
-  /**
-   * Returns due cards in a deck (non-deleted, dueDate <= now), ordered by dueDate ascending.
-   */
-  async findDueCards(deckId: string): Promise<Card[]> {
-    return this.cardRepository.findDueCards(deckId);
+    await this.cardRepository.softDeleteCardsByDeckId(deckId);
   }
 
   /**
    * Records a study result for a card and applies the SM-2 spaced repetition algorithm.
+   * Returns the card and the updated study state fields for the HTTP response.
    */
   async recordStudyResult(
     deckId: string,
     cardId: string,
     ownerId: string,
     result: 'know' | 'dont_know'
-  ): Promise<Card> {
-    const deck = await this.validateDeckOwnership(deckId, ownerId);
+  ): Promise<{ card: Card; studyState: {
+    dueDate: Date; interval: number; repetitions: number;
+    lastResult: 'know' | 'dont_know'; lastStudied: Date;
+    correctCount: number; incorrectCount: number;
+  }}> {
+    await this.validateDeckOwnership(deckId, ownerId);
 
-    if (deck.type !== ContentType.DECK) {
-      throw new BadRequestException(`Content with ID ${deckId} is not a deck`);
-    }
-
-    const card = await this.cardRepository.findById(cardId, deckId);
-    if (!card) {
+    const card = await this.cardRepository.findById(cardId);
+    if (!card || card.deleted || card.deckId !== deckId) {
       throw new NotFoundException(`Card with ID ${cardId} not found`);
     }
-    if (card.deleted) {
-      throw new NotFoundException(`Card with ID ${cardId} not found`);
-    }
+
+    const studyResult = await this.studyResultRepository.findOrCreate(cardId, ownerId);
 
     const now = new Date();
     let interval: number;
@@ -118,20 +115,20 @@ export class CardService {
     let incorrectCount: number;
 
     if (result === 'know') {
-      repetitions = card.repetitions + 1;
-      interval = Math.min(2 ** repetitions, 365); // days, capped at ~1 year
+      repetitions = studyResult.repetitions + 1;
+      interval = Math.min(2 ** repetitions, 365);
       dueDate = new Date(now.getTime() + interval * 24 * 60 * 60 * 1000);
-      correctCount = card.correctCount + 1;
-      incorrectCount = card.incorrectCount;
+      correctCount = studyResult.correctCount + 1;
+      incorrectCount = studyResult.incorrectCount;
     } else {
       repetitions = 0;
       interval = 0;
-      dueDate = now; // due immediately
-      correctCount = card.correctCount;
-      incorrectCount = card.incorrectCount + 1;
+      dueDate = now;
+      correctCount = studyResult.correctCount;
+      incorrectCount = studyResult.incorrectCount + 1;
     }
 
-    await this.cardRepository.updateCardStudyState(deckId, cardId, {
+    await this.studyResultRepository.updateStudyState(studyResult.id, {
       dueDate,
       interval,
       repetitions,
@@ -141,19 +138,30 @@ export class CardService {
       incorrectCount,
     });
 
-    // Return updated card
-    const updated = await this.cardRepository.findById(cardId, deckId);
-    if (!updated) {
-      throw new Error(`Card with ID ${cardId} disappeared after update`);
-    }
-    return updated;
+    return {
+      card,
+      studyState: {
+        dueDate,
+        interval,
+        repetitions,
+        lastResult: result,
+        lastStudied: now,
+        correctCount,
+        incorrectCount,
+      },
+    };
   }
 
   /**
-   * Counts due cards in a deck (non-deleted, dueDate <= now).
+   * Counts due cards in a deck for a specific user.
    */
-  async countDueCards(deckId: string): Promise<number> {
-    return this.cardRepository.countDueCards(deckId);
+  async countDueCards(deckId: string, userId: string): Promise<number> {
+    const cards = await this.cardRepository.findByDeckId(deckId);
+    if (cards.length === 0) return 0;
+
+    const cardIds = cards.map(c => c.id);
+    const dueResults = await this.studyResultRepository.findDueResults(userId, cardIds);
+    return dueResults.length;
   }
 
   private async validateDeckOwnership(deckId: string, ownerId: string) {
@@ -161,6 +169,10 @@ export class CardService {
 
     if (!deck) {
       throw new NotFoundException(`Deck with ID ${deckId} not found`);
+    }
+
+    if (deck.type !== 'deck') {
+      throw new BadRequestException(`Content with ID ${deckId} is not a deck`);
     }
 
     if (deck.ownerId !== ownerId) {

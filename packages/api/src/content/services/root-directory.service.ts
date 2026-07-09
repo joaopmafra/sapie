@@ -66,7 +66,7 @@ export class RootDirectoryService {
       const now = new Date();
       const rootDirectoryData = {
         name: 'My Contents',
-        type: ContentType.DIRECTORY,
+        type: 'directory' as const,
         parentId: null,
         ownerId: userId,
         body: null,
@@ -83,10 +83,9 @@ export class RootDirectoryService {
       return {
         id: docRef.id,
         name: rootDirectoryData.name,
-        type: rootDirectoryData.type,
+        type: 'directory' as const,
         parentId: rootDirectoryData.parentId,
         ownerId: rootDirectoryData.ownerId,
-        body: null,
         createdAt: now,
         updatedAt: now,
       };

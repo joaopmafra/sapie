@@ -350,7 +350,7 @@ export interface ContentResponse {
      * @type {string}
      * @memberof ContentResponse
      */
-    'folderId'?: string | null;
+    'directoryId'?: string | null;
     /**
      * ID of the user who owns this content
      * @type {string}

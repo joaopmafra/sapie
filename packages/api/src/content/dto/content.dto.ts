@@ -62,7 +62,7 @@ export class ContentResponse {
     enum: ContentType,
     example: ContentType.NOTE,
   })
-  type: ContentType;
+  type: 'directory' | 'note' | 'deck';
 
   @ApiProperty({
     type: String,
@@ -78,7 +78,7 @@ export class ContentResponse {
       'Denormalized folder ID (set for deck-type content, enables folder-level study queries).',
     nullable: true,
   })
-  folderId?: string | null;
+  directoryId?: string | null;
 
   @ApiProperty({
     description: 'ID of the user who owns this content',
@@ -131,9 +131,13 @@ export function toContentResponse(content: Content): ContentResponse {
   response.ownerId = content.ownerId;
   response.createdAt = content.createdAt;
   response.updatedAt = content.updatedAt;
-  response.folderId = content.folderId ?? null;
   response.tags = content.tags ?? null;
-  if (content.type !== ContentType.DIRECTORY) {
+
+  if (content.type === 'deck') {
+    response.directoryId = content.directoryId ?? null;
+  }
+
+  if (content.type === 'note') {
     if (content.body) {
       const summary = new ContentBodySummaryResponse();
       summary.mimeType = content.body.mimeType;

@@ -158,13 +158,15 @@ export function toCardResponse(card: Card): CardResponse {
   response.ownerId = card.ownerId;
   response.front = card.front;
   response.back = card.back;
-  response.dueDate = card.dueDate;
-  response.interval = card.interval;
-  response.repetitions = card.repetitions;
-  response.lastResult = card.lastResult;
-  response.lastStudied = card.lastStudied;
-  response.correctCount = card.correctCount;
-  response.incorrectCount = card.incorrectCount;
+  // Study state fields default to zero/null — actual study state is in
+  // the study_results collection and returned via study endpoints.
+  response.dueDate = new Date(0);
+  response.interval = 0;
+  response.repetitions = 0;
+  response.lastResult = null;
+  response.lastStudied = null;
+  response.correctCount = 0;
+  response.incorrectCount = 0;
   response.deleted = card.deleted;
   response.deletedAt = card.deletedAt ?? null;
   response.createdAt = card.createdAt;
@@ -219,7 +221,9 @@ export class UpdateCardRequest {
 export class CardController {
   private readonly logger = new Logger(CardController.name);
 
-  constructor(private readonly cardService: CardService) {}
+  constructor(
+    private readonly cardService: CardService,
+  ) {}
 
   @Post(':deckId/cards')
   @Auth()
@@ -430,8 +434,19 @@ export class CardController {
       `Recording study result for card ${cardId} in deck ${deckId}: ${body.result}`
     );
 
-    const updated = await this.cardService.recordStudyResult(deckId, cardId, user.uid, body.result);
+    const { card, studyState } = await this.cardService.recordStudyResult(
+      deckId, cardId, user.uid, body.result
+    );
 
-    return toCardResponse(updated);
+    const response = toCardResponse(card);
+    response.dueDate = studyState.dueDate;
+    response.interval = studyState.interval;
+    response.repetitions = studyState.repetitions;
+    response.lastResult = studyState.lastResult;
+    response.lastStudied = studyState.lastStudied;
+    response.correctCount = studyState.correctCount;
+    response.incorrectCount = studyState.incorrectCount;
+
+    return response;
   }
 }

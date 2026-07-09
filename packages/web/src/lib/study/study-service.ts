@@ -39,7 +39,7 @@ export class StudyService {
       `${basePath}/api/study/folder-cards`,
       {
         ...options,
-        params: { folderId },
+        params: { directoryId: folderId },
       }
     );
     return {

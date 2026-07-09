@@ -103,16 +103,16 @@ export class StudyController {
       'For ungraded review sessions.',
   })
   @ApiQuery({
-    name: 'folderId',
+    name: 'directoryId',
     required: true,
     type: String,
-    description: 'The folder ID to collect cards from',
+    description: 'The directory ID to collect cards from',
   })
   @ApiOkResponse({
     description: 'Cards returned successfully.',
   })
   @ApiBadRequestResponse({
-    description: 'Missing or invalid folderId.',
+    description: 'Missing or invalid directoryId.',
     ...apiProblemDetailsSchema,
   })
   @ApiUnauthorizedResponse({
@@ -121,16 +121,16 @@ export class StudyController {
   })
   async getFolderCards(
     @Request() request: AuthenticatedRequest,
-    @Query('folderId') folderId: string
+    @Query('directoryId') directoryId: string
   ) {
     const { user } = request;
 
-    if (!folderId || folderId.trim().length === 0) {
-      throw new BadRequestException('Query parameter `folderId` is required');
+    if (!directoryId || directoryId.trim().length === 0) {
+      throw new BadRequestException('Query parameter `directoryId` is required');
     }
 
-    this.logger.debug(`Getting folder cards for user ${user.uid}, folder: ${folderId}`);
+    this.logger.debug(`Getting folder cards for user ${user.uid}, directory: ${directoryId}`);
 
-    return this.studyService.getFolderCards(folderId.trim(), user.uid);
+    return this.studyService.getFolderCards(directoryId.trim(), user.uid);
   }
 }

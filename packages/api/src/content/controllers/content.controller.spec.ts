@@ -99,7 +99,7 @@ describe('ContentController', () => {
     expect(response.body).toHaveProperty('name', 'My Deck');
     expect(response.body).toHaveProperty('type', 'deck');
     expect(response.body).toHaveProperty('parentId', note.id);
-    expect(response.body).toHaveProperty('folderId', root.id);
+    expect(response.body).toHaveProperty('directoryId', root.id);
     expect(response.body).toHaveProperty('ownerId', fixture.TEST_USER_ID);
   });
 
