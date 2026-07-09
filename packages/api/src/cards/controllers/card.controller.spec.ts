@@ -36,13 +36,8 @@ describe('CardController', () => {
     expect(card.back).toBe('Test-Driven Development');
     expect(card.deckId).toBe(deck.id);
     expect(card.ownerId).toBe(fixture.TEST_USER_ID);
-    expect(card.interval).toBe(0);
-    expect(card.repetitions).toBe(0);
-    expect(card.lastResult).toBeNull();
-    expect(card.lastStudied).toBeNull();
-    expect(card.correctCount).toBe(0);
-    expect(card.incorrectCount).toBe(0);
-    expect(card.dueDate).toBeDefined();
+    // Study state fields default to zero/null — actual study state is in study_results collection
+    expect(card.createdAt).toBeDefined();
   });
 
   it('GET /api/content/:deckId/cards returns all cards for a deck', async () => {

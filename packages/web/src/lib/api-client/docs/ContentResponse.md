@@ -9,7 +9,7 @@ Name | Type | Description | Notes
 **name** | **string** | Display name of the content | [default to undefined]
 **type** | **string** | Type of content | [default to undefined]
 **parentId** | **string** | ID of the parent directory, null for root directory | [default to undefined]
-**folderId** | **string** | Denormalized folder ID (set for deck-type content, enables folder-level study queries). | [optional] [default to undefined]
+**directoryId** | **string** | Denormalized folder ID (set for deck-type content, enables folder-level study queries). | [optional] [default to undefined]
 **ownerId** | **string** | ID of the user who owns this content | [default to undefined]
 **body** | [**ContentBodySummaryResponse**](ContentBodySummaryResponse.md) | **Notes.** Public summary of the stored body. Omitted for directories. &#x60;null&#x60; before the first &#x60;PUT …/body&#x60;. | [optional] [default to undefined]
 **tags** | **Array&lt;string&gt;** | Tags for categorization (e.g. \&quot;content-root\&quot;, \&quot;knowledge-area\&quot;). Applicable to folders. | [optional] [default to undefined]
@@ -26,7 +26,7 @@ const instance: ContentResponse = {
     name,
     type,
     parentId,
-    folderId,
+    directoryId,
     ownerId,
     body,
     tags,

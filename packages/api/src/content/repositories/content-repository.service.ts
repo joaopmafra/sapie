@@ -2,11 +2,14 @@ import { Injectable, Logger } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { FirebaseAdminService } from '../../firebase';
 import {
+  BaseContent,
   Content,
   ContentBody,
   ContentBodyDocument,
-  ContentDocument,
   ContentType,
+  Deck,
+  Directory,
+  Note,
 } from '../entities/content.entity';
 
 @Injectable()
@@ -35,8 +38,9 @@ export class ContentRepository {
       }
 
       const doc = querySnapshot.docs[0];
-      const data = doc.data() as ContentDocument;
+      const data = doc.data();
       const content = this.convertDocumentToContent(doc.id, data);
+      if (!content) return null;
       // Filter out soft-deleted roots (unlikely but defensive)
       return content.deleted ? null : content;
     } catch (error) {
@@ -57,7 +61,8 @@ export class ContentRepository {
     }
 
     const doc = querySnapshot.docs[0];
-    const content = this.convertDocumentToContent(doc.id, doc.data() as ContentDocument);
+    const content = this.convertDocumentToContent(doc.id, doc.data());
+    if (!content) return null;
     // Skip soft-deleted items (they should not block name reuse)
     return content.deleted ? null : content;
   }
@@ -69,7 +74,9 @@ export class ContentRepository {
       return null;
     }
 
-    return this.convertDocumentToContent(doc.id, doc.data() as ContentDocument);
+    const data = doc.data();
+    if (!data) return null;
+    return this.convertDocumentToContent(doc.id, data);
   }
 
   async findByParentIdAndOwnerId(parentId: string, ownerId: string): Promise<Content[]> {
@@ -79,8 +86,8 @@ export class ContentRepository {
       .where('ownerId', '==', ownerId)
       .get();
     return snapshot.docs
-      .map(d => this.convertDocumentToContent(d.id, d.data() as ContentDocument))
-      .filter(c => !c.deleted);
+      .map(d => this.convertDocumentToContent(d.id, d.data()))
+      .filter((c): c is Content => c !== null && !c.deleted);
   }
 
   async addNote(params: {
@@ -89,8 +96,29 @@ export class ContentRepository {
     ownerId: string;
     createdAt: Date;
     updatedAt: Date;
-  }): Promise<Content> {
-    return this.addContentWithType({ ...params, type: ContentType.NOTE });
+  }): Promise<Note> {
+    const newContentData = {
+      name: params.name,
+      type: ContentType.NOTE as const,
+      parentId: params.parentId,
+      ownerId: params.ownerId,
+      body: null,
+      createdAt: params.createdAt,
+      updatedAt: params.updatedAt,
+    };
+
+    const docRef = await this.firestore.collection(this.contentCollection).add(newContentData);
+
+    return {
+      id: docRef.id,
+      type: 'note' as const,
+      name: params.name,
+      parentId: params.parentId,
+      ownerId: params.ownerId,
+      body: null,
+      createdAt: params.createdAt,
+      updatedAt: params.updatedAt,
+    };
   }
 
   private async addContentWithType(params: {
@@ -100,48 +128,58 @@ export class ContentRepository {
     createdAt: Date;
     updatedAt: Date;
     type: ContentType;
-    folderId?: string | null;
+    directoryId?: string | null;
   }): Promise<Content> {
     const newContentData: Record<string, unknown> = {
       name: params.name,
       type: params.type,
       parentId: params.parentId,
       ownerId: params.ownerId,
-      body: null,
       createdAt: params.createdAt,
       updatedAt: params.updatedAt,
     };
-    if (params.folderId !== undefined) {
-      newContentData.folderId = params.folderId;
+    if (params.type === ContentType.NOTE) {
+      newContentData.body = null;
+    }
+    if (params.directoryId !== undefined) {
+      newContentData.directoryId = params.directoryId;
     }
 
     const docRef = await this.firestore.collection(this.contentCollection).add(newContentData);
 
-    return {
-      id: docRef.id,
-      name: newContentData.name as string,
-      type: newContentData.type as ContentType,
-      parentId: newContentData.parentId as string | null,
-      folderId: (newContentData.folderId as string) ?? null,
-      ownerId: newContentData.ownerId as string,
-      body: null,
-      createdAt: params.createdAt,
-      updatedAt: params.updatedAt,
-    };
+    // Re-read to get the typed document back (avoids unsafe cast of unknown fields)
+    const snap = await docRef.get();
+    if (!snap.exists) {
+      throw new Error(`Content ${docRef.id} not found immediately after creation`);
+    }
+    const snapData = snap.data();
+    if (!snapData) {
+      throw new Error(`Content ${docRef.id} data is undefined`);
+    }
+    const created = this.convertDocumentToContent(docRef.id, snapData);
+    if (!created) {
+      throw new Error(`Content ${docRef.id} not found immediately after creation`);
+    }
+    return created;
   }
 
   async addDeck(params: {
     name: string;
     parentId: string;
-    folderId: string;
+    directoryId: string;
     ownerId: string;
     createdAt: Date;
     updatedAt: Date;
-  }): Promise<Content> {
-    return this.addContentWithType({
+  }): Promise<Deck> {
+    const result = await this.addContentWithType({
       ...params,
       type: ContentType.DECK,
     });
+    // addContentWithType returns Content; for deck creation the type is always Deck
+    if (result.type !== 'deck') {
+      throw new Error(`Expected deck, got ${result.type}`);
+    }
+    return result;
   }
 
   async addDirectory(params: {
@@ -150,13 +188,12 @@ export class ContentRepository {
     ownerId: string;
     createdAt: Date;
     updatedAt: Date;
-  }): Promise<Content> {
+  }): Promise<Directory> {
     const newContentData = {
       name: params.name,
-      type: ContentType.DIRECTORY,
+      type: ContentType.DIRECTORY as const,
       parentId: params.parentId,
       ownerId: params.ownerId,
-      body: null,
       createdAt: params.createdAt,
       updatedAt: params.updatedAt,
     };
@@ -165,11 +202,10 @@ export class ContentRepository {
 
     return {
       id: docRef.id,
-      name: newContentData.name,
-      type: newContentData.type,
-      parentId: newContentData.parentId,
-      ownerId: newContentData.ownerId,
-      body: null,
+      type: 'directory' as const,
+      name: params.name,
+      parentId: params.parentId,
+      ownerId: params.ownerId,
       createdAt: params.createdAt,
       updatedAt: params.updatedAt,
     };
@@ -216,11 +252,13 @@ export class ContentRepository {
         .get();
 
       for (const doc of snapshot.docs) {
-        const docData = doc.data() as ContentDocument;
+        const docData = doc.data();
+        const docDeleted = docData?.['deleted'];
+        const docType = docData?.['type'];
         // Skip soft-deleted descendants (shouldn't exist but defensive)
-        if (!docData.deleted) {
+        if (!docDeleted) {
           result.push(doc.id);
-          if (docData.type === (ContentType.DIRECTORY as string)) {
+          if (docType === 'directory' || docType === 'note') {
             queue.push(doc.id);
           }
         }
@@ -239,7 +277,7 @@ export class ContentRepository {
       .collection(this.contentCollection)
       .where('parentId', '==', parentId)
       .get();
-    return snapshot.docs.filter(d => !(d.data() as ContentDocument).deleted).length;
+    return snapshot.docs.filter(d => !(d.data()).deleted).length;
   }
 
   async updateContentBodyMetadata(
@@ -251,7 +289,7 @@ export class ContentRepository {
   ): Promise<void> {
     const ref = this.firestore.collection(this.contentCollection).doc(id);
     const snap = await ref.get();
-    const data = snap.data() as ContentDocument | undefined;
+    const data = snap.data();
     const existingNested = data?.body;
     let createdAt = updatedAt;
     if (this.isContentBodyDocument(existingNested)) {
@@ -286,7 +324,7 @@ export class ContentRepository {
   /**
    * Finds all folders tagged "content-root" owned by the given user (non-deleted).
    */
-  async findRootsByOwnerId(ownerId: string): Promise<Content[]> {
+  async findRootsByOwnerId(ownerId: string): Promise<Directory[]> {
     const snapshot = await this.firestore
       .collection(this.contentCollection)
       .where('type', '==', ContentType.DIRECTORY)
@@ -295,27 +333,27 @@ export class ContentRepository {
       .get();
 
     return snapshot.docs
-      .map(doc => this.convertDocumentToContent(doc.id, doc.data() as ContentDocument))
-      .filter(c => !c.deleted);
+      .map(doc => this.convertDocumentToContent(doc.id, doc.data()))
+      .filter((c): c is Directory => c !== null && !c.deleted && c.type === 'directory');
   }
 
   /**
-   * Finds all non-deleted deck-type content whose `folderId` is in the given list.
+   * Finds all non-deleted deck-type content whose `directoryId` is in the given list.
    */
-  async findDecksByFolderIds(folderIds: string[], ownerId: string): Promise<Content[]> {
-    if (folderIds.length === 0) return [];
+  async findDecksByDirectoryIds(directoryIds: string[], ownerId: string): Promise<Deck[]> {
+    if (directoryIds.length === 0) return [];
 
-    // Firestore `in` query supports up to 30 values. For MVP we assume fewer than 30 folders per root.
+    // Firestore `in` query supports up to 30 values. For MVP we assume fewer than 30 directories per root.
     const snapshot = await this.firestore
       .collection(this.contentCollection)
       .where('type', '==', ContentType.DECK)
-      .where('folderId', 'in', folderIds)
+      .where('directoryId', 'in', directoryIds)
       .where('ownerId', '==', ownerId)
       .get();
 
     return snapshot.docs
-      .map(doc => this.convertDocumentToContent(doc.id, doc.data() as ContentDocument))
-      .filter(c => !c.deleted);
+      .map(doc => this.convertDocumentToContent(doc.id, doc.data()))
+      .filter((c): c is Deck => c !== null && !c.deleted && c.type === 'deck');
   }
 
   private isContentBodyDocument(v: unknown): v is ContentBodyDocument {
@@ -342,26 +380,45 @@ export class ContentRepository {
     };
   }
 
-  private convertDocumentToContent(id: string, data: ContentDocument): Content {
-    const base = {
+  /**
+   * Converts a raw Firestore document to the correct discriminated Content type.
+   * Uses the `type` field to discriminate and validate fields at runtime.
+   */
+  private convertDocumentToContent(id: string, data: FirebaseFirestore.DocumentData): Content | null {
+    if (!data || typeof data !== 'object') return null;
+
+    const rawType = data['type'];
+    if (typeof rawType !== 'string') return null;
+
+    const base: BaseContent = {
       id,
-      name: data.name,
-      type: data.type as ContentType,
-      parentId: data.parentId,
-      folderId: data.folderId ?? null,
-      ownerId: data.ownerId,
-      tags: data.tags ?? null,
-      deleted: data.deleted,
-      deletedAt: data.deletedAt?.toDate() ?? null,
-      deletedBy: data.deletedBy ?? null,
-      createdAt: data.createdAt.toDate(),
-      updatedAt: data.updatedAt.toDate(),
+      name: typeof data['name'] === 'string' ? data['name'] : '',
+      parentId: typeof data['parentId'] === 'string' ? data['parentId'] : null,
+      ownerId: typeof data['ownerId'] === 'string' ? data['ownerId'] : '',
+      deleted: typeof data['deleted'] === 'boolean' ? data['deleted'] : undefined,
+      deletedAt: data['deletedAt'] && typeof data['deletedAt'].toDate === 'function' ? data['deletedAt'].toDate() : null,
+      deletedBy: data['deletedBy'] && typeof data['deletedBy'] === 'object' ? data['deletedBy'] as { uid: string } : null,
+      tags: Array.isArray(data['tags']) ? data['tags'] : null,
+      createdAt: data['createdAt'] && typeof data['createdAt'].toDate === 'function' ? data['createdAt'].toDate() : new Date(),
+      updatedAt: data['updatedAt'] && typeof data['updatedAt'].toDate === 'function' ? data['updatedAt'].toDate() : new Date(),
     };
 
-    if (this.isContentBodyDocument(data.body)) {
-      return { ...base, body: this.bodyFromNested(data.body) };
+    switch (rawType) {
+      case 'directory':
+        return { ...base, type: 'directory' as const };
+      case 'note': {
+        const body = this.isContentBodyDocument(data['body'])
+          ? this.bodyFromNested(data['body'])
+          : null;
+        return { ...base, type: 'note' as const, body };
+      }
+      case 'deck': {
+        const directoryId = typeof data['directoryId'] === 'string' ? data['directoryId'] : null;
+        const description = typeof data['description'] === 'string' ? data['description'] : undefined;
+        return { ...base, type: 'deck' as const, directoryId, description };
+      }
+      default:
+        return null;
     }
-
-    return { ...base, body: null };
   }
 }

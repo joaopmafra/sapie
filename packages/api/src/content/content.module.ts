@@ -10,17 +10,6 @@ import { ContentService } from './services/content.service';
 import { ContentBodyStorageService } from './services/content-body-storage.service';
 import { getContentBodyReadServiceProviderPair } from './services/content-body-read.service';
 
-/**
- * Content Module
- *
- * This module provides content management functionality including:
- * - Root directory management for users
- * - Content storage and retrieval operations
- * - Blob (inline image) storage for notes
- *
- * The module serves as the foundation for the content management system,
- * providing users with their personal workspace and content organization capabilities.
- */
 @Module({
   imports: [
     ...(FakeStorageModule.isEnabled() ? [FakeStorageModule] : []),

@@ -6,6 +6,7 @@ import { Card, CardDocument } from '../entities/card.entity';
 @Injectable()
 export class CardRepository {
   private readonly logger = new Logger(CardRepository.name);
+  private readonly cardsCollectionName = 'cards';
 
   constructor(private readonly firebaseAdminService: FirebaseAdminService) {}
 
@@ -13,45 +14,49 @@ export class CardRepository {
     return this.firebaseAdminService.getFirestore();
   }
 
-  private cardsCollection(
-    deckId: string
-  ): admin.firestore.CollectionReference<admin.firestore.DocumentData> {
-    return this.firestore.collection('content').doc(deckId).collection('cards');
+  private cardsCollection(): admin.firestore.CollectionReference<admin.firestore.DocumentData> {
+    return this.firestore.collection(this.cardsCollectionName);
   }
 
-  async findById(cardId: string, deckId: string): Promise<Card | null> {
-    const doc = await this.cardsCollection(deckId).doc(cardId).get();
+  async findById(cardId: string): Promise<Card | null> {
+    const doc = await this.cardsCollection().doc(cardId).get();
 
     if (!doc.exists) {
       return null;
     }
 
-    return this.convertDocumentToCard(doc.id, doc.data() as CardDocument);
+    const data = doc.data();
+    if (!data) return null;
+    return this.convertDocumentToCard(doc.id, data);
   }
 
+  /** Returns all non-deleted cards in a deck, ordered by position. */
   async findByDeckId(deckId: string): Promise<Card[]> {
-    const snapshot = await this.cardsCollection(deckId).get();
+    const snapshot = await this.cardsCollection()
+      .where('deckId', '==', deckId)
+      .where('deleted', '==', false)
+      .orderBy('position', 'asc')
+      .get();
 
     return snapshot.docs
-      .map(d => this.convertDocumentToCard(d.id, d.data() as CardDocument))
-      .filter(c => !c.deleted)
-      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      .map(d => this.convertDocumentToCard(d.id, d.data()!))
+      .filter((c): c is Card => c !== null);
   }
 
-  /**
-   * Returns non-deleted cards in a deck that are due for review (dueDate <= now),
-   * ordered by dueDate ascending (oldest due first).
-   */
-  async findDueCards(deckId: string): Promise<Card[]> {
-    const now = admin.firestore.Timestamp.now();
-    const snapshot = await this.cardsCollection(deckId)
-      .where('dueDate', '<=', now)
+  /** Returns non-deleted cards in a deck, ordered by position (includes all, not just due). */
+  async findByDeckIds(deckIds: string[]): Promise<Card[]> {
+    if (deckIds.length === 0) return [];
+
+    // Firestore `in` supports up to 30 values
+    const snapshot = await this.cardsCollection()
+      .where('deckId', 'in', deckIds)
       .where('deleted', '==', false)
       .get();
 
     return snapshot.docs
-      .map(d => this.convertDocumentToCard(d.id, d.data() as CardDocument))
-      .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
+      .map(d => this.convertDocumentToCard(d.id, d.data()!))
+      .filter((c): c is Card => c !== null)
+      .sort((a, b) => a.position - b.position);
   }
 
   async addCard(params: {
@@ -59,33 +64,37 @@ export class CardRepository {
     ownerId: string;
     front: string;
     back: string;
+    position: number;
   }): Promise<Card> {
     const now = new Date();
 
-    const newCardData: CardDocument = {
+    const newCardData = {
       deckId: params.deckId,
       ownerId: params.ownerId,
+      position: params.position,
       front: params.front,
       back: params.back,
-      dueDate: admin.firestore.Timestamp.fromDate(now),
-      interval: 0,
-      repetitions: 0,
-      lastResult: null,
-      lastStudied: null,
-      correctCount: 0,
-      incorrectCount: 0,
       deleted: false,
       createdAt: admin.firestore.Timestamp.fromDate(now),
       updatedAt: admin.firestore.Timestamp.fromDate(now),
     };
 
-    const docRef = await this.cardsCollection(params.deckId).add(newCardData);
+    const docRef = await this.cardsCollection().add(newCardData);
 
-    return this.convertDocumentToCard(docRef.id, newCardData);
+    return {
+      id: docRef.id,
+      deckId: params.deckId,
+      ownerId: params.ownerId,
+      position: params.position,
+      front: params.front,
+      back: params.back,
+      deleted: false,
+      createdAt: now,
+      updatedAt: now,
+    };
   }
 
   async updateCard(
-    deckId: string,
     cardId: string,
     updates: { front?: string; back?: string; updatedAt?: Date }
   ): Promise<void> {
@@ -103,41 +112,11 @@ export class CardRepository {
       updateData.updatedAt = admin.firestore.Timestamp.fromDate(updates.updatedAt);
     }
 
-    await this.cardsCollection(deckId).doc(cardId).update(updateData);
+    await this.cardsCollection().doc(cardId).update(updateData);
   }
 
-  /**
-   * Atomically updates card scheduling fields after a study result is recorded.
-   */
-  async updateCardStudyState(
-    deckId: string,
-    cardId: string,
-    updates: {
-      dueDate: Date;
-      interval: number;
-      repetitions: number;
-      lastResult: 'know' | 'dont_know';
-      lastStudied: Date;
-      correctCount: number;
-      incorrectCount: number;
-    }
-  ): Promise<void> {
-    await this.cardsCollection(deckId)
-      .doc(cardId)
-      .update({
-        dueDate: admin.firestore.Timestamp.fromDate(updates.dueDate),
-        interval: updates.interval,
-        repetitions: updates.repetitions,
-        lastResult: updates.lastResult,
-        lastStudied: admin.firestore.Timestamp.fromDate(updates.lastStudied),
-        correctCount: updates.correctCount,
-        incorrectCount: updates.incorrectCount,
-        updatedAt: admin.firestore.Timestamp.fromDate(updates.lastStudied),
-      });
-  }
-
-  async softDeleteCard(deckId: string, cardId: string, deletedAt: Date): Promise<void> {
-    await this.cardsCollection(deckId)
+  async softDeleteCard(cardId: string, deletedAt: Date): Promise<void> {
+    await this.cardsCollection()
       .doc(cardId)
       .update({
         deleted: true,
@@ -147,27 +126,20 @@ export class CardRepository {
   }
 
   /**
-   * Counts non-deleted cards in a deck where `dueDate <= now`.
+   * Soft-deletes all non-deleted cards belonging to a deck.
    */
-  async countDueCards(deckId: string): Promise<number> {
-    const now = admin.firestore.Timestamp.now();
-    const snapshot = await this.cardsCollection(deckId)
-      .where('dueDate', '<=', now)
+  async softDeleteCardsByDeckId(deckId: string): Promise<void> {
+    const snapshot = await this.cardsCollection()
+      .where('deckId', '==', deckId)
       .where('deleted', '==', false)
-      .count()
       .get();
-    return snapshot.data().count;
-  }
-  async deleteCardsByDeckId(deckId: string): Promise<void> {
-    const snapshot = await this.cardsCollection(deckId).get();
 
-    const nonDeleted = snapshot.docs.filter(d => !d.data().deleted);
+    if (snapshot.empty) return;
 
     const now = admin.firestore.Timestamp.fromDate(new Date());
-
     const batch = this.firestore.batch();
 
-    for (const doc of nonDeleted) {
+    for (const doc of snapshot.docs) {
       batch.update(doc.ref, {
         deleted: true,
         deletedAt: now,
@@ -178,24 +150,37 @@ export class CardRepository {
     await batch.commit();
   }
 
-  private convertDocumentToCard(id: string, data: CardDocument): Card {
+  /**
+   * Returns the next position value for a new card in the deck.
+   */
+  async getNextPosition(deckId: string): Promise<number> {
+    const snapshot = await this.cardsCollection()
+      .where('deckId', '==', deckId)
+      .where('deleted', '==', false)
+      .orderBy('position', 'desc')
+      .limit(1)
+      .get();
+
+    if (snapshot.empty) return 0;
+    const data = snapshot.docs[0].data();
+    return (data?.['position'] ?? -1) + 1;
+  }
+
+  private convertDocumentToCard(id: string, data: FirebaseFirestore.DocumentData): Card | null {
+    if (!data || typeof data !== 'object') return null;
+    if (typeof data['deckId'] !== 'string') return null;
+
     return {
       id,
-      deckId: data.deckId,
-      ownerId: data.ownerId,
-      front: data.front,
-      back: data.back,
-      dueDate: data.dueDate.toDate(),
-      interval: data.interval,
-      repetitions: data.repetitions,
-      lastResult: data.lastResult,
-      lastStudied: data.lastStudied?.toDate() ?? null,
-      correctCount: data.correctCount,
-      incorrectCount: data.incorrectCount,
-      deleted: data.deleted,
-      deletedAt: data.deletedAt?.toDate() ?? null,
-      createdAt: data.createdAt.toDate(),
-      updatedAt: data.updatedAt.toDate(),
+      deckId: data['deckId'],
+      ownerId: typeof data['ownerId'] === 'string' ? data['ownerId'] : '',
+      position: typeof data['position'] === 'number' ? data['position'] : 0,
+      front: typeof data['front'] === 'string' ? data['front'] : '',
+      back: typeof data['back'] === 'string' ? data['back'] : '',
+      deleted: typeof data['deleted'] === 'boolean' ? data['deleted'] : undefined,
+      deletedAt: data['deletedAt'] && typeof data['deletedAt'].toDate === 'function' ? data['deletedAt'].toDate() : null,
+      createdAt: data['createdAt'] && typeof data['createdAt'].toDate === 'function' ? data['createdAt'].toDate() : new Date(),
+      updatedAt: data['updatedAt'] && typeof data['updatedAt'].toDate === 'function' ? data['updatedAt'].toDate() : new Date(),
     };
   }
 }

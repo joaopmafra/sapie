@@ -40,8 +40,8 @@ export interface Content {
   /** ID of the parent directory, null for root directory */
   parentId: string | null;
 
-  /** Denormalized folder ID (set for deck-type content). */
-  folderId?: string | null;
+  /** Denormalized directory ID (set for deck-type content). */
+  directoryId?: string | null;
 
   /** ID of the user who owns this content */
   ownerId: string;
