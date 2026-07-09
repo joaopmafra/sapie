@@ -11,7 +11,7 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { nanoid } from 'nanoid';
-import { Content, ContentType, Note } from '../entities/content.entity';
+import { Content, Note } from '../entities/content.entity';
 import { ContentRepository } from '../repositories/content-repository.service';
 import { CONTENT_BODY_MAX_BYTES } from '../constants/content-body-limits';
 import {
@@ -69,7 +69,7 @@ export class ContentService {
     name: string,
     parentId: string,
     ownerId: string,
-    contentType: ContentType = 'note' as ContentType
+    contentType: 'directory' | 'note' | 'deck' = 'note'
   ): Promise<Content> {
     const parent = await this.contentRepository.findById(parentId);
 

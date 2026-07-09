@@ -163,7 +163,7 @@ export class CardRepository {
 
     if (snapshot.empty) return 0;
     const data = snapshot.docs[0].data();
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return (data?.['position'] ?? -1) + 1;
   }
 
