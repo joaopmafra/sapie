@@ -25,7 +25,6 @@ import {
 } from './content-body-read.service';
 import { ContentBodyStorageService } from './content-body-storage.service';
 
-
 import { CardService } from '../../cards/services/card.service';
 
 import type { Readable } from 'stream';
@@ -42,16 +41,13 @@ export class ContentService {
     @Inject(CONTENT_BODY_READ_SERVICE)
     private readonly contentBodyReadService: ContentBodyReadService,
     @Inject(forwardRef(() => CardService))
-    private readonly cardService: CardService,
+    private readonly cardService: CardService
   ) {}
 
   async findByParentIdAndOwnerId(parentId: string, ownerId: string): Promise<Content[]> {
     const children = await this.contentRepository.findByParentIdAndOwnerId(parentId, ownerId);
     return children.filter(
-      child =>
-        child.type === ContentType.DIRECTORY ||
-        child.type === ContentType.NOTE ||
-        child.type === ContentType.DECK
+      child => child.type === 'directory' || child.type === 'note' || child.type === 'deck'
     );
   }
 
@@ -73,7 +69,7 @@ export class ContentService {
     name: string,
     parentId: string,
     ownerId: string,
-    contentType: ContentType = ContentType.NOTE
+    contentType: ContentType = 'note' as ContentType
   ): Promise<Content> {
     const parent = await this.contentRepository.findById(parentId);
 
@@ -89,15 +85,15 @@ export class ContentService {
       throw new BadRequestException('Cannot create content under a deleted parent');
     }
 
-    if (contentType === ContentType.DIRECTORY && parent.type !== ContentType.DIRECTORY) {
+    if (contentType === 'directory' && parent.type !== 'directory') {
       throw new BadRequestException('A folder can only be created inside another folder');
     }
 
-    if (contentType === ContentType.NOTE && parent.type !== ContentType.DIRECTORY) {
+    if (contentType === 'note' && parent.type !== 'directory') {
       throw new BadRequestException('A note can only be created inside a folder');
     }
 
-    if (contentType === ContentType.DECK && parent.type !== ContentType.NOTE) {
+    if (contentType === 'deck' && parent.type !== 'note') {
       throw new BadRequestException('A deck can only be created under a note');
     }
 
@@ -107,7 +103,7 @@ export class ContentService {
     }
 
     const now = new Date();
-    if (contentType === ContentType.DIRECTORY) {
+    if (contentType === 'directory') {
       return this.contentRepository.addDirectory({
         name,
         parentId,
@@ -117,7 +113,7 @@ export class ContentService {
       });
     }
 
-    if (contentType === ContentType.DECK) {
+    if (contentType === 'deck') {
       // Denormalize directoryId from the parent note's parent directory
       return this.contentRepository.addDeck({
         name,
@@ -155,7 +151,7 @@ export class ContentService {
       throw new NotFoundException(`Content with ID ${id} not found`);
     }
 
-    if (tags !== undefined && existing.type !== ContentType.DIRECTORY) {
+    if (tags !== undefined && existing.type !== 'directory') {
       throw new BadRequestException('Tags are only supported for folder-type content');
     }
 
@@ -211,7 +207,7 @@ export class ContentService {
       throw new ForbiddenException('User does not own this content');
     }
 
-    if (existing.type === ContentType.DIRECTORY || existing.type === ContentType.DECK) {
+    if (existing.type === 'directory' || existing.type === 'deck') {
       throw new BadRequestException('Body storage is not applicable for directories or decks');
     }
 
@@ -244,7 +240,7 @@ export class ContentService {
       throw new ForbiddenException('User does not own this content');
     }
 
-    if (existing.type === ContentType.DIRECTORY || existing.type === ContentType.DECK) {
+    if (existing.type === 'directory' || existing.type === 'deck') {
       throw new BadRequestException('Body storage is not applicable for directories or decks');
     }
 
@@ -284,7 +280,7 @@ export class ContentService {
       throw new ForbiddenException('User does not own this content');
     }
 
-    if (existing.type === ContentType.DIRECTORY || existing.type === ContentType.DECK) {
+    if (existing.type === 'directory' || existing.type === 'deck') {
       throw new BadRequestException('Body storage is not applicable for directories or decks');
     }
 
@@ -460,7 +456,7 @@ export class ContentService {
 
     const now = new Date();
 
-    if (content.type === ContentType.NOTE) {
+    if (content.type === 'note') {
       const childCount = await this.contentRepository.findContentChildrenCount(contentId);
       if (childCount > 0 && !cascade) {
         throw new ConflictException(
@@ -468,9 +464,16 @@ export class ContentService {
         );
       }
 
-      // Soft-delete content children (e.g. flashcard decks) if cascading
+      // Soft-delete content children (e.g. flashcard decks) and their cards if cascading
       if (cascade && childCount > 0) {
         const childIds = await this.contentRepository.findAllDescendantIds(contentId, ownerId);
+        // Cascade-delete cards for any deck children
+        for (const childId of childIds) {
+          const child = await this.contentRepository.findById(childId);
+          if (child && child.type === 'deck') {
+            await this.cardService.deleteCardsForDeck(childId);
+          }
+        }
         const childDeletePromises = childIds.map(id =>
           this.contentRepository.softDeleteContent(id, now, ownerId)
         );
@@ -479,8 +482,8 @@ export class ContentService {
 
       // Soft-delete the note itself (blobs are NOT deleted per versioning plan)
       await this.contentRepository.softDeleteContent(contentId, now, ownerId);
-    } else if (content.type === ContentType.DECK) {
-      // Cascade-delete all cards in the deck subcollection
+    } else if (content.type === 'deck') {
+      // Cascade-delete all cards in the standalone cards collection
       await this.cardService.deleteCardsForDeck(contentId);
 
       // Soft-delete the deck itself
@@ -488,6 +491,15 @@ export class ContentService {
     } else {
       // Directory: fetch all descendants and soft-delete them, then the folder
       const descendantIds = await this.contentRepository.findAllDescendantIds(contentId, ownerId);
+
+      // Cascade-delete cards for any deck descendants
+      for (const descendantId of descendantIds) {
+        const descendant = await this.contentRepository.findById(descendantId);
+        if (descendant && descendant.type === 'deck') {
+          await this.cardService.deleteCardsForDeck(descendantId);
+        }
+      }
+
       const deletePromises = descendantIds.map(id =>
         this.contentRepository.softDeleteContent(id, now, ownerId)
       );

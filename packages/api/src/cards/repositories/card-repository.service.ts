@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { FirebaseAdminService } from '../../firebase';
-import { Card, CardDocument } from '../entities/card.entity';
+import { Card } from '../entities/card.entity';
 
 @Injectable()
 export class CardRepository {
@@ -39,7 +39,7 @@ export class CardRepository {
       .get();
 
     return snapshot.docs
-      .map(d => this.convertDocumentToCard(d.id, d.data()!))
+      .map(d => this.convertDocumentToCard(d.id, d.data() || {}))
       .filter((c): c is Card => c !== null);
   }
 
@@ -54,7 +54,7 @@ export class CardRepository {
       .get();
 
     return snapshot.docs
-      .map(d => this.convertDocumentToCard(d.id, d.data()!))
+      .map(d => this.convertDocumentToCard(d.id, d.data() || {}))
       .filter((c): c is Card => c !== null)
       .sort((a, b) => a.position - b.position);
   }
@@ -163,9 +163,11 @@ export class CardRepository {
 
     if (snapshot.empty) return 0;
     const data = snapshot.docs[0].data();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
     return (data?.['position'] ?? -1) + 1;
   }
 
+  /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
   private convertDocumentToCard(id: string, data: FirebaseFirestore.DocumentData): Card | null {
     if (!data || typeof data !== 'object') return null;
     if (typeof data['deckId'] !== 'string') return null;
@@ -178,9 +180,18 @@ export class CardRepository {
       front: typeof data['front'] === 'string' ? data['front'] : '',
       back: typeof data['back'] === 'string' ? data['back'] : '',
       deleted: typeof data['deleted'] === 'boolean' ? data['deleted'] : undefined,
-      deletedAt: data['deletedAt'] && typeof data['deletedAt'].toDate === 'function' ? data['deletedAt'].toDate() : null,
-      createdAt: data['createdAt'] && typeof data['createdAt'].toDate === 'function' ? data['createdAt'].toDate() : new Date(),
-      updatedAt: data['updatedAt'] && typeof data['updatedAt'].toDate === 'function' ? data['updatedAt'].toDate() : new Date(),
+      deletedAt:
+        data['deletedAt'] && typeof data['deletedAt'].toDate === 'function'
+          ? data['deletedAt'].toDate()
+          : null,
+      createdAt:
+        data['createdAt'] && typeof data['createdAt'].toDate === 'function'
+          ? data['createdAt'].toDate()
+          : new Date(),
+      updatedAt:
+        data['updatedAt'] && typeof data['updatedAt'].toDate === 'function'
+          ? data['updatedAt'].toDate()
+          : new Date(),
     };
   }
 }

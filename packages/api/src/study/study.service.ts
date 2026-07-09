@@ -29,7 +29,7 @@ export class StudyService {
   constructor(
     private readonly contentRepository: ContentRepository,
     private readonly cardRepository: CardRepository,
-    private readonly studyResultRepository: StudyResultRepository,
+    private readonly studyResultRepository: StudyResultRepository
   ) {}
 
   async getDueCards(rootIds: string[], ownerId: string): Promise<DueCardsResponse> {

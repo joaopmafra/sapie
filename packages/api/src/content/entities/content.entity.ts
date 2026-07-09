@@ -195,10 +195,9 @@ export interface ContentCreationInput {
   parentId: string | null;
 }
 
-/**
- * Deck-specific creation input (used internally by the repository layer).
- */
-export interface DeckCreationInput extends ContentCreationInput {
-  type: ContentType.DECK;
+export interface DeckCreationInput {
+  name: string;
+  type: 'deck';
+  parentId: string;
   directoryId: string;
 }

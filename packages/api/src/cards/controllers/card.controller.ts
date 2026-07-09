@@ -221,9 +221,7 @@ export class UpdateCardRequest {
 export class CardController {
   private readonly logger = new Logger(CardController.name);
 
-  constructor(
-    private readonly cardService: CardService,
-  ) {}
+  constructor(private readonly cardService: CardService) {}
 
   @Post(':deckId/cards')
   @Auth()
@@ -435,7 +433,10 @@ export class CardController {
     );
 
     const { card, studyState } = await this.cardService.recordStudyResult(
-      deckId, cardId, user.uid, body.result
+      deckId,
+      cardId,
+      user.uid,
+      body.result
     );
 
     const response = toCardResponse(card);

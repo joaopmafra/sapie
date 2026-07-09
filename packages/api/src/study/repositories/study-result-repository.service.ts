@@ -125,7 +125,11 @@ export class StudyResultRepository {
       });
   }
 
-  private convertToStudyResult(id: string, data: FirebaseFirestore.DocumentData): StudyResult | null {
+  /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
+  private convertToStudyResult(
+    id: string,
+    data: FirebaseFirestore.DocumentData
+  ): StudyResult | null {
     if (!data || typeof data !== 'object') return null;
     if (typeof data['cardId'] !== 'string' || typeof data['userId'] !== 'string') return null;
 
@@ -133,15 +137,30 @@ export class StudyResultRepository {
       id,
       cardId: data['cardId'],
       userId: data['userId'],
-      dueDate: data['dueDate'] && typeof data['dueDate'].toDate === 'function' ? data['dueDate'].toDate() : new Date(),
+      dueDate:
+        data['dueDate'] && typeof data['dueDate'].toDate === 'function'
+          ? data['dueDate'].toDate()
+          : new Date(),
       interval: typeof data['interval'] === 'number' ? data['interval'] : 0,
       repetitions: typeof data['repetitions'] === 'number' ? data['repetitions'] : 0,
-      lastResult: data['lastResult'] === 'know' || data['lastResult'] === 'dont_know' ? data['lastResult'] : null,
-      lastStudied: data['lastStudied'] && typeof data['lastStudied'].toDate === 'function' ? data['lastStudied'].toDate() : null,
+      lastResult:
+        data['lastResult'] === 'know' || data['lastResult'] === 'dont_know'
+          ? data['lastResult']
+          : null,
+      lastStudied:
+        data['lastStudied'] && typeof data['lastStudied'].toDate === 'function'
+          ? data['lastStudied'].toDate()
+          : null,
       correctCount: typeof data['correctCount'] === 'number' ? data['correctCount'] : 0,
       incorrectCount: typeof data['incorrectCount'] === 'number' ? data['incorrectCount'] : 0,
-      createdAt: data['createdAt'] && typeof data['createdAt'].toDate === 'function' ? data['createdAt'].toDate() : new Date(),
-      updatedAt: data['updatedAt'] && typeof data['updatedAt'].toDate === 'function' ? data['updatedAt'].toDate() : new Date(),
+      createdAt:
+        data['createdAt'] && typeof data['createdAt'].toDate === 'function'
+          ? data['createdAt'].toDate()
+          : new Date(),
+      updatedAt:
+        data['updatedAt'] && typeof data['updatedAt'].toDate === 'function'
+          ? data['updatedAt'].toDate()
+          : new Date(),
     };
   }
 }

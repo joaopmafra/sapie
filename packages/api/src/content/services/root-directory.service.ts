@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { FirebaseAdminService } from '../../firebase';
-import { Content, ContentType } from '../entities/content.entity';
+import { Content } from '../entities/content.entity';
 import { ContentRepository } from '../repositories/content-repository.service';
 
 /**

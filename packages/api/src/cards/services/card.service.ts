@@ -17,7 +17,7 @@ export class CardService {
   constructor(
     private readonly cardRepository: CardRepository,
     private readonly contentRepository: ContentRepository,
-    private readonly studyResultRepository: StudyResultRepository,
+    private readonly studyResultRepository: StudyResultRepository
   ) {}
   async createCard(deckId: string, ownerId: string, front: string, back: string): Promise<Card> {
     await this.validateDeckOwnership(deckId, ownerId);
@@ -93,11 +93,18 @@ export class CardService {
     cardId: string,
     ownerId: string,
     result: 'know' | 'dont_know'
-  ): Promise<{ card: Card; studyState: {
-    dueDate: Date; interval: number; repetitions: number;
-    lastResult: 'know' | 'dont_know'; lastStudied: Date;
-    correctCount: number; incorrectCount: number;
-  }}> {
+  ): Promise<{
+    card: Card;
+    studyState: {
+      dueDate: Date;
+      interval: number;
+      repetitions: number;
+      lastResult: 'know' | 'dont_know';
+      lastStudied: Date;
+      correctCount: number;
+      incorrectCount: number;
+    };
+  }> {
     await this.validateDeckOwnership(deckId, ownerId);
 
     const card = await this.cardRepository.findById(cardId);

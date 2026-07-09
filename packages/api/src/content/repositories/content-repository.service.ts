@@ -29,7 +29,7 @@ export class ContentRepository {
         .collection(this.contentCollection)
         .where('ownerId', '==', userId)
         .where('parentId', '==', null)
-        .where('type', '==', ContentType.DIRECTORY)
+        .where('type', '==', 'directory')
         .limit(1)
         .get();
 
@@ -99,7 +99,7 @@ export class ContentRepository {
   }): Promise<Note> {
     const newContentData = {
       name: params.name,
-      type: ContentType.NOTE as const,
+      type: 'note' as const,
       parentId: params.parentId,
       ownerId: params.ownerId,
       body: null,
@@ -127,7 +127,7 @@ export class ContentRepository {
     ownerId: string;
     createdAt: Date;
     updatedAt: Date;
-    type: ContentType;
+    type: ContentType | 'directory' | 'note' | 'deck';
     directoryId?: string | null;
   }): Promise<Content> {
     const newContentData: Record<string, unknown> = {
@@ -138,7 +138,7 @@ export class ContentRepository {
       createdAt: params.createdAt,
       updatedAt: params.updatedAt,
     };
-    if (params.type === ContentType.NOTE) {
+    if (params.type === 'note') {
       newContentData.body = null;
     }
     if (params.directoryId !== undefined) {
@@ -173,7 +173,7 @@ export class ContentRepository {
   }): Promise<Deck> {
     const result = await this.addContentWithType({
       ...params,
-      type: ContentType.DECK,
+      type: 'deck',
     });
     // addContentWithType returns Content; for deck creation the type is always Deck
     if (result.type !== 'deck') {
@@ -191,7 +191,7 @@ export class ContentRepository {
   }): Promise<Directory> {
     const newContentData = {
       name: params.name,
-      type: ContentType.DIRECTORY as const,
+      type: 'directory' as const,
       parentId: params.parentId,
       ownerId: params.ownerId,
       createdAt: params.createdAt,
@@ -253,7 +253,9 @@ export class ContentRepository {
 
       for (const doc of snapshot.docs) {
         const docData = doc.data();
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const docDeleted = docData?.['deleted'];
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const docType = docData?.['type'];
         // Skip soft-deleted descendants (shouldn't exist but defensive)
         if (!docDeleted) {
@@ -277,7 +279,7 @@ export class ContentRepository {
       .collection(this.contentCollection)
       .where('parentId', '==', parentId)
       .get();
-    return snapshot.docs.filter(d => !(d.data()).deleted).length;
+    return snapshot.docs.filter(d => !d.data().deleted).length;
   }
 
   async updateContentBodyMetadata(
@@ -290,6 +292,7 @@ export class ContentRepository {
     const ref = this.firestore.collection(this.contentCollection).doc(id);
     const snap = await ref.get();
     const data = snap.data();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const existingNested = data?.body;
     let createdAt = updatedAt;
     if (this.isContentBodyDocument(existingNested)) {
@@ -346,7 +349,7 @@ export class ContentRepository {
     // Firestore `in` query supports up to 30 values. For MVP we assume fewer than 30 directories per root.
     const snapshot = await this.firestore
       .collection(this.contentCollection)
-      .where('type', '==', ContentType.DECK)
+      .where('type', '==', 'deck')
       .where('directoryId', 'in', directoryIds)
       .where('ownerId', '==', ownerId)
       .get();
@@ -384,7 +387,12 @@ export class ContentRepository {
    * Converts a raw Firestore document to the correct discriminated Content type.
    * Uses the `type` field to discriminate and validate fields at runtime.
    */
-  private convertDocumentToContent(id: string, data: FirebaseFirestore.DocumentData): Content | null {
+
+  private convertDocumentToContent(
+    id: string,
+    data: FirebaseFirestore.DocumentData
+  ): Content | null {
+    /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
     if (!data || typeof data !== 'object') return null;
 
     const rawType = data['type'];
@@ -396,11 +404,23 @@ export class ContentRepository {
       parentId: typeof data['parentId'] === 'string' ? data['parentId'] : null,
       ownerId: typeof data['ownerId'] === 'string' ? data['ownerId'] : '',
       deleted: typeof data['deleted'] === 'boolean' ? data['deleted'] : undefined,
-      deletedAt: data['deletedAt'] && typeof data['deletedAt'].toDate === 'function' ? data['deletedAt'].toDate() : null,
-      deletedBy: data['deletedBy'] && typeof data['deletedBy'] === 'object' ? data['deletedBy'] as { uid: string } : null,
+      deletedAt:
+        data['deletedAt'] && typeof data['deletedAt'].toDate === 'function'
+          ? data['deletedAt'].toDate()
+          : null,
+      deletedBy:
+        data['deletedBy'] && typeof data['deletedBy'] === 'object'
+          ? (data['deletedBy'] as { uid: string })
+          : null,
       tags: Array.isArray(data['tags']) ? data['tags'] : null,
-      createdAt: data['createdAt'] && typeof data['createdAt'].toDate === 'function' ? data['createdAt'].toDate() : new Date(),
-      updatedAt: data['updatedAt'] && typeof data['updatedAt'].toDate === 'function' ? data['updatedAt'].toDate() : new Date(),
+      createdAt:
+        data['createdAt'] && typeof data['createdAt'].toDate === 'function'
+          ? data['createdAt'].toDate()
+          : new Date(),
+      updatedAt:
+        data['updatedAt'] && typeof data['updatedAt'].toDate === 'function'
+          ? data['updatedAt'].toDate()
+          : new Date(),
     };
 
     switch (rawType) {
@@ -414,11 +434,13 @@ export class ContentRepository {
       }
       case 'deck': {
         const directoryId = typeof data['directoryId'] === 'string' ? data['directoryId'] : null;
-        const description = typeof data['description'] === 'string' ? data['description'] : undefined;
+        const description =
+          typeof data['description'] === 'string' ? data['description'] : undefined;
         return { ...base, type: 'deck' as const, directoryId, description };
       }
       default:
         return null;
     }
+    /* eslint-enable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
   }
 }
