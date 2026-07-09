@@ -5,10 +5,9 @@
 
 ## Motivation
 
-The current model has accumulated tactical decisions (`folderId` denormalization, cards as a subcollection, flat `Content` interface) that made sense during early MVP iterations but now create friction:
-
+The current model has accumulated tactical decisions (`folderId` denormalization, cards as a subcollection, flat `Content` interface) that made sense during early MVP iterations but now create friction. The refactor addresses these, and also renames `folderId` → `directoryId` for domain language consistency.
 - **Type safety gaps.** The `Content` interface uses optional fields for everything, pushing validation into scattered runtime checks.
-- **Denormalized staleness.** `folderId` on decks can go stale when a note is moved to a different folder.
+- **Denormalized staleness.** `folderId` on decks can go stale when a note is moved — the refactor keeps the field (renamed to `directoryId`) and documents the repair responsibility on the note-move operation.
 - **Subcollection coupling.** Cards living under `content/{deckId}/cards` makes standalone card queries harder and ties card lifecycle to deck documents.
 
 The refactor aligns the storage model with the project's architectural principles: metadata in Firestore, content bodies in GCS, a discriminated type hierarchy, and a design optimized for correctness first (local browser cache will absorb query cost, so server-side query micro-optimizations are premature).
@@ -64,15 +63,42 @@ type Content = Directory | Note | Deck;
 - Eliminates runtime checks like `if (existing.type !== ContentType.DIRECTORY)` scattered across `ContentService`.
 - The Firestore document stays flat (single collection) — the discriminated union is a domain-layer concern, not a schema change.
 
-### 2. Remove `folderId` from decks
+### 2. Keep `folderId`, rename to `directoryId`
 
-**What:** Delete the denormalized `folderId` field. `findDecksByFolderIds` rewrites to traverse `parentId` chains or query via `cards`/`study_results` collections.
+**What:** Retain the denormalized directory reference on decks. Rename the field from `folderId` to `directoryId` for consistency with the project's domain language (`Directory` type, `parentId` pointing to a directory). All endpoints, query params, frontend types, and hooks must use `directoryId` — never `folderId`.
 
-**Why:**
+**Domain model (with jsdoc):**
 
-- **Staleness hazard.** Moving a note to a different folder leaves its decks' `folderId` pointing at the old folder. There is no trigger or hook to repair it.
-- **Premature optimization.** `folderId` only exists to avoid recursive `WHERE parentId = …` queries. With a local browser cache (Cache Storage + IndexedDB) absorbing query cost, this optimization buys nothing.
-- **Correct by construction.** `deck.parentId → note.parentId → folder` is always accurate. No synchronization to maintain.
+```typescript
+interface Deck extends BaseContent {
+  type: 'deck';
+  description?: string;
+  cardStyle?: 'qa' | 'cloze' | 'open_ended';
+  defaultDepth?: 'foundation' | 'applied' | 'detail';
+  language?: string;
+  /**
+   * Denormalized ID of the directory containing this deck's parent note.
+   * Enables efficient folder-level study queries (`WHERE directoryId = ? AND type = 'deck'`)
+   * without traversing `deck.parentId → note.parentId → directory` chains.
+   *
+   * Set once at deck creation (snapshot of note.parentId). If the note is moved
+   * to a different directory, this field must be repaired — currently handled by
+   * the note-move operation updating all child decks.
+   */
+  directoryId: string | null;
+}
+```
+
+**Why keep it:**
+
+- **Fast single-folder deck queries.** `WHERE directoryId = ? AND type = 'deck'` is a direct indexed query. Without it, finding all decks in a folder requires: fetch all notes in the folder → fetch all decks where `parentId` is one of those note IDs. Two queries, N+1 potential, no single index.
+- **Study dashboard aggregation.** Content roots (Story 81) aggregate cards across entire folder hierarchies. The `directoryId` denormalization anchors decks to their folder for the recursive descendant collection step.
+- **Staleness is manageable.** The note-move operation already handles updating child deck `directoryId` values. It's a single write per moved deck — cheaper than the alternative of multi-step queries on every study session.
+
+**Why rename:**
+
+- The domain model uses `Directory` for the type literal and `parentId` to reference parent directories. `folderId` is the only place the term "folder" appears in the schema — it's inconsistent.
+- Codebase convention: pick one term and use it everywhere. `directory` wins because it's already the `type` literal value.
 
 ### 3. Cards as a standalone collection
 
@@ -159,6 +185,33 @@ type Content = Directory | Note | Deck;
 - Blobs are immutable, cache-friendly, and have no Firestore document — no reconciliation overhead.
 - Cards reference images the same way notes do. The blob belongs to the note (where the GCS prefix lives), not to the card.
 
+### 8. Future: local sync via CacheStorage API
+
+**What (future):** The current Firestore-backed query model may eventually be replaced or augmented by a local-first synchronization layer using browser APIs — specifically the [Web CacheStorage API](https://developer.mozilla.org/en-US/docs/Web/API/CacheStorage) for content bodies and IndexedDB for metadata. Under this model:
+
+- The entire content tree (or a working subset) is synced to the browser at session start.
+- Queries that currently hit Firestore (`WHERE directoryId = ?`, `WHERE dueDate <= ?`) run against the local store instead.
+- The server remains the source of truth; the client syncs changes incrementally.
+
+**Impact on `directoryId`:**
+
+- The `directoryId` denormalization exists to make server-side folder-level deck queries efficient (avoiding recursive `WHERE parentId = …` chains).
+- With a local cache, all content metadata is available in-memory or in IndexedDB. Filtering decks by their note's parent directory becomes a local operation — no server round-trip, no index dependency.
+- **At that point, `directoryId` may no longer be needed.** The field could be dropped in favor of a pure `deck.parentId → note.parentId → directory` traversal computed client-side.
+
+**Why keep `directoryId` for now:**
+
+- The local sync layer does not exist yet. Until it does, server-side query efficiency matters.
+- Removing `directoryId` now means paying the recursive query cost on every folder-level study operation — a regression with no compensating benefit.
+- When local sync is implemented and proven (performance measured, edge cases handled), `directoryId` removal becomes a straightforward cleanup: delete the field, remove the staleness repair code, simplify the model. That's a simpler change than adding it back later.
+
+**Migration path:**
+
+1. Implement local sync (CacheStorage + IndexedDB) as an opt-in layer.
+2. Measure query performance with and without `directoryId` on the client side.
+3. If local traversal is fast enough (<100ms for typical folder sizes), drop `directoryId` from the schema and remove the repair logic.
+4. Update `storage_model.md` to reflect the new sync architecture.
+
 ---
 
 ## Collection map (after refactor)
@@ -177,20 +230,20 @@ GCS paths unchanged:
 |`{ownerId}/content/{contentId}`|Note body (markdown)|
 |`{ownerId}/content/{contentId}/blobs/{blobId}`|Inline images (immutable)|
 
----
-
 ## Migration notes
 
 1. **New `cards` collection.** One-time migration from `content/{deckId}/cards` subcollection to top-level `cards`. Write a migration script that copies each card document and adds `deckId` + `position` fields. Validate with a dry run first.
 
 2. **New `study_results` collection.** Extract `dueDate`, `interval`, `repetitions`, `lastResult`, `lastStudied`, `correctCount`, `incorrectCount` from existing card documents. Each becomes a document keyed by `(cardId, ownerId)`.
 
-3. **Remove `folderId`.** Drop the field from all deck documents. Rewrite `findDecksByFolderIds` to use the `cards` collection (`WHERE deckId IN (SELECT id FROM content WHERE parentId IN (noteIds))`) or defer to the local cache layer once implemented.
+3. **Rename `folderId` → `directoryId`.** Rename the field on all deck documents in Firestore. Update all API query params (`?directoryId=…`), DTOs, frontend types, hooks, and service methods. Use `lsp rename` on the TypeScript property to propagate to all call sites. No logic change — purely a nomenclature rename.
 
 4. **Discriminated union.** Purely a code change — no Firestore migration needed. Update `Content` interface, `ContentDocument` mapping, and fix compile errors where optional fields were accessed without narrowing.
 
 5. **`findAllDescendantIds` bug.** When converting to the discriminated union, fix the directory traversal to collect deck children of notes (not just directory children). This resolves the documented limitation where directory deletion misses decks.
 
+
+6. **Update `storage_model.md`.** After all migrations are applied and verified, rewrite `docs/dev/storage_model.md` to reflect the new model: discriminated union types, cards as a standalone `cards` collection, `study_results` as a separate collection, `directoryId` (renamed from `folderId`), and the updated collection map. The current doc describes the pre-refactor state and will be stale once migration completes.
 ---
 
 ## See also
