@@ -37,6 +37,8 @@ Supporting material:
 - [Firebase — new hosted environment (project)](firebase_environment_setup.md) — create Auth, Firestore, Storage; CLI
   alias; deploy; IAM + bucket CORS checklist
 - [Content naming — metadata vs content body](content_naming.md) — Firestore **content** vs Storage **content body**
+- [Storage model](storage_model.md) — Firestore collections, GCS paths, content tree, cards, blobs
+- [Storage model refactor](storage_model_refactor.md) — settled design decisions for the next iteration
 - [Dev tooling infrastructure](dev_tooling_infrastructure.md) — seed data script, E2E fixtures, migration path to `qa/`
 - [xp_simplicity_is_the_key.md](xp_simplicity_is_the_key.md)
 - [tdd_baby_steps.md](tdd_baby_steps.md)

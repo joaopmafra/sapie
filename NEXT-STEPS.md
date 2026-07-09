@@ -1,17 +1,32 @@
 # NEXT-STEPS.md
 
-**Last updated:** 2026-07-03
+**Last updated:** 2026-07-09
 
-## Session summary (2026-07-03)
+## Today's priorities (2026-07-09)
 
-Audited the repo state: **MVP is complete.** All stories (53–84) were previously implemented and merged to main
-in PRs #16, #17, #19. The NEXT-STEPS.md was stale — it listed stories 64/76/77/81-84 as pending when they were
-already done. Fixed one TS strict-null error in `ContentExplorer.tsx` (`deleteDialogTarget` possibly null)
-that was failing `pnpm run verify`.
+1. **Implement the storage model refactor** — full design in [docs/dev/storage_model_refactor.md](docs/dev/storage_model_refactor.md):
+   - Discriminated union for `Content` (Directory | Note | Deck)
+   - Rename `folderId` → `directoryId` across the entire stack
+   - Cards as a standalone `cards` collection (migrate from subcollection)
+   - Study results as a separate `study_results` collection
+   - Fix `findAllDescendantIds` bug (directory deletion misses deck children)
+
+2. **Test the local workspace copy feature by hand:**
+   - Improve the seed script (`scripts/seed-dev-data.ts`) — add decks to the seed tree
+   - Deploy to staging
+   - Run through the full study flow manually
+
+3. **Create the production environment** — provision `sapie.app` Firebase project, configure auth, Firestore rules, GCS bucket.
+
+4. **Deploy to production.**
+
+5. **Test the whole app in production** — create content, study, verify persistence.
 
 ---
 
-## MVP status: COMPLETE
+## MVP status: COMPLETE (as of 2026-07-03)
+
+All planned MVP stories (53–84) were implemented and merged to main. The storage model refactor and production deployment are post-MVP work.
 
 | Priority | Feature | Story | Status | Merged |
 |----------|---------|-------|--------|--------|
@@ -31,14 +46,23 @@ that was failing `pnpm run verify`.
 
 ---
 
-## Postponed (not for MVP)
+## Post-MVP work
+
+| Item | Status |
+|------|--------|
+| Storage model refactor | Design approved — implementing today |
+| Staging deployment + manual test | Today |
+| Production environment + deploy | Today |
+
+---
+
+## Postponed
 
 | Item | Reason |
 |------|--------|
 | Responsive mobile polish | Cross-cutting, non-blocking for core study flow |
 | Shared packages (`@sapie/markdown`, `@sapie/validation`) | Deferred until a second consumer exists |
 | MarkdownService AST upgrade | Blocked on ESM tsconfig; regex is sufficient for MVP |
-| Prod Firebase key (`sapie.app`) | Not yet provisioned |
 | API key auth | Not started; separate from study flow |
 | Google Sign-In real auth testing | Requires valid `googleClientId` |
 | Lock-aware web UI middleware | Deferred (see locking roadmap) |
@@ -75,7 +99,10 @@ that was failing `pnpm run verify`.
 ## Key design docs
 
 - [MVP objective](docs/plans/mvp_objective.md)
+- [Storage model refactor](docs/dev/storage_model_refactor.md)
 - [Sapie Sync CLI proposal](docs/research/sapie_sync_cli_proposal.md)
 - [Study dashboard design](docs/research/study_mode/study_dashboard_design.md)
 - [Content versioning](docs/research/content_versioning.md)
 - [Dev tooling infrastructure](docs/dev/dev_tooling_infrastructure.md)
+- [Innovative learning features brainstorm](docs/research/inovative_learning_features.md)
+- [Innovative learning features assessment](docs/research/inovative_learning_features_assessment.md)

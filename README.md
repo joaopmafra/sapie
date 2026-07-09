@@ -38,6 +38,7 @@ from the current directory. You can always override with `--workspace <path>`.
 ### Environment URLs
 
 | `--url` value | Environment | Auth |
+- [Storage model](storage_model.md) — Firestore collections, GCS paths, content tree, cards, blobs
 |---|---|---|
 | `localhost` | Local dev (emulators) | Email/password via emulator |
 | `sapie-b09be.web.app` | Staging | Email/password or Google OAuth |
