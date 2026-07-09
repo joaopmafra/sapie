@@ -45,6 +45,6 @@ printf "OK\n\n"
 
 echo "Running cli unit tests..."
 cd packages/cli
-npx jest --testPathIgnorePatterns="google-auth" --forceExit
+pnpm test
 cd ../..
 printf "OK\n\n"

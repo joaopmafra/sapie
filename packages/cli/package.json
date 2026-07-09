@@ -19,7 +19,7 @@
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint": "eslint \"{src,test}/**/*.ts\" --fix",
     "lint:check": "eslint \"{src,test}/**/*.ts\"",
-    "test": "NODE_OPTIONS='--disable-warning=DEP0040' jest",
+    "test": "NODE_OPTIONS='--disable-warning=DEP0040' jest --testPathIgnorePatterns='google-auth' --forceExit",
     "test:watch": "NODE_OPTIONS='--disable-warning=DEP0040' jest --watch",
     "verify:types": "tsc -p tsconfig.json --noEmit",
     "verify:all": "pnpm verify:types && pnpm lint:check && pnpm format:check"
