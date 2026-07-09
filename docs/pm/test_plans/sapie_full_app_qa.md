@@ -1,7 +1,7 @@
 # Sapie — Manual QA Test Plan
 
 Run these steps in order. Each step describes what to do and what to expect.
-All commands run from the repo root (`packages/cli/src/index.ts` is relative).
+All commands assume you're at the repository root — adjust `<repo-root>` to your actual path.
 
 ---
 
@@ -52,6 +52,7 @@ Listens on `http://localhost:5173`.
 
 ## 3. Seed test data
 
+From the repo root:
 ```
 npx tsx scripts/seed-dev-data.ts
 ```
@@ -137,6 +138,9 @@ Folders: 6, Notes: 6, Decks: 2, Cards: 7
 
 ## 8. CLI — local workspace copy (sync)
 
+All CLI paths below use `<repo-root>` as a placeholder. Replace with the actual path to your
+Sapie checkout (e.g. `~/dev/sapie`).
+
 **Build the CLI:**
 ```
 cd packages/cli && pnpm run build
@@ -145,7 +149,7 @@ cd packages/cli && pnpm run build
 **Create a workspace and initialize:**
 ```
 mkdir -p /tmp/sapie-qa && cd /tmp/sapie-qa
-npx tsx ../../src/index.ts init
+npx tsx <repo-root>/packages/cli/src/index.ts init
 ```
 - Interactive prompt asks for **email + password** (use the test user from Step 2).
 - Expected output:
@@ -158,7 +162,7 @@ npx tsx ../../src/index.ts init
 
 **Pull content from the API:**
 ```
-npx tsx ../../src/index.ts pull
+npx tsx <repo-root>/packages/cli/src/index.ts pull
 ```
 - Expected: Downloads all notes, folders, and decks to `/tmp/sapie-qa/`.
   ```
@@ -182,13 +186,13 @@ Change some text and save.
 
 **Check sync status:**
 ```
-npx tsx ../../src/index.ts status
+npx tsx <repo-root>/packages/cli/src/index.ts status
 ```
 - Expected: Flags "Arrays" as **MODIFIED**.
 
 **Push changes back:**
 ```
-npx tsx ../../src/index.ts push
+npx tsx <repo-root>/packages/cli/src/index.ts push
 ```
 - Expected: Uploads the modified note body to the API.
 
@@ -200,7 +204,7 @@ npx tsx ../../src/index.ts push
 ```
 mkdir -p "My Contents/Data Structures/Graphs.md"
 echo "# Graphs" > "My Contents/Data Structures/Graphs.md/index.md"
-npx tsx ../../src/index.ts push
+npx tsx <repo-root>/packages/cli/src/index.ts push
 ```
 - Expected: New "Graphs" note appears in the web sidebar under Data Structures.
 
